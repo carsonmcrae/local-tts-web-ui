@@ -2,6 +2,10 @@
 
 A local text-to-speech tool using Kokoro with a simple web interface.
 
+## Preview
+
+![App Screenshot](tts_screenshot.png)
+
 ## Features
 
 - 50+ voice options

@@ -30,19 +30,25 @@ cd "%USERPROFILE%\OneDrive\Desktop"
 ```
 
 ```
-mkdir kokoro-local-tts
+mkdir local-tts-web-ui
 ```
 
-3. Navigate into the project folder:
+3. Clone the repository: 
 
 ```
-cd kokoro-local-tts
+git clone https://github.com/carsonmcrae/local-tts-web-ui.git
 ```
 
-4. Create and activate virtual environment:
+4. Navigate into the project folder:
 
 ```
-python -m venv venv
+cd local-tts-web-ui
+```
+
+5. Create and activate virtual environment:
+
+```
+py -3.12 -m venv venv
 ```
 
 ```

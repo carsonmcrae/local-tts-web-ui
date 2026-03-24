@@ -21,19 +21,36 @@ Use the interface to select a voice, adjust speed, and generate speech from text
 
 ## Setup
 
-1. Navigate to project folder:
+1. Open Command Prompt
 
-    `cd C:\tts`
+2. (Optional) Navigate to where you want the project saved, for example:
 
-2. Create and activate virtual environment:
+    `cd C:\Users\YourName\Desktop`
+
+(Note: You may want to create a dedicated folder for your projects first.)
+
+To create a new folder and move into it in Command Prompt use:
+
+    `mkdir my-projects`
+
+    `cd my-projects`
+
+
+3. Navigate into the project folder:
+
+    `cd kokoro-local-tts`
+
+4. Create and activate virtual environment:
 
     `python -m venv venv`
 
     `venv\Scripts\activate`
 
-3. Install dependencies:
+5. Install dependencies:
 
     `pip install -r requirements.txt`
+
+(Note: This installs required Python packages such as `gradio` and `kokoro-tts`, along with their dependencies. On first run, the app will automatically download the Kokoro model files (~350MB), including `kokoro-v1.0.onnx` and `voices-v1.0.bin`.)
 
 ## Run
 

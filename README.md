@@ -23,16 +23,16 @@ Use the interface to select a voice, adjust speed, and generate speech from text
 
 1. Navigate to project folder:
 
-    cd C:\tts
+    `cd C:\tts`
 
 2. Create and activate virtual environment:
 
-    python -m venv venv
-    venv\Scripts\activate
+    `python -m venv venv`
+    `venv\Scripts\activate`
 
 3. Install dependencies:
 
-    pip install -r requirements.txt
+    `pip install -r requirements.txt`
 
 ## Run
 

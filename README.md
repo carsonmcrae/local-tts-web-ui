@@ -73,7 +73,7 @@ On first run, required model files (~350MB) will be downloaded automatically.
 ### Start the app
 
 ```
-cd C:\tts
+cd C:\Users\YourName\Desktop
 ```
 
 ```

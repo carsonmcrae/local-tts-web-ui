@@ -25,7 +25,9 @@ Use the interface to select a voice, adjust speed, and generate speech from text
 
 2. (Optional) Navigate to where you want the project saved, for example:
 
-    `cd C:\Users\YourName\Desktop`
+```
+cd C:\Users\YourName\Desktop
+```
 
     *(Note: You may want to create a dedicated folder for your projects first.)*
 

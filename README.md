@@ -7,6 +7,10 @@ A local text-to-speech tool using Kokoro with a simple web interface.
 > This project requires **Python 3.12**.
 > 
 > Python 3.13 is **not currently supported** and will cause installation errors.
+>
+> Verify your version with `py -0`
+>
+> If you do not have 3.12 install from the official Python website or run `winget install -e --id Python.Python.3.12`
 
 
 ## Preview

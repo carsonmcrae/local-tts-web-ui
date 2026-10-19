@@ -36,7 +36,7 @@
     "api:types": "node scripts/gen-api-types.mjs",
     "api:check": "node scripts/gen-api-types.mjs --check",
     "deps:check": "knip && node scripts/uv-run.mjs --cwd apps/server run --frozen deptry src",
-    "security": "npm audit --omit=dev --audit-level=high && node scripts/uv-run.mjs --cwd apps/server export --frozen --no-dev --no-emit-project --format requirements-txt -o ../../.tools/server-requirements.txt --quiet && node scripts/uv-run.mjs --cwd apps/server run --frozen pip-audit --strict -r ../../.tools/server-requirements.txt",
+    "security": "npm audit --omit=dev --audit-level=high && node scripts/uv-run.mjs --cwd apps/server export --frozen --no-dev --no-emit-project --format requirements-txt -o ../../.tools/server-requirements.txt --quiet && node scripts/uv-run.mjs --cwd apps/server run --frozen pip-audit --strict -r ../../.tools/server-requirements.txt && node scripts/audit-worker.mjs",
     "licenses": "node scripts/license-inventory.mjs",
     "check": "npm run format:check && npm run lint && npm run typecheck && npm run api:check && npm run test && npm run build"
   },

@@ -16,8 +16,8 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-cpu = ["torch==2.11.0", "torchaudio==2.11.0"]
-cuda = ["torch==2.11.0", "torchaudio==2.11.0"]
+cpu = ["torch==2.13.0", "torchaudio==2.11.0"]
+cuda = ["torch==2.13.0", "torchaudio==2.11.0"]
 
 [project.scripts]
 ltts-chatterbox-worker = "ltts_chatterbox_worker.__main__:main"

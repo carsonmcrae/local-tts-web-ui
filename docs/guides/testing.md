@@ -32,7 +32,7 @@ missing-model experience, axe accessibility scans and phone layouts are covered.
 
 - Real microphones and real Safari/iOS devices (Playwright's WebKit build on Windows was used; real Apple
   hardware was not available).
-- macOS and Linux runs of the full suite (CI runs unit tests on Ubuntu; see the matrix in `ci.yml`).
+- macOS and Linux runs of the full suite (CI runs the server unit tests on Ubuntu, Windows and macOS and the web tests on Ubuntu; see `ci.yml`).
 - Subjective audio quality — tests check that speech is present, loud enough and correctly timed, and
   cloning is checked with speaker-embedding similarity during development, not by listening.
 

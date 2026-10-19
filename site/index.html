@@ -1,0 +1,447 @@
+<!doctype html>
+<!--
+  Purpose: The project's public landing page (GitHub Pages): what Local TTS is, the overview and demo
+    videos playing inline with captions, features and how to install.
+  Scope: One static page with inline styles and no scripts or third-party requests. The Pages workflow
+    copies the videos from docs/media into ./media at build time.
+  Does NOT belong: The app itself (apps/web) or user documentation (the wiki).
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Local TTS: private text-to-speech for your documents</title>
+    <meta
+      name="description"
+      content="Turn PDFs, EPUBs, Word and Markdown files into natural narration with read-along highlighting. Optional consent-based voice cloning. Free, open source, and runs entirely on your computer."
+    />
+    <meta property="og:title" content="Local TTS" />
+    <meta
+      property="og:description"
+      content="Any document, read aloud: privately, on your own computer."
+    />
+    <meta
+      property="og:image"
+      content="https://carsonmcrae.github.io/local-tts-web-ui/media/social-preview.png"
+    />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <style>
+      @font-face {
+        font-family: Inter;
+        src: url('fonts/inter-latin-wght-normal.woff2') format('woff2');
+        font-weight: 100 900;
+        font-display: swap;
+      }
+      :root {
+        color-scheme: light dark;
+        --bg: #f7f6f3;
+        --surface: #ffffff;
+        --line: #e3e0da;
+        --text: #1c1d21;
+        --muted: #55565c;
+        --accent: #4f46e5;
+        --accent-text: #4338ca;
+        --accent-soft: #eef0ff;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #121316;
+          --surface: #1a1b1f;
+          --line: #2c2d33;
+          --text: #ececef;
+          --muted: #a9aab1;
+          --accent: #5b54e8;
+          --accent-text: #aaa6ff;
+          --accent-soft: #24233d;
+        }
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font:
+          17px/1.6 Inter,
+          system-ui,
+          -apple-system,
+          'Segoe UI',
+          sans-serif;
+      }
+      a {
+        color: var(--accent-text);
+      }
+      .wrap {
+        max-width: 1120px;
+        margin: 0 auto;
+        padding: 0 20px;
+      }
+      header.top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 18px 0;
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-weight: 700;
+        font-size: 19px;
+        color: var(--text);
+        text-decoration: none;
+      }
+      .brand svg {
+        width: 34px;
+        height: 34px;
+      }
+      nav.links {
+        display: flex;
+        gap: 20px;
+        flex-wrap: wrap;
+      }
+      nav.links a {
+        color: var(--muted);
+        text-decoration: none;
+        font-weight: 550;
+        font-size: 15px;
+      }
+      nav.links a:hover {
+        color: var(--text);
+      }
+      .hero {
+        text-align: center;
+        padding: 48px 0 28px;
+      }
+      h1 {
+        font-size: clamp(40px, 7vw, 76px);
+        line-height: 1.03;
+        letter-spacing: -0.04em;
+        margin: 0 0 18px;
+      }
+      .grad {
+        background: linear-gradient(110deg, #4f46e5 10%, #8b5cf6 90%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
+      .lede {
+        font-size: clamp(18px, 2.2vw, 21px);
+        color: var(--muted);
+        max-width: 720px;
+        margin: 0 auto 28px;
+      }
+      .actions {
+        display: flex;
+        gap: 12px;
+        justify-content: center;
+        flex-wrap: wrap;
+      }
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 22px;
+        border-radius: 999px;
+        font-weight: 650;
+        text-decoration: none;
+        border: 1px solid var(--line);
+        background: var(--surface);
+        color: var(--text);
+      }
+      .btn.primary {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: #fff;
+      }
+      .video {
+        margin: 28px auto 0;
+        border-radius: 18px;
+        overflow: hidden;
+        border: 1px solid var(--line);
+        box-shadow: 0 40px 80px -40px rgba(28, 29, 33, 0.45);
+        background: #000;
+      }
+      .video video {
+        display: block;
+        width: 100%;
+        height: auto;
+        aspect-ratio: 16 / 9;
+      }
+      .note {
+        color: var(--muted);
+        font-size: 14px;
+        text-align: center;
+        margin: 10px 0 0;
+      }
+      section {
+        padding: 56px 0 8px;
+      }
+      h2 {
+        font-size: clamp(28px, 4vw, 40px);
+        letter-spacing: -0.03em;
+        line-height: 1.1;
+        margin: 0 0 10px;
+      }
+      .section-lede {
+        color: var(--muted);
+        margin: 0 0 24px;
+        max-width: 760px;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 16px;
+      }
+      .card {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        padding: 20px 22px;
+      }
+      .card h3 {
+        margin: 0 0 6px;
+        font-size: 18px;
+      }
+      .card p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 16px;
+      }
+      .tag {
+        display: inline-block;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: var(--accent-text);
+        background: var(--accent-soft);
+        border-radius: 6px;
+        padding: 2px 8px;
+        margin-bottom: 10px;
+      }
+      pre {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 18px 20px;
+        overflow-x: auto;
+        font:
+          15px/1.7 ui-monospace,
+          'Cascadia Code',
+          Consolas,
+          monospace;
+      }
+      footer {
+        margin-top: 64px;
+        padding: 28px 0 40px;
+        border-top: 1px solid var(--line);
+        color: var(--muted);
+        font-size: 14px;
+      }
+      footer .row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px 22px;
+        justify-content: space-between;
+      }
+      @media (max-width: 640px) {
+        nav.links {
+          display: none;
+        }
+        .hero {
+          padding-top: 24px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header class="top">
+        <a class="brand" href="./" aria-label="Local TTS home">
+          <svg viewBox="0 0 32 32" aria-hidden="true">
+            <rect width="32" height="32" rx="8" fill="#4f46e5" />
+            <path
+              d="M9 20.5v-9M13.5 23v-14M18 19v-6M22.5 21.5v-11"
+              stroke="#fff"
+              stroke-width="2.4"
+              stroke-linecap="round"
+            />
+          </svg>
+          Local TTS
+        </a>
+        <nav class="links" aria-label="Page">
+          <a href="#overview">Overview</a>
+          <a href="#features">Features</a>
+          <a href="#demo">Demo</a>
+          <a href="#start">Get started</a>
+          <a href="https://github.com/carsonmcrae/local-tts-web-ui/wiki">Guide</a>
+          <a href="https://github.com/carsonmcrae/local-tts-web-ui">GitHub</a>
+        </nav>
+      </header>
+
+      <main>
+        <div class="hero" id="overview">
+          <h1>Any document.<br /><span class="grad">Read aloud.</span></h1>
+          <p class="lede">
+            Turn PDFs, e-books, Word files and notes into natural narration, and follow along
+            sentence by sentence. Optionally, create a voice of your own. Everything runs on your
+            computer: no accounts, no cloud, no telemetry.
+          </p>
+          <div class="actions">
+            <a class="btn primary" href="#start">Get started</a>
+            <a class="btn" href="https://github.com/carsonmcrae/local-tts-web-ui/releases/latest"
+              >Latest release</a
+            >
+            <a class="btn" href="https://github.com/carsonmcrae/local-tts-web-ui">View on GitHub</a>
+          </div>
+          <div class="video">
+            <video
+              controls
+              playsinline
+              preload="metadata"
+              poster="media/local-tts-promo-poster.webp"
+            >
+              <source src="media/local-tts-promo.mp4" type="video/mp4" />
+              <track
+                kind="captions"
+                src="media/local-tts-promo-captions.vtt"
+                srclang="en"
+                label="English"
+                default
+              />
+              <a href="media/local-tts-promo.mp4">Download the overview video (MP4)</a>
+            </video>
+          </div>
+          <p class="note">The 45-second overview. Its voice-over was generated by Local TTS.</p>
+        </div>
+
+        <section id="features" aria-labelledby="features-title">
+          <h2 id="features-title">Everything you need to listen</h2>
+          <p class="section-lede">
+            A reader, a voice library and an optional voice studio, in one app that you run with two
+            commands.
+          </p>
+          <div class="grid">
+            <div class="card">
+              <span class="tag">Reader</span>
+              <h3>PDF, EPUB, Word, Markdown and text</h3>
+              <p>
+                Upload a file or paste text. Chapters and pages are found for you, and you pick up
+                where you left off.
+              </p>
+            </div>
+            <div class="card">
+              <span class="tag">Read-along</span>
+              <h3>Follow every sentence</h3>
+              <p>
+                The sentence being spoken is highlighted, and the page follows the narration from
+                chapter to chapter.
+              </p>
+            </div>
+            <div class="card">
+              <span class="tag">Fast</span>
+              <h3>Starts in about a second</h3>
+              <p>
+                Sentences are generated just ahead of you and cached, so even whole books start
+                playing almost at once.
+              </p>
+            </div>
+            <div class="card">
+              <span class="tag">Voices</span>
+              <h3>54 natural voices</h3>
+              <p>
+                Kokoro voices in nine languages, with quality grades and side-by-side comparison on
+                your own passage.
+              </p>
+            </div>
+            <div class="card">
+              <span class="tag">Optional</span>
+              <h3>A voice of your own</h3>
+              <p>
+                Voice Studio clones a voice from about 20 seconds of speech, with quality checks and
+                required consent.
+              </p>
+            </div>
+            <div class="card">
+              <span class="tag">Private</span>
+              <h3>Stays on your computer</h3>
+              <p>
+                Binds to 127.0.0.1, works offline after setup, and never sends documents or
+                recordings anywhere.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section id="demo" aria-labelledby="demo-title">
+          <h2 id="demo-title">See it working</h2>
+          <p class="section-lede">
+            Recorded from the running app with its real narration: a PDF upload, read-along across
+            chapters, voice comparison, Voice Studio, export and the dark theme.
+          </p>
+          <div class="video">
+            <video
+              controls
+              playsinline
+              preload="metadata"
+              poster="media/local-tts-demo-poster.webp"
+            >
+              <source src="media/local-tts-demo.mp4" type="video/mp4" />
+              <track
+                kind="captions"
+                src="media/local-tts-demo-captions.vtt"
+                srclang="en"
+                label="English"
+                default
+              />
+              <a href="media/local-tts-demo.mp4">Download the demo video (MP4)</a>
+            </video>
+          </div>
+          <p class="note">
+            The cloned voice in the demo comes from a built-in synthetic voice, not a real person.
+            <a href="https://github.com/carsonmcrae/local-tts-web-ui/blob/main/docs/media/README.md"
+              >How these videos were made</a
+            >
+          </p>
+        </section>
+
+        <section id="start" aria-labelledby="start-title">
+          <h2 id="start-title">Get started</h2>
+          <p class="section-lede">
+            You need Node.js 22.12 or newer and Git. The first run installs everything else inside
+            the project folder: a checksum-verified Python toolchain and the voice model (about 340
+            MB). No GPU is needed.
+          </p>
+          <pre><code>git clone https://github.com/carsonmcrae/local-tts-web-ui.git
+cd local-tts-web-ui
+npm install
+npm run dev</code></pre>
+          <p class="section-lede">
+            Your browser opens at <code>http://127.0.0.1:5173</code>. The
+            <a href="https://github.com/carsonmcrae/local-tts-web-ui/wiki">user guide</a> covers
+            installation, voices, voice cloning, exporting and troubleshooting.
+          </p>
+        </section>
+      </main>
+
+      <footer>
+        <div class="row">
+          <span>Local TTS is free and open source under the MIT licence.</span>
+          <span>
+            <a href="https://github.com/carsonmcrae/local-tts-web-ui/wiki">Guide</a> ·
+            <a href="https://github.com/carsonmcrae/local-tts-web-ui/releases">Releases</a> ·
+            <a href="https://github.com/carsonmcrae/local-tts-web-ui/security/policy">Security</a> ·
+            <a href="https://github.com/carsonmcrae/local-tts-web-ui/blob/main/CODE_OF_CONDUCT.md"
+              >Code of conduct</a
+            >
+          </span>
+        </div>
+      </footer>
+    </div>
+  </body>
+</html>

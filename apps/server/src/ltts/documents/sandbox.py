@@ -1,16 +1,18 @@
 """Purpose: Run untrusted-document parsers in a separate, killable process.
 
 Scope: Spawns a fresh interpreter per extraction (no shared state with the server), applies an
-address-space limit where the OS supports it (POSIX ``RLIMIT_AS``), enforces a wall-clock timeout
-and converts crashes, hangs and memory exhaustion into clean ``DocumentExtractionError``s. A parser
-bug can therefore never take down or wedge the API server.
+address-space limit on Linux (``RLIMIT_AS``), enforces a wall-clock timeout and converts crashes,
+hangs and memory exhaustion into clean ``DocumentExtractionError``s. A parser bug can therefore
+never take down or wedge the API server.
 Does NOT belong: Format dispatch (``extractors.py``) or ingestion orchestration (``service.py``).
 """
 
 from __future__ import annotations
 
 import importlib
+import logging
 import multiprocessing as mp
+import platform
 from multiprocessing.connection import Connection
 from pathlib import Path
 
@@ -18,15 +20,22 @@ from ltts.documents.extractors import extract
 from ltts.documents.structures import DocumentType, Extraction, ExtractionLimits
 from ltts.errors import AppError, DocumentExtractionError
 
+log = logging.getLogger("ltts.documents")
+
 _CONTEXT = mp.get_context("spawn")
 
 
 def _limit_memory(memory_mb: int) -> None:
-    try:
-        resource = importlib.import_module("resource")
-    except ImportError:
-        return  # Windows has no RLIMIT_AS; the timeout and archive/text limits still apply.
+    # Only Linux gets an address-space cap. Windows has no RLIMIT_AS, and macOS reserves far more
+    # virtual address space at start-up than any sensible cap, so a cap there fails every parse.
+    # The timeout and archive/text limits apply everywhere.
+    if platform.system() != "Linux":
+        return
+    resource = importlib.import_module("resource")
     limit = memory_mb * 1024 * 1024
+    _, hard = resource.getrlimit(resource.RLIMIT_AS)
+    if hard != resource.RLIM_INFINITY:
+        limit = min(limit, hard)  # an unprivileged process may lower its hard limit, never raise it
     resource.setrlimit(resource.RLIMIT_AS, (limit, limit))
 
 
@@ -85,4 +94,5 @@ def extract_isolated(
     if status == "app_error":
         code, message = payload
         raise DocumentExtractionError(message, code=code)
+    log.warning("Document parser failed in its sandbox process with %s", payload)
     raise DocumentExtractionError("The document could not be read; it may be damaged.", code="corrupt_document")

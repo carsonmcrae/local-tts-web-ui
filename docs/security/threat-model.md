@@ -28,7 +28,7 @@ and the integrity of installed model files and Python/npm dependencies.
 | Zip slip                                               | Archives are never extracted to disk; member names with `..`, absolute paths or drive letters are ignored                                                          | `test_document_security.py`          |
 | Archive bombs / oversized decompression                | Entry count, total declared size and per-entry ratio limits before parsing; zipfile never yields more than declared sizes                                          | `test_document_security.py`          |
 | XML entity expansion / XXE                             | `<!ENTITY` declarations rejected in every XML part; defusedxml for EPUB; python-docx parses with `resolve_entities=False`                                          | `test_document_security.py`          |
-| Malformed documents, parser crashes or hangs           | Extraction runs in a spawned process with a timeout (and an address-space limit on POSIX); failures become clean errors                                            | `test_document_security.py`          |
+| Malformed documents, parser crashes or hangs           | Extraction runs in a spawned process with a timeout (and an address-space limit on Linux); failures become clean errors                                            | `test_document_security.py`          |
 | Resource exhaustion                                    | Upload size (streamed, enforced server-side), text length, PDF pages, concurrent extractions, document count, audio cache size, free-disk checks, request body cap | `test_api.py`                        |
 | Type confusion (e.g. `.pdf` that isn't a PDF)          | Magic-byte sniffing must agree with the extension                                                                                                                  | `test_extractors.py`                 |
 | Macros / active content                                | DOCX macros and embedded objects are never read; EPUB scripts/styles are dropped; Markdown raw HTML is disabled                                                    | `test_extractors.py`                 |
@@ -42,8 +42,9 @@ and the integrity of installed model files and Python/npm dependencies.
 
 ## Residual risks
 
-- **Windows has no per-process memory limit** in the sandbox (POSIX uses `RLIMIT_AS`); the timeout,
-  archive and text limits still apply.
+- **Only Linux has a per-process memory limit** in the sandbox (`RLIMIT_AS`). Windows has no
+  equivalent, and macOS reserves more virtual address space at start-up than any useful cap allows.
+  The timeout, archive and text limits still apply everywhere.
 - **PDFium and libxml2 are native code.** They are mature and fuzzed, and run in a separate, killable
   process, but a memory-safety bug could still compromise that process.
 - **Network mode uses plain HTTP.** The token protects access but not confidentiality on the LAN, and

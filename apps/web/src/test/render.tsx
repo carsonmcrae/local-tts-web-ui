@@ -141,6 +141,7 @@ export const kokoro = (overrides: Partial<EngineInfo> = {}): EngineInfo => ({
   ],
   installedBytes: 353_719_767,
   installJobId: null,
+  updateAvailable: false,
   ...overrides,
 });
 

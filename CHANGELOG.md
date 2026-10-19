@@ -25,6 +25,9 @@ fresh with `npm install && npm run dev`.
   playlist; interrupted exports resume using cached audio.
 - **Settings:** theme, playback defaults, engine install/remove with sizes and hardware advice, storage
   usage and cache clearing, privacy summary, diagnostics and version information.
+- **Engine updates:** when the voice-cloning worker's locked packages change (for example a security
+  fix), existing installs show **Update available** and update in place with one click instead of a
+  remove and reinstall.
 - **One-command setup:** `npm run dev` provisions a checksum-verified `uv`, an isolated Python 3.12
   environment and the default voice model, then starts the API and UI together.
 - Security hardening: loopback binding, Host/CSRF/cross-site checks, CSP, sandboxed document parsing,

@@ -34,7 +34,7 @@ export default function VoiceStudioPage() {
           </Button>
         }
       />
-      {cloning && !ready ? (
+      {cloning && (!ready || cloning.updateAvailable) ? (
         <div className="mb-8">
           <Section
             title="Voice-cloning engine"

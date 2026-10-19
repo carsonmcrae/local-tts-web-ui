@@ -61,3 +61,23 @@ when a choice changes the stack, a trust boundary, data storage or the setup exp
 - **Decision:** Bind `127.0.0.1`; validate the Host header (DNS rebinding); require a custom header on
   state-changing requests and block `Sec-Fetch-Site: cross-site` (CSRF); never enable CORS. Network
   access needs `--allow-network`, which generates an access token required from non-loopback clients.
+
+## ADR-8: Worker lock changes are offered as a one-click, in-place update
+
+- **Context:** The cloning environment is built once from `apps/chatterbox-worker/uv.lock`. When that
+  lock changes (a security override, a Dependabot bump), existing installs kept the old packages until
+  someone removed and reinstalled voice cloning.
+- **Decision:** `installed.json` records the SHA-256 of the lock and the extra (`cpu`/`cuda`) the
+  environment was built from. When the current lock differs, or the marker predates this field, the
+  engine reports `updateAvailable` and Settings → Engines (and the Voice Studio) offers **Update**. The
+  update is an install job (same progress, cancel and status as an install) that runs the same
+  `uv sync --frozen` for the recorded extra in place, then verifies a model load before writing the new
+  hash. Synthesis waits while uv rewrites packages.
+- **Alternatives:** Re-syncing automatically before the worker first loads. Rejected because it would
+  download packages the user didn't ask for (the privacy promise is that the only network requests are
+  downloads you start), would break cloning offline, and would turn a voice preview into a
+  multi-minute wait.
+- **Consequences:** Nothing is deleted when an update fails: the previous marker stays, the engine stays
+  usable, and the update stays on offer with the error shown. Only changed packages download. A
+  cancel during uv's short install phase can leave a mix of old and new packages; because the old
+  hash is kept, the update stays on offer and running it again brings the environment back in line.

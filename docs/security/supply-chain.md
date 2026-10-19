@@ -10,6 +10,7 @@
 | Exact npm versions, `save-exact`, committed `package-lock.json`                                                                      | `package.json`, `.npmrc`                                |
 | `ignore-scripts=true` — no package runs install hooks (audited: none of the 519 packages needs one)                                  | `.npmrc`                                                |
 | Locked Python environments, `uv sync --frozen`                                                                                       | `apps/server/uv.lock`, `apps/chatterbox-worker/uv.lock` |
+| Existing cloning installs record the worker lock's SHA-256 and are offered an update when it changes                                 | `apps/server/src/ltts/engines/chatterbox_env.py`        |
 | 14-day release cool-down for Python resolution (`exclude-newer`); worker versions are picked by hand under the same rule             | `apps/server/pyproject.toml`                            |
 | Pinned uv binary with SHA-256 for six platforms                                                                                      | `scripts/toolchain.json`                                |
 | Pinned model artifacts with SHA-256 and host allow-list                                                                              | `apps/server/src/ltts/modelstore/manifest.json`         |

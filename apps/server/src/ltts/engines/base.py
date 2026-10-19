@@ -57,6 +57,7 @@ class EngineInfo(ApiModel):
     install_options: list[InstallOption]
     installed_bytes: int
     install_job_id: str | None = None
+    update_available: bool = False  # installed from an older runtime lock; POST /engines/{id}/update applies it
 
 
 class VoiceInfo(ApiModel):
@@ -103,6 +104,10 @@ class Engine(Protocol):
     def synthesize(self, text: str, voice: VoiceSpec, pace: float) -> AudioClip: ...
 
     def install(self, context: JobContext, option: str | None) -> dict[str, Any]: ...
+
+    def update(self, context: JobContext) -> dict[str, Any]:
+        """Bring an installed engine up to date in place; only offered when ``info().update_available``."""
+        ...
 
     def uninstall(self) -> None: ...
 

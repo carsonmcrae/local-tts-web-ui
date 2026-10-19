@@ -1,29 +1,36 @@
 """Purpose: Optional Chatterbox Turbo engine (MIT) for zero-shot voice cloning, run out-of-process.
 
 Scope: Installs an isolated, locked environment (CPU or CUDA PyTorch) with uv plus checksum-pinned
-weights, reports hardware-aware install options, and synthesises through ``WorkerClient`` using a
-custom profile's reference recording (or the model's built-in voice). Output is 24 kHz and carries
-Resemble's imperceptible Perth watermark.
-Does NOT belong: Profile storage/consent (``voices``) or the worker implementation
-(``apps/chatterbox-worker``).
+weights, offers an in-place update when the worker lock has changed since the install, reports
+hardware-aware install options, and synthesises through ``WorkerClient`` using a custom profile's
+reference recording (or the model's built-in voice). Output is 24 kHz and carries Resemble's
+imperceptible Perth watermark.
+Does NOT belong: Profile storage/consent (``voices``), running uv and the install marker
+(``chatterbox_env.py``) or the worker implementation (``apps/chatterbox-worker``).
 """
 
 from __future__ import annotations
 
-import json
 import logging
 import os
 import shutil
-import subprocess
 import sys
 import threading
 from pathlib import Path
 from typing import Any
 
 from ltts.audio import read_audio
-from ltts.common import MB, ensure_free_space, new_id, utc_now
-from ltts.config import REPO_ROOT, Settings
+from ltts.common import MB, ensure_free_space, new_id
+from ltts.config import Settings
 from ltts.engines.base import AudioClip, EngineInfo, InstallOption, VoiceInfo, VoiceSpec
+from ltts.engines.chatterbox_env import (
+    PROJECT_DIR,
+    find_uv,
+    lock_digest,
+    read_marker,
+    sync_environment,
+    write_marker,
+)
 from ltts.engines.worker_client import WorkerClient
 from ltts.errors import EngineUnavailableError
 from ltts.hardware import detect_gpus
@@ -32,30 +39,23 @@ from ltts.modelstore.store import ModelStore
 
 log = logging.getLogger("ltts.engines.chatterbox")
 ARTIFACT = "chatterbox-turbo"
-PROJECT_DIR = REPO_ROOT / "apps" / "chatterbox-worker"
 ENV_BYTES = {"cuda": 5_400 * MB, "cpu": 1_500 * MB}
+UPDATE_FREE_BYTES = 1_000 * MB  # an update only replaces the packages whose locked versions changed
 LOAD_TIMEOUT_S = 600.0
 SYNTH_TIMEOUT_S = 300.0
-
-
-def find_uv() -> str | None:
-    explicit = os.environ.get("LTTS_UV_BIN")
-    if explicit and Path(explicit).is_file():
-        return explicit
-    exe = "uv.exe" if sys.platform == "win32" else "uv"
-    pinned = sorted((REPO_ROOT / ".tools" / "uv").glob(f"*/{exe}"))
-    return str(pinned[-1]) if pinned else shutil.which("uv")
 
 
 class ChatterboxEngine:
     id = "chatterbox"
 
-    def __init__(self, settings: Settings, store: ModelStore):
+    def __init__(self, settings: Settings, store: ModelStore, project_dir: Path = PROJECT_DIR):
         self._settings = settings
         self._store = store
+        self._project = project_dir
         self._root = settings.resolved_engines_dir / "chatterbox"
         self._worker: WorkerClient | None = None
         self._lock = threading.Lock()
+        self._updating = False
 
     # -- paths & state ----------------------------------------------------
     @property
@@ -71,18 +71,20 @@ class ChatterboxEngine:
         return self._root / "installed.json"
 
     def _marker_data(self) -> dict[str, Any]:
-        try:
-            data = json.loads(self._marker.read_text("utf-8"))
-        except (OSError, ValueError):
-            return {}
-        return data if isinstance(data, dict) else {}
+        return read_marker(self._marker)
 
     def _installed_option(self) -> str | None:
-        option = self._marker_data().get("option")
+        data = self._marker_data()
+        option = data.get("extra") or data.get("option")
         return str(option) if option else None
 
     def is_ready(self) -> bool:
         return self._installed_option() is not None and self._python.is_file() and self._store.is_installed(ARTIFACT)
+
+    def update_available(self) -> bool:
+        """The environment was built from another worker lock, or before locks were recorded (legacy marker)."""
+        current = lock_digest(self._project)
+        return current is not None and self.is_ready() and self._marker_data().get("lockSha256") != current
 
     def revision(self) -> str:
         return f"{ARTIFACT}/worker-1"
@@ -106,6 +108,7 @@ class ChatterboxEngine:
 
     def info(self) -> EngineInfo:
         ready = self.is_ready()
+        update = ready and self.update_available()
         option = self._installed_option()
         device = (self._worker.loaded or {}).get("device") if self._worker and self._worker.loaded else option
         return EngineInfo(
@@ -117,7 +120,7 @@ class ChatterboxEngine:
             license=self._store.artifact(ARTIFACT).license,
             optional=True,
             status="ready" if ready else "not_installed",
-            status_message="Ready" if ready else "Not installed",
+            status_message="Update available" if update else ("Ready" if ready else "Not installed"),
             supports_cloning=True,
             controls=[],
             languages=["English"],
@@ -128,6 +131,7 @@ class ChatterboxEngine:
             ),
             install_options=self._options(),
             installed_bytes=self._store.installed_bytes(ARTIFACT) + int(self._marker_data().get("envBytes", 0)),
+            update_available=update,
         )
 
     def voices(self) -> list[VoiceInfo]:
@@ -145,20 +149,19 @@ class ChatterboxEngine:
             )
         ]
 
-    # -- install ----------------------------------------------------------
+    # -- install & update -------------------------------------------------
     def install(self, context: JobContext, option: str | None) -> dict[str, Any]:
         choice = option or next(o.id for o in self._options() if o.recommended)
         if choice not in {o.id for o in self._options()}:
             raise EngineUnavailableError("That install option isn't available on this computer.", code="invalid_option")
-        uv = find_uv()
-        if uv is None:
-            raise EngineUnavailableError("uv was not found. Run `npm run setup` and try again.", code="uv_missing")
+        uv = _require_uv()
         self._root.mkdir(parents=True, exist_ok=True)
         ensure_free_space(self._root, ENV_BYTES[choice], self._settings.min_free_disk_mb)
         self.close()
         self._marker.unlink(missing_ok=True)
         context.update(0.02, "Installing the Chatterbox runtime (PyTorch). This can take several minutes…", force=True)
-        self._sync_environment(uv, choice, context)
+        digest = lock_digest(self._project)
+        sync_environment(uv, self._project, self._venv, choice, context, update=False)
         context.update(0.4, "Downloading Chatterbox model files…", force=True)
         self._store.install(
             ARTIFACT,
@@ -168,37 +171,45 @@ class ChatterboxEngine:
             lambda: context.canceled,
         )
         context.update(0.92, "Loading the model to verify the installation…", force=True)
+        loaded = self._verified_load(choice)
+        # Only a verified load marks the engine as installed.
+        write_marker(self._marker, choice, digest, self._venv)
+        return {"option": choice, "device": loaded.get("device")}
+
+    def update(self, context: JobContext) -> dict[str, Any]:
+        """Re-sync the installed environment to the current worker lock, in place.
+
+        The previous marker (and with it the ready state) stays until the updated environment has loaded
+        the model, so a failed or canceled update keeps the old record and the update stays on offer.
+        """
+        choice = self._installed_option()
+        if choice is None or not self.is_ready():
+            raise EngineUnavailableError("Install Chatterbox before updating it.", code="engine_not_installed")
+        uv = _require_uv()
+        ensure_free_space(self._root, UPDATE_FREE_BYTES, self._settings.min_free_disk_mb)
+        previous = self._marker_data()
+        digest = lock_digest(self._project)
+        with self._lock:
+            self._updating = True  # synthesis must not start the worker while uv rewrites its packages
         try:
-            loaded = self._ensure_worker(choice)
+            self.close()
+            context.update(0.02, "Updating the Chatterbox runtime to the latest locked packages…", force=True)
+            sync_environment(uv, self._project, self._venv, choice, context, update=True)
+        finally:
+            with self._lock:
+                self._updating = False
+        context.update(0.9, "Loading the model to verify the update…", force=True)
+        loaded = self._verified_load(choice)
+        write_marker(self._marker, choice, digest, self._venv, installed_at=previous.get("installedAt"))
+        log.info("chatterbox environment updated", extra={"lock_sha256": digest})
+        return {"option": choice, "device": loaded.get("device"), "updated": True}
+
+    def _verified_load(self, option: str) -> dict[str, Any]:
+        try:
+            return self._ensure_worker(option)
         except Exception:
             self.close()
             raise
-        # Only a verified load marks the engine as installed.
-        marker = {"option": choice, "installedAt": utc_now(), "envBytes": _tree_bytes(self._venv)}
-        self._marker.write_text(json.dumps(marker), encoding="utf-8")
-        return {"option": choice, "device": loaded.get("device")}
-
-    def _sync_environment(self, uv: str, choice: str, context: JobContext) -> None:
-        env = {**os.environ, "UV_PROJECT_ENVIRONMENT": str(self._venv),
-               "UV_PYTHON_INSTALL_DIR": str(REPO_ROOT / ".tools" / "python"), "UV_NO_PROGRESS": "1"}  # fmt: skip
-        proc = subprocess.Popen(  # noqa: S603 - fixed argv; uv verifies hashes from the committed lockfile
-            [uv, "sync", "--frozen", "--no-dev", "--project", str(PROJECT_DIR), "--extra", choice],
-            cwd=PROJECT_DIR, env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, encoding="utf-8",
-        )  # fmt: skip
-        tail: list[str] = []
-        for line in proc.stdout or ():
-            tail = [*tail[-20:], line.rstrip()]
-            if context.canceled:
-                proc.kill()
-                context.check()
-            if line.strip():
-                context.update(0.05, f"Installing runtime: {line.strip()[:120]}")
-        if proc.wait() != 0:
-            log.error("chatterbox environment sync failed:\n%s", "\n".join(tail))
-            raise EngineUnavailableError(
-                "Installing the Chatterbox runtime failed. Check your connection and the server log, then retry.",
-                code="install_failed",
-            )
 
     def uninstall(self) -> None:
         self.close()
@@ -206,16 +217,22 @@ class ChatterboxEngine:
         self._store.remove(ARTIFACT)
 
     # -- runtime ----------------------------------------------------------
+    def _worker_argv(self) -> list[str]:
+        return [str(self._python), "-I", "-m", "ltts_chatterbox_worker"]
+
     def _ensure_worker(self, option: str | None = None) -> dict[str, Any]:
         with self._lock:
+            if self._updating:
+                raise EngineUnavailableError(
+                    "Chatterbox is being updated. Try again when the update finishes.", code="engine_updating"
+                )
             if self._worker is None:
+                if self.update_available():
+                    log.warning("chatterbox runtime is older than the worker lock; update it in Settings → Engines")
                 env = {k: v for k, v in os.environ.items() if not k.startswith(("LTTS_", "UV_"))}
                 env.update({"PYTHONUTF8": "1", "PYTHONIOENCODING": "utf-8", "HF_HUB_OFFLINE": "1"})
                 self._worker = WorkerClient(
-                    [str(self._python), "-I", "-m", "ltts_chatterbox_worker"],
-                    env,
-                    self._root,
-                    self._settings.clone_worker_idle_unload_s,
+                    self._worker_argv(), env, self._root, self._settings.clone_worker_idle_unload_s
                 )
             if not self._worker.loaded:
                 device = option or self._installed_option() or "auto"
@@ -251,7 +268,8 @@ class ChatterboxEngine:
         return AudioClip(samples, rate)
 
 
-def _tree_bytes(path: Path) -> int:
-    if not path.exists():
-        return 0
-    return sum(p.stat().st_size for p in path.rglob("*") if p.is_file())
+def _require_uv() -> str:
+    uv = find_uv()
+    if uv is None:
+        raise EngineUnavailableError("uv was not found. Run `npm run setup` and try again.", code="uv_missing")
+    return uv

@@ -9,6 +9,12 @@ server runs `uv sync --frozen --extra cpu|cuda` against this project's `uv.lock`
 `data/engines/chatterbox/venv`, then downloads the checksum-pinned weights listed in
 `apps/server/src/ltts/modelstore/manifest.json`.
 
+After a verified model load the server writes `data/engines/chatterbox/installed.json` with the
+SHA-256 of this `uv.lock` and the extra it synced. Changing the lock (a security override, a
+Dependabot bump) makes existing installs show **Update available**; the update re-runs the same
+`uv sync --frozen` in place and only records the new hash once the model loads again
+([ADR-8](../../docs/architecture/decisions.md)).
+
 Protocol: one JSON object per line on stdin, one JSON reply per line on stdout. Library output is
 redirected to stderr so it can never corrupt the protocol. Hugging Face offline mode is forced, so
 the worker can only load the verified local weights.

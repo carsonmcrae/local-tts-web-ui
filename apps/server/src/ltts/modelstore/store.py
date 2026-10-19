@@ -16,6 +16,9 @@ import shutil
 import time
 from collections.abc import Callable
 from dataclasses import dataclass
+
+# importlib.resources.files needs Python 3.9; the server requires 3.11.
+# nosemgrep: python.lang.compatibility.python37.python37-compatibility-importlib2
 from importlib import resources
 from pathlib import Path
 from typing import Any

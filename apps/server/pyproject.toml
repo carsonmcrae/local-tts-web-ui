@@ -54,7 +54,7 @@ packages = ["src/ltts"]
 
 [tool.uv]
 # Supply-chain cool-down: only resolve releases that have been public for at least two weeks.
-exclude-newer = "2026-10-05T00:00:00Z"
+exclude-newer = "14 days"
 
 [tool.ruff]
 line-length = 120
@@ -106,6 +106,7 @@ filterwarnings = ["error::pytest.PytestUnraisableExceptionWarning"]
 [tool.coverage.run]
 source = ["ltts"]
 branch = true
+relative_files = true
 
 [tool.coverage.report]
 show_missing = true

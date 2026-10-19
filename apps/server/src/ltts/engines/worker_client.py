@@ -50,6 +50,8 @@ class WorkerClient:
 
     def _start(self) -> None:
         self._replies = queue.Queue()
+        # Popen's encoding argument needs Python 3.6; the server requires 3.11.
+        # nosemgrep: python.lang.compatibility.python36.python36-compatibility-Popen2
         self._proc = subprocess.Popen(  # noqa: S603 - fixed argv built by the server, no shell
             self._argv,
             cwd=self._cwd,

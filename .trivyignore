@@ -1,0 +1,9 @@
+# Purpose: Advisories reviewed and accepted for Trivy scans, each with its reason and an expiry date.
+# Scope: Only unreachable findings with no compatible fix. The full triage is in
+#   docs/security/supply-chain.md ("Known advisories in the optional Chatterbox environment").
+# Does NOT belong: Anything that has a compatible fixed version; upgrade those instead.
+
+# torch.jit.script memory corruption (GHSA-rrmf-rvhw-rf47, PYSEC-2025-194), optional Chatterbox worker.
+# Nothing in Chatterbox, Perth, s3tokenizer or the worker calls torch.jit, and the fix (torch 2.13)
+# has no matching torchaudio release (torchaudio stops at 2.11). Re-check by the expiry date.
+CVE-2025-3000 exp:2027-01-31

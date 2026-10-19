@@ -11,7 +11,7 @@ const STORAGE_KEY = 'ltts.theme';
 
 function readChoice(): ThemeChoice {
   try {
-    const stored = window.localStorage.getItem(STORAGE_KEY);
+    const stored = globalThis.localStorage.getItem(STORAGE_KEY);
     return stored === 'light' || stored === 'dark' ? stored : 'system';
   } catch {
     return 'system';
@@ -19,7 +19,7 @@ function readChoice(): ThemeChoice {
 }
 
 function apply(choice: ThemeChoice): void {
-  const prefersDark = window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false;
+  const prefersDark = globalThis.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false;
   const dark = choice === 'dark' || (choice === 'system' && prefersDark);
   document.documentElement.classList.toggle('dark', dark);
 }
@@ -29,8 +29,8 @@ export function useTheme(): [ThemeChoice, (choice: ThemeChoice) => void] {
 
   useEffect(() => {
     apply(choice);
-    if (!window.matchMedia) return undefined;
-    const media = window.matchMedia('(prefers-color-scheme: dark)');
+    if (!globalThis.matchMedia) return undefined;
+    const media = globalThis.matchMedia('(prefers-color-scheme: dark)');
     // Read the stored choice at event time so every hook instance agrees on the latest setting.
     const onChange = () => apply(readChoice());
     media.addEventListener('change', onChange);
@@ -39,7 +39,7 @@ export function useTheme(): [ThemeChoice, (choice: ThemeChoice) => void] {
 
   const update = useCallback((next: ThemeChoice) => {
     try {
-      window.localStorage.setItem(STORAGE_KEY, next);
+      globalThis.localStorage.setItem(STORAGE_KEY, next);
     } catch {
       // storage unavailable (private mode): the choice still applies for this session
     }

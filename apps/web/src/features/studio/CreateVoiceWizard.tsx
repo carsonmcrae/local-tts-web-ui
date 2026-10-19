@@ -125,17 +125,16 @@ export function CreateVoiceWizard({
     setConsent(false);
     create.reset();
   };
-  const close = (next: boolean) => {
-    onOpenChange(next);
-    if (!next) reset();
+  // The wizard is opened from outside (it has no dialog trigger), so the dialog only ever asks to
+  // close; closing starts the next visit from the first step.
+  const close = () => {
+    onOpenChange(false);
+    reset();
   };
-  const submit = () => {
-    if (!verdict || !clip) return;
-    create.mutate(
-      { name: name.trim(), wav: verdict.wav, source: clip.source },
-      { onSuccess: () => setStep(4) },
-    );
-  };
+  // What "Create voice" uploads: the checked recording and where it came from.
+  const upload = verdict && clip ? { wav: verdict.wav, source: clip.source } : null;
+  const submit = (input: { wav: Blob; source: CapturedClip['source'] }) =>
+    create.mutate({ name: name.trim(), ...input }, { onSuccess: () => setStep(4) });
 
   const canContinue = [
     true,
@@ -146,7 +145,7 @@ export function CreateVoiceWizard({
   ][step];
   const footer =
     step === 4 ? (
-      <Button variant="primary" onClick={() => close(false)}>
+      <Button variant="primary" onClick={close}>
         Done
       </Button>
     ) : (
@@ -160,11 +159,11 @@ export function CreateVoiceWizard({
             Back
           </Button>
         ) : null}
-        {step === 3 ? (
+        {step === 3 && upload ? (
           <Button
             variant="primary"
             icon={<Sparkles size={15} />}
-            onClick={submit}
+            onClick={() => submit(upload)}
             disabled={!canContinue}
             loading={create.isPending}
           >

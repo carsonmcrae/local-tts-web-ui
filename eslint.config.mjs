@@ -79,9 +79,6 @@ export default defineConfig(
       ],
       '@typescript-eslint/no-unnecessary-type-assertion': 'error',
       '@typescript-eslint/prefer-optional-chain': 'error',
-      // Click-to-play on sentence spans is a pointer convenience; keyboard users have the player.
-      'jsx-a11y/click-events-have-key-events': 'off',
-      'jsx-a11y/no-static-element-interactions': 'off',
     },
   },
   {

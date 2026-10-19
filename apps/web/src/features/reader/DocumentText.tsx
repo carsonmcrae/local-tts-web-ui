@@ -2,9 +2,12 @@
  * Purpose: Render one section's text for reading along, with the spoken sentence highlighted.
  * Scope: Groups segments into headings and paragraphs, highlights the active segment (sentence-level
  *   timing is exact because each segment is its own audio clip), starts playback from any clicked
- *   sentence, and keeps the active sentence in view without fighting a user who scrolls away.
+ *   or keyboard-activated sentence (the text is a single tab stop; arrow keys move between
+ *   sentences, Enter or Space plays), and keeps the active sentence in view without fighting a
+ *   user who scrolls away.
  * Does NOT belong: Section navigation or player controls.
  */
+import type { KeyboardEvent } from 'react';
 import { useEffect, useMemo, useRef } from 'react';
 import type { SegmentOut } from '@/api/types';
 
@@ -22,6 +25,53 @@ export function toBlocks(segments: readonly SegmentOut[]): Block[] {
     else blocks.push({ key: segment.paragraphIndex, kind: segment.kind, segments: [segment] });
   }
   return blocks;
+}
+
+/** Arrow keys move focus between sentences (reading order); Enter and Space play from one. */
+const MOVES: Readonly<Record<string, number>> = {
+  ArrowRight: 1,
+  ArrowDown: 1,
+  ArrowLeft: -1,
+  ArrowUp: -1,
+};
+
+interface SentenceProps {
+  segment: SegmentOut;
+  active: boolean;
+  tabStop: boolean;
+  onSelect: (index: number) => void;
+  onMove: (index: number, step: number) => void;
+}
+
+function Sentence({ segment, active, tabStop, onSelect, onMove }: Readonly<SentenceProps>) {
+  const onKeyDown = (event: KeyboardEvent<HTMLSpanElement>) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      onSelect(segment.index);
+      return;
+    }
+    const step = MOVES[event.key];
+    if (step === undefined) return;
+    event.preventDefault();
+    onMove(segment.index, step);
+  };
+  return (
+    // A <button> always renders as an inline-block box, so a long sentence would no longer wrap
+    // with the rest of its paragraph. A span with the button role and keyboard support keeps the
+    // text flowing.
+    <span // NOSONAR(typescript:S6819): inline sentence control, see the comment above
+      role="button"
+      tabIndex={tabStop ? 0 : -1}
+      className="reader-seg"
+      data-index={segment.index}
+      data-active={active}
+      aria-current={active ? 'true' : undefined}
+      onClick={() => onSelect(segment.index)}
+      onKeyDown={onKeyDown}
+    >
+      {segment.text}
+    </span>
+  );
 }
 
 interface DocumentTextProps {
@@ -62,25 +112,33 @@ export function DocumentText({
     const rect = element.getBoundingClientRect();
     const margin = window.innerHeight * 0.2;
     if (rect.top < margin || rect.bottom > window.innerHeight - margin * 1.6) {
-      const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+      const reduce = globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
       element.scrollIntoView({ block: 'center', behavior: reduce ? 'auto' : 'smooth' });
     }
   }, [activeIndex, autoScroll]);
+
+  // The text is one tab stop: the sentence being spoken, or the first one in this section.
+  const tabStop = segments.some((segment) => segment.index === activeIndex)
+    ? activeIndex
+    : segments[0]?.index;
+  const focusNeighbour = (index: number, step: number) => {
+    const target = segments[segments.findIndex((segment) => segment.index === index) + step];
+    if (!target) return;
+    container.current?.querySelector<HTMLElement>(`[data-index="${target.index}"]`)?.focus();
+  };
 
   return (
     <div ref={container} className="reader-text mx-auto">
       {blocks.map((block) => {
         const content = block.segments.map((segment, position) => (
           <span key={segment.index}>
-            <span
-              className="reader-seg"
-              data-index={segment.index}
-              data-active={segment.index === activeIndex}
-              aria-current={segment.index === activeIndex ? 'true' : undefined}
-              onClick={() => onSelect(segment.index)}
-            >
-              {segment.text}
-            </span>
+            <Sentence
+              segment={segment}
+              active={segment.index === activeIndex}
+              tabStop={segment.index === tabStop}
+              onSelect={onSelect}
+              onMove={focusNeighbour}
+            />
             {position < block.segments.length - 1 ? ' ' : null}
           </span>
         ));

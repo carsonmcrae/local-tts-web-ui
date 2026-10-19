@@ -249,13 +249,12 @@ export class PlaybackController {
     return this.goTo(this.state.segmentIndex, this.isActive());
   }
 
-  private request(index: number, prefetch: boolean): CacheEntry {
+  private request(documentId: string, index: number, prefetch: boolean): CacheEntry {
     const key = this.key(index);
     const existing = this.cache.get(index);
     if (existing?.key === key && !existing.failed) return existing;
-    if (existing) this.drop(index);
+    if (existing) this.drop(index, existing);
     const controller = new AbortController();
-    const documentId = this.state.document?.id ?? '';
     const entry: CacheEntry = {
       key,
       controller,
@@ -280,24 +279,23 @@ export class PlaybackController {
     return entry;
   }
 
-  private drop(index: number): void {
-    const entry = this.cache.get(index);
-    if (!entry) return;
+  private drop(index: number, entry: CacheEntry): void {
     this.cache.delete(index);
     entry.controller.abort();
   }
 
   private clearCache(): void {
-    for (const index of [...this.cache.keys()]) this.drop(index);
+    // Deleting the current entry while iterating a Map is safe: later entries are still visited.
+    for (const [index, entry] of this.cache) this.drop(index, entry);
   }
 
-  private prefetchAround(index: number): void {
-    const count = this.state.document?.segmentCount ?? 0;
-    for (const cached of [...this.cache.keys()]) {
-      if (cached < index - KEEP_BEHIND || cached > index + PREFETCH_AHEAD) this.drop(cached);
+  private prefetchAround(document: PlayerDocument, index: number): void {
+    for (const [cached, entry] of this.cache) {
+      if (cached < index - KEEP_BEHIND || cached > index + PREFETCH_AHEAD) this.drop(cached, entry);
     }
+    const count = document.segmentCount;
     for (let ahead = 1; ahead <= PREFETCH_AHEAD && index + ahead < count; ahead += 1) {
-      this.request(index + ahead, true).promise.catch(() => undefined);
+      this.request(document.id, index + ahead, true).promise.catch(() => undefined);
     }
   }
 
@@ -316,8 +314,8 @@ export class PlaybackController {
     this.persist();
     this.loadedKey = null;
     if (!autoplay) return;
-    const entry = this.request(index, false);
-    this.prefetchAround(index);
+    const entry = this.request(document.id, index, false);
+    this.prefetchAround(document, index);
     try {
       const audio = await entry.promise;
       if (generation !== this.generation) return;
@@ -326,6 +324,8 @@ export class PlaybackController {
       this.deps.media.playbackRate = this.state.rate;
       this.deps.media.preservesPitch = true;
       this.set({ duration: audio.duration });
+      // Paused while the sentence was being generated: keep the audio ready, but don't start it.
+      if (this.state.status !== 'loading') return;
       await this.startMedia(generation);
     } catch (error) {
       if (

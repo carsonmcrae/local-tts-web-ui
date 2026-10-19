@@ -13,7 +13,7 @@ import { useDocument, usePreferences } from '@/api/queries';
 import type { DocumentDetail, SectionOut } from '@/api/types';
 import { buttonClasses } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
-import { Banner, EmptyState, Skeleton } from '@/components/ui/Feedback';
+import { Banner, EmptyState, Skeleton, StatusRegion } from '@/components/ui/Feedback';
 import { usePageTitle } from '@/components/ui/Layout';
 import { DefaultVoicesBanner } from '@/features/engines/EngineSetup';
 import type { PlayerDocument } from '@/features/player/controller';
@@ -141,13 +141,13 @@ export default function ReaderPage() {
   const document = useDocument(documentId);
   if (document.isPending) {
     return (
-      <div className="mx-auto max-w-3xl px-6 py-10" role="status" aria-label="Loading document">
+      <StatusRegion label="Loading document" className="mx-auto max-w-3xl px-6 py-10">
         <Skeleton className="mb-4 h-8 w-2/3" />
         <Skeleton className="mb-10 h-5 w-1/3" />
         {[0, 1, 2, 3, 4].map((key) => (
           <Skeleton key={key} className="mb-3 h-5" />
         ))}
-      </div>
+      </StatusRegion>
     );
   }
   if (document.isError) {

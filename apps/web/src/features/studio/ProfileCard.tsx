@@ -24,9 +24,8 @@ import { formatRelativeDate } from '@/lib/format';
 
 function useReferencePlayer(src: string) {
   const [playing, setPlaying] = useState(false);
-  const [audio] = useState(() => (typeof Audio === 'undefined' ? null : new Audio()));
+  const [audio] = useState(() => new Audio());
   useEffect(() => {
-    if (!audio) return undefined;
     const stop = () => setPlaying(false);
     audio.addEventListener('ended', stop);
     audio.addEventListener('pause', stop);
@@ -37,7 +36,6 @@ function useReferencePlayer(src: string) {
     };
   }, [audio]);
   const toggle = () => {
-    if (!audio) return;
     if (playing) {
       audio.pause();
       return;

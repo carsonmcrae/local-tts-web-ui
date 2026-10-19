@@ -8,6 +8,7 @@ import { AudioLines, BookOpen, Mic, Settings, ShieldCheck } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { NavLink, Outlet } from 'react-router';
 import { useEngines } from '@/api/queries';
+import type { EngineInfo } from '@/api/types';
 import { cn } from '@/lib/cn';
 import { PlayerBar } from '@/features/player/PlayerBar';
 
@@ -30,29 +31,24 @@ function Brand() {
   );
 }
 
+/** Sidebar status for the default voice engine (and whether the local server answers at all). */
+function engineStatus(offline: boolean, engines: readonly EngineInfo[] | undefined) {
+  if (offline) return { label: 'Server offline', dot: 'bg-danger' };
+  const status = engines?.find((engine) => engine.id === 'kokoro')?.status;
+  if (status === 'ready') return { label: 'Voices ready', dot: 'bg-success' };
+  if (status === 'installing') return { label: 'Installing voices…', dot: 'bg-warning' };
+  return { label: 'Voices not installed', dot: 'bg-warning' };
+}
+
 function EngineStatus() {
   const engines = useEngines();
-  const kokoro = engines.data?.find((engine) => engine.id === 'kokoro');
-  const ready = kokoro?.status === 'ready';
-  const label = engines.isError
-    ? 'Server offline'
-    : ready
-      ? 'Voices ready'
-      : kokoro?.status === 'installing'
-        ? 'Installing voices…'
-        : 'Voices not installed';
+  const { label, dot } = engineStatus(engines.isError, engines.data);
   return (
     <NavLink
       to="/settings#engines"
       className="flex items-center gap-2 rounded-[var(--radius-md)] px-2 py-1.5 text-xs text-muted hover:bg-surface-2"
     >
-      <span
-        className={cn(
-          'size-2 rounded-full',
-          ready ? 'bg-success' : engines.isError ? 'bg-danger' : 'bg-warning',
-        )}
-        aria-hidden="true"
-      />
+      <span className={cn('size-2 rounded-full', dot)} aria-hidden="true" />
       {label}
     </NavLink>
   );

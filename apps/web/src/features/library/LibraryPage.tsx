@@ -6,12 +6,14 @@
  * Does NOT belong: Reading view (ReaderPage).
  */
 import { BookOpen, PlayCircle, Sparkles } from 'lucide-react';
+import type { ReactNode } from 'react';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { describeError } from '@/api/client';
 import { useDocuments, usePasteText } from '@/api/queries';
+import type { DocumentSummary, ReadingProgress } from '@/api/types';
 import { Button, buttonClasses } from '@/components/ui/Button';
-import { Banner, EmptyState, ProgressBar, Skeleton } from '@/components/ui/Feedback';
+import { Banner, EmptyState, ProgressBar, Skeleton, StatusRegion } from '@/components/ui/Feedback';
 import { PageHeader } from '@/components/ui/Layout';
 import { DefaultVoicesBanner } from '@/features/engines/EngineSetup';
 import { DocumentCard, documentFacts } from './DocumentCard';
@@ -53,14 +55,88 @@ function ContinueCard({
   );
 }
 
+type Resumable = DocumentSummary & { progress: ReadingProgress };
+
+/** A document that was started but not finished (the "continue listening" candidate). */
+function isResumable(doc: DocumentSummary): doc is Resumable {
+  return Boolean(doc.progress && doc.progress.percent < 99.5);
+}
+
+function LibraryContent({
+  documents,
+  emptyActions,
+}: Readonly<{ documents: ReturnType<typeof useDocuments>; emptyActions: ReactNode }>) {
+  if (documents.isPending) {
+    return (
+      <StatusRegion label="Loading documents" className="flex flex-col gap-3">
+        {[0, 1, 2].map((key) => (
+          <Skeleton key={key} className="h-24" />
+        ))}
+      </StatusRegion>
+    );
+  }
+  if (documents.isError) {
+    return (
+      <Banner
+        tone="error"
+        title="Couldn't load your library"
+        action={
+          <Button size="sm" onClick={() => void documents.refetch()}>
+            Retry
+          </Button>
+        }
+      >
+        {describeError(documents.error)}
+      </Banner>
+    );
+  }
+  const list = documents.data;
+  if (list.length === 0) {
+    return (
+      <div className="rounded-[var(--radius-xl)] border-2 border-dashed border-line-strong bg-surface/60">
+        <EmptyState
+          icon={<BookOpen size={26} />}
+          title="Drop a document here to start listening"
+          actions={emptyActions}
+        >
+          PDF, Word (DOCX), EPUB, Markdown and plain text, up to 25 MB. Text is extracted on this
+          computer; scanned PDFs without a text layer aren't supported yet.
+        </EmptyState>
+      </div>
+    );
+  }
+  const recent = list.find(isResumable);
+  return (
+    <>
+      {recent ? (
+        <ContinueCard
+          id={recent.id}
+          title={recent.title}
+          percent={recent.progress.percent}
+          facts={documentFacts(recent).join(' · ')}
+        />
+      ) : null}
+      <div className="mb-3 flex items-baseline justify-between">
+        <h2 className="text-base font-semibold tracking-tight">All documents</h2>
+        <span className="text-[13px] text-muted">
+          {list.length} total · drag files anywhere to add
+        </span>
+      </div>
+      <ul className="grid gap-3 lg:grid-cols-2">
+        {list.map((doc) => (
+          <DocumentCard key={doc.id} doc={doc} />
+        ))}
+      </ul>
+    </>
+  );
+}
+
 export default function LibraryPage() {
   const documents = useDocuments();
   const intake = useDocumentIntake();
   const paste = usePasteText();
   const navigate = useNavigate();
   const [pasteOpen, setPasteOpen] = useState(false);
-  const list = documents.data ?? [];
-  const recent = list.find((doc) => doc.progress && doc.progress.percent < 99.5);
 
   const trySample = () =>
     paste.mutate(
@@ -89,71 +165,22 @@ export default function LibraryPage() {
           {describeError(paste.error)}
         </Banner>
       ) : null}
-
-      {documents.isPending ? (
-        <div className="flex flex-col gap-3" aria-label="Loading documents" role="status">
-          {[0, 1, 2].map((key) => (
-            <Skeleton key={key} className="h-24" />
-          ))}
-        </div>
-      ) : documents.isError ? (
-        <Banner
-          tone="error"
-          title="Couldn't load your library"
-          action={
-            <Button size="sm" onClick={() => void documents.refetch()}>
-              Retry
+      <LibraryContent
+        documents={documents}
+        emptyActions={
+          <>
+            <UploadButtons onFile={intake.submit} onPaste={() => setPasteOpen(true)} />
+            <Button
+              variant="ghost"
+              icon={<Sparkles size={16} />}
+              onClick={trySample}
+              loading={paste.isPending}
+            >
+              Try a sample
             </Button>
-          }
-        >
-          {describeError(documents.error)}
-        </Banner>
-      ) : list.length === 0 ? (
-        <div className="rounded-[var(--radius-xl)] border-2 border-dashed border-line-strong bg-surface/60">
-          <EmptyState
-            icon={<BookOpen size={26} />}
-            title="Drop a document here to start listening"
-            actions={
-              <>
-                <UploadButtons onFile={intake.submit} onPaste={() => setPasteOpen(true)} />
-                <Button
-                  variant="ghost"
-                  icon={<Sparkles size={16} />}
-                  onClick={trySample}
-                  loading={paste.isPending}
-                >
-                  Try a sample
-                </Button>
-              </>
-            }
-          >
-            PDF, Word (DOCX), EPUB, Markdown and plain text, up to 25 MB. Text is extracted on this
-            computer; scanned PDFs without a text layer aren't supported yet.
-          </EmptyState>
-        </div>
-      ) : (
-        <>
-          {recent ? (
-            <ContinueCard
-              id={recent.id}
-              title={recent.title}
-              percent={recent.progress?.percent ?? 0}
-              facts={documentFacts(recent).join(' · ')}
-            />
-          ) : null}
-          <div className="mb-3 flex items-baseline justify-between">
-            <h2 className="text-base font-semibold tracking-tight">All documents</h2>
-            <span className="text-[13px] text-muted">
-              {list.length} total · drag files anywhere to add
-            </span>
-          </div>
-          <ul className="grid gap-3 lg:grid-cols-2">
-            {list.map((doc) => (
-              <DocumentCard key={doc.id} doc={doc} />
-            ))}
-          </ul>
-        </>
-      )}
+          </>
+        }
+      />
       <PasteTextDialog open={pasteOpen} onOpenChange={setPasteOpen} />
     </DropTarget>
   );

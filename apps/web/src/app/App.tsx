@@ -11,7 +11,7 @@ import { lazy, Suspense, useState } from 'react';
 import { createBrowserRouter, Link, Navigate, RouterProvider } from 'react-router';
 import { ApiError } from '@/api/client';
 import { buttonClasses } from '@/components/ui/Button';
-import { EmptyState } from '@/components/ui/Feedback';
+import { EmptyState, StatusRegion } from '@/components/ui/Feedback';
 import { Spinner } from '@/components/ui/Spinner';
 import { ToastProvider } from '@/components/ui/Toast';
 import { PlayerProvider } from '@/features/player/PlayerProvider';
@@ -28,13 +28,12 @@ function Page({ children }: Readonly<{ children: ReactNode }>) {
   return (
     <Suspense
       fallback={
-        <div
+        <StatusRegion
+          label="Loading page"
           className="flex h-full items-center justify-center text-muted"
-          role="status"
-          aria-label="Loading page"
         >
           <Spinner size={24} />
-        </div>
+        </StatusRegion>
       }
     >
       {children}

@@ -1,12 +1,13 @@
 /**
  * Purpose: Popovers and option menus anchored to a trigger (speed menu, voice picker, actions).
- * Scope: Radix Popover with consistent surface styling, and a simple radio-style option list with
- *   keyboard focus and a checked indicator.
+ * Scope: Radix Popover with consistent surface styling, and a single-choice option list built from
+ *   native radio inputs (arrow-key selection, visible focus ring, checked indicator).
  * Does NOT belong: Option data or selection logic.
  */
 import { Check } from 'lucide-react';
 import { Popover as RadixPopover } from 'radix-ui';
 import type { ReactNode } from 'react';
+import { useId } from 'react';
 import { cn } from '@/lib/cn';
 
 interface PopoverProps {
@@ -63,34 +64,50 @@ interface OptionListProps<T extends string | number> {
   label: string;
 }
 
+/** A single-choice list built from native radio buttons (arrow keys move and select). */
 export function OptionList<T extends string | number>({
   options,
   value,
   onSelect,
   label,
 }: Readonly<OptionListProps<T>>) {
+  const name = useId();
   return (
-    <div role="listbox" aria-label={label} className="flex flex-col">
+    <fieldset className="flex min-w-0 flex-col">
+      <legend className="sr-only">{label}</legend>
       {options.map((option) => {
         const selected = option.value === value;
         return (
-          <button
+          <label
             key={String(option.value)}
-            type="button"
-            role="option"
-            aria-selected={selected}
-            onClick={() => onSelect(option.value)}
             className={cn(
-              'flex min-h-9 items-center gap-2 rounded-[var(--radius-sm)] px-2.5 text-left text-sm hover:bg-surface-2',
+              'flex min-h-9 cursor-pointer items-center gap-2 rounded-[var(--radius-sm)] px-2.5 text-left text-sm hover:bg-surface-2',
+              'has-focus-visible:outline-2 has-focus-visible:-outline-offset-2 has-focus-visible:outline-accent',
               selected && 'font-medium text-accent-text',
             )}
           >
-            <span className="flex w-4 justify-center">{selected ? <Check size={15} /> : null}</span>
+            <input
+              type="radio"
+              name={name}
+              value={String(option.value)}
+              checked={selected}
+              onChange={() => onSelect(option.value)}
+              className="sr-only"
+            />
+            <span className="flex w-4 justify-center" aria-hidden="true">
+              {selected ? <Check size={15} /> : null}
+            </span>
             <span className="flex-1">{option.label}</span>
-            {option.hint ? <span className="text-xs text-subtle">{option.hint}</span> : null}
-          </button>
+            {/* The space keeps label and hint apart in the radio's accessible name. */}
+            {option.hint ? (
+              <>
+                {' '}
+                <span className="text-xs text-subtle">{option.hint}</span>
+              </>
+            ) : null}
+          </label>
         );
       })}
-    </div>
+    </fieldset>
   );
 }

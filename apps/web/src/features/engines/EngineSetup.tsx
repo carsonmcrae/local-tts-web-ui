@@ -65,14 +65,24 @@ function StatusBadge({ engine, job }: Readonly<{ engine: EngineInfo; job: JobOut
   return <Badge>{engine.optional ? 'Optional' : 'Not installed'}</Badge>;
 }
 
+function storageNote(
+  engine: EngineInfo,
+  chosen: InstallOption | undefined,
+  installed: boolean,
+): string {
+  if (installed) {
+    const device = engine.device ? ` · running on ${engine.device.toUpperCase()}` : '';
+    return `Using ${formatBytes(engine.installedBytes)}${device}`;
+  }
+  return `Needs about ${formatBytes(chosen?.diskBytes ?? 0)} of disk space`;
+}
+
 function EngineFacts({
   engine,
   chosen,
   installed,
 }: Readonly<{ engine: EngineInfo; chosen: InstallOption | undefined; installed: boolean }>) {
-  const storage = installed
-    ? `Using ${formatBytes(engine.installedBytes)}${engine.device ? ` · running on ${engine.device.toUpperCase()}` : ''}`
-    : `Needs about ${formatBytes(chosen?.diskBytes ?? 0)} of disk space`;
+  const storage = storageNote(engine, chosen, installed);
   return (
     <>
       <dl className="grid gap-x-6 gap-y-2 text-[13px] sm:grid-cols-2">

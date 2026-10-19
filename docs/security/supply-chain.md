@@ -50,29 +50,36 @@ synthesises. An instrumented load plus clone (CUDA and CPU) made exactly these r
 `weights_only` unpickler (`conds.pt` from the pinned weights, and Perth's checkpoint inside its
 hash-pinned wheel). It made no TorchScript, `torch.export`, `torch.compile` or Hub calls.
 
-| Advisory                                                               | Package (fixed in)          | Reachable in the worker?                                                                        | Status      |
-| ---------------------------------------------------------------------- | --------------------------- | ----------------------------------------------------------------------------------------------- | ----------- |
-| GHSA-63cw-57p8-fm3p / PYSEC-2026-2286 (high): `weights_only` unpickler | torch (2.10.0)              | Yes, but only for the two trusted, hash-pinned files above                                      | Fixed       |
-| GHSA-qfhq-4f3w-5fph / PYSEC-2025-195: `torch.lstm_cell`                | torch (2.10.0)              | No: the voice encoder's `nn.LSTM` uses the fused LSTM kernel                                    | Fixed       |
-| GHSA-vgrw-7cvw-pwgx / PYSEC-2025-193: `unpack_sequence`                | torch (2.9.1)               | No: not called                                                                                  | Fixed       |
-| GHSA-3749-ghw9-m3mg / PYSEC-2025-191: local DoS in `mkldnn_max_pool2d` | torch (2.7.1)               | No: not called                                                                                  | Fixed       |
-| GHSA-887c-mr87-cxwp / PYSEC-2026-1970: `ctc_loss` resource release     | torch (2.8.0)               | No: training-only loss                                                                          | Fixed       |
-| PYSEC-2026-139: pt2 archive deserialisation                            | torch (not listed for 2.11) | No: no `torch.export` archives are loaded                                                       | Fixed       |
-| PYSEC-2025-198 to 202: wrong results or assertions in five operators   | torch (2.7.0)               | No: none is used, and three need `torch.compile`                                                | Fixed       |
-| PYSEC-2025-203 to 209: DoS or overflow in seven operators or Inductor  | torch (2.7.1 to 2.9.0)      | No: none is used and nothing is compiled                                                        | Fixed       |
-| GHSA-29pf-2h5f-8g72 / PYSEC-2026-2289 (high): config fetches Hub code  | transformers (5.3.0)        | No: offline mode, and the local folder has no `config.json`                                     | Fixed       |
-| GHSA-fgcw-684q-jj6r / PYSEC-2026-2290 (high): LightGlue remote code    | transformers (5.5.0)        | No: no LightGlue model                                                                          | Fixed       |
-| GHSA-x9r9-c232-4q39 / PYSEC-2026-4174 (high): custom generate download | transformers (after 5.8.1)  | No: no `custom_generate`, offline mode                                                          | Fixed       |
-| GHSA-xrqw-3rrv-vx5w / PYSEC-2026-3929 (high): `save_pretrained` paths  | transformers (5.10.0)       | No: nothing is saved                                                                            | Fixed       |
-| GHSA-rrmf-rvhw-rf47 / PYSEC-2025-194 (low): `torch.jit.script`         | torch (2.13.0)              | No: never called (instrumented run, and no caller in Chatterbox, s3tokenizer or the model code) | **Ignored** |
-| GHSA-h35f-9h28-mq5c / PYSEC-2026-3447: sdist `MANIFEST.in` bypass      | setuptools (83.0.0)         | No: the worker never builds an sdist; setuptools is only there for `pkg_resources`              | **Ignored** |
+| Advisory                                                               | Package (fixed in)          | Reachable in the worker?                                                                        | Status                                   |
+| ---------------------------------------------------------------------- | --------------------------- | ----------------------------------------------------------------------------------------------- | ---------------------------------------- |
+| GHSA-63cw-57p8-fm3p / PYSEC-2026-2286 (high): `weights_only` unpickler | torch (2.10.0)              | Yes, but only for the two trusted, hash-pinned files above                                      | Fixed                                    |
+| GHSA-qfhq-4f3w-5fph / PYSEC-2025-195: `torch.lstm_cell`                | torch (2.10.0)              | No: the voice encoder's `nn.LSTM` uses the fused LSTM kernel                                    | Fixed                                    |
+| GHSA-vgrw-7cvw-pwgx / PYSEC-2025-193: `unpack_sequence`                | torch (2.9.1)               | No: not called                                                                                  | Fixed                                    |
+| GHSA-3749-ghw9-m3mg / PYSEC-2025-191: local DoS in `mkldnn_max_pool2d` | torch (2.7.1)               | No: not called                                                                                  | Fixed                                    |
+| GHSA-887c-mr87-cxwp / PYSEC-2026-1970: `ctc_loss` resource release     | torch (2.8.0)               | No: training-only loss                                                                          | Fixed                                    |
+| PYSEC-2026-139: pt2 archive deserialisation                            | torch (not listed for 2.11) | No: no `torch.export` archives are loaded                                                       | Fixed                                    |
+| PYSEC-2025-198 to 202: wrong results or assertions in five operators   | torch (2.7.0)               | No: none is used, and three need `torch.compile`                                                | Fixed                                    |
+| PYSEC-2025-203 to 209: DoS or overflow in seven operators or Inductor  | torch (2.7.1 to 2.9.0)      | No: none is used and nothing is compiled                                                        | Fixed                                    |
+| GHSA-29pf-2h5f-8g72 / PYSEC-2026-2289 (high): config fetches Hub code  | transformers (5.3.0)        | No: offline mode, and the local folder has no `config.json`                                     | Fixed                                    |
+| GHSA-fgcw-684q-jj6r / PYSEC-2026-2290 (high): LightGlue remote code    | transformers (5.5.0)        | No: no LightGlue model                                                                          | Fixed                                    |
+| GHSA-x9r9-c232-4q39 / PYSEC-2026-4174 (high): custom generate download | transformers (after 5.8.1)  | No: no `custom_generate`, offline mode                                                          | Fixed                                    |
+| GHSA-xrqw-3rrv-vx5w / PYSEC-2026-3929 (high): `save_pretrained` paths  | transformers (5.10.0)       | No: nothing is saved                                                                            | Fixed                                    |
+| GHSA-rrmf-rvhw-rf47 / PYSEC-2025-194 (low): `torch.jit.script`         | torch (2.13.0)              | No: never called (instrumented run, and no caller in Chatterbox, s3tokenizer or the model code) | **Ignored**                              |
+| GHSA-h35f-9h28-mq5c / PYSEC-2026-3447: sdist `MANIFEST.in` bypass      | setuptools (83.0.0)         | No: the worker never builds an sdist                                                            | Fixed (84.0.0, overriding torch's `<82`) |
 
-The two **ignored** IDs are passed to `pip-audit --ignore-vuln` in `scripts/audit-worker.mjs`:
+The one **ignored** ID is passed to `pip-audit --ignore-vuln` in `scripts/audit-worker.mjs`, and the
+matching Dependabot alert is dismissed as "vulnerable code not used":
 
 - `PYSEC-2025-194`: the fix needs torch 2.13, which has no matching torchaudio; revisit when Chatterbox
   drops torchaudio or torchaudio ships again.
-- `PYSEC-2026-3447`: setuptools 81 and later remove `pkg_resources`, which the Perth watermarker imports;
-  without it the watermark silently disappears and model loading fails.
+
+setuptools moved to 84.0.0 (2026-10-19). torch declares `setuptools<82`, but only
+`torch.utils.cpp_extension` uses it, to build C++ extensions at runtime, which nothing here does.
+setuptools 82 removed `pkg_resources`, which the Perth watermarker imports for one function;
+`ltts_chatterbox_worker/compat.py` provides that function (`resource_filename`) from
+`importlib.resources` before any model code loads. With torch 2.11 and setuptools 84 the six
+real-model tests pass and clone quality is unchanged (mean speaker similarity 0.912; 0.915 and 0.917
+before).
 
 ### Verification
 

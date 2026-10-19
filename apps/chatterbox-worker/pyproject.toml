@@ -13,9 +13,6 @@ requires-python = ">=3.11,<3.12"
 dependencies = [
   "chatterbox-tts==0.1.7",
   "soundfile>=0.13,<1",
-  # resemble-perth (Chatterbox's watermarker) imports pkg_resources; without it the watermarker
-  # silently resolves to None and model loading fails. setuptools 81 drops pkg_resources.
-  "setuptools>=70,<81",
 ]
 
 [project.optional-dependencies]
@@ -49,12 +46,16 @@ conflicts = [[{ extra = "cpu" }, { extra = "cuda" }]]
 # GHSA-xrqw-3rrv-vx5w, GHSA-x9r9-c232-4q39), all fixed by 5.10.1; 5.11.0 was taken because 5.10.x
 # crashed on torch 2.6 (unguarded torch.float8_e8m0fnu, a torch 2.7 dtype). Clone quality is checked
 # with an A/B speaker-similarity run whenever these overrides move.
+# torch declares setuptools<82, but only torch.utils.cpp_extension (building C++ extensions at runtime)
+# uses it, which nothing here does; setuptools 83+ fixes GHSA-h35f-9h28-mq5c. Perth's one pkg_resources
+# call (setuptools 82 removed that package) is served by ltts_chatterbox_worker/compat.py.
 # Triage of every advisory and the latest numbers: docs/security/supply-chain.md.
 override-dependencies = [
   "gradio; sys_platform == 'never'",
   "diffusers>=0.38.0,<0.39",
   "safetensors>=0.8.0,<0.9",
   "transformers>=5.11.0,<5.12",
+  "setuptools>=83,<85",
 ]
 
 # chatterbox-tts 0.1.7's declared requirements, verbatim except torch/torchaudio==2.6.0, which become

@@ -45,7 +45,7 @@ when a choice changes the stack, a trust boundary, data storage or the setup exp
 ## ADR-5: Raw-body uploads and sandboxed parsing
 
 - **Decision:** Uploads are `POST` bodies streamed to disk with a hard byte limit (no multipart parser).
-  The real type is sniffed; parsing happens in a spawned process with a timeout (and RLIMIT_AS on POSIX);
+  The real type is sniffed; parsing happens in a spawned process with a timeout (and RLIMIT_AS on Linux);
   ZIP containers are validated (entries, ratio, total size, encryption, names) and XML entity
   declarations are rejected before any parser runs.
 - **Consequences:** Parser bugs or malicious documents can at worst fail one upload.

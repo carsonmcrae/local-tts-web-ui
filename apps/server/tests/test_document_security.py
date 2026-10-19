@@ -12,10 +12,12 @@ from __future__ import annotations
 import io
 import zipfile
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
 from builders import BILLION_LAUGHS, CONTAINER, make_docx, make_epub, make_pdf, make_zip_bomb
+from ltts.documents import sandbox
 from ltts.documents.extractors import extract
 from ltts.documents.safezip import SafeZip, is_safe_member_name
 from ltts.documents.sandbox import extract_isolated
@@ -123,6 +125,31 @@ def test_sandbox_extracts_in_a_separate_process(tmp_path: Path) -> None:
     path = write(tmp_path, "s.pdf", make_pdf([["Isolated extraction works fine."]]))
     result = extract_isolated(path, DocumentType.PDF, "s", LIMITS, timeout_s=60, memory_mb=1024)
     assert result.sections[0].blocks[0].text == "Isolated extraction works fine."
+
+
+@pytest.mark.parametrize("system", ["Darwin", "Windows"])
+def test_memory_cap_is_skipped_where_the_os_cannot_enforce_it(monkeypatch: pytest.MonkeyPatch, system: str) -> None:
+    def no_resource(name: str) -> None:
+        raise AssertionError(f"{name} must not be loaded on {system}")
+
+    monkeypatch.setattr(sandbox, "platform", SimpleNamespace(system=lambda: system))
+    monkeypatch.setattr(sandbox, "importlib", SimpleNamespace(import_module=no_resource))
+    sandbox._limit_memory(1024)
+
+
+def test_memory_cap_on_linux_never_exceeds_the_hard_limit(monkeypatch: pytest.MonkeyPatch) -> None:
+    applied: list[tuple[int, int]] = []
+    hard = 512 * 1024 * 1024
+    resource = SimpleNamespace(
+        RLIMIT_AS=9,
+        RLIM_INFINITY=-1,
+        getrlimit=lambda _: (hard, hard),
+        setrlimit=lambda _, value: applied.append(value),
+    )
+    monkeypatch.setattr(sandbox, "platform", SimpleNamespace(system=lambda: "Linux"))
+    monkeypatch.setattr(sandbox, "importlib", SimpleNamespace(import_module=lambda _: resource))
+    sandbox._limit_memory(1024)
+    assert applied == [(hard, hard)]
 
 
 def test_sandbox_converts_errors(tmp_path: Path) -> None:

@@ -15,10 +15,14 @@ import sys
 import traceback
 from typing import Any
 
+from ltts_chatterbox_worker.compat import install_pkg_resources_shim
+
 os.environ["HF_HUB_OFFLINE"] = "1"
 os.environ["TRANSFORMERS_OFFLINE"] = "1"
 os.environ["HF_HUB_DISABLE_TELEMETRY"] = "1"
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
+# Perth (Chatterbox's watermarker) imports pkg_resources, which setuptools 81+ no longer ships.
+install_pkg_resources_shim()
 
 
 class Worker:

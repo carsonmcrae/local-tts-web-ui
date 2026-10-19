@@ -18,7 +18,6 @@ const workerDir = path.join(repoRoot, 'apps', 'chatterbox-worker');
 // Reviewed, unfixable-for-now advisories; each one is justified in docs/security/supply-chain.md.
 const IGNORED = [
   'PYSEC-2025-194', // torch.jit.script memory corruption: never called; the fix (2.13) has no torchaudio
-  'PYSEC-2026-3447', // setuptools sdist MANIFEST.in bypass: no sdists are built; <81 kept for Perth
 ];
 
 // The export carries hashes, so pip-audit can read it as-is instead of installing it with pip.

@@ -16,6 +16,7 @@ import ipaddress
 import json
 from collections.abc import Awaitable, Callable, MutableMapping
 from typing import Any
+from urllib.parse import parse_qs
 
 from ltts.config import LOOPBACK_HOSTS, Settings
 
@@ -90,7 +91,18 @@ class SecurityMiddleware:
         if problem:
             await _reject(send, *problem)
             return
-        await self.app(scope, _limited(receive, self.max_body), _with_headers(send, scope["path"]))
+        wrapped = _with_headers(send, scope["path"], self._login_cookie(scope))
+        await self.app(scope, _limited(receive, self.max_body), wrapped)
+
+    def _login_cookie(self, scope: Scope) -> bytes | None:
+        """Turn a valid ``?token=`` on a network client's first visit into an HttpOnly cookie."""
+        if not self.settings.allow_network or not self.settings.access_token:
+            return None
+        query = parse_qs(scope.get("query_string", b"").decode("latin-1"))
+        supplied = (query.get("token") or [""])[0]
+        if supplied and hmac.compare_digest(supplied.encode(), self.settings.access_token.encode()):
+            return f"ltts_token={supplied}; Path=/; HttpOnly; SameSite=Strict; Max-Age=2592000".encode()
+        return None
 
     def _check(self, scope: Scope, headers: dict[bytes, bytes]) -> tuple[int, str, str] | None:
         host = _host_name(headers.get(b"host", b"").decode("latin-1"))
@@ -104,10 +116,10 @@ class SecurityMiddleware:
             return 403, "missing_client_header", "Requests must come from the Local TTS app."
         client = scope.get("client")
         if self.settings.allow_network and not _is_loopback(client[0] if client else None):
-            return self._check_token(headers)
+            return self._check_token(headers, scope.get("query_string", b""))
         return None
 
-    def _check_token(self, headers: dict[bytes, bytes]) -> tuple[int, str, str] | None:
+    def _check_token(self, headers: dict[bytes, bytes], query: bytes) -> tuple[int, str, str] | None:
         token = self.settings.access_token
         supplied = headers.get(b"authorization", b"").decode().removeprefix("Bearer ").strip()
         if not supplied:
@@ -115,6 +127,8 @@ class SecurityMiddleware:
                 name, _, value = part.strip().partition("=")
                 if name == "ltts_token":
                     supplied = value
+        if not supplied:
+            supplied = (parse_qs(query.decode("latin-1")).get("token") or [""])[0]
         if not token or not hmac.compare_digest(supplied.encode(), token.encode()):
             return 401, "access_token_required", "This server requires an access token for network clients."
         return None
@@ -147,7 +161,7 @@ def _limited(receive: Receive, max_body: int) -> Receive:
     return wrapped
 
 
-def _with_headers(send: Send, path: str) -> Send:
+def _with_headers(send: Send, path: str, cookie: bytes | None = None) -> Send:
     async def wrapped(message: Message) -> None:
         if message["type"] == "http.response.start":
             existing = list(message.get("headers", []))
@@ -155,6 +169,8 @@ def _with_headers(send: Send, path: str) -> Send:
             extra = [(k, v) for k, v in SECURITY_HEADERS if k not in names]
             if path.startswith("/api/"):
                 extra.append((b"cache-control", b"no-store"))
+            if cookie:
+                extra.append((b"set-cookie", cookie))
             message["headers"] = existing + extra
         await send(message)
 

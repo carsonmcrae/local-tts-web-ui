@@ -10,11 +10,20 @@ from __future__ import annotations
 
 import logging
 import threading
-from typing import Any
+from typing import Any, override
 
 import numpy as np
 
-from ltts.engines.base import AudioClip, EngineControl, EngineInfo, EngineStatus, InstallOption, VoiceInfo, VoiceSpec
+from ltts.engines.base import (
+    AudioClip,
+    Engine,
+    EngineControl,
+    EngineInfo,
+    EngineStatus,
+    InstallOption,
+    VoiceInfo,
+    VoiceSpec,
+)
 from ltts.engines.kokoro_voices import GRADES, describe
 from ltts.errors import ConflictError, EngineUnavailableError, SynthesisError
 from ltts.jobs import JobContext
@@ -27,7 +36,7 @@ SAMPLE_RATE = 24_000
 PACE = EngineControl(name="pace", label="Speaking pace", minimum=0.5, maximum=2.0, default=1.0, step=0.05)
 
 
-class KokoroEngine:
+class KokoroEngine(Engine):
     id = "kokoro"
 
     def __init__(self, store: ModelStore):
@@ -157,7 +166,8 @@ class KokoroEngine:
 
     # -- install ---------------------------------------------------------
     # Kokoro has a single install option, so ``option`` is not consulted.
-    def install(self, context: JobContext, option: str | None) -> dict[str, Any]:  # noqa: ARG002
+    @override
+    def install(self, context: JobContext, option: str | None) -> dict[str, Any]:
         def progress(done: int, total: int, name: str) -> None:
             context.update(done / total, f"Downloading {name} ({done // 1_048_576} / {total // 1_048_576} MB)")
 
@@ -168,7 +178,8 @@ class KokoroEngine:
         return {"artifact": ARTIFACT}
 
     # Nothing runs, so the job context is not used.
-    def update(self, context: JobContext) -> dict[str, Any]:  # noqa: ARG002
+    @override
+    def update(self, context: JobContext) -> dict[str, Any]:
         """Kokoro runs in-process from checksum-pinned files; there is no separate runtime to update."""
         raise ConflictError("Kokoro is already up to date.", code="no_update")
 

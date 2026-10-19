@@ -105,6 +105,58 @@ function TestStep({ profile }: Readonly<{ profile: VoiceProfile }>) {
   );
 }
 
+/** The wizard's buttons: Back, then Continue, Create voice on the consent step, or Done at the end. */
+function WizardFooter({
+  step,
+  canContinue,
+  pending,
+  onBack,
+  onNext,
+  onCreate,
+  onDone,
+}: Readonly<{
+  step: number;
+  canContinue: boolean | undefined;
+  pending: boolean;
+  onBack: () => void;
+  onNext: () => void;
+  onCreate: (() => void) | undefined;
+  onDone: () => void;
+}>) {
+  if (step === 4) {
+    return (
+      <Button variant="primary" onClick={onDone}>
+        Done
+      </Button>
+    );
+  }
+  const create = step === 3 ? onCreate : undefined;
+  return (
+    <>
+      {step > 0 ? (
+        <Button icon={<ArrowLeft size={15} />} onClick={onBack} disabled={pending}>
+          Back
+        </Button>
+      ) : null}
+      {create ? (
+        <Button
+          variant="primary"
+          icon={<Sparkles size={15} />}
+          onClick={create}
+          disabled={!canContinue}
+          loading={pending}
+        >
+          Create voice
+        </Button>
+      ) : (
+        <Button variant="primary" onClick={onNext} disabled={!canContinue}>
+          Continue <ArrowRight size={15} />
+        </Button>
+      )}
+    </>
+  );
+}
+
 export function CreateVoiceWizard({
   open,
   onOpenChange,
@@ -143,39 +195,17 @@ export function CreateVoiceWizard({
     Boolean(name.trim() && consent),
     true,
   ][step];
-  const footer =
-    step === 4 ? (
-      <Button variant="primary" onClick={close}>
-        Done
-      </Button>
-    ) : (
-      <>
-        {step > 0 ? (
-          <Button
-            icon={<ArrowLeft size={15} />}
-            onClick={() => setStep(step - 1)}
-            disabled={create.isPending}
-          >
-            Back
-          </Button>
-        ) : null}
-        {step === 3 && upload ? (
-          <Button
-            variant="primary"
-            icon={<Sparkles size={15} />}
-            onClick={() => submit(upload)}
-            disabled={!canContinue}
-            loading={create.isPending}
-          >
-            Create voice
-          </Button>
-        ) : (
-          <Button variant="primary" onClick={() => setStep(step + 1)} disabled={!canContinue}>
-            Continue <ArrowRight size={15} />
-          </Button>
-        )}
-      </>
-    );
+  const footer = (
+    <WizardFooter
+      step={step}
+      canContinue={canContinue}
+      pending={create.isPending}
+      onBack={() => setStep(step - 1)}
+      onNext={() => setStep(step + 1)}
+      onCreate={upload ? () => submit(upload) : undefined}
+      onDone={close}
+    />
+  );
 
   return (
     <Dialog

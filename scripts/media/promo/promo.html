@@ -1,0 +1,184 @@
+<!doctype html>
+<!--
+  Purpose: The Local TTS showcase video's composition: seven scenes built from the app's own design
+    tokens, fonts and real screenshots (docs/images).
+  Scope: window.seek(t) draws the frame at t seconds; nothing animates on its own, so
+    render-promo.mjs can step through frames exactly. Scene times match the voice-over cues in
+    promo-audio.mjs (SCENES there).
+  Does NOT belong: Frame capture and encoding (render-promo.mjs) or the soundtrack (promo-audio.mjs).
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Local TTS showcase</title>
+    <style>
+      @font-face {
+        font-family: Inter;
+        src: url('/node_modules/@fontsource-variable/inter/files/inter-latin-wght-normal.woff2');
+        font-weight: 100 900;
+      }
+      @font-face {
+        font-family: Literata;
+        src: url('/node_modules/@fontsource-variable/literata/files/literata-latin-wght-normal.woff2');
+        font-weight: 200 900;
+      }
+      html,
+      body {
+        margin: 0;
+        background: #111;
+      }
+      #stage {
+        position: relative;
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        background: #f7f6f3;
+        font-family: Inter, sans-serif;
+        color: #1c1d21;
+      }
+      .layer {
+        position: absolute;
+        inset: 0;
+      }
+      .abs {
+        position: absolute;
+        transform-origin: 50% 50%;
+      }
+      .blob {
+        position: absolute;
+        border-radius: 50%;
+        filter: blur(120px);
+      }
+      .h {
+        font-weight: 750;
+        letter-spacing: -0.04em;
+        line-height: 1.02;
+        margin: 0;
+      }
+      .grad {
+        background: linear-gradient(110deg, #4f46e5 10%, #8b5cf6 90%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        padding-bottom: 0.08em;
+      }
+      .eyebrow {
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.16em;
+        color: #4338ca;
+        font-size: 24px;
+      }
+      .sub {
+        font-size: 32px;
+        color: #55565c;
+        line-height: 1.42;
+        font-weight: 450;
+        margin: 0;
+      }
+      .window {
+        border-radius: 20px;
+        background: #fff;
+        overflow: hidden;
+        box-shadow:
+          0 60px 100px -40px rgba(28, 29, 33, 0.45),
+          0 0 0 1px #e3e0da;
+      }
+      .window .bar {
+        height: 46px;
+        background: #eceae5;
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        padding: 0 20px;
+      }
+      .window .dot {
+        width: 13px;
+        height: 13px;
+        border-radius: 50%;
+      }
+      .window .url {
+        margin-left: 22px;
+        height: 28px;
+        padding: 0 16px;
+        border-radius: 14px;
+        background: #fff;
+        color: #55565c;
+        font-size: 16px;
+        display: flex;
+        align-items: center;
+      }
+      .window .view {
+        position: relative;
+        overflow: hidden;
+      }
+      .window .view img {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        transform-origin: 65% 36%;
+      }
+      .chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+        padding: 15px 26px;
+        border-radius: 999px;
+        background: #fff;
+        font-weight: 600;
+        font-size: 27px;
+        white-space: nowrap;
+        box-shadow:
+          0 18px 40px -18px rgba(28, 29, 33, 0.4),
+          0 0 0 1px #e3e0da;
+      }
+      .chip .tag {
+        font-size: 17px;
+        font-weight: 800;
+        letter-spacing: 0.06em;
+        color: #fff;
+        background: #4f46e5;
+        border-radius: 8px;
+        padding: 5px 9px;
+      }
+      .check {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        font-size: 30px;
+        font-weight: 600;
+      }
+      .check i {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: #e7f6ee;
+        color: #15803d;
+        display: grid;
+        place-items: center;
+        font-style: normal;
+      }
+      .code {
+        font:
+          600 34px ui-monospace,
+          Consolas,
+          monospace;
+        background: #fff;
+        border: 1px solid #e3e0da;
+        border-radius: 16px;
+        padding: 18px 30px;
+        box-shadow: 0 18px 40px -24px rgba(28, 29, 33, 0.35);
+      }
+      .icon {
+        width: 1em;
+        height: 1em;
+        flex: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="stage"></div>
+    <script src="promo.js"></script>
+  </body>
+</html>

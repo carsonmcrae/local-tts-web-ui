@@ -5,19 +5,19 @@
 
 ## Controls
 
-| Control                                                                                                                              | Where                                                   |
-| ------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------- |
-| Exact npm versions, `save-exact`, committed `package-lock.json`                                                                      | `package.json`, `.npmrc`                                |
-| `ignore-scripts=true` — no package runs install hooks (audited: none of the 519 packages needs one)                                  | `.npmrc`                                                |
-| Locked Python environments, `uv sync --frozen`                                                                                       | `apps/server/uv.lock`, `apps/chatterbox-worker/uv.lock` |
-| 14-day release cool-down for Python resolution (`exclude-newer`); not yet enforced for the Chatterbox worker (see below)             | `apps/server/pyproject.toml`                            |
-| Pinned uv binary with SHA-256 for six platforms                                                                                      | `scripts/toolchain.json`                                |
-| Pinned model artifacts with SHA-256 and host allow-list                                                                              | `apps/server/src/ltts/modelstore/manifest.json`         |
-| `npm audit --audit-level=high` and `pip-audit` of the server environment                                                             | `npm run security`, CI                                  |
-| Secret scanning (gitleaks), CodeQL (JS/TS + Python), dependency review on PRs (fails on high severity, covers both Python lockfiles) | `.github/workflows`                                     |
-| Dependabot with a 7-day cool-down and grouped updates                                                                                | `.github/dependabot.yml`                                |
-| License inventory that fails on unreviewed copyleft or unknown licences                                                              | `npm run licenses`                                      |
-| GitHub Actions pinned to commit SHAs                                                                                                 | `.github/workflows`                                     |
+| Control                                                                                                                              | Where                                                                 |
+| ------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------- |
+| Exact npm versions, `save-exact`, committed `package-lock.json`                                                                      | `package.json`, `.npmrc`                                              |
+| `ignore-scripts=true` — no package runs install hooks (audited: none of the 519 packages needs one)                                  | `.npmrc`                                                              |
+| Locked Python environments, `uv sync --frozen`                                                                                       | `apps/server/uv.lock`, `apps/chatterbox-worker/uv.lock`               |
+| 14-day release cool-down for Python resolution (`exclude-newer`, the same date in both projects)                                     | `apps/server/pyproject.toml`, `apps/chatterbox-worker/pyproject.toml` |
+| Pinned uv binary with SHA-256 for six platforms                                                                                      | `scripts/toolchain.json`                                              |
+| Pinned model artifacts with SHA-256 and host allow-list                                                                              | `apps/server/src/ltts/modelstore/manifest.json`                       |
+| `npm audit --audit-level=high` and `pip-audit` of the server environment                                                             | `npm run security`, CI                                                |
+| Secret scanning (gitleaks), CodeQL (JS/TS + Python), dependency review on PRs (fails on high severity, covers both Python lockfiles) | `.github/workflows`                                                   |
+| Dependabot with a 7-day cool-down and grouped updates                                                                                | `.github/dependabot.yml`                                              |
+| License inventory that fails on unreviewed copyleft or unknown licences                                                              | `npm run licenses`                                                    |
+| GitHub Actions pinned to commit SHAs                                                                                                 | `.github/workflows`                                                   |
 
 ## Known advisories in the optional Chatterbox environment
 
@@ -40,15 +40,19 @@ exactly by chatterbox) and `setuptools` 80.x (1; held below 81 because the Perth
 `npm run security`, because these advisories need triage and the PyTorch local builds (`+cpu`,
 `+cu124`) are not on PyPI.
 
-The worker lock was also resolved without `exclude-newer`, so 21 of its 123 PyPI packages were less
-than 14 days old on 2026-10-19 (for example `certifi` 2026.10.18 and `fastapi` 0.148.0). Bringing it
-under the same cool-down as the server is tracked with the advisory triage.
+The worker lock was first resolved without `exclude-newer`, so 21 of its packages were less than 14
+days old on 2026-10-19. It now has the same `exclude-newer` date as the server, and 20 of them went back
+to their newest releases that are old enough (for example `certifi` 2026.10.18 → 2026.7.22).
+`omegaconf` keeps 2.4.0 (2026-10-09) through an `exclude-newer-package` exception, because every older
+release needs `antlr4-python3-runtime` 4.9, which ships only as an sdist and would run its `setup.py` on
+install. Remove the exception once `exclude-newer` passes 2026-10-23.
 
 ## Updating dependencies
 
 1. Let Dependabot propose updates (or bump manually), never adopting a release younger than 14 days.
-2. For Python: move `exclude-newer` forward, run `node scripts/uv-run.mjs --cwd apps/server lock`, review
-   the lock diff (new packages, changed sources).
+2. For Python: move `exclude-newer` forward in both `pyproject.toml` files, run
+   `node scripts/uv-run.mjs --cwd apps/server lock` (and `--cwd apps/chatterbox-worker lock`), review the
+   lock diff (new packages, changed sources, anything that only ships as an sdist).
 3. Run `npm run check`, `npm run test:inference` and `npm run test:e2e`.
 4. Run `npm run security` and `npm run licenses`; review any new install scripts with
    `npm query ':attr(scripts, [install])'` before considering them.

@@ -33,6 +33,12 @@ build-backend = "hatchling.build"
 packages = ["src/ltts_chatterbox_worker"]
 
 [tool.uv]
+# Supply-chain cool-down, kept in step with apps/server: only resolve releases that have been public
+# for at least two weeks (the PyTorch indexes publish upload times too).
+exclude-newer = "2026-10-05T00:00:00Z"
+# Exception: every omegaconf before 2.4.0 (2026-10-09) needs antlr4-python3-runtime 4.9, which ships only
+# as an sdist and would run its setup.py on install. Drop this once exclude-newer passes 2026-10-23.
+exclude-newer-package = { omegaconf = "2026-10-10T00:00:00Z" }
 conflicts = [[{ extra = "cpu" }, { extra = "cuda" }]]
 # chatterbox-tts declares gradio as a hard dependency but never imports it; drop it (and its large
 # dependency tree) from this environment. It also pins diffusers==0.29.0, which has high-severity

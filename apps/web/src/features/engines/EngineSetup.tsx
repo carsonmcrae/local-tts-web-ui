@@ -175,9 +175,9 @@ export function EnginePanel({ engine }: Readonly<{ engine: EngineInfo }>) {
 
   return (
     <article className="flex flex-col gap-4" aria-labelledby={`engine-${engine.id}`}>
-      <div className="flex flex-wrap items-start justify-between gap-3">
+      <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <h3 id={`engine-${engine.id}`} className="font-semibold">
               {engine.name}
             </h3>

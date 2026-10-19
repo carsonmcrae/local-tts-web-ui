@@ -78,7 +78,7 @@ export default function VoiceLibraryPage() {
       />
       <DefaultVoicesBanner />
       <div className="mb-6 grid gap-4 lg:grid-cols-[1fr_minmax(0,22rem)]">
-        <div className="grid gap-3 sm:grid-cols-4">
+        <div className="grid content-start gap-3 sm:grid-cols-4">
           <div className="relative sm:col-span-4">
             <Search
               size={16}

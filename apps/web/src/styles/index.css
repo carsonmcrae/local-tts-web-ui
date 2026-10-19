@@ -146,19 +146,24 @@
   }
 
   .reader-seg {
-    @apply cursor-pointer rounded-[4px] transition-colors duration-150;
+    @apply cursor-pointer rounded-[3px] transition-[background-color,box-shadow] duration-150;
     box-decoration-break: clone;
     -webkit-box-decoration-break: clone;
-    padding: 0.08em 0.06em;
   }
 
-  .reader-seg:hover {
-    background: color-mix(in srgb, var(--highlight) 55%, transparent);
+  /* Touch browsers keep :hover after a tap, so only real pointers get the hover tint. */
+  @media (hover: hover) {
+    .reader-seg:hover {
+      background: color-mix(in srgb, var(--highlight) 55%, transparent);
+    }
   }
 
+  /* The spread shadow widens the highlight without adding padding that would look like double spaces. */
   .reader-seg[data-active='true'] {
     background: var(--highlight);
-    box-shadow: inset 0 -2px 0 var(--highlight-line);
+    box-shadow:
+      0 0 0 0.14em var(--highlight),
+      inset 0 -2px 0 var(--highlight-line);
   }
 
   .scrollbar-thin {

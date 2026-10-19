@@ -37,6 +37,7 @@ OUT.mkdir(exist_ok=True)
             ["The Storm", "By midnight the wind had turned and the rain began."],
         ],
         outline=[("The Return", 1), ("The Storm", 2)],
+        title="Harbour Stories",
     )
 )
 make_docx(
@@ -46,7 +47,10 @@ make_docx(
     title="Quarterly Letter",
 )  # fmt: skip
 (OUT / "sample.epub").write_bytes(
-    make_epub([("Opening", "<p>The train left the station at dawn.</p>"), ("Arrival", "<p>The city was still asleep.</p>")])
+    make_epub(
+        [("Opening", "<p>The train left the station at dawn.</p>"), ("Arrival", "<p>The city was still asleep.</p>")],
+        title="The Night Train",
+    )
 )
 (OUT / "scanned.pdf").write_bytes(make_pdf([[], []], image_only=True))
 (OUT / "disguised.pdf").write_text("This is plain text pretending to be a PDF.", encoding="utf-8")

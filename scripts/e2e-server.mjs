@@ -26,15 +26,30 @@ async function main() {
     ...uvEnv(),
     LTTS_ENV: 'production',
     LTTS_DATA_DIR: dataDir,
-    LTTS_MODELS_DIR: withoutModels ? path.join(dataDir, 'no-models') : path.join(repoRoot, 'data', 'models'),
-    LTTS_ENGINES_DIR: withoutModels ? path.join(dataDir, 'no-engines') : path.join(repoRoot, 'data', 'engines'),
+    LTTS_MODELS_DIR: withoutModels
+      ? path.join(dataDir, 'no-models')
+      : path.join(repoRoot, 'data', 'models'),
+    LTTS_ENGINES_DIR: withoutModels
+      ? path.join(dataDir, 'no-engines')
+      : path.join(repoRoot, 'data', 'engines'),
     LTTS_UV_BIN: uv,
   };
   const server = startManaged({
     name: 'e2e',
     label: color.dim(`[e2e:${port}]`),
     command: uv,
-    args: ['run', '--frozen', '--project', serverDir, 'ltts', 'serve', '--port', port, '--static', path.join(webDir, 'dist')],
+    args: [
+      'run',
+      '--frozen',
+      '--project',
+      serverDir,
+      'ltts',
+      'serve',
+      '--port',
+      port,
+      '--static',
+      path.join(webDir, 'dist'),
+    ],
     cwd: repoRoot,
     env,
   });

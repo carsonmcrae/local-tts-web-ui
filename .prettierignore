@@ -11,3 +11,5 @@ apps/server
 apps/chatterbox-worker
 apps/web/src/api/schema.gen.ts
 CHANGELOG.md
+tests/fixtures/documents
+docs/security/license-inventory.generated.md

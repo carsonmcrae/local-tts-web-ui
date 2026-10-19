@@ -4,7 +4,7 @@
  *   `SectionBody` (loads one section; loading/error/text states) and `SectionPager`.
  * Does NOT belong: Player coordination (ReaderPage) or sentence rendering (DocumentText).
  */
-import { ArrowLeft, ChevronLeft, ChevronRight, ListTree, Play } from 'lucide-react';
+import { ArrowLeft, ChevronLeft, ChevronRight, ListTree, Pause, Play } from 'lucide-react';
 import { Link } from 'react-router';
 import { describeError } from '@/api/client';
 import { useSection } from '@/api/queries';
@@ -18,9 +18,10 @@ interface HeaderProps {
   doc: DocumentDetail;
   onContents: (() => void) | undefined;
   onPlay: () => void;
+  playing: boolean;
 }
 
-export function ReaderHeader({ doc, onContents, onPlay }: Readonly<HeaderProps>) {
+export function ReaderHeader({ doc, onContents, onPlay, playing }: Readonly<HeaderProps>) {
   const resuming = Boolean(doc.progress && doc.progress.segmentIndex > 0);
   return (
     <header className="mb-8 border-b border-line pb-6">
@@ -57,8 +58,18 @@ export function ReaderHeader({ doc, onContents, onPlay }: Readonly<HeaderProps>)
               onClick={onContents}
             />
           ) : null}
-          <Button variant="primary" icon={<Play size={16} fill="currentColor" />} onClick={onPlay}>
-            {resuming ? 'Resume' : 'Play'}
+          <Button
+            variant="primary"
+            icon={
+              playing ? (
+                <Pause size={16} fill="currentColor" />
+              ) : (
+                <Play size={16} fill="currentColor" />
+              )
+            }
+            onClick={onPlay}
+          >
+            {playing ? 'Pause' : resuming ? 'Resume' : 'Play'}
           </Button>
         </div>
       </div>

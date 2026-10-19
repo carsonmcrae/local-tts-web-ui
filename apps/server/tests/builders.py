@@ -20,7 +20,12 @@ def _pdf_string(text: str) -> str:
     return text.replace("\\", "\\\\").replace("(", "\\(").replace(")", "\\)")
 
 
-def make_pdf(pages: list[list[str]], outline: list[tuple[str, int]] | None = None, image_only: bool = False) -> bytes:
+def make_pdf(
+    pages: list[list[str]],
+    outline: list[tuple[str, int]] | None = None,
+    image_only: bool = False,
+    title: str | None = None,
+) -> bytes:
     """A valid PDF with one text line per list item (Helvetica 11pt), optional outline and image pages."""
     numbered: dict[int, bytes] = {}
     page_ids: list[int] = []
@@ -50,14 +55,14 @@ def make_pdf(pages: list[list[str]], outline: list[tuple[str, int]] | None = Non
         numbered[outlines_id] = (
             f"<< /Type /Outlines /First {item_ids[0]} 0 R /Last {item_ids[-1]} 0 R /Count {len(item_ids)} >>".encode()
         )
-        for i, (title, page_index) in enumerate(outline):
+        for i, (entry_title, page_index) in enumerate(outline):
             links = ""
             if i > 0:
                 links += f" /Prev {item_ids[i - 1]} 0 R"
             if i < len(item_ids) - 1:
                 links += f" /Next {item_ids[i + 1]} 0 R"
             numbered[item_ids[i]] = (
-                f"<< /Title ({_pdf_string(title)}) /Parent {outlines_id} 0 R /Dest [{page_ids[page_index]} 0 R /Fit]{links} >>"
+                f"<< /Title ({_pdf_string(entry_title)}) /Parent {outlines_id} 0 R /Dest [{page_ids[page_index]} 0 R /Fit]{links} >>"
             ).encode()
         catalog += f" /Outlines {outlines_id} 0 R"
     numbered[1] = (catalog + " >>").encode()
@@ -73,7 +78,8 @@ def make_pdf(pages: list[list[str]], outline: list[tuple[str, int]] | None = Non
     out.write(f"xref\n0 {size}\n0000000000 65535 f \n".encode())
     for number in range(1, size):
         out.write(f"{offsets.get(number, 0):010d} 00000 n \n".encode())
-    out.write(f"trailer\n<< /Size {size} /Root 1 0 R >>\nstartxref\n{xref}\n%%EOF\n".encode())
+    info = f" /Info << /Title ({_pdf_string(title)}) >>" if title else ""
+    out.write(f"trailer\n<< /Size {size} /Root 1 0 R{info} >>\nstartxref\n{xref}\n%%EOF\n".encode())
     return out.getvalue()
 
 
@@ -104,7 +110,13 @@ CONTAINER = (
 )
 
 
-def make_epub(chapters: list[tuple[str, str]], *, nav: bool = True, extra: dict[str, bytes] | None = None) -> bytes:
+def make_epub(
+    chapters: list[tuple[str, str]],
+    *,
+    nav: bool = True,
+    extra: dict[str, bytes] | None = None,
+    title: str = "Test Book",
+) -> bytes:
     """``chapters`` are ``(title, body_html)``. Builds an EPUB 3 package with an optional nav document."""
     buffer = io.BytesIO()
     with zipfile.ZipFile(buffer, "w") as book:
@@ -113,16 +125,16 @@ def make_epub(chapters: list[tuple[str, str]], *, nav: bool = True, extra: dict[
         manifest = []
         spine = []
         nav_items = []
-        for i, (title, body) in enumerate(chapters, start=1):
+        for i, (chapter_title, body) in enumerate(chapters, start=1):
             name = f"chapter{i}.xhtml"
             book.writestr(
                 f"OEBPS/{name}",
-                f'<?xml version="1.0"?><html xmlns="http://www.w3.org/1999/xhtml"><head><title>{title}</title>'
-                f"<style>p{{color:red}}</style></head><body><h1>{title}</h1>{body}<script>alert(1)</script></body></html>",
+                f'<?xml version="1.0"?><html xmlns="http://www.w3.org/1999/xhtml"><head><title>{chapter_title}</title>'
+                f"<style>p{{color:red}}</style></head><body><h1>{chapter_title}</h1>{body}<script>alert(1)</script></body></html>",
             )
             manifest.append(f'<item id="c{i}" href="{name}" media-type="application/xhtml+xml"/>')
             spine.append(f'<itemref idref="c{i}"/>')
-            nav_items.append(f'<li><a href="{name}">{title}</a></li>')
+            nav_items.append(f'<li><a href="{name}">{chapter_title}</a></li>')
         if nav:
             book.writestr(
                 "OEBPS/nav.xhtml",
@@ -133,7 +145,7 @@ def make_epub(chapters: list[tuple[str, str]], *, nav: bool = True, extra: dict[
         book.writestr(
             "OEBPS/content.opf",
             '<?xml version="1.0"?><package xmlns="http://www.idpf.org/2007/opf" version="3.0">'
-            '<metadata xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:title>Test Book</dc:title></metadata>'
+            f'<metadata xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:title>{title}</dc:title></metadata>'
             f"<manifest>{''.join(manifest)}</manifest><spine>{''.join(spine)}</spine></package>",
         )
         for name, data in (extra or {}).items():

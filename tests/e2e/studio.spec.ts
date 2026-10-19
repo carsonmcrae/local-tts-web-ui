@@ -17,8 +17,13 @@ const PASSAGE =
   'walk past the old bakery, where warm bread and fresh coffee fill the air.';
 
 test('create, use and delete a custom voice', async ({ page, request }) => {
-  const engines = (await (await request.get('/api/engines')).json()) as { id: string; status: string }[];
-  const cloningReady = engines.some((engine) => engine.id === 'chatterbox' && engine.status === 'ready');
+  const engines = (await (await request.get('/api/engines')).json()) as {
+    id: string;
+    status: string;
+  }[];
+  const cloningReady = engines.some(
+    (engine) => engine.id === 'chatterbox' && engine.status === 'ready',
+  );
   const reference = await request.post('/api/voices/kokoro:bm_george/preview', {
     headers: { 'X-LTTS-Client': 'web' },
     data: { text: PASSAGE },
@@ -40,7 +45,10 @@ test('create, use and delete a custom voice', async ({ page, request }) => {
   await expect(wizard.getByText('“E2E Synthetic Voice” is saved')).toBeVisible();
 
   if (cloningReady) {
-    const sample = page.waitForResponse((r) => r.url().includes('/api/voices/custom:') && r.url().endsWith('/preview'), { timeout: 150_000 });
+    const sample = page.waitForResponse(
+      (r) => r.url().includes('/api/voices/custom:') && r.url().endsWith('/preview'),
+      { timeout: 150_000 },
+    );
     await wizard.getByRole('button', { name: 'Generate sample' }).click();
     const response = await sample;
     expect(response.status()).toBe(200);
@@ -49,7 +57,10 @@ test('create, use and delete a custom voice', async ({ page, request }) => {
     await wizard.getByRole('button', { name: 'Done' }).click();
 
     await pasteText(page, 'Narrated with my custom voice.', 'Custom voice doc');
-    const narration = page.waitForResponse((r) => r.url().includes('/segments/0/audio') && r.url().includes('custom%3A'), { timeout: 150_000 });
+    const narration = page.waitForResponse(
+      (r) => r.url().includes('/segments/0/audio') && r.url().includes('custom%3A'),
+      { timeout: 150_000 },
+    );
     await play(page);
     expect((await narration).status()).toBe(200);
     await page.goto('/studio');
@@ -59,7 +70,10 @@ test('create, use and delete a custom voice', async ({ page, request }) => {
   }
 
   await page.getByRole('button', { name: 'Delete E2E Synthetic Voice' }).click();
-  await page.getByRole('dialog', { name: /Permanently delete/ }).getByRole('button', { name: 'Delete voice' }).click();
+  await page
+    .getByRole('dialog', { name: /Permanently delete/ })
+    .getByRole('button', { name: 'Delete voice' })
+    .click();
   await expect(page.getByText('No custom voices yet')).toBeVisible();
 });
 

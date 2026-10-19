@@ -5,50 +5,102 @@
 
 ## Controls
 
-| Control                                                                                                                              | Where                                                   |
-| ------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------- |
-| Exact npm versions, `save-exact`, committed `package-lock.json`                                                                      | `package.json`, `.npmrc`                                |
-| `ignore-scripts=true` — no package runs install hooks (audited: none of the 519 packages needs one)                                  | `.npmrc`                                                |
-| Locked Python environments, `uv sync --frozen`                                                                                       | `apps/server/uv.lock`, `apps/chatterbox-worker/uv.lock` |
-| 14-day release cool-down for Python resolution (`exclude-newer`); not yet enforced for the Chatterbox worker (see below)             | `apps/server/pyproject.toml`                            |
-| Pinned uv binary with SHA-256 for six platforms                                                                                      | `scripts/toolchain.json`                                |
-| Pinned model artifacts with SHA-256 and host allow-list                                                                              | `apps/server/src/ltts/modelstore/manifest.json`         |
-| `npm audit --audit-level=high` and `pip-audit` of the server environment                                                             | `npm run security`, CI                                  |
-| Secret scanning (gitleaks), CodeQL (JS/TS + Python), dependency review on PRs (fails on high severity, covers both Python lockfiles) | `.github/workflows`                                     |
-| Dependabot with a 7-day cool-down and grouped updates                                                                                | `.github/dependabot.yml`                                |
-| License inventory that fails on unreviewed copyleft or unknown licences                                                              | `npm run licenses`                                      |
-| GitHub Actions pinned to commit SHAs                                                                                                 | `.github/workflows`                                     |
+| Control                                                                                                                              | Where                                                                 |
+| ------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------- |
+| Exact npm versions, `save-exact`, committed `package-lock.json`                                                                      | `package.json`, `.npmrc`                                              |
+| `ignore-scripts=true` — no package runs install hooks (audited: none of the 519 packages needs one)                                  | `.npmrc`                                                              |
+| Locked Python environments, `uv sync --frozen`                                                                                       | `apps/server/uv.lock`, `apps/chatterbox-worker/uv.lock`               |
+| 14-day release cool-down for Python resolution (`exclude-newer`, the same date in both projects)                                     | `apps/server/pyproject.toml`, `apps/chatterbox-worker/pyproject.toml` |
+| Pinned uv binary with SHA-256 for six platforms                                                                                      | `scripts/toolchain.json`                                              |
+| Pinned model artifacts with SHA-256 and host allow-list                                                                              | `apps/server/src/ltts/modelstore/manifest.json`                       |
+| `npm audit --audit-level=high`, `pip-audit` of the server environment and of both Chatterbox extras (OSV, no install)                | `npm run security` (`scripts/audit-worker.mjs`), CI                   |
+| Secret scanning (gitleaks), CodeQL (JS/TS + Python), dependency review on PRs (fails on high severity, covers both Python lockfiles) | `.github/workflows`                                                   |
+| Dependabot with a 7-day cool-down and grouped updates                                                                                | `.github/dependabot.yml`                                              |
+| License inventory that fails on unreviewed copyleft or unknown licences                                                              | `npm run licenses`                                                    |
+| GitHub Actions pinned to commit SHAs                                                                                                 | `.github/workflows`                                                   |
 
 ## Known advisories in the optional Chatterbox environment
 
-`chatterbox-tts` 0.1.7 pins exact versions of its machine-learning stack. Where a patched version is
-compatible, the worker overrides the pin:
+`chatterbox-tts` 0.1.7 pins exact, older versions of its machine-learning stack. Where a patched
+release is compatible, the worker lifts the pin (`override-dependencies` in
+`apps/chatterbox-worker/pyproject.toml`; for torch a `dependency-metadata` entry, because an override
+would detach torch from the per-extra PyTorch index). `npm run security` audits both extras through
+`scripts/audit-worker.mjs`, against OSV because PyTorch's `+cpu` and `+cu126` builds are not on PyPI.
 
-| Package        | Pinned by chatterbox | Override | Why                                                                                           |
-| -------------- | -------------------- | -------- | --------------------------------------------------------------------------------------------- |
-| `diffusers`    | 0.29.0               | 0.38.0   | Two high-severity `trust_remote_code` advisories                                              |
-| `safetensors`  | 0.5.3                | 0.8.0    | Required by diffusers 0.38                                                                    |
-| `transformers` | 5.2.0                | 5.11.0   | Four high-severity advisories; 5.10.x crashes on torch 2.6 (unguarded torch 2.7 float8 dtype) |
+| Package           | Pinned by chatterbox | Locked            | Why                                                                                           |
+| ----------------- | -------------------- | ----------------- | --------------------------------------------------------------------------------------------- |
+| diffusers         | 0.29.0               | 0.38.0            | Two high-severity `trust_remote_code` advisories (GHSA-98h9-4798-4q5v, GHSA-7wx4-6vff-v64p)   |
+| safetensors       | 0.5.3                | 0.8.0             | Required by diffusers 0.38                                                                    |
+| transformers      | 5.2.0                | 5.11.0            | Four high-severity advisories below (5.11 rather than 5.10.x, which crashed on torch 2.6)     |
+| torch, torchaudio | 2.6.0 (`+cu124`)     | 2.11.0 (`+cu126`) | 18 of the 19 advisories below; torchaudio has no release after 2.11, so torch stops there too |
 
-Clone quality was measured with each change: three cloned sentences scored against the same reference
-recording had mean speaker similarity 0.915 before, 0.917 with the new diffusers and 0.917 with the new
-transformers (unrelated voices score 0.60 to 0.65).
+The cu126 build supports the same GPUs as cu124 did (sm_50 to sm_90, Maxwell through Hopper). Linux
+wheels now need glibc 2.28 or newer.
 
-As of 2026-10-19, `pip-audit` still reports lower-severity advisories against `torch` 2.6.0 (7, pinned
-exactly by chatterbox) and `setuptools` 80.x (1; held below 81 because the Perth watermarker imports
-`pkg_resources`). They only affect people who install voice cloning. The worker is not yet part of
-`npm run security`, because these advisories need triage and the PyTorch local builds (`+cpu`,
-`+cu124`) are not on PyPI.
+### Triage (2026-10-19)
 
-The worker lock was also resolved without `exclude-newer`, so 21 of its 123 PyPI packages were less
-than 14 days old on 2026-10-19 (for example `certifi` 2026.10.18 and `fastapi` 0.148.0). Bringing it
-under the same cool-down as the server is tracked with the advisory triage.
+The worker loads one folder of checksum-pinned weights with Hugging Face offline mode forced and only
+synthesises. An instrumented load plus clone (CUDA and CPU) made exactly these risky calls:
+`AutoTokenizer`/`AutoConfig.from_pretrained` on that local folder, and two `torch.load` calls through the
+`weights_only` unpickler (`conds.pt` from the pinned weights, and Perth's checkpoint inside its
+hash-pinned wheel). It made no TorchScript, `torch.export`, `torch.compile` or Hub calls.
+
+| Advisory                                                               | Package (fixed in)          | Reachable in the worker?                                                                        | Status      |
+| ---------------------------------------------------------------------- | --------------------------- | ----------------------------------------------------------------------------------------------- | ----------- |
+| GHSA-63cw-57p8-fm3p / PYSEC-2026-2286 (high): `weights_only` unpickler | torch (2.10.0)              | Yes, but only for the two trusted, hash-pinned files above                                      | Fixed       |
+| GHSA-qfhq-4f3w-5fph / PYSEC-2025-195: `torch.lstm_cell`                | torch (2.10.0)              | No: the voice encoder's `nn.LSTM` uses the fused LSTM kernel                                    | Fixed       |
+| GHSA-vgrw-7cvw-pwgx / PYSEC-2025-193: `unpack_sequence`                | torch (2.9.1)               | No: not called                                                                                  | Fixed       |
+| GHSA-3749-ghw9-m3mg / PYSEC-2025-191: local DoS in `mkldnn_max_pool2d` | torch (2.7.1)               | No: not called                                                                                  | Fixed       |
+| GHSA-887c-mr87-cxwp / PYSEC-2026-1970: `ctc_loss` resource release     | torch (2.8.0)               | No: training-only loss                                                                          | Fixed       |
+| PYSEC-2026-139: pt2 archive deserialisation                            | torch (not listed for 2.11) | No: no `torch.export` archives are loaded                                                       | Fixed       |
+| PYSEC-2025-198 to 202: wrong results or assertions in five operators   | torch (2.7.0)               | No: none is used, and three need `torch.compile`                                                | Fixed       |
+| PYSEC-2025-203 to 209: DoS or overflow in seven operators or Inductor  | torch (2.7.1 to 2.9.0)      | No: none is used and nothing is compiled                                                        | Fixed       |
+| GHSA-29pf-2h5f-8g72 / PYSEC-2026-2289 (high): config fetches Hub code  | transformers (5.3.0)        | No: offline mode, and the local folder has no `config.json`                                     | Fixed       |
+| GHSA-fgcw-684q-jj6r / PYSEC-2026-2290 (high): LightGlue remote code    | transformers (5.5.0)        | No: no LightGlue model                                                                          | Fixed       |
+| GHSA-x9r9-c232-4q39 / PYSEC-2026-4174 (high): custom generate download | transformers (after 5.8.1)  | No: no `custom_generate`, offline mode                                                          | Fixed       |
+| GHSA-xrqw-3rrv-vx5w / PYSEC-2026-3929 (high): `save_pretrained` paths  | transformers (5.10.0)       | No: nothing is saved                                                                            | Fixed       |
+| GHSA-rrmf-rvhw-rf47 / PYSEC-2025-194 (low): `torch.jit.script`         | torch (2.13.0)              | No: never called (instrumented run, and no caller in Chatterbox, s3tokenizer or the model code) | **Ignored** |
+| GHSA-h35f-9h28-mq5c / PYSEC-2026-3447: sdist `MANIFEST.in` bypass      | setuptools (83.0.0)         | No: the worker never builds an sdist; setuptools is only there for `pkg_resources`              | **Ignored** |
+
+The two **ignored** IDs are passed to `pip-audit --ignore-vuln` in `scripts/audit-worker.mjs`:
+
+- `PYSEC-2025-194`: the fix needs torch 2.13, which has no matching torchaudio; revisit when Chatterbox
+  drops torchaudio or torchaudio ships again.
+- `PYSEC-2026-3447`: setuptools 81 and later remove `pkg_resources`, which the Perth watermarker imports;
+  without it the watermark silently disappears and model loading fails.
+
+### Verification
+
+Clone quality is checked with every change on real models (RTX 3080): a reference recording (Kokoro
+`bm_george` reading a fixed passage, imported as a consented profile), three cloned sentences per run,
+scored by cosine similarity of Chatterbox voice-encoder embeddings to the reference. Unrelated Kokoro
+voices score 0.59 to 0.70. The diffusers and transformers overrides were measured this way (0.915 before,
+0.917 after each). The torch upgrade, on the same transformers 5.11:
+
+| Environment        | Mean per run        | Mean (9 clips) | Perth watermark |
+| ------------------ | ------------------- | -------------- | --------------- |
+| torch 2.6.0+cu124  | 0.920, 0.906, 0.913 | 0.913          | Detected        |
+| torch 2.11.0+cu126 | 0.907, 0.926, 0.919 | 0.917          | Detected        |
+
+The difference is within the run-to-run spread, and speed is the same under the same GPU load (about 2.6
+to 3.5 s per sentence after a 21 to 25 s first clone that includes loading the model). The CPU build
+also loads, clones (0.910 on one sentence) and watermarks. `npm run test:inference` passes.
+
+### Release cool-down
+
+The worker lock was first resolved without `exclude-newer`, so 21 of its packages were less than 14
+days old on 2026-10-19. It now has the same `exclude-newer` date as the server, and 20 of them went back
+to their newest releases that are old enough (for example `certifi` 2026.10.18 → 2026.7.22).
+`omegaconf` keeps 2.4.0 (2026-10-09) through an `exclude-newer-package` exception, because every older
+release needs `antlr4-python3-runtime` 4.9, which ships only as an sdist and would run its `setup.py` on
+install. Remove the exception once `exclude-newer` passes 2026-10-23.
 
 ## Updating dependencies
 
 1. Let Dependabot propose updates (or bump manually), never adopting a release younger than 14 days.
-2. For Python: move `exclude-newer` forward, run `node scripts/uv-run.mjs --cwd apps/server lock`, review
-   the lock diff (new packages, changed sources).
+2. For Python: move `exclude-newer` forward in both `pyproject.toml` files, run
+   `node scripts/uv-run.mjs --cwd apps/server lock` (and `--cwd apps/chatterbox-worker lock`), review the
+   lock diff (new packages, changed sources, anything that only ships as an sdist).
 3. Run `npm run check`, `npm run test:inference` and `npm run test:e2e`.
 4. Run `npm run security` and `npm run licenses`; review any new install scripts with
    `npm query ':attr(scripts, [install])'` before considering them.

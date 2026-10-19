@@ -1,7 +1,7 @@
 # Purpose: Isolated, locked environment for the optional Chatterbox voice-cloning engine.
 # Scope: chatterbox-tts and PyTorch (CPU or CUDA build, mutually exclusive extras) plus the tiny
 #   stdio worker the main server drives. Installed on demand from Settings into data/engines/.
-# Does NOT belong: The main server environment — chatterbox pins numpy<2 and torch==2.6.0, which
+# Does NOT belong: The main server environment — chatterbox pins numpy<2 and its own torch, which
 #   conflict with kokoro-onnx, so the two must never share a virtual environment.
 
 [project]
@@ -19,8 +19,8 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-cpu = ["torch==2.6.0", "torchaudio==2.6.0"]
-cuda = ["torch==2.6.0", "torchaudio==2.6.0"]
+cpu = ["torch==2.11.0", "torchaudio==2.11.0"]
+cuda = ["torch==2.11.0", "torchaudio==2.11.0"]
 
 [project.scripts]
 ltts-chatterbox-worker = "ltts_chatterbox_worker.__main__:main"
@@ -33,6 +33,12 @@ build-backend = "hatchling.build"
 packages = ["src/ltts_chatterbox_worker"]
 
 [tool.uv]
+# Supply-chain cool-down, kept in step with apps/server: only resolve releases that have been public
+# for at least two weeks (the PyTorch indexes publish upload times too).
+exclude-newer = "2026-10-05T00:00:00Z"
+# Exception: every omegaconf before 2.4.0 (2026-10-09) needs antlr4-python3-runtime 4.9, which ships only
+# as an sdist and would run its setup.py on install. Drop this once exclude-newer passes 2026-10-23.
+exclude-newer-package = { omegaconf = "2026-10-10T00:00:00Z" }
 conflicts = [[{ extra = "cpu" }, { extra = "cuda" }]]
 # chatterbox-tts declares gradio as a hard dependency but never imports it; drop it (and its large
 # dependency tree) from this environment. It also pins diffusers==0.29.0, which has high-severity
@@ -40,9 +46,10 @@ conflicts = [[{ extra = "cpu" }, { extra = "cuda" }]]
 # turn needs safetensors>=0.8 (chatterbox pins 0.5.3). Chatterbox only imports diffusers' model layers
 # and safetensors' load_file, both unchanged in these versions (verified by test_inference.py).
 # transformers 5.2.0 has four high-severity advisories (GHSA-29pf-2h5f-8g72, GHSA-fgcw-684q-jj6r,
-# GHSA-xrqw-3rrv-vx5w, GHSA-x9r9-c232-4q39), all fixed by 5.10.1. 5.10.x still crashes on chatterbox's
-# torch 2.6 (unguarded torch.float8_e8m0fnu, a torch 2.7 dtype); 5.11.0 guards it. Clone quality is
-# checked with an A/B speaker-similarity run whenever these overrides move.
+# GHSA-xrqw-3rrv-vx5w, GHSA-x9r9-c232-4q39), all fixed by 5.10.1; 5.11.0 was taken because 5.10.x
+# crashed on torch 2.6 (unguarded torch.float8_e8m0fnu, a torch 2.7 dtype). Clone quality is checked
+# with an A/B speaker-similarity run whenever these overrides move.
+# Triage of every advisory and the latest numbers: docs/security/supply-chain.md.
 override-dependencies = [
   "gradio; sys_platform == 'never'",
   "diffusers>=0.38.0,<0.39",
@@ -50,14 +57,41 @@ override-dependencies = [
   "transformers>=5.11.0,<5.12",
 ]
 
+# chatterbox-tts 0.1.7's declared requirements, verbatim except torch/torchaudio==2.6.0, which become
+# the >=2.9 range it already declares for Python 3.14 so the extras above can pick 2.11 (fixes the
+# weights_only unpickler advisory GHSA-63cw-57p8-fm3p and 17 others; torchaudio stops at 2.11).
+# An override can't do this: it would detach torch from the per-extra PyTorch index below.
+[[tool.uv.dependency-metadata]]
+name = "chatterbox-tts"
+version = "0.1.7"
+requires-python = ">=3.10"
+requires-dist = [
+  "numpy<2.0.0,>=1.24.0; python_version < '3.13'",
+  "numpy>=2.0.0; python_version >= '3.13'",
+  "librosa==0.11.0",
+  "s3tokenizer",
+  "torch>=2.9.0",
+  "torchaudio>=2.9.0",
+  "transformers==5.2.0",
+  "diffusers==0.29.0",
+  "resemble-perth>=1.0.0",
+  "conformer==0.3.2",
+  "safetensors==0.5.3",
+  "spacy-pkuseg",
+  "pykakasi==2.3.0",
+  "gradio==6.8.0",
+  "pyloudnorm",
+  "omegaconf",
+]
+
 [tool.uv.sources]
 torch = [
   { index = "pytorch-cpu", extra = "cpu" },
-  { index = "pytorch-cu124", extra = "cuda" },
+  { index = "pytorch-cu126", extra = "cuda" },
 ]
 torchaudio = [
   { index = "pytorch-cpu", extra = "cpu" },
-  { index = "pytorch-cu124", extra = "cuda" },
+  { index = "pytorch-cu126", extra = "cuda" },
 ]
 
 [[tool.uv.index]]
@@ -65,7 +99,9 @@ name = "pytorch-cpu"
 url = "https://download.pytorch.org/whl/cpu"
 explicit = true
 
+# PyTorch stopped building cu124 after 2.6. The cu126 builds cover the same GPUs (sm_50 to sm_90,
+# Maxwell through Hopper); cu128 would add RTX 50-series but drop everything before Turing.
 [[tool.uv.index]]
-name = "pytorch-cu124"
-url = "https://download.pytorch.org/whl/cu124"
+name = "pytorch-cu126"
+url = "https://download.pytorch.org/whl/cu126"
 explicit = true

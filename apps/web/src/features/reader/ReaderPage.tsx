@@ -38,6 +38,9 @@ export function sectionOf(doc: Pick<DocumentDetail, 'sections'>, segment: number
   );
 }
 
+/** Narration is under way: playing, or fetching the next sentence to play. */
+const isNarrating = (status: string) => status === 'playing' || status === 'loading';
+
 function Reader({ doc }: Readonly<{ doc: DocumentDetail }>) {
   usePageTitle(doc.title);
   const { controller, state } = usePlayer();
@@ -50,9 +53,11 @@ function Reader({ doc }: Readonly<{ doc: DocumentDetail }>) {
   const playerDoc = useMemo(() => toPlayerDocument(doc), [doc]);
 
   // Follow the narration into the next section (adjusting state during render, not in an effect).
+  // Moving to the next sentence sets its index together with `loading`, so following only while
+  // `playing` would never fire at a section boundary.
   if (speaking !== followed) {
     setFollowed(speaking);
-    if (speaking !== null && state.status === 'playing') setViewed(speaking);
+    if (speaking !== null && isNarrating(state.status)) setViewed(speaking);
   }
 
   useEffect(() => {
@@ -74,7 +79,7 @@ function Reader({ doc }: Readonly<{ doc: DocumentDetail }>) {
     else void controller.load(playerDoc, index, true);
   };
   const resumeAt = isLoaded ? state.segmentIndex : (doc.progress?.segmentIndex ?? 0);
-  const playingThis = isLoaded && (state.status === 'playing' || state.status === 'loading');
+  const playingThis = isLoaded && isNarrating(state.status);
   const nav = (
     <SectionNav sections={doc.sections} viewed={viewed} speaking={speaking} onSelect={jump} />
   );

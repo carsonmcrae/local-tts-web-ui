@@ -71,7 +71,8 @@ The one **ignored** ID is passed to `pip-audit --ignore-vuln` in `scripts/audit-
 matching Dependabot alert is dismissed as "vulnerable code not used":
 
 - `PYSEC-2025-194`: the fix needs torch 2.13, which has no matching torchaudio; revisit when Chatterbox
-  drops torchaudio or torchaudio ships again.
+  drops torchaudio or torchaudio ships again. torchaudio 2.11 ships compiled extensions built against
+  torch 2.11, so `.github/dependabot.yml` holds the worker's torch below 2.12 until then.
 
 setuptools moved to 84.0.0 (2026-10-19). torch declares `setuptools<82`, but only
 `torch.utils.cpp_extension` uses it, to build C++ extensions at runtime, which nothing here does.

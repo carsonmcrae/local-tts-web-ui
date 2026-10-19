@@ -1,0 +1,84 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R /Outlines 10 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [4 0 R 6 0 R 8 0 R] /Count 3 >>
+endobj
+3 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+4 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R >> >> /Contents 5 0 R >>
+endobj
+5 0 obj
+<< /Length 55 >>
+stream
+BT
+/F1 11 Tf
+14 TL
+72 760 Td
+(Harbour Stories) Tj T*
+ET
+endstream
+endobj
+6 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R >> >> /Contents 7 0 R >>
+endobj
+7 0 obj
+<< /Length 142 >>
+stream
+BT
+/F1 11 Tf
+14 TL
+72 760 Td
+(The Return) Tj T*
+(The boats returned just after seven in the evening.) Tj T*
+(Gulls circled overhead.) Tj T*
+ET
+endstream
+endobj
+8 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R >> >> /Contents 9 0 R >>
+endobj
+9 0 obj
+<< /Length 109 >>
+stream
+BT
+/F1 11 Tf
+14 TL
+72 760 Td
+(The Storm) Tj T*
+(By midnight the wind had turned and the rain began.) Tj T*
+ET
+endstream
+endobj
+10 0 obj
+<< /Type /Outlines /First 11 0 R /Last 12 0 R /Count 2 >>
+endobj
+11 0 obj
+<< /Title (The Return) /Parent 10 0 R /Dest [6 0 R /Fit] /Next 12 0 R >>
+endobj
+12 0 obj
+<< /Title (The Storm) /Parent 10 0 R /Dest [8 0 R /Fit] /Prev 11 0 R >>
+endobj
+xref
+0 13
+0000000000 65535 f 
+0000000009 00000 n 
+0000000075 00000 n 
+0000000144 00000 n 
+0000000214 00000 n 
+0000000340 00000 n 
+0000000445 00000 n 
+0000000571 00000 n 
+0000000764 00000 n 
+0000000890 00000 n 
+0000001050 00000 n 
+0000001124 00000 n 
+0000001213 00000 n 
+trailer
+<< /Size 13 /Root 1 0 R >>
+startxref
+1301
+%%EOF

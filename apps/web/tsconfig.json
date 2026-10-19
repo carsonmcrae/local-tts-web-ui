@@ -1,0 +1,11 @@
+{
+  "//": "Purpose: TypeScript project for the web UI and its unit tests. Scope: src/**, vite and vitest config. Does NOT belong: Shared strictness flags (tsconfig.base.json).",
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "jsx": "react-jsx",
+    "types": ["vite/client", "vitest/globals", "@testing-library/jest-dom"],
+    "paths": { "@/*": ["./src/*"] }
+  },
+  "include": ["src", "vite.config.ts"]
+}

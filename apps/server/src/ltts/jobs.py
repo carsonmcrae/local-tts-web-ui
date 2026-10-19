@@ -1,0 +1,189 @@
+"""Purpose: Background jobs (model installs, exports) with progress, cancellation and recovery.
+
+Scope: Runs each job on its own daemon thread, de-duplicates identical active jobs, throttles
+progress writes to SQLite, maps failures to stable error codes, and marks jobs that were running
+when the server stopped as ``interrupted`` so the UI can offer a resume.
+Does NOT belong: What a job does — callers pass the work function.
+"""
+
+from __future__ import annotations
+
+import json
+import logging
+import threading
+import time
+from collections.abc import Callable
+from enum import StrEnum
+from typing import Any
+
+from ltts.common import ApiModel, new_id, utc_now
+from ltts.db import Database
+from ltts.errors import AppError, NotFoundError
+
+log = logging.getLogger("ltts.jobs")
+_WRITE_INTERVAL_S = 0.5
+
+
+class JobStatus(StrEnum):
+    QUEUED = "queued"
+    RUNNING = "running"
+    SUCCEEDED = "succeeded"
+    FAILED = "failed"
+    CANCELED = "canceled"
+    INTERRUPTED = "interrupted"
+
+
+ACTIVE = {JobStatus.QUEUED, JobStatus.RUNNING}
+
+
+class JobOut(ApiModel):
+    id: str
+    kind: str
+    status: JobStatus
+    progress: float
+    message: str
+    payload: dict[str, Any]
+    result: dict[str, Any] | None
+    error_code: str | None
+    created_at: str
+    updated_at: str
+
+
+class JobCanceledError(Exception):
+    """Raised inside job code when cancellation was requested."""
+
+
+class JobContext:
+    def __init__(self, manager: JobManager, job_id: str, cancel: threading.Event):
+        self.job_id = job_id
+        self._manager = manager
+        self._cancel = cancel
+        self._last_write = 0.0
+
+    @property
+    def canceled(self) -> bool:
+        return self._cancel.is_set()
+
+    def check(self) -> None:
+        if self._cancel.is_set():
+            raise JobCanceledError
+
+    def update(self, progress: float, message: str, *, force: bool = False) -> None:
+        now = time.monotonic()
+        if force or now - self._last_write >= _WRITE_INTERVAL_S:
+            self._last_write = now
+            self._manager._write(self.job_id, progress=max(0.0, min(progress, 1.0)), message=message)
+
+
+JobFn = Callable[[JobContext], dict[str, Any] | None]
+
+
+def _row_to_job(row: Any) -> JobOut:
+    return JobOut(
+        id=row["id"],
+        kind=row["kind"],
+        status=JobStatus(row["status"]),
+        progress=row["progress"],
+        message=row["message"],
+        payload=json.loads(row["payload_json"]),
+        result=json.loads(row["result_json"]) if row["result_json"] else None,
+        error_code=row["error_code"],
+        created_at=row["created_at"],
+        updated_at=row["updated_at"],
+    )
+
+
+class JobManager:
+    def __init__(self, db: Database):
+        self._db = db
+        self._lock = threading.Lock()
+        self._cancel: dict[str, threading.Event] = {}
+
+    def recover(self) -> int:
+        with self._db.connect() as conn:
+            return conn.execute(
+                "UPDATE jobs SET status = ?, message = ?, updated_at = ? WHERE status IN (?, ?)",
+                (JobStatus.INTERRUPTED, "Stopped when the app shut down.", utc_now(), *ACTIVE),
+            ).rowcount
+
+    def _write(self, job_id: str, **fields: Any) -> None:
+        if "result" in fields:
+            fields["result_json"] = json.dumps(fields.pop("result"))
+        assignments = ", ".join(f"{name} = :{name}" for name in fields)
+        with self._db.connect() as conn:
+            conn.execute(
+                f"UPDATE jobs SET {assignments}, updated_at = :updated_at WHERE id = :id",  # noqa: S608 - fixed names
+                {**fields, "updated_at": utc_now(), "id": job_id},
+            )
+
+    def find_active(self, kind: str, key: str) -> JobOut | None:
+        for job in self.list_recent(kind=kind):
+            if job.status in ACTIVE and job.payload.get("key") == key:
+                return job
+        return None
+
+    def submit(self, kind: str, payload: dict[str, Any], work: JobFn, *, key: str | None = None) -> JobOut:
+        with self._lock:
+            if key is not None and (existing := self.find_active(kind, key)):
+                return existing
+            job_id = new_id()
+            now = utc_now()
+            with self._db.connect() as conn:
+                conn.execute(
+                    "INSERT INTO jobs VALUES (?, ?, ?, 0, ?, ?, NULL, NULL, ?, ?)",
+                    (
+                        job_id,
+                        kind,
+                        JobStatus.QUEUED,
+                        "Waiting to start…",
+                        json.dumps({**payload, "key": key}),
+                        now,
+                        now,
+                    ),
+                )
+            cancel = threading.Event()
+            self._cancel[job_id] = cancel
+        thread = threading.Thread(target=self._run, args=(job_id, work, cancel), name=f"job-{kind}", daemon=True)
+        thread.start()
+        return self.get(job_id)
+
+    def _run(self, job_id: str, work: JobFn, cancel: threading.Event) -> None:
+        context = JobContext(self, job_id, cancel)
+        self._write(job_id, status=JobStatus.RUNNING, message="Starting…")
+        try:
+            result = work(context)
+            self._write(job_id, status=JobStatus.SUCCEEDED, progress=1.0, message="Done", result=result or {})
+        except JobCanceledError:
+            self._write(job_id, status=JobStatus.CANCELED, message="Canceled")
+        except AppError as exc:
+            self._write(job_id, status=JobStatus.FAILED, message=exc.message, error_code=exc.code)
+        except Exception:
+            log.exception("job failed", extra={"job_id": job_id})
+            self._write(
+                job_id,
+                status=JobStatus.FAILED,
+                message="The job failed unexpectedly.",
+                error_code="internal_error",
+            )
+        finally:
+            self._cancel.pop(job_id, None)
+
+    def get(self, job_id: str) -> JobOut:
+        with self._db.connect() as conn:
+            row = conn.execute("SELECT * FROM jobs WHERE id = ?", (job_id,)).fetchone()
+        if row is None:
+            raise NotFoundError("That job does not exist.", code="job_not_found")
+        return _row_to_job(row)
+
+    def list_recent(self, *, kind: str | None = None, limit: int = 50) -> list[JobOut]:
+        where = " WHERE kind = ?" if kind else ""
+        query = f"SELECT * FROM jobs{where} ORDER BY created_at DESC LIMIT ?"  # noqa: S608 - constant fragments
+        params: tuple[Any, ...] = (kind, limit) if kind else (limit,)
+        with self._db.connect() as conn:
+            return [_row_to_job(row) for row in conn.execute(query, params).fetchall()]
+
+    def cancel(self, job_id: str) -> JobOut:
+        event = self._cancel.get(job_id)
+        if event is not None:
+            event.set()
+        return self.get(job_id)

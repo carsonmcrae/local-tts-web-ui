@@ -1,0 +1,96 @@
+{
+  "//": "Purpose: Approved model artifacts \u2014 exact URLs, sizes and SHA-256 digests. Scope: Every file the app may download at runtime. Does NOT belong: Python/npm dependency pins. Changing an entry requires the provenance review in docs/security/model-provenance.md.",
+  "version": 1,
+  "allowedHosts": [
+    "github.com",
+    "objects.githubusercontent.com",
+    "release-assets.githubusercontent.com",
+    "huggingface.co",
+    ".huggingface.co",
+    ".hf.co"
+  ],
+  "artifacts": {
+    "kokoro-v1.0": {
+      "engine": "kokoro",
+      "label": "Kokoro 82M v1.0 (ONNX)",
+      "source": "https://github.com/thewh1teagle/kokoro-onnx/releases/tag/model-files-v1.1",
+      "license": "Apache-2.0 model weights (hexgrad/Kokoro-82M); ONNX export by kokoro-onnx (MIT)",
+      "files": [
+        {
+          "name": "kokoro-v1.0.onnx",
+          "url": "https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.1/kokoro-v1.0.onnx",
+          "size": 325505369,
+          "sha256": "beb0d1848dee9a49da392cc3df26958d46cfa35d321edf434f52949153f0df3a"
+        },
+        {
+          "name": "voices-v1.0.bin",
+          "url": "https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.1/voices-v1.0.bin",
+          "size": 28214398,
+          "sha256": "bca610b8308e8d99f32e6fe4197e7ec01679264efed0cac9140fe9c29f1fbf7d"
+        }
+      ]
+    },
+    "chatterbox-turbo": {
+      "engine": "chatterbox",
+      "label": "Chatterbox Turbo (350M)",
+      "source": "https://huggingface.co/ResembleAI/chatterbox-turbo/tree/749d1c1a46eb10492095d68fbcf55691ccf137cd",
+      "license": "MIT (code and weights, Resemble AI). Output carries Resemble's Perth imperceptible watermark.",
+      "files": [
+        {
+          "name": "t3_turbo_v1.safetensors",
+          "url": "https://huggingface.co/ResembleAI/chatterbox-turbo/resolve/749d1c1a46eb10492095d68fbcf55691ccf137cd/t3_turbo_v1.safetensors",
+          "size": 1915480052,
+          "sha256": "fcf1f8c1d651bb7e3acd69ee5be269b4ac10c02980b7708213d598bc9f7cdf87"
+        },
+        {
+          "name": "s3gen_meanflow.safetensors",
+          "url": "https://huggingface.co/ResembleAI/chatterbox-turbo/resolve/749d1c1a46eb10492095d68fbcf55691ccf137cd/s3gen_meanflow.safetensors",
+          "size": 1064875036,
+          "sha256": "d65cb687a2ed581ee6cc297e919ffefa63386944f42364ae13b78a594945514f"
+        },
+        {
+          "name": "ve.safetensors",
+          "url": "https://huggingface.co/ResembleAI/chatterbox-turbo/resolve/749d1c1a46eb10492095d68fbcf55691ccf137cd/ve.safetensors",
+          "size": 5695784,
+          "sha256": "f0921cab452fa278bc25cd23ffd59d36f816d7dc5181dd1bef9751a7fb61f63c"
+        },
+        {
+          "name": "conds.pt",
+          "url": "https://huggingface.co/ResembleAI/chatterbox-turbo/resolve/749d1c1a46eb10492095d68fbcf55691ccf137cd/conds.pt",
+          "size": 169454,
+          "sha256": "b1852099306fd6a7814eb9d0bd10186caba7249596cc23868f78a0eefbfa5033"
+        },
+        {
+          "name": "vocab.json",
+          "url": "https://huggingface.co/ResembleAI/chatterbox-turbo/resolve/749d1c1a46eb10492095d68fbcf55691ccf137cd/vocab.json",
+          "size": 999186,
+          "sha256": "f6bd25a65e4e63ca31360e9fb11c7e4f9a391a78385d640acd814092dd6eee4f"
+        },
+        {
+          "name": "merges.txt",
+          "url": "https://huggingface.co/ResembleAI/chatterbox-turbo/resolve/749d1c1a46eb10492095d68fbcf55691ccf137cd/merges.txt",
+          "size": 456318,
+          "sha256": "1ce1664773c50f3e0cc8842619a93edc4624525b728b188a9e0be33b7726adc5"
+        },
+        {
+          "name": "tokenizer_config.json",
+          "url": "https://huggingface.co/ResembleAI/chatterbox-turbo/resolve/749d1c1a46eb10492095d68fbcf55691ccf137cd/tokenizer_config.json",
+          "size": 3878,
+          "sha256": "bca16a2ac1ddbd78b8d6228f0031884cc74b6ea54b967d6f6d2ebae9ccde23e6"
+        },
+        {
+          "name": "special_tokens_map.json",
+          "url": "https://huggingface.co/ResembleAI/chatterbox-turbo/resolve/749d1c1a46eb10492095d68fbcf55691ccf137cd/special_tokens_map.json",
+          "size": 470,
+          "sha256": "92ba8063bf40aa163eadebbfe0de07c2aebe44cf0d4a9e8726580b0781fd2640"
+        },
+        {
+          "name": "added_tokens.json",
+          "url": "https://huggingface.co/ResembleAI/chatterbox-turbo/resolve/749d1c1a46eb10492095d68fbcf55691ccf137cd/added_tokens.json",
+          "size": 418,
+          "sha256": "72e4ab6acb0d9309ac3df4b526ae5fd80a2da5bc5ab7bb02d85096a374f69193"
+        }
+      ]
+    }
+  }
+}

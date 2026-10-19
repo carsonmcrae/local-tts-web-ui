@@ -1,0 +1,4 @@
+{
+  "//": "Purpose: Files allowed to exceed the 500-line limit, each with a reason. Scope: Used by scripts/check-file-size.mjs. Does NOT belong: Generated files or lockfiles (always exempt).",
+  "files": {}
+}

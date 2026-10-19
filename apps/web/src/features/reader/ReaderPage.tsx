@@ -1,0 +1,169 @@
+/**
+ * Purpose: The reading view for one document.
+ * Scope: Loads the document into the player at the saved position (without auto-playing), follows
+ *   the spoken section while playing, offers the contents panel (sidebar on desktop, dialog on
+ *   phones), and composes the header, warnings, section text and section pager.
+ * Does NOT belong: Player controls (PlayerBar) or text rendering details (DocumentText).
+ */
+import { ListTree } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { Link, useParams } from 'react-router';
+import { ApiError, describeError } from '@/api/client';
+import { useDocument, usePreferences } from '@/api/queries';
+import type { DocumentDetail, SectionOut } from '@/api/types';
+import { buttonClasses } from '@/components/ui/Button';
+import { Dialog } from '@/components/ui/Dialog';
+import { Banner, EmptyState, Skeleton } from '@/components/ui/Feedback';
+import { usePageTitle } from '@/components/ui/Layout';
+import { DefaultVoicesBanner } from '@/features/engines/EngineSetup';
+import type { PlayerDocument } from '@/features/player/controller';
+import { usePlayer } from '@/features/player/PlayerProvider';
+import { ReaderHeader, SectionBody, SectionPager } from './ReaderParts';
+import { SectionNav } from './SectionNav';
+
+function toPlayerDocument(doc: DocumentDetail): PlayerDocument {
+  return {
+    id: doc.id,
+    title: doc.title,
+    segmentCount: doc.segmentCount,
+    estimatedSeconds: doc.estimatedSeconds,
+    sections: doc.sections,
+  };
+}
+
+export function sectionOf(doc: Pick<DocumentDetail, 'sections'>, segment: number): number {
+  return (
+    doc.sections.find((s) => segment >= s.startSegment && segment < s.startSegment + s.segmentCount)
+      ?.index ?? 0
+  );
+}
+
+function Reader({ doc }: Readonly<{ doc: DocumentDetail }>) {
+  usePageTitle(doc.title);
+  const { controller, state } = usePlayer();
+  const preferences = usePreferences();
+  const isLoaded = state.document?.id === doc.id;
+  const speaking = isLoaded ? (controller.sectionAt(state.segmentIndex)?.index ?? null) : null;
+  const [viewed, setViewed] = useState(() => sectionOf(doc, doc.progress?.segmentIndex ?? 0));
+  const [followed, setFollowed] = useState(speaking);
+  const [tocOpen, setTocOpen] = useState(false);
+  const playerDoc = useMemo(() => toPlayerDocument(doc), [doc]);
+
+  // Follow the narration into the next section (adjusting state during render, not in an effect).
+  if (speaking !== followed) {
+    setFollowed(speaking);
+    if (speaking !== null && state.status === 'playing') setViewed(speaking);
+  }
+
+  useEffect(() => {
+    if (state.document?.id !== doc.id)
+      void controller.load(playerDoc, doc.progress?.segmentIndex ?? 0, false);
+    // Only when the document changes; the player owns the position afterwards.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [doc.id]);
+
+  const jump = (target: SectionOut) => {
+    setViewed(target.index);
+    setTocOpen(false);
+    if (isLoaded) void controller.seek(target.startSegment);
+    else void controller.load(playerDoc, target.startSegment, false);
+  };
+  const playFrom = (index: number) => {
+    if (isLoaded && index === state.segmentIndex && state.status !== 'playing')
+      void controller.play();
+    else void controller.load(playerDoc, index, true);
+  };
+  const resumeAt = isLoaded ? state.segmentIndex : (doc.progress?.segmentIndex ?? 0);
+  const playingThis = isLoaded && (state.status === 'playing' || state.status === 'loading');
+  const nav = (
+    <SectionNav sections={doc.sections} viewed={viewed} speaking={speaking} onSelect={jump} />
+  );
+  const multiSection = doc.sections.length > 1;
+
+  return (
+    <div className="mx-auto flex max-w-6xl gap-8 px-4 py-6 sm:px-8 sm:py-8">
+      {multiSection ? (
+        <aside
+          className="sticky top-6 hidden max-h-[calc(100dvh-12rem)] w-64 shrink-0 scrollbar-thin self-start overflow-y-auto lg:block"
+          aria-label="Document contents"
+        >
+          <p className="mb-2 px-2.5 text-xs font-semibold tracking-wide text-subtle uppercase">
+            Contents
+          </p>
+          {nav}
+        </aside>
+      ) : null}
+      <article className="min-w-0 flex-1">
+        <ReaderHeader
+          doc={doc}
+          onContents={multiSection ? () => setTocOpen(true) : undefined}
+          onPlay={() => (playingThis ? controller.pause() : playFrom(resumeAt))}
+          playing={playingThis}
+        />
+        <DefaultVoicesBanner />
+        {doc.warnings.map((warning) => (
+          <Banner key={warning} tone="warning" className="mb-6">
+            {warning}
+          </Banner>
+        ))}
+        {multiSection ? (
+          <p className="mb-6 text-[13px] font-medium text-muted">
+            Section {viewed + 1} of {doc.sections.length} · {doc.sections[viewed]?.title}
+          </p>
+        ) : null}
+        <SectionBody
+          documentId={doc.id}
+          sectionIndex={viewed}
+          activeIndex={isLoaded ? state.segmentIndex : null}
+          autoScroll={preferences.data?.autoScroll ?? true}
+          onSelect={playFrom}
+        />
+        <SectionPager
+          previous={doc.sections[viewed - 1]}
+          next={doc.sections[viewed + 1]}
+          onSelect={(section) => setViewed(section.index)}
+        />
+      </article>
+      <Dialog open={tocOpen} onOpenChange={setTocOpen} title="Contents">
+        {nav}
+      </Dialog>
+    </div>
+  );
+}
+
+export default function ReaderPage() {
+  const { documentId } = useParams();
+  const document = useDocument(documentId);
+  if (document.isPending) {
+    return (
+      <div className="mx-auto max-w-3xl px-6 py-10" role="status" aria-label="Loading document">
+        <Skeleton className="mb-4 h-8 w-2/3" />
+        <Skeleton className="mb-10 h-5 w-1/3" />
+        {[0, 1, 2, 3, 4].map((key) => (
+          <Skeleton key={key} className="mb-3 h-5" />
+        ))}
+      </div>
+    );
+  }
+  if (document.isError) {
+    const missing = document.error instanceof ApiError && document.error.status === 404;
+    return (
+      <EmptyState
+        icon={<ListTree size={26} />}
+        title={
+          missing
+            ? 'This document is no longer in your library'
+            : "This document couldn't be opened"
+        }
+        actions={
+          <Link to="/library" className={buttonClasses('primary')}>
+            Back to library
+          </Link>
+        }
+      >
+        {missing ? 'It may have been deleted.' : describeError(document.error)}
+      </EmptyState>
+    );
+  }
+  return <Reader key={document.data.id} doc={document.data} />;
+}

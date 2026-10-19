@@ -28,11 +28,14 @@ class WorkerError(SynthesisError):
 
 
 class WorkerClient:
-    def __init__(self, argv: list[str], env: dict[str, str], cwd: Path, idle_unload_s: float):
+    def __init__(
+        self, argv: list[str], env: dict[str, str], cwd: Path, idle_unload_s: float, idle_check_s: float = 15.0
+    ):
         self._argv = argv
         self._env = env
         self._cwd = cwd
         self._idle_unload_s = idle_unload_s
+        self._idle_check_s = idle_check_s
         self._proc: subprocess.Popen[str] | None = None
         self._replies: queue.Queue[dict[str, Any]] = queue.Queue()
         self._lock = threading.Lock()
@@ -124,7 +127,7 @@ class WorkerClient:
 
     def _idle_watch(self) -> None:
         while True:
-            time.sleep(15)
+            time.sleep(self._idle_check_s)
             idle = time.monotonic() - self._last_used
             if self.running and idle > self._idle_unload_s and self._lock.acquire(blocking=False):
                 try:

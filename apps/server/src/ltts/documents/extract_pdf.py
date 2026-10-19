@@ -41,25 +41,32 @@ def _running_key(line: str) -> str:
     return re.sub(r"\d+", "#", line.lower()).strip()
 
 
+def _edge_positions(count: int) -> set[int]:
+    """Line positions that may hold a running header/footer; short pages only use the outermost line."""
+    depth = EDGE_LINES if count > 2 * EDGE_LINES + 1 else 1
+    return {*range(min(depth, count)), *range(max(count - depth, 0), count)}
+
+
 def _strip_running_lines(pages: list[list[str]]) -> list[list[str]]:
     """Drop page numbers and lines repeated at the top/bottom of many pages."""
     repeated: set[str] = set()
     if len(pages) >= 3:
         counts: Counter[str] = Counter()
         for lines in pages:
-            counts.update({_running_key(line) for line in lines[:EDGE_LINES] + lines[-EDGE_LINES:]})
+            counts.update({_running_key(lines[i]) for i in _edge_positions(len(lines))})
         threshold = max(2, math.ceil(len(pages) * RUNNING_LINE_SHARE))
         repeated = {key for key, count in counts.items() if count >= threshold}
 
     cleaned: list[list[str]] = []
     for lines in pages:
-        keep = []
-        for position, line in enumerate(lines):
-            at_edge = position < EDGE_LINES or position >= len(lines) - EDGE_LINES
-            if at_edge and (_PAGE_NUMBER.match(line) or _running_key(line) in repeated):
-                continue
-            keep.append(line)
-        cleaned.append(keep)
+        edges = _edge_positions(len(lines))
+        cleaned.append(
+            [
+                line
+                for position, line in enumerate(lines)
+                if position not in edges or not (_PAGE_NUMBER.match(line) or _running_key(line) in repeated)
+            ]
+        )
     return cleaned
 
 
@@ -68,8 +75,22 @@ def _typical_width(pages: list[list[str]]) -> int:
     return lengths[int(len(lengths) * 0.8)] if lengths else 0
 
 
-def _paragraphs(pages: list[list[str]]) -> list[_Paragraph]:
-    """Join lines into paragraphs; a short line followed by a new-block start ends a paragraph."""
+def _ends_paragraph(line: str, nxt: tuple[int, str] | None, page: int, width: int, breaks: set[int]) -> bool:
+    if nxt is None:
+        return True
+    next_page, next_line = nxt
+    if next_page != page and next_page in breaks:  # a chapter starts on the next page
+        return True
+    if not _NEW_BLOCK_START.match(next_line):
+        return False
+    ends = bool(_SENTENCE_END.search(line))
+    if next_page != page and ends:
+        return True
+    return len(line) < 0.75 * width and (ends or len(line) < 0.5 * width)
+
+
+def _paragraphs(pages: list[list[str]], breaks: set[int]) -> list[_Paragraph]:
+    """Join lines into paragraphs; a short line before a new-block start, or a chapter page, ends one."""
     stream = [(page, line) for page, lines in enumerate(pages) for line in lines]
     width = _typical_width(pages)
     paragraphs: list[_Paragraph] = []
@@ -81,10 +102,7 @@ def _paragraphs(pages: list[list[str]]) -> list[_Paragraph]:
             buffer = buffer[:-1] + line
         else:
             buffer = f"{buffer} {line}"
-        nxt = stream[i + 1][1] if i + 1 < len(stream) else ""
-        short = len(line) < 0.75 * width
-        ends = bool(_SENTENCE_END.search(line))
-        if not nxt or (short and _NEW_BLOCK_START.match(nxt) and (ends or len(line) < 0.5 * width)):
+        if _ends_paragraph(line, stream[i + 1] if i + 1 < len(stream) else None, page, width, breaks):
             paragraphs.append(_Paragraph(start_page, clean_inline(buffer)))
             buffer = ""
     return [p for p in paragraphs if p.text]
@@ -100,9 +118,10 @@ def _outline_starts(pdf: pdfium.PdfDocument, page_count: int) -> list[tuple[int,
     top = min(item.level for item in items)
     starts: dict[int, str] = {}
     for item in items:
-        page = item.page_index
+        dest = item.get_dest()
+        page = dest.get_index() if dest is not None else None
         if item.level == top and page is not None and 0 <= page < page_count and page not in starts:
-            starts[page] = clean_inline(item.title or "")[:200] or f"Page {page + 1}"
+            starts[page] = clean_inline(item.get_title() or "")[:200] or f"Page {page + 1}"
     return sorted(starts.items())
 
 
@@ -112,6 +131,8 @@ def _block(text: str, first: bool) -> Block:
 
 
 def _group(paragraphs: list[_Paragraph], starts: list[tuple[int, str]]) -> list[ExtractedSection]:
+    if not paragraphs:
+        return []
     if len(starts) < 2:
         starts = sorted({(p.page, f"Page {p.page + 1}") for p in paragraphs})
     elif starts[0][0] > 0:
@@ -188,6 +209,7 @@ def extract_pdf_file(path: Path, title: str | None, limits: ExtractionLimits) ->
     warnings = []
     if blank:
         warnings.append(f"{blank} of {page_count} pages had no readable text (likely scanned images) and were skipped.")
-    sections = _group(_paragraphs(_strip_running_lines(pages)), starts)
+    breaks = {page for page, _ in starts} if len(starts) >= 2 else set()
+    sections = _group(_paragraphs(_strip_running_lines(pages), breaks), starts)
     usable_title = meta_title if meta_title and not meta_title.lower().startswith("microsoft") else None
     return Extraction(title=usable_title or title, sections=sections, page_count=page_count, warnings=warnings)

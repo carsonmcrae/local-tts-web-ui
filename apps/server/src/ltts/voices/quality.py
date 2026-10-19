@@ -92,11 +92,9 @@ def analyze(samples: Float32Array, sample_rate: int) -> QualityReport:
     levels = frame_rms_db(samples, sample_rate)
     frame_s = 0.03
     speech_frames = levels > SILENCE_DB
-    speech = (
-        samples
-        if not speech_frames.any()
-        else samples[np.repeat(speech_frames, int(sample_rate * frame_s))[: len(samples)]]
-    )
+    # The frame mask covers whole frames only; align the samples to it (the remainder is < 30 ms).
+    mask = np.repeat(speech_frames, max(int(sample_rate * frame_s), 1))
+    speech = samples[: len(mask)][mask] if speech_frames.any() else samples
     peak = float(np.max(np.abs(samples))) if samples.size else 0.0
     values = {
         "duration_s": round(len(samples) / sample_rate, 2),

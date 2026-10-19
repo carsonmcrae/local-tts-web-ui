@@ -11,8 +11,9 @@ from __future__ import annotations
 import re
 import unicodedata
 
-# Soft hyphen, zero-width space/non-joiner/joiner, word joiner and byte-order mark.
-_INVISIBLE = dict.fromkeys([0x00AD, 0x200B, 0x200C, 0x200D, 0x2060, 0xFEFF])
+# Soft hyphen, zero-width space/non-joiner/joiner, word joiner, byte-order mark, and the U+FFFE/U+FFFF
+# noncharacters PDFium emits where it has joined a hyphenated line break.
+_INVISIBLE = dict.fromkeys([0x00AD, 0x200B, 0x200C, 0x200D, 0x2060, 0xFEFF, 0xFFFE, 0xFFFF])
 _CONTROL = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f]")
 # Space, tab, no-break space, the en-quad..hair-space block, narrow/medium/ideographic spaces.
 _SPACE_CHARS = " \t" + "".join(map(chr, [0x00A0, *range(0x2000, 0x200B), 0x202F, 0x205F, 0x3000]))

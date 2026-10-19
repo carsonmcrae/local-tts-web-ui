@@ -60,7 +60,17 @@ def _serve(args: argparse.Namespace) -> int:
     return 0
 
 
+_reported_quarters: set[int] = set()
+
+
 def _progress(done: int, total: int, name: str) -> None:
+    if not sys.stdout.isatty():
+        # Logs (CI, piped output) get one line per 25 % instead of a redrawn bar.
+        quarter = int(4 * done / max(total, 1))
+        if quarter not in _reported_quarters:
+            _reported_quarters.add(quarter)
+            print(f"  {quarter * 25:3d}% ({done / 1_048_576:.0f} of {total / 1_048_576:.0f} MB)", flush=True)
+        return
     filled = int(_BAR_WIDTH * done / max(total, 1))
     sys.stdout.write(f"\r  {name[:28]:<28} [{'#' * filled}{'.' * (_BAR_WIDTH - filled)}] {done / 1_048_576:7.1f} MB")
     sys.stdout.flush()

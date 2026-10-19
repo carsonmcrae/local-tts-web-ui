@@ -11,6 +11,7 @@ import {
   createContext,
   useContext,
   useEffect,
+  useMemo,
   useRef,
   useState,
   useSyncExternalStore,
@@ -32,7 +33,7 @@ function createController(
   media: MediaLike,
   onSaved: (documentId: string) => void,
 ): PlaybackController {
-  const timers = new Map<string, number>();
+  const timers = new Map<string, ReturnType<typeof setTimeout>>();
   return new PlaybackController(
     {
       media,
@@ -42,10 +43,10 @@ function createController(
           signal,
         }),
       saveProgress: (documentId, index, voiceId) => {
-        window.clearTimeout(timers.get(documentId));
+        globalThis.clearTimeout(timers.get(documentId));
         timers.set(
           documentId,
-          window.setTimeout(() => {
+          globalThis.setTimeout(() => {
             api(`/api/documents/${documentId}/progress`, {
               method: 'PUT',
               json: { segmentIndex: index, voiceId },
@@ -133,7 +134,8 @@ export function PlayerProvider({
   useEffect(() => () => controller.unload(), [controller]);
   useMediaSession(controller, state);
 
-  return <PlayerContext.Provider value={{ controller, state }}>{children}</PlayerContext.Provider>;
+  const value = useMemo(() => ({ controller, state }), [controller, state]);
+  return <PlayerContext.Provider value={value}>{children}</PlayerContext.Provider>;
 }
 
 export function usePlayer(): PlayerContextValue {

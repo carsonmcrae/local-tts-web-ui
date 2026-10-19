@@ -28,7 +28,10 @@ interface ExportDialogProps {
 
 type Range = 'all' | 'current' | 'custom';
 
-function JobStatus({ job, onResume }: Readonly<{ job: JobOut; onResume: () => void }>) {
+function JobStatus({
+  job,
+  onResume,
+}: Readonly<{ job: JobOut; onResume: (jobId: string) => void }>) {
   const cancel = useCancelJob();
   if (isJobActive(job)) {
     return (
@@ -73,7 +76,7 @@ function JobStatus({ job, onResume }: Readonly<{ job: JobOut; onResume: () => vo
       tone={job.status === 'failed' ? 'error' : 'warning'}
       title={job.status === 'failed' ? 'Export failed' : 'Export stopped'}
       action={
-        <Button size="sm" icon={<RotateCcw size={14} />} onClick={onResume}>
+        <Button size="sm" icon={<RotateCcw size={14} />} onClick={() => onResume(job.id)}>
           Resume
         </Button>
       }
@@ -93,13 +96,13 @@ export function ExportDialog({
   pace,
 }: Readonly<ExportDialogProps>) {
   const preferences = usePreferences();
-  const [chosenFormat, setFormat] = useState<'mp3' | 'wav' | null>(null);
+  const [chosenFormat, setChosenFormat] = useState<'mp3' | 'wav' | null>(null);
   const [layout, setLayout] = useState<'single' | 'chapters'>('single');
   const [range, setRange] = useState<Range>('all');
   const [first, setFirst] = useState(0);
   const [last, setLast] = useState(Math.max(sections.length - 1, 0));
   const [jobId, setJobId] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const start = useStartExport();
   const job = useJob(jobId);
 
@@ -113,21 +116,20 @@ export function ExportDialog({
 
   const begin = () => {
     const [firstSection, lastSection] = bounds();
-    setError(null);
+    setErrorMessage(null);
     start.mutate(
       { documentId, voiceId, pace, format, layout, firstSection, lastSection },
       {
         onSuccess: (created) => setJobId(created.id),
-        onError: (failure) => setError(describeError(failure)),
+        onError: (error) => setErrorMessage(describeError(error)),
       },
     );
   };
 
-  const resume = () => {
-    if (!jobId) return;
-    api<JobOut>(`/api/exports/${jobId}/resume`, { method: 'POST' })
+  const resume = (stoppedJobId: string) => {
+    api<JobOut>(`/api/exports/${stoppedJobId}/resume`, { method: 'POST' })
       .then((created) => setJobId(created.id))
-      .catch((failure: unknown) => setError(describeError(failure)));
+      .catch((error: unknown) => setErrorMessage(describeError(error)));
   };
 
   const active = isJobActive(job.data);
@@ -165,7 +167,7 @@ export function ExportDialog({
                 id={id}
                 aria-describedby={describedBy}
                 value={format}
-                onChange={(event) => setFormat(event.target.value as 'mp3' | 'wav')}
+                onChange={(event) => setChosenFormat(event.target.value as 'mp3' | 'wav')}
               >
                 <option value="mp3">MP3</option>
                 <option value="wav">WAV</option>
@@ -232,7 +234,7 @@ export function ExportDialog({
             ))}
           </div>
         ) : null}
-        {error ? <Banner tone="error">{error}</Banner> : null}
+        {errorMessage ? <Banner tone="error">{errorMessage}</Banner> : null}
         {job.data ? <JobStatus job={job.data} onResume={resume} /> : null}
       </div>
     </Dialog>

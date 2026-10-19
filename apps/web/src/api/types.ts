@@ -9,6 +9,7 @@ type Schemas = components['schemas'];
 
 export type DocumentSummary = Schemas['DocumentSummary'];
 export type DocumentDetail = Schemas['DocumentDetail'];
+export type ReadingProgress = Schemas['ReadingProgress'];
 export type SectionOut = Schemas['SectionOut'];
 export type SectionContent = Schemas['SectionContent'];
 export type SegmentOut = Schemas['SegmentOut'];

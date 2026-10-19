@@ -46,7 +46,7 @@ export class MicRecorder {
   private readonly levelBuffer = new Float32Array(2048);
 
   static check(): void {
-    if (!window.isSecureContext)
+    if (!globalThis.isSecureContext)
       throw new MicrophoneError(
         'insecure',
         'Recording needs a secure page (localhost or HTTPS). Import a recording instead, or open the app on this computer.',

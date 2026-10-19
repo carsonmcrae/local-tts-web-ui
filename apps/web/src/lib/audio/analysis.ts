@@ -31,20 +31,16 @@ const FRAME_S = 0.03;
 
 const toDb = (value: number) => Math.round(20 * Math.log10(Math.max(value, 1e-9)) * 10) / 10;
 
+/** The p-th percentile of sorted levels; with no frames at all it is the -120 dB floor. */
 function percentile(sorted: Float64Array, p: number): number {
-  if (sorted.length === 0) return -120;
   return sorted[Math.min(sorted.length - 1, Math.floor((p / 100) * sorted.length))] ?? -120;
 }
 
-function frameLevels(samples: Float32Array, frame: number): Float64Array {
-  const count = Math.floor(samples.length / frame);
-  const levels = new Float64Array(count);
-  for (let f = 0; f < count; f += 1) {
-    let sum = 0;
-    for (let i = f * frame; i < (f + 1) * frame; i += 1) sum += (samples[i] ?? 0) ** 2;
-    levels[f] = 20 * Math.log10(Math.sqrt(sum / frame + 1e-12));
-  }
-  return levels;
+/** Sum of squared samples in each whole frame (a trailing partial frame is ignored). */
+function frameEnergies(samples: Float32Array, frame: number): Float64Array {
+  return Float64Array.from({ length: Math.floor(samples.length / frame) }, (_, f) =>
+    samples.subarray(f * frame, (f + 1) * frame).reduce((sum, value) => sum + value ** 2, 0),
+  );
 }
 
 type Rule = [metric: keyof LocalReport, below: boolean, threshold: number, issue: LocalIssue];
@@ -144,14 +140,12 @@ const RULES: Rule[] = [
 
 export function analyzeSamples(samples: Float32Array, sampleRate: number): LocalReport {
   const frame = Math.max(1, Math.floor(sampleRate * FRAME_S));
-  const levels = frameLevels(samples, frame);
-  let speechFrames = 0;
-  let speechEnergy = 0;
-  levels.forEach((level, f) => {
-    if (level <= SILENCE_DB) return;
-    speechFrames += 1;
-    for (let i = f * frame; i < (f + 1) * frame; i += 1) speechEnergy += (samples[i] ?? 0) ** 2;
-  });
+  const energies = frameEnergies(samples, frame);
+  const toLevel = (energy: number) => 20 * Math.log10(Math.sqrt(energy / frame + 1e-12));
+  const levels = energies.map(toLevel);
+  const speech = energies.filter((energy) => toLevel(energy) > SILENCE_DB);
+  const speechFrames = speech.length;
+  const speechEnergy = speech.reduce((sum, energy) => sum + energy, 0);
   let peak = 0;
   let clipped = 0;
   for (const value of samples) {

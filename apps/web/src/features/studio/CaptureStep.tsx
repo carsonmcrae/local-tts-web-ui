@@ -26,18 +26,23 @@ const MAX_RECORD_S = 45;
 const TARGET_S = 20;
 const MAX_IMPORT_BYTES = 20 * 1024 * 1024;
 
+/** Colour of one meter bar: lit bars turn red near the top of the range, as a clipping warning. */
+function barColor(lit: boolean, hot: boolean): string {
+  if (!lit) return 'bg-surface-3';
+  return hot ? 'bg-danger' : 'bg-accent';
+}
+
 function LevelMeter({ level }: Readonly<{ level: number }>) {
   const bars = 24;
   return (
     <div className="flex h-8 items-end gap-[3px]" aria-hidden="true">
       {Array.from({ length: bars }, (_, i) => {
-        const on = level * bars > i;
         return (
           <span
             key={i}
             className={cn(
               'w-1.5 rounded-sm transition-[height,background-color] duration-75',
-              on ? (i > bars * 0.85 ? 'bg-danger' : 'bg-accent') : 'bg-surface-3',
+              barColor(level * bars > i, i > bars * 0.85),
             )}
             style={{ height: `${30 + (i / bars) * 70}%` }}
           />
@@ -51,15 +56,18 @@ export function CaptureStep({
   onCaptured,
 }: Readonly<{ onCaptured: (clip: CapturedClip) => void }>) {
   const [scriptIndex, setScriptIndex] = useState(0);
-  const [recording, setRecording] = useState(false);
+  // The recorder while a take is in progress (null when idle).
+  const [active, setActive] = useState<MicRecorder | null>(null);
   const [elapsed, setElapsed] = useState(0);
   const [level, setLevel] = useState(0);
-  const [error, setError] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  // Mirrors `active` for the unmount cleanup, which must release the microphone.
   const recorder = useRef<MicRecorder | null>(null);
   const frame = useRef(0);
   const fileInput = useRef<HTMLInputElement>(null);
-  const script = SCRIPTS[scriptIndex] ?? SCRIPTS[0];
+  const recording = active !== null;
+  const script = SCRIPTS[scriptIndex];
 
   useEffect(
     () => () => {
@@ -69,51 +77,49 @@ export function CaptureStep({
     [],
   );
 
-  const finish = async () => {
+  const finish = async (session: MicRecorder) => {
     cancelAnimationFrame(frame.current);
-    const active = recorder.current;
     recorder.current = null;
-    setRecording(false);
-    if (!active) return;
+    setActive(null);
     setBusy(true);
     try {
-      const blob = await active.stop();
+      const blob = await session.stop();
       const clip = await decodeToClip(await blob.arrayBuffer(), MAX_RECORD_S + 5);
       onCaptured({ samples: clip.samples, sampleRate: clip.sampleRate, source: 'recording' });
     } catch {
-      setError('The recording could not be processed. Please try again.');
+      setErrorMessage('The recording could not be processed. Please try again.');
     } finally {
       setBusy(false);
     }
   };
 
   const start = async () => {
-    setError(null);
+    setErrorMessage(null);
     const next = new MicRecorder();
     try {
       await next.start();
-    } catch (failure) {
-      setError(explainMicrophoneError(failure).message);
+    } catch (error) {
+      setErrorMessage(explainMicrophoneError(error).message);
       return;
     }
     recorder.current = next;
     setElapsed(0);
-    setRecording(true);
+    setActive(next);
     const begin = performance.now();
     const tick = () => {
       const seconds = (performance.now() - begin) / 1000;
       setElapsed(seconds);
-      setLevel(recorder.current?.level() ?? 0);
-      if (seconds >= MAX_RECORD_S) void finish();
+      setLevel(next.level());
+      if (seconds >= MAX_RECORD_S) void finish(next);
       else frame.current = requestAnimationFrame(tick);
     };
     frame.current = requestAnimationFrame(tick);
   };
 
   const importFile = async (file: File) => {
-    setError(null);
+    setErrorMessage(null);
     if (file.size > MAX_IMPORT_BYTES) {
-      setError('That file is larger than 20 MB. Trim it to under a minute and try again.');
+      setErrorMessage('That file is larger than 20 MB. Trim it to under a minute and try again.');
       return;
     }
     setBusy(true);
@@ -126,7 +132,7 @@ export function CaptureStep({
         ...(clip.trimmed ? { note: 'Only the first 45 seconds were kept.' } : {}),
       });
     } catch {
-      setError('This browser couldn’t decode that file. Try WAV, MP3, M4A or FLAC.');
+      setErrorMessage('This browser couldn’t decode that file. Try WAV, MP3, M4A or FLAC.');
     } finally {
       setBusy(false);
     }
@@ -153,7 +159,7 @@ export function CaptureStep({
       </div>
 
       <div className="flex flex-col items-center gap-4 rounded-[var(--radius-lg)] border border-line p-5">
-        {recording ? (
+        {active ? (
           <>
             <LevelMeter level={level} />
             <p className="text-2xl font-semibold tabular-nums" aria-live="off">
@@ -169,7 +175,7 @@ export function CaptureStep({
               variant="danger"
               size="lg"
               icon={<Square size={16} fill="currentColor" />}
-              onClick={() => void finish()}
+              onClick={() => void finish(active)}
             >
               Stop recording
             </Button>
@@ -216,7 +222,7 @@ export function CaptureStep({
           </>
         )}
       </div>
-      {error ? <Banner tone="error">{error}</Banner> : null}
+      {errorMessage ? <Banner tone="error">{errorMessage}</Banner> : null}
     </div>
   );
 }

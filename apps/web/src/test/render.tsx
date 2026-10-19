@@ -1,21 +1,23 @@
 /**
  * Purpose: Test harness for rendering screens with the app's real providers.
  * Scope: A route-table API mock for `fetch` (matched by method and path prefix), sample API objects,
- *   and `renderWithApp` that mounts the component inside QueryClient, Toast and Player providers and
- *   a memory router.
+ *   routes for reading a document (details, section text, segment audio), `renderWithApp` that
+ *   mounts the component inside QueryClient, Toast and Player providers and a memory router, and
+ *   `PlayerSpy` for tests that need to drive the shared player directly.
  * Does NOT belong: Assertions or per-test data beyond shared fixtures.
  */
 import type { QueryClient } from '@tanstack/react-query';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { render } from '@testing-library/react';
 import type { ReactNode } from 'react';
+import { useEffect } from 'react';
 import { createMemoryRouter, RouterProvider } from 'react-router';
 import { vi } from 'vitest';
 import type { DocumentDetail, EngineInfo, Preferences, VoiceInfo } from '@/api/types';
 import { createQueryClient } from '@/app/App';
 import { ToastProvider } from '@/components/ui/Toast';
 import type { MediaLike } from '@/features/player/controller';
-import { PlayerProvider } from '@/features/player/PlayerProvider';
+import { PlayerProvider, usePlayer } from '@/features/player/PlayerProvider';
 
 type Handler = (url: URL, init: RequestInit) => unknown;
 
@@ -41,7 +43,9 @@ export function mockApi(routes: Record<string, Handler | unknown>) {
     if (!key)
       return json({ error: { code: 'not_mocked', message: `${method} ${url.pathname}` } }, 404);
     const route = routes[key];
-    const result = typeof route === 'function' ? (route as Handler)(url, init) : route;
+    // Handlers may return a promise, e.g. to hold a request open while a test inspects the UI.
+    const result: unknown =
+      typeof route === 'function' ? await (route as Handler)(url, init) : route;
     return result instanceof Response ? result : json(result);
   });
   vi.stubGlobal('fetch', fetchMock);
@@ -172,3 +176,43 @@ export const documentDetail = (overrides: Partial<DocumentDetail> = {}): Documen
   warnings: [],
   ...overrides,
 });
+
+/** Text of one section: its title as a heading, then "Sentence N." for each later segment. */
+function sectionText(doc: DocumentDetail, sectionIndex: number) {
+  const section = doc.sections[sectionIndex];
+  const start = section?.startSegment ?? 0;
+  const count = section?.segmentCount ?? doc.segmentCount;
+  return {
+    sectionIndex,
+    segments: Array.from({ length: count }, (_, offset) => ({
+      index: start + offset,
+      sectionIndex,
+      paragraphIndex: offset === 0 && section ? 0 : 1,
+      kind: offset === 0 && section ? ('heading' as const) : ('paragraph' as const),
+      boundary: 'sentence' as const,
+      text: offset === 0 && section ? section.title : `Sentence ${start + offset + 1}.`,
+    })),
+  };
+}
+
+/** Routes for reading `doc`: its details, each section's text and audio for every segment. */
+export function readerRoutes(doc: DocumentDetail = documentDetail()) {
+  return {
+    [`GET /api/documents/${doc.id}`]: doc,
+    [`GET /api/documents/${doc.id}/sections/`]: (url: URL) =>
+      sectionText(doc, Number(url.pathname.split('/').pop())),
+    [`GET /api/documents/${doc.id}/segments`]: () =>
+      new Response(new Blob(['wav']), { headers: { 'X-Audio-Duration': '2' } }),
+  };
+}
+
+type Player = ReturnType<typeof usePlayer>;
+
+/** Hands the app's player (controller and current state) to a test after every render. */
+export function PlayerSpy({ onPlayer }: Readonly<{ onPlayer: (player: Player) => void }>) {
+  const player = usePlayer();
+  useEffect(() => {
+    onPlayer(player);
+  }, [onPlayer, player]);
+  return null;
+}

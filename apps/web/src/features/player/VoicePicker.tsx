@@ -21,12 +21,12 @@ interface VoicePickerProps {
 
 export function groupVoices(voices: VoiceInfo[], query: string): [string, VoiceInfo[]][] {
   const needle = query.trim().toLowerCase();
-  const matches = voices.filter((voice) =>
-    !needle
-      ? true
-      : `${voice.name} ${voice.language} ${voice.engineId} ${voice.gender}`
-          .toLowerCase()
-          .includes(needle),
+  const matches = voices.filter(
+    (voice) =>
+      !needle ||
+      `${voice.name} ${voice.language} ${voice.engineId} ${voice.gender}`
+        .toLowerCase()
+        .includes(needle),
   );
   const groups = new Map<string, VoiceInfo[]>();
   for (const voice of matches) {
@@ -70,9 +70,9 @@ export function VoicePicker({
           aria-label={`Voice: ${current?.name ?? 'none selected'}. Change voice`}
         >
           <AudioLines size={17} className="shrink-0" />
-          {!compact ? (
+          {compact ? null : (
             <span className="max-w-32 truncate">{current?.name ?? 'Choose voice'}</span>
-          ) : null}
+          )}
         </button>
       }
     >
@@ -91,7 +91,9 @@ export function VoicePicker({
           />
         </div>
       </div>
-      <div
+      {/* A custom listbox: options are filtered by the search box, grouped by language and shown
+          disabled with a reason, none of which a native <select> can render (S6819 suggests one). */}
+      <div // NOSONAR(typescript:S6819): custom listbox, see the comment above
         className="max-h-80 scrollbar-thin overflow-y-auto p-1.5"
         role="listbox"
         aria-label="Voices"
@@ -100,10 +102,10 @@ export function VoicePicker({
           <p className="p-3 text-sm text-muted">No voices match “{query}”.</p>
         ) : null}
         {groups.map(([group, items]) => (
-          <div key={group} role="group" aria-label={group} className="mb-1">
-            <p className="px-2.5 pt-2 pb-1 text-[11px] font-semibold tracking-wide text-subtle uppercase">
+          <fieldset key={group} className="mb-1 min-w-0">
+            <legend className="px-2.5 pt-2 pb-1 text-[11px] font-semibold tracking-wide text-subtle uppercase">
               {group}
-            </p>
+            </legend>
             {items.map((voice) => (
               <button
                 key={voice.id}
@@ -125,12 +127,12 @@ export function VoicePicker({
                   {voice.gender === 'unspecified' ? '' : voice.gender}
                 </span>
                 {voice.qualityGrade ? <Badge>{voice.qualityGrade}</Badge> : null}
-                {!voice.available ? (
+                {voice.available ? null : (
                   <span className="text-xs text-subtle">Not installed</span>
-                ) : null}
+                )}
               </button>
             ))}
-          </div>
+          </fieldset>
         ))}
       </div>
     </Popover>

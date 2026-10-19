@@ -43,8 +43,9 @@ export function Slider({
       max={max}
       step={step}
       disabled={disabled ?? false}
-      onValueChange={(values) => onChange(values[0] ?? min)}
-      onValueCommit={(values) => onCommit?.(values[0] ?? min)}
+      // Radix reports one value per thumb, and this slider has exactly one.
+      onValueChange={(values) => values.forEach((next) => onChange(next))}
+      onValueCommit={(values) => values.forEach((next) => onCommit?.(next))}
     >
       <RadixSlider.Track className="relative h-1.5 grow overflow-hidden rounded-full bg-surface-3">
         <RadixSlider.Range className="absolute h-full rounded-full bg-accent" />

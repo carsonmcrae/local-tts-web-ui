@@ -53,7 +53,8 @@ function useServerAnalysis(wav: Blob) {
 function readAsDataUrl(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result));
+    // readAsDataURL always produces a string result.
+    reader.onload = () => resolve(reader.result as string);
     reader.onerror = () => reject(reader.error ?? new Error('Could not read the recording.'));
     reader.readAsDataURL(blob);
   });

@@ -120,7 +120,7 @@ export function VoiceCard({
         <Badge tone={voice.category === 'custom' ? 'success' : 'neutral'}>
           {voice.category === 'custom' ? 'Custom' : 'Built-in'}
         </Badge>
-        {!voice.available ? <Badge tone="warning">Engine not installed</Badge> : null}
+        {voice.available ? null : <Badge tone="warning">Engine not installed</Badge>}
       </div>
       {voice.description ? (
         <p className="text-[13px] leading-snug text-muted">{voice.description}</p>

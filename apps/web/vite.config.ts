@@ -44,7 +44,7 @@ export default defineConfig({
       reporter: ['text-summary', 'lcov'],
       include: ['src/**/*.{ts,tsx}'],
       exclude: ['src/**/*.test.{ts,tsx}', 'src/test/**', 'src/api/schema.gen.ts', 'src/main.tsx'],
-      thresholds: { lines: 75, functions: 70, branches: 65, statements: 73 },
+      thresholds: { lines: 100, functions: 100, branches: 100, statements: 100 },
     },
   },
 });

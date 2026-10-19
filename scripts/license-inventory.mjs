@@ -1,0 +1,153 @@
+// @ts-check
+/**
+ * Purpose: Produce the dependency license inventory and fail on unreviewed copyleft licenses.
+ * Scope: Production npm packages (from node_modules package.json files reachable from the web app)
+ *   and the server's runtime Python packages (via importlib.metadata in the locked environment).
+ *   Writes docs/security/license-inventory.generated.md. GPL/AGPL/LGPL entries must be listed in
+ *   ALLOWED_COPYLEFT with the reason they are acceptable.
+ * Does NOT belong: Model-weight licenses (docs/security/model-provenance.md).
+ */
+import { spawnSync } from 'node:child_process';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import path from 'node:path';
+import { color, ok } from './lib/log.mjs';
+import { repoRoot, serverDir } from './lib/paths.mjs';
+import { resolveUv, uvEnv } from './lib/uv.mjs';
+
+/** Copyleft components that are acceptable, and why. Keep this list short and justified. */
+const ALLOWED_COPYLEFT = {
+  phonemizer:
+    'GPL-3.0 phonemiser used by kokoro-onnx; installed as a separate package, not distributed with this repo.',
+  'espeakng-loader':
+    'Ships the GPL-3.0 espeak-ng library used for phonemisation; installed by uv, not redistributed.',
+};
+/** Packages whose metadata omits a license, with the license from their upstream LICENSE file. */
+const METADATA_OVERRIDES = {
+  'kokoro-onnx': 'MIT (upstream LICENSE; not in package metadata)',
+  'espeakng-loader': 'MIT wrapper bundling espeak-ng (GPL-3.0)',
+};
+const COPYLEFT = /\b(A?GPL|LGPL)/i;
+
+/** @param {string} name @param {Set<string>} seen @param {Map<string, string>} out */
+function walkNpm(name, seen, out) {
+  if (seen.has(name)) return;
+  seen.add(name);
+  const manifest = path.join(repoRoot, 'node_modules', name, 'package.json');
+  if (!existsSync(manifest)) return;
+  const json = JSON.parse(readFileSync(manifest, 'utf8'));
+  out.set(
+    `${json.name}@${json.version}`,
+    typeof json.license === 'string' ? json.license : 'UNKNOWN',
+  );
+  for (const dep of Object.keys(json.dependencies ?? {})) walkNpm(dep, seen, out);
+}
+
+async function pythonLicenses() {
+  const uv = await resolveUv({ allowDownload: false });
+  const script =
+    'import json,importlib.metadata as m\n' +
+    'out={}\n' +
+    'for d in m.distributions():\n' +
+    '    meta=d.metadata\n' +
+    '    lic=meta.get("License-Expression") or ""\n' +
+    '    if not lic:\n' +
+    '        cls=[c.split("::")[-1].strip() for c in (meta.get_all("Classifier") or []) if c.startswith("License ::")]\n' +
+    '        lic="; ".join(cls) or (meta.get("License") or "UNKNOWN").splitlines()[0][:60]\n' +
+    '    out[f"{meta[\'Name\']}=={d.version}"]=lic\n' +
+    'print(json.dumps(out))';
+  const result = spawnSync(
+    uv,
+    ['run', '--frozen', '--project', serverDir, 'python', '-c', script],
+    {
+      cwd: repoRoot,
+      env: uvEnv(),
+      encoding: 'utf8',
+    },
+  );
+  if (result.status !== 0) throw new Error(result.stderr);
+  const all = /** @type {Record<string, string>} */ (JSON.parse(result.stdout));
+  // Keep only locked runtime dependencies (the environment also holds dev tools).
+  const exported = spawnSync(
+    uv,
+    [
+      'export',
+      '--frozen',
+      '--no-dev',
+      '--no-hashes',
+      '--no-emit-project',
+      '--format',
+      'requirements-txt',
+      '--project',
+      serverDir,
+    ],
+    { cwd: repoRoot, env: uvEnv(), encoding: 'utf8' },
+  );
+  const normalize = (/** @type {string} */ name) => name.toLowerCase().replaceAll('_', '-');
+  const runtime = new Set(
+    exported.stdout
+      .split(/\r?\n/)
+      .map((line) => /^([A-Za-z0-9_.-]+)==/.exec(line.trim())?.[1])
+      .filter(Boolean)
+      .map((name) => normalize(String(name))),
+  );
+  return Object.fromEntries(
+    Object.entries(all).filter(([pkg]) => runtime.has(normalize(pkg.split('==')[0] ?? ''))),
+  );
+}
+
+async function main() {
+  const webManifest = JSON.parse(
+    readFileSync(path.join(repoRoot, 'apps', 'web', 'package.json'), 'utf8'),
+  );
+  const npm = new Map();
+  const seen = new Set();
+  for (const dep of Object.keys(webManifest.dependencies ?? {})) walkNpm(dep, seen, npm);
+  const python = await pythonLicenses();
+
+  /** @type {string[]} */
+  const problems = [];
+  const rows = (/** @type {[string, string][]} */ entries) =>
+    entries
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([pkg, license]) => {
+        const name = pkg.split(/==|@(?=[^@]*$)/)[0]?.toLowerCase() ?? pkg;
+        const allowed = ALLOWED_COPYLEFT[/** @type {keyof typeof ALLOWED_COPYLEFT} */ (name)];
+        const override = METADATA_OVERRIDES[/** @type {keyof typeof METADATA_OVERRIDES} */ (name)];
+        const resolved = license === 'UNKNOWN' && override ? override : license;
+        if ((COPYLEFT.test(resolved) && !allowed) || resolved === 'UNKNOWN')
+          problems.push(`${pkg} (${resolved})`);
+        return `| ${pkg} | ${resolved} | ${allowed ?? ''} |`;
+      })
+      .join('\n');
+
+  const doc = `<!-- Generated by \`npm run licenses\` — do not edit by hand. -->
+# Dependency license inventory (generated)
+
+Runtime dependencies only (development tooling is not distributed). Model weights are covered in
+[model-provenance.md](model-provenance.md).
+
+## Web app (npm, production)
+
+| Package | License | Note |
+| --- | --- | --- |
+${rows([...npm.entries()])}
+
+## Server (Python, runtime)
+
+| Package | License | Note |
+| --- | --- | --- |
+${rows(Object.entries(python))}
+`;
+  writeFileSync(path.join(repoRoot, 'docs', 'security', 'license-inventory.generated.md'), doc);
+  if (problems.length) {
+    for (const problem of problems)
+      console.error(`${color.red('✗')} unreviewed or unknown license: ${problem}`);
+    process.exit(1);
+  }
+  ok(`License inventory written (${npm.size} npm, ${Object.keys(python).length} Python packages)`);
+}
+
+main().catch((error) => {
+  console.error(error);
+  process.exit(1);
+});

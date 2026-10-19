@@ -1,0 +1,10 @@
+# Security-sensitive areas require review from the maintainer (see CONTRIBUTING.md).
+*                                              @carsonmcrae
+/apps/server/src/ltts/security.py              @carsonmcrae
+/apps/server/src/ltts/documents/safezip.py     @carsonmcrae
+/apps/server/src/ltts/documents/sandbox.py     @carsonmcrae
+/apps/server/src/ltts/modelstore/              @carsonmcrae
+/apps/server/src/ltts/voices/                  @carsonmcrae
+/scripts/lib/download.mjs                      @carsonmcrae
+/scripts/toolchain.json                        @carsonmcrae
+/.github/workflows/                            @carsonmcrae

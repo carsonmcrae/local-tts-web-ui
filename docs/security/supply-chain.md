@@ -10,7 +10,7 @@
 | Exact npm versions, `save-exact`, committed `package-lock.json`                                                                      | `package.json`, `.npmrc`                                |
 | `ignore-scripts=true` — no package runs install hooks (audited: none of the 519 packages needs one)                                  | `.npmrc`                                                |
 | Locked Python environments, `uv sync --frozen`                                                                                       | `apps/server/uv.lock`, `apps/chatterbox-worker/uv.lock` |
-| 14-day release cool-down for Python resolution (`exclude-newer`); worker versions are picked by hand under the same rule             | `apps/server/pyproject.toml`                            |
+| 14-day release cool-down for Python resolution (`exclude-newer`); not yet enforced for the Chatterbox worker (see below)             | `apps/server/pyproject.toml`                            |
 | Pinned uv binary with SHA-256 for six platforms                                                                                      | `scripts/toolchain.json`                                |
 | Pinned model artifacts with SHA-256 and host allow-list                                                                              | `apps/server/src/ltts/modelstore/manifest.json`         |
 | `npm audit --audit-level=high` and `pip-audit` of the server environment                                                             | `npm run security`, CI                                  |
@@ -39,6 +39,10 @@ exactly by chatterbox) and `setuptools` 80.x (1; held below 81 because the Perth
 `pkg_resources`). They only affect people who install voice cloning. The worker is not yet part of
 `npm run security`, because these advisories need triage and the PyTorch local builds (`+cpu`,
 `+cu124`) are not on PyPI.
+
+The worker lock was also resolved without `exclude-newer`, so 21 of its 123 PyPI packages were less
+than 14 days old on 2026-10-19 (for example `certifi` 2026.10.18 and `fastapi` 0.148.0). Bringing it
+under the same cool-down as the server is tracked with the advisory triage.
 
 ## Updating dependencies
 

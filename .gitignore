@@ -44,3 +44,7 @@ blob-report/
 # OS noise
 .DS_Store
 Thumbs.db
+
+# Claude Code: session worktrees and personal settings stay local (the shared .claude/settings.json is tracked).
+.claude/worktrees/
+.claude/settings.local.json

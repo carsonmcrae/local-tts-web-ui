@@ -81,7 +81,8 @@ export async function decodeToClip(data: ArrayBuffer, maxSeconds: number): Promi
   }
 }
 
-export function encodeWav(samples: Float32Array, sampleRate: number): Blob {
+/** PCM16 mono WAV bytes. */
+export function encodeWavBuffer(samples: Float32Array, sampleRate: number): ArrayBuffer {
   const bytesPerSample = 2;
   const dataSize = samples.length * bytesPerSample;
   const buffer = new ArrayBuffer(44 + dataSize);
@@ -106,5 +107,9 @@ export function encodeWav(samples: Float32Array, sampleRate: number): Blob {
     const clamped = Math.max(-1, Math.min(1, samples[i] ?? 0));
     view.setInt16(44 + i * bytesPerSample, clamped < 0 ? clamped * 0x8000 : clamped * 0x7fff, true);
   }
-  return new Blob([buffer], { type: 'audio/wav' });
+  return buffer;
+}
+
+export function encodeWav(samples: Float32Array, sampleRate: number): Blob {
+  return new Blob([encodeWavBuffer(samples, sampleRate)], { type: 'audio/wav' });
 }

@@ -157,6 +157,54 @@ function WizardFooter({
   );
 }
 
+/** The body of the current step. */
+function WizardStepContent({
+  step,
+  clip,
+  profile,
+  error,
+  name,
+  consent,
+  onName,
+  onConsent,
+  onCaptured,
+  onRetake,
+  onVerdict,
+}: Readonly<{
+  step: number;
+  clip: CapturedClip | null;
+  profile: VoiceProfile | undefined;
+  error: unknown;
+  name: string;
+  consent: boolean;
+  onName: (name: string) => void;
+  onConsent: (consent: boolean) => void;
+  onCaptured: (clip: CapturedClip) => void;
+  onRetake: () => void;
+  onVerdict: (ok: boolean, wav: Blob) => void;
+}>) {
+  return (
+    <>
+      {step === 0 ? <ReferenceExplainer /> : null}
+      {step === 1 ? <CaptureStep onCaptured={onCaptured} /> : null}
+      {step === 2 && clip ? (
+        <ReviewStep clip={clip} onRetake={onRetake} onVerdict={onVerdict} />
+      ) : null}
+      {step === 3 ? (
+        <>
+          <DetailsStep name={name} onName={onName} consent={consent} onConsent={onConsent} />
+          {error ? (
+            <Banner tone="error" className="mt-4">
+              {describeError(error)}
+            </Banner>
+          ) : null}
+        </>
+      ) : null}
+      {step === 4 && profile ? <TestStep profile={profile} /> : null}
+    </>
+  );
+}
+
 export function CreateVoiceWizard({
   open,
   onOpenChange,
@@ -217,30 +265,23 @@ export function CreateVoiceWizard({
       footer={footer}
     >
       <Stepper step={step} />
-      {step === 0 ? <ReferenceExplainer /> : null}
-      {step === 1 ? (
-        <CaptureStep
-          onCaptured={(captured) => {
-            setClip(captured);
-            setVerdict(null);
-            setStep(2);
-          }}
-        />
-      ) : null}
-      {step === 2 && clip ? (
-        <ReviewStep clip={clip} onRetake={() => setStep(1)} onVerdict={onVerdict} />
-      ) : null}
-      {step === 3 ? (
-        <>
-          <DetailsStep name={name} onName={setName} consent={consent} onConsent={setConsent} />
-          {create.isError ? (
-            <Banner tone="error" className="mt-4">
-              {describeError(create.error)}
-            </Banner>
-          ) : null}
-        </>
-      ) : null}
-      {step === 4 && create.data ? <TestStep profile={create.data} /> : null}
+      <WizardStepContent
+        step={step}
+        clip={clip}
+        profile={create.data}
+        error={create.isError ? create.error : null}
+        name={name}
+        consent={consent}
+        onName={setName}
+        onConsent={setConsent}
+        onCaptured={(captured) => {
+          setClip(captured);
+          setVerdict(null);
+          setStep(2);
+        }}
+        onRetake={() => setStep(1)}
+        onVerdict={onVerdict}
+      />
     </Dialog>
   );
 }

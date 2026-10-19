@@ -1,14 +1,15 @@
 /**
  * Purpose: Multi-step user flows rendered against the mocked API.
  * Scope: Creating a custom voice from an imported recording (decode mocked: jsdom has no Web Audio),
- *   renaming/deleting a profile, exporting audio through to the download link, installing an engine
- *   with progress, previewing voices, pasting text, and the app shell / not-found route.
+ *   renaming/deleting a profile, exporting audio through to the download link, installing and
+ *   updating an engine with progress, previewing voices, pasting text, and the app shell /
+ *   not-found route.
  * Does NOT belong: Unit tests of pure helpers (lib.test.ts).
  */
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { JobOut, VoiceProfile } from '@/api/types';
+import type { JobOut } from '@/api/types';
 import type * as WavModule from '@/lib/audio/wav';
 import { App } from '@/app/App';
 import { EnginePanel } from '@/features/engines/EngineSetup';
@@ -16,7 +17,16 @@ import LibraryPage from '@/features/library/LibraryPage';
 import { ExportDialog } from '@/features/reader/ExportDialog';
 import VoiceStudioPage from '@/features/studio/VoiceStudioPage';
 import VoiceLibraryPage from '@/features/voices/VoiceLibraryPage';
-import { documentDetail, json, kokoro, mockApi, preferences, renderWithApp, voice } from './render';
+import {
+  documentDetail,
+  json,
+  kokoro,
+  mockApi,
+  preferences,
+  renderWithApp,
+  voice,
+  voiceProfile,
+} from './render';
 
 vi.mock('@/lib/audio/wav', async (importOriginal) => {
   const actual = await importOriginal<typeof WavModule>();
@@ -38,12 +48,7 @@ const job = (overrides: Partial<JobOut>): JobOut => ({
   payload: {}, result: null, errorCode: null, createdAt: '', updatedAt: '', ...overrides,
 }); // prettier-ignore
 
-const profile: VoiceProfile = {
-  id: 'c'.repeat(32), voiceId: `custom:${'c'.repeat(32)}`, name: 'My voice', engineId: 'chatterbox', durationS: 14,
-  sampleRate: 24000, consentedAt: '2026-10-19T10:00:00+00:00', source: 'import', createdAt: '2026-10-19T10:00:00+00:00',
-  stores: 'A trimmed copy of your reference recording (WAV).',
-  quality: { durationS: 14, speechS: 12, rmsDbfs: -20, peakDbfs: -1, clippingRatio: 0, pauseRatio: 0.2, snrDb: 40, ok: true, issues: [] },
-}; // prettier-ignore
+const profile = voiceProfile();
 
 const base = {
   'GET /api/preferences': preferences,
@@ -149,6 +154,15 @@ describe('Export', () => {
   });
 });
 
+/** Renders Chatterbox with an update on offer, checks the notice and presses Update. */
+async function startChatterboxUpdate() {
+  const user = userEvent.setup();
+  const engine = kokoro({ id: 'chatterbox', name: 'Chatterbox Turbo', supportsCloning: true, updateAvailable: true }); // prettier-ignore
+  renderWithApp(<EnginePanel engine={engine} />);
+  expect(screen.getAllByText('Update available')).toHaveLength(2); // badge + notice
+  await user.click(screen.getByRole('button', { name: 'Update Chatterbox Turbo' }));
+}
+
 describe('Engines', () => {
   it('installs an engine and shows progress until ready', async () => {
     let state = 0;
@@ -179,6 +193,44 @@ describe('Engines', () => {
     expect(
       await screen.findByText('Chatterbox Turbo is ready', {}, { timeout: 4000 }),
     ).toBeInTheDocument();
+  });
+
+  it('offers a one-click runtime update for an installed engine', async () => {
+    let state = 0;
+    const updateJob = (overrides: Partial<JobOut>) =>
+      job({ kind: 'install', payload: { engineId: 'chatterbox', update: true }, ...overrides });
+    const { calls } = mockApi({
+      ...base,
+      'POST /api/engines/': updateJob({ progress: 0.05, message: 'Updating runtime: Prepared 2' }),
+      'GET /api/jobs/': () =>
+        ++state < 2
+          ? updateJob({ progress: 0.05, message: 'Updating runtime: Installed 2 packages' })
+          : updateJob({ status: 'succeeded', progress: 1, message: 'Done' }),
+    });
+    await startChatterboxUpdate();
+    expect(
+      await screen.findByRole('progressbar', { name: 'Updating Chatterbox Turbo' }),
+    ).toBeInTheDocument();
+    expect(calls.some((c) => c.method === 'POST' && c.path === '/api/engines/chatterbox/update')).toBe(true); // prettier-ignore
+    expect(
+      await screen.findByText('Chatterbox Turbo is up to date', {}, { timeout: 4000 }),
+    ).toBeInTheDocument();
+  });
+
+  it('keeps the update on offer and explains a failed update', async () => {
+    mockApi({
+      ...base,
+      'POST /api/engines/': job({ kind: 'install', payload: { update: true } }),
+      'GET /api/jobs/': job({
+        kind: 'install', payload: { update: true }, status: 'failed', errorCode: 'update_failed',
+        message: 'Updating the Chatterbox runtime failed. Your installation was not removed.',
+      }), // prettier-ignore
+    });
+    await startChatterboxUpdate();
+    const failure = await screen.findByRole('alert');
+    expect(within(failure).getByText('Update failed')).toBeInTheDocument();
+    expect(within(failure).getByText(/installation was not removed/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Update Chatterbox Turbo' })).toBeInTheDocument();
   });
 });
 

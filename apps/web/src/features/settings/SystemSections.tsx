@@ -62,7 +62,6 @@ export function StorageSection() {
       title="Storage"
       description={storage ? `Data folder: ${storage.dataDir}` : undefined}
     >
-      {!storage ? <Skeleton className="h-28" /> : null}
       {storage ? (
         <div className="flex flex-col gap-4">
           <dl className="grid gap-x-8 gap-y-2 text-sm sm:grid-cols-2">
@@ -96,7 +95,9 @@ export function StorageSection() {
             </Button>
           </div>
         </div>
-      ) : null}
+      ) : (
+        <Skeleton className="h-28" />
+      )}
       <ConfirmDialog
         open={confirm}
         onOpenChange={setConfirm}
@@ -149,11 +150,12 @@ export function PrivacySection() {
 }
 
 export function diagnosticsReport(info: SystemInfo, webVersion: string): string {
+  const gpus = info.gpus.map((gpu) => `${gpu.vendor} ${gpu.name}`).join(', ') || 'none detected';
   return [
     `Local TTS web ${webVersion} / server ${info.version}`,
     `Python ${info.python} on ${info.platform} (${info.machine}), ${info.cpuCores} logical CPUs`,
     `Memory: ${formatBytes(info.memoryAvailableBytes)} free of ${formatBytes(info.memoryTotalBytes)}`,
-    `GPUs: ${info.gpus.map((gpu) => `${gpu.vendor} ${gpu.name}`).join(', ') || 'none detected'}`,
+    `GPUs: ${gpus}`,
     `ONNX Runtime providers: ${info.onnxProviders.join(', ')}`,
     `Disk free: ${formatBytes(info.storage.freeBytes)}; models ${formatBytes(info.storage.modelsBytes)}; cache ${formatBytes(info.storage.audioCacheBytes)}`,
     `Network exposed: ${info.networkExposed ? 'yes' : 'no'}`,

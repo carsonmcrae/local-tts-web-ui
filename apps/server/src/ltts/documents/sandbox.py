@@ -49,7 +49,8 @@ def _child(
         conn.send(("app_error", (exc.code, exc.message)))
     except MemoryError:
         conn.send(("app_error", ("resource_limit", "The document needed too much memory to process.")))
-    except Exception as exc:  # noqa: BLE001 - any parser failure must become a clean error
+    # Any other parser failure must become a clean error.
+    except Exception as exc:  # noqa: BLE001
         conn.send(("crash", type(exc).__name__))
     finally:
         conn.close()

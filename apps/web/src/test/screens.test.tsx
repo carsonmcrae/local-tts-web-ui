@@ -118,18 +118,23 @@ describe('Reader', () => {
     },
   };
 
+  const documentRoutes = () => ({
+    [`GET /api/documents/${doc.id}`]: doc,
+    'GET /api/documents/': doc,
+    [`GET /api/documents/${doc.id}/segments`]: () =>
+      new Response(new Blob(['wav']), { headers: { 'X-Audio-Duration': '1' } }),
+  });
+  const renderReader = () =>
+    renderWithApp(<ReaderPage />, { path: '/read/:documentId', route: `/read/${doc.id}` });
+
   it('renders headings and sentences, and starts playback from a clicked sentence', async () => {
     const { calls } = mockApi({
       ...base,
       ...sections,
-      [`GET /api/documents/${doc.id}`]: doc,
-      'GET /api/documents/': doc,
-      [`GET /api/documents/${doc.id}/segments`]: new Response(new Blob(['wav']), {
-        headers: { 'X-Audio-Duration': '1' },
-      }),
+      ...documentRoutes(),
     });
     const user = userEvent.setup();
-    renderWithApp(<ReaderPage />, { path: '/read/:documentId', route: `/read/${doc.id}` });
+    renderReader();
     expect(
       await screen.findByRole('heading', { level: 1, name: 'The Lighthouse' }),
     ).toBeInTheDocument();
@@ -169,17 +174,10 @@ describe('Reader', () => {
           },
         ],
       },
-      [`GET /api/documents/${doc.id}`]: doc,
-      'GET /api/documents/': doc,
-      [`GET /api/documents/${doc.id}/segments`]: new Response(new Blob(['wav']), {
-        headers: { 'X-Audio-Duration': '1' },
-      }),
+      ...documentRoutes(),
     });
     const user = userEvent.setup();
-    const { media } = renderWithApp(<ReaderPage />, {
-      path: '/read/:documentId',
-      route: `/read/${doc.id}`,
-    });
+    const { media } = renderReader();
     await user.click(await screen.findByText('The keeper climbed.'));
     await waitFor(() =>
       expect(screen.getByText('The keeper climbed.')).toHaveAttribute('data-active', 'true'),

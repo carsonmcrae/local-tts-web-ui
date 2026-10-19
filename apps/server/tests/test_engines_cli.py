@@ -13,6 +13,7 @@ import logging
 import sys
 import time
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 from fastapi.testclient import TestClient
@@ -26,7 +27,7 @@ from ltts.engines.base import VoiceSpec
 from ltts.engines.chatterbox import ChatterboxEngine
 from ltts.engines.kokoro import KokoroEngine
 from ltts.engines.worker_client import WorkerClient, WorkerError
-from ltts.errors import EngineUnavailableError
+from ltts.errors import ConflictError, EngineUnavailableError
 from ltts.hardware import GpuInfo
 from ltts.logging_setup import KeyValueFormatter
 from ltts.modelstore.store import ModelStore
@@ -77,6 +78,9 @@ def test_kokoro_not_installed(tmp_path: Path) -> None:
     with pytest.raises(EngineUnavailableError) as error:
         engine.synthesize("Hi.", VoiceSpec("af_heart"), 1.0)
     assert error.value.code == "engine_not_installed"
+    assert not info.update_available
+    with pytest.raises(ConflictError):
+        engine.update(None)  # type: ignore[arg-type]
 
 
 def test_chatterbox_install_options_follow_hardware(settings: Settings, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -85,10 +89,16 @@ def test_chatterbox_install_options_follow_hardware(settings: Settings, monkeypa
     monkeypatch.setattr(
         chatterbox_module, "detect_gpus", lambda: (GpuInfo(vendor="NVIDIA", name="Test GPU", memory_mb=8000),)
     )
+    # Pin the platform so every OS covers both the CUDA and the Apple Silicon branches.
+    monkeypatch.setattr(chatterbox_module, "sys", SimpleNamespace(platform="linux"))
     with_gpu = engine.info()
     assert with_gpu.supports_cloning and with_gpu.controls == [] and with_gpu.status == "not_installed"
-    if sys.platform != "darwin":
-        assert [o.id for o in with_gpu.install_options] == ["cuda", "cpu"] and with_gpu.install_options[0].recommended
+    assert [(o.id, o.label) for o in with_gpu.install_options] == [("cuda", "NVIDIA GPU (CUDA)"), ("cpu", "CPU only")]
+    assert with_gpu.install_options[0].recommended and not with_gpu.install_options[1].recommended
+    # macOS never offers CUDA, even if an NVIDIA card is reported.
+    monkeypatch.setattr(chatterbox_module, "sys", SimpleNamespace(platform="darwin"))
+    mac = engine.info().install_options
+    assert [(o.id, o.label) for o in mac] == [("cpu", "Apple Silicon / CPU")] and mac[0].recommended
     monkeypatch.setattr(chatterbox_module, "detect_gpus", lambda: ())
     assert [o.id for o in engine.info().install_options] == ["cpu"]
     assert engine.voices()[0].available is False

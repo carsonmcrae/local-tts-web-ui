@@ -40,6 +40,7 @@ describe('format', () => {
     expect(formatRelativeDate('2026-10-18T08:00:00Z', now)).toBe('Yesterday');
     expect(formatRelativeDate('2026-10-15T08:00:00Z', now)).toBe('4 days ago');
     expect(formatRelativeDate(null, now)).toBe('');
+    expect(formatRelativeDate('2026-09-01T08:00:00Z', now)).toMatch(/2026/);
     expect(pluralize(1, 'page')).toBe('1 page');
     expect(pluralize(2000, 'page')).toBe('2,000 pages');
   });

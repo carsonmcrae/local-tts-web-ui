@@ -6,13 +6,14 @@
  * Does NOT belong: Formatting (Prettier) or Python linting (ruff, configured in pyproject.toml).
  */
 import js from '@eslint/js';
+import { defineConfig } from 'eslint/config';
 import jsxA11y from 'eslint-plugin-jsx-a11y';
 import reactHooks from 'eslint-plugin-react-hooks';
 import reactRefresh from 'eslint-plugin-react-refresh';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
-export default tseslint.config(
+export default defineConfig(
   {
     ignores: [
       '**/node_modules/**',
@@ -55,7 +56,13 @@ export default tseslint.config(
   },
   {
     files: ['apps/web/src/**/*.{ts,tsx}'],
-    plugins: { 'react-hooks': reactHooks, 'react-refresh': reactRefresh, 'jsx-a11y': jsxA11y },
+    plugins: {
+      // Type-only cast: the plugin's own typings nest `configs.flat`, which ESLint's Plugin type
+      // does not allow; the runtime object is a valid plugin.
+      'react-hooks': /** @type {import('eslint').ESLint.Plugin} */ (reactHooks),
+      'react-refresh': reactRefresh,
+      'jsx-a11y': jsxA11y,
+    },
     languageOptions: {
       globals: { ...globals.browser },
       parserOptions: { projectService: true, tsconfigRootDir: import.meta.dirname },
@@ -72,9 +79,6 @@ export default tseslint.config(
       ],
       '@typescript-eslint/no-unnecessary-type-assertion': 'error',
       '@typescript-eslint/prefer-optional-chain': 'error',
-      // Click-to-play on sentence spans is a pointer convenience; keyboard users have the player.
-      'jsx-a11y/click-events-have-key-events': 'off',
-      'jsx-a11y/no-static-element-interactions': 'off',
     },
   },
   {

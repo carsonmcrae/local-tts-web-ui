@@ -24,8 +24,11 @@ from ltts.errors import DocumentExtractionError
 MIN_PAGE_CHARS = 20
 RUNNING_LINE_SHARE = 0.4
 EDGE_LINES = 2
-_PAGE_NUMBER = re.compile(
-    r"^(?:page\s*)?\d{1,4}(?:\s*(?:of|/)\s*\d{1,4})?$|^[-–—]\s*\d{1,4}\s*[-–—]$|^[ivxlc]{1,6}$", re.IGNORECASE
+# Page-number lines: "12", "Page 12", "12 of 300", "12/300", "- 12 -" (any dash) and Roman numerals ("xiv").
+_PAGE_NUMBER_FORMS = (
+    re.compile(r"^(?:page\s*)?\d{1,4}(?:\s*(?:of|/)\s*\d{1,4})?$", re.IGNORECASE),
+    re.compile(r"^[-–—]\s*\d{1,4}\s*[-–—]$"),
+    re.compile(r"^[ivxlc]{1,6}$", re.IGNORECASE),
 )
 _SENTENCE_END = re.compile(r"[.!?:;\"”’)\]]$")
 _NEW_BLOCK_START = re.compile(r"^[A-Z0-9\"“‘(•\-–—]")
@@ -35,6 +38,10 @@ _NEW_BLOCK_START = re.compile(r"^[A-Z0-9\"“‘(•\-–—]")
 class _Paragraph:
     page: int
     text: str
+
+
+def _is_page_number(line: str) -> bool:
+    return any(form.match(line) for form in _PAGE_NUMBER_FORMS)
 
 
 def _running_key(line: str) -> str:
@@ -64,7 +71,7 @@ def _strip_running_lines(pages: list[list[str]]) -> list[list[str]]:
             [
                 line
                 for position, line in enumerate(lines)
-                if position not in edges or not (_PAGE_NUMBER.match(line) or _running_key(line) in repeated)
+                if position not in edges or not (_is_page_number(line) or _running_key(line) in repeated)
             ]
         )
     return cleaned

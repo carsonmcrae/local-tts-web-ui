@@ -10,13 +10,22 @@ from __future__ import annotations
 
 import logging
 import threading
-from typing import Any
+from typing import Any, override
 
 import numpy as np
 
-from ltts.engines.base import AudioClip, EngineControl, EngineInfo, InstallOption, VoiceInfo, VoiceSpec
+from ltts.engines.base import (
+    AudioClip,
+    Engine,
+    EngineControl,
+    EngineInfo,
+    EngineStatus,
+    InstallOption,
+    VoiceInfo,
+    VoiceSpec,
+)
 from ltts.engines.kokoro_voices import GRADES, describe
-from ltts.errors import EngineUnavailableError, SynthesisError
+from ltts.errors import ConflictError, EngineUnavailableError, SynthesisError
 from ltts.jobs import JobContext
 from ltts.modelstore.store import ModelStore
 
@@ -27,7 +36,7 @@ SAMPLE_RATE = 24_000
 PACE = EngineControl(name="pace", label="Speaking pace", minimum=0.5, maximum=2.0, default=1.0, step=0.05)
 
 
-class KokoroEngine:
+class KokoroEngine(Engine):
     id = "kokoro"
 
     def __init__(self, store: ModelStore):
@@ -86,19 +95,24 @@ class KokoroEngine:
     def revision(self) -> str:
         return f"{ARTIFACT}/{ENGINE_CODE_VERSION}"
 
+    def _status(self, ready: bool) -> tuple[EngineStatus, str]:
+        if not ready:
+            return "not_installed", "Model not installed"
+        if self._load_error:
+            return "error", f"Installed, but failed to load ({self._load_error})"
+        return "ready", "Ready"
+
     def info(self) -> EngineInfo:
         art = self._store.artifact(ARTIFACT)
         ready = self.is_ready()
-        message = "Ready" if ready else "Model not installed"
-        if ready and self._load_error:
-            message = f"Installed, but failed to load ({self._load_error})"
+        status, message = self._status(ready)
         return EngineInfo(
             id=self.id,
             name="Kokoro",
             description="Fast, natural-sounding built-in voices. Runs comfortably on any modern CPU.",
             license=art.license,
             optional=False,
-            status="error" if ready and self._load_error else ("ready" if ready else "not_installed"),
+            status=status,
             status_message=message,
             supports_cloning=False,
             controls=[PACE],
@@ -151,7 +165,9 @@ class KokoroEngine:
         return result
 
     # -- install ---------------------------------------------------------
-    def install(self, context: JobContext, option: str | None) -> dict[str, Any]:  # noqa: ARG002 - one option
+    # Kokoro has a single install option, so ``option`` is not consulted.
+    @override
+    def install(self, context: JobContext, option: str | None) -> dict[str, Any]:
         def progress(done: int, total: int, name: str) -> None:
             context.update(done / total, f"Downloading {name} ({done // 1_048_576} / {total // 1_048_576} MB)")
 
@@ -160,6 +176,12 @@ class KokoroEngine:
         self.close()
         self._ensure_loaded()
         return {"artifact": ARTIFACT}
+
+    # Nothing runs, so the job context is not used.
+    @override
+    def update(self, context: JobContext) -> dict[str, Any]:
+        """Kokoro runs in-process from checksum-pinned files; there is no separate runtime to update."""
+        raise ConflictError("Kokoro is already up to date.", code="no_update")
 
     def uninstall(self) -> None:
         self.close()

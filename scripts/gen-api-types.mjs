@@ -49,7 +49,9 @@ async function main() {
   ok('Wrote apps/web/src/api/schema.gen.ts');
 }
 
-main().catch((error) => {
+try {
+  await main();
+} catch (error) {
   printFailure(error);
   process.exit(1);
-});
+}

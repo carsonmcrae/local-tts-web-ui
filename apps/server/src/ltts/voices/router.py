@@ -41,12 +41,12 @@ async def _receive(request: Request, services: ServicesDep) -> FsPath:
     return target
 
 
-@router.get("/consent", response_model=ConsentInfo)
+@router.get("/consent")
 def consent_statement() -> ConsentInfo:
     return ConsentInfo(statement=CONSENT_STATEMENT)
 
 
-@router.post("/analyze", response_model=QualityReport)
+@router.post("/analyze")
 async def analyze_recording(request: Request, services: ServicesDep) -> QualityReport:
     target = await _receive(request, services)
     try:
@@ -55,7 +55,7 @@ async def analyze_recording(request: Request, services: ServicesDep) -> QualityR
         target.unlink(missing_ok=True)
 
 
-@router.post("", response_model=VoiceProfileOut, status_code=201)
+@router.post("", status_code=201)
 async def create_profile(
     request: Request,
     services: ServicesDep,
@@ -70,12 +70,12 @@ async def create_profile(
         target.unlink(missing_ok=True)
 
 
-@router.get("", response_model=list[VoiceProfileOut])
+@router.get("")
 def list_profiles(services: ServicesDep) -> list[VoiceProfileOut]:
     return services.voices.list_all()
 
 
-@router.patch("/{profile_id}", response_model=VoiceProfileOut)
+@router.patch("/{profile_id}")
 def rename_profile(profile_id: ProfileId, body: RenameRequest, services: ServicesDep) -> VoiceProfileOut:
     return services.voices.rename(profile_id, body.name.strip())
 

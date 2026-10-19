@@ -21,11 +21,13 @@ export const SHORTCUTS: readonly { keys: string[]; action: string }[] = [
 const INTERACTIVE =
   'input, textarea, select, button, a, [contenteditable="true"], [role="slider"], [role="dialog"] *';
 
+/** The neighbouring preset speed in `direction`; the current speed at either end of the ladder. */
 export function stepSpeed(current: number, direction: 1 | -1): number {
-  const index = SPEEDS.findIndex((speed) => speed >= current - 0.001);
-  const base = index === -1 ? SPEEDS.length - 1 : index;
-  const next = Math.min(Math.max(base + direction, 0), SPEEDS.length - 1);
-  return SPEEDS[next] ?? current;
+  const next =
+    direction === 1
+      ? SPEEDS.find((speed) => speed > current + 0.001)
+      : SPEEDS.findLast((speed) => speed < current - 0.001);
+  return next ?? current;
 }
 
 export function useShortcuts(
@@ -55,7 +57,7 @@ export function useShortcuts(
         action();
       }
     };
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
+    globalThis.addEventListener('keydown', onKeyDown);
+    return () => globalThis.removeEventListener('keydown', onKeyDown);
   }, [controller, enabled, onRateChange, onHelp]);
 }

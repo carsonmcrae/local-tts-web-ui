@@ -45,8 +45,9 @@ and the integrity of installed model files and Python/npm dependencies.
 - **Only Linux has a per-process memory limit** in the sandbox (`RLIMIT_AS`). Windows has no
   equivalent, and macOS reserves more virtual address space at start-up than any useful cap allows.
   The timeout, archive and text limits still apply everywhere.
-- **The optional Chatterbox environment has known lower-severity advisories** in `torch` and
-  `setuptools`, pinned by `chatterbox-tts`
+- **The optional Chatterbox environment carries one reviewed, unreachable advisory**: `torch`
+  2.11's `torch.jit.script` issue (the fix needs a torchaudio that does not exist yet, and nothing
+  calls `torch.jit`). `npm run security` audits both extras and fails on anything else
   ([supply-chain.md](supply-chain.md#known-advisories-in-the-optional-chatterbox-environment)). The
   default Kokoro reader does not install them.
 - **PDFium and libxml2 are native code.** They are mature and fuzzed, and run in a separate, killable

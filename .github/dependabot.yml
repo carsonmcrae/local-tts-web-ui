@@ -13,6 +13,16 @@ updates:
     groups:
       npm-minor-patch:
         update-types: [minor, patch]
+    ignore:
+      # ESLint 10: eslint-plugin-jsx-a11y (6.10.2, the latest) supports ESLint 9 at most, so the major
+      # upgrade would mean dropping accessibility linting. Revisit when it supports ESLint 10.
+      - dependency-name: eslint
+        update-types: ['version-update:semver-major']
+      - dependency-name: '@eslint/js'
+        update-types: ['version-update:semver-major']
+      # Node's types follow the runtime this project targets (.nvmrc, engines), not the newest Node.
+      - dependency-name: '@types/node'
+        update-types: ['version-update:semver-major']
   - package-ecosystem: uv
     directory: /apps/server
     schedule:
@@ -29,7 +39,7 @@ updates:
     cooldown:
       default-days: 30
   - package-ecosystem: github-actions
-    directory: /
+    directories: ['/', '/.github/actions/*']
     schedule:
       interval: weekly
     cooldown:

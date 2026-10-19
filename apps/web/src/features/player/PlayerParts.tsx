@@ -191,7 +191,7 @@ export function ShortcutSheet({
   );
 }
 
+/** The next faster preset speed, wrapping around to the slowest after the fastest. */
 export function nextSpeed(rate: number): number {
-  const index = SPEEDS.findIndex((speed) => speed === rate);
-  return SPEEDS[(index + 1) % SPEEDS.length] ?? 1;
+  return SPEEDS.find((speed) => speed > rate + 0.001) ?? SPEEDS[0];
 }

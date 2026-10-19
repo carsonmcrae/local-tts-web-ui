@@ -35,7 +35,8 @@ const PORT = '8793';
 /** Serves only the composition's own files, over loopback. */
 async function serveComposition() {
   const server = createServer((req, res) => {
-    const url = decodeURIComponent(new URL(req.url ?? '/', 'http://x').pathname);
+    // Only the path is used; the base is this server's own loopback origin.
+    const url = decodeURIComponent(new URL(req.url ?? '/', 'http://127.0.0.1').pathname);
     if (!ALLOWED.some((prefix) => url.startsWith(prefix)) || url.includes('..')) {
       res.writeHead(404).end();
       return;
@@ -128,22 +129,25 @@ async function main() {
     encoder.stdin.end();
     const code = await new Promise((resolve) => encoder.on('close', resolve));
     if (code !== 0) throw new Error(`ffmpeg exited ${code}`);
+    const video = path.join(OUT, `${NAME}.mp4`);
     await run(ffmpeg, ['-y', '-v', 'error', '-i', master, '-c:v', 'libx264', '-preset', 'veryslow', '-crf', '22', '-profile:v', 'high',
       '-level:v', '4.0', '-pix_fmt', 'yuv420p', '-g', '60', '-c:a', 'aac', '-b:a', '160k', '-ar', '48000', '-movflags', '+faststart',
-      path.join(OUT, `${NAME}.mp4`)]); // prettier-ignore
+      video]); // prettier-ignore
     await run(ffmpeg, ['-y', '-v', 'error', '-ss', '3.2', '-i', master, '-frames:v', '1', '-c:v', 'libwebp', '-quality', '82', path.join(OUT, `${NAME}-poster.webp`)]); // prettier-ignore
     const vtt = audio.cues
       .map((c) => `${stamp(c.start)} --> ${stamp(c.end)}\n${c.text}\n`)
       .join('\n');
     writeFileSync(path.join(OUT, `${NAME}-captions.vtt`), `WEBVTT\n\n${vtt}`);
-    console.log(`wrote ${path.join(OUT, `${NAME}.mp4`)}`);
+    console.log(`wrote ${video}`);
   } finally {
     await browser.close();
     server.close();
   }
 }
 
-main().catch((error) => {
+try {
+  await main();
+} catch (error) {
   console.error(error);
   process.exitCode = 1;
-});
+}

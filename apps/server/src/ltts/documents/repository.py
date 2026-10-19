@@ -25,9 +25,14 @@ from ltts.documents.schemas import (
 from ltts.documents.structures import SectionInfo, Segment
 from ltts.errors import NotFoundError
 
+_DOCUMENT_GONE = "That document no longer exists."
+# One complete query: every document (most recently read or added first), or only the one whose id
+# is passed as :document_id.
 _SUMMARY_SQL = """
 SELECT d.*, p.segment_idx AS p_segment, p.voice_id AS p_voice, p.updated_at AS p_updated
 FROM documents d LEFT JOIN progress p ON p.document_id = d.id
+WHERE (:document_id IS NULL OR d.id = :document_id)
+ORDER BY COALESCE(p.updated_at, d.created_at) DESC
 """
 
 
@@ -86,14 +91,14 @@ class DocumentRepository:
 
     def list_all(self) -> list[DocumentSummary]:
         with self._db.connect() as conn:
-            rows = conn.execute(_SUMMARY_SQL + " ORDER BY COALESCE(p.updated_at, d.created_at) DESC").fetchall()
+            rows = conn.execute(_SUMMARY_SQL, {"document_id": None}).fetchall()
         return [_summary(row) for row in rows]
 
     def get(self, document_id: str) -> DocumentDetail:
         with self._db.connect() as conn:
-            row = conn.execute(_SUMMARY_SQL + " WHERE d.id = ?", (document_id,)).fetchone()
+            row = conn.execute(_SUMMARY_SQL, {"document_id": document_id}).fetchone()
             if row is None:
-                raise NotFoundError("That document no longer exists.", code="document_not_found")
+                raise NotFoundError(_DOCUMENT_GONE, code="document_not_found")
             conn.execute("UPDATE documents SET last_opened_at = ? WHERE id = ?", (utc_now(), document_id))
         summary = _summary(row)
         return DocumentDetail(
@@ -147,13 +152,13 @@ class DocumentRepository:
     def delete(self, document_id: str) -> None:
         with self._db.connect() as conn:
             if conn.execute("DELETE FROM documents WHERE id = ?", (document_id,)).rowcount == 0:
-                raise NotFoundError("That document no longer exists.", code="document_not_found")
+                raise NotFoundError(_DOCUMENT_GONE, code="document_not_found")
 
     def save_progress(self, document_id: str, segment_index: int, voice_id: str | None) -> None:
         with self._db.connect() as conn:
             row = conn.execute("SELECT segment_count FROM documents WHERE id = ?", (document_id,)).fetchone()
             if row is None:
-                raise NotFoundError("That document no longer exists.", code="document_not_found")
+                raise NotFoundError(_DOCUMENT_GONE, code="document_not_found")
             index = min(segment_index, max(row[0] - 1, 0))
             conn.execute(
                 """INSERT INTO progress (document_id, segment_idx, voice_id, updated_at) VALUES (?, ?, ?, ?)

@@ -8,7 +8,7 @@
 import { ArrowLeft, ArrowRight, Check, Play, Sparkles } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { describeError } from '@/api/client';
-import { useCreateProfile, useEngines, usePreferences, useSavePreferences } from '@/api/queries';
+import { useCreateProfile, useEngines } from '@/api/queries';
 import type { VoiceProfile } from '@/api/types';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
@@ -16,7 +16,7 @@ import { Banner } from '@/components/ui/Feedback';
 import { Textarea } from '@/components/ui/Field';
 import { cn } from '@/lib/cn';
 import { EnginePanel } from '@/features/engines/EngineSetup';
-import { usePlayer } from '@/features/player/PlayerProvider';
+import { useReadingVoice } from '@/features/player/useReadingVoice';
 import { useVoicePreview } from '@/features/voices/useVoicePreview';
 import type { CapturedClip } from './CaptureStep';
 import { CaptureStep } from './CaptureStep';
@@ -54,12 +54,10 @@ function Stepper({ step }: Readonly<{ step: number }>) {
 function TestStep({ profile }: Readonly<{ profile: VoiceProfile }>) {
   const engines = useEngines();
   const preview = useVoicePreview();
-  const preferences = usePreferences();
-  const save = useSavePreferences();
-  const { controller } = usePlayer();
+  const reading = useReadingVoice();
   const [text, setText] = useState(TEST_TEXT);
   const engine = engines.data?.find((item) => item.id === profile.engineId);
-  const isDefault = preferences.data?.defaultVoiceId === profile.voiceId;
+  const isDefault = reading.current === profile.voiceId;
 
   if (engine && engine.status !== 'ready') {
     return (
@@ -98,16 +96,112 @@ function TestStep({ profile }: Readonly<{ profile: VoiceProfile }>) {
         <Button
           icon={isDefault ? <Check size={15} /> : undefined}
           disabled={isDefault}
-          onClick={() => {
-            void controller.setVoice(profile.voiceId);
-            if (preferences.data)
-              save.mutate({ ...preferences.data, defaultVoiceId: profile.voiceId });
-          }}
+          onClick={() => reading.choose(profile.voiceId)}
         >
           {isDefault ? 'Used for reading' : 'Use for reading'}
         </Button>
       </div>
     </div>
+  );
+}
+
+/** The wizard's buttons: Back, then Continue, Create voice on the consent step, or Done at the end. */
+function WizardFooter({
+  step,
+  canContinue,
+  pending,
+  onBack,
+  onNext,
+  onCreate,
+  onDone,
+}: Readonly<{
+  step: number;
+  canContinue: boolean | undefined;
+  pending: boolean;
+  onBack: () => void;
+  onNext: () => void;
+  onCreate: (() => void) | undefined;
+  onDone: () => void;
+}>) {
+  if (step === 4) {
+    return (
+      <Button variant="primary" onClick={onDone}>
+        Done
+      </Button>
+    );
+  }
+  const create = step === 3 ? onCreate : undefined;
+  return (
+    <>
+      {step > 0 ? (
+        <Button icon={<ArrowLeft size={15} />} onClick={onBack} disabled={pending}>
+          Back
+        </Button>
+      ) : null}
+      {create ? (
+        <Button
+          variant="primary"
+          icon={<Sparkles size={15} />}
+          onClick={create}
+          disabled={!canContinue}
+          loading={pending}
+        >
+          Create voice
+        </Button>
+      ) : (
+        <Button variant="primary" onClick={onNext} disabled={!canContinue}>
+          Continue <ArrowRight size={15} />
+        </Button>
+      )}
+    </>
+  );
+}
+
+/** The body of the current step. */
+function WizardStepContent({
+  step,
+  clip,
+  profile,
+  error,
+  name,
+  consent,
+  onName,
+  onConsent,
+  onCaptured,
+  onRetake,
+  onVerdict,
+}: Readonly<{
+  step: number;
+  clip: CapturedClip | null;
+  profile: VoiceProfile | undefined;
+  error: unknown;
+  name: string;
+  consent: boolean;
+  onName: (name: string) => void;
+  onConsent: (consent: boolean) => void;
+  onCaptured: (clip: CapturedClip) => void;
+  onRetake: () => void;
+  onVerdict: (ok: boolean, wav: Blob) => void;
+}>) {
+  return (
+    <>
+      {step === 0 ? <ReferenceExplainer /> : null}
+      {step === 1 ? <CaptureStep onCaptured={onCaptured} /> : null}
+      {step === 2 && clip ? (
+        <ReviewStep clip={clip} onRetake={onRetake} onVerdict={onVerdict} />
+      ) : null}
+      {step === 3 ? (
+        <>
+          <DetailsStep name={name} onName={onName} consent={consent} onConsent={onConsent} />
+          {error ? (
+            <Banner tone="error" className="mt-4">
+              {describeError(error)}
+            </Banner>
+          ) : null}
+        </>
+      ) : null}
+      {step === 4 && profile ? <TestStep profile={profile} /> : null}
+    </>
   );
 }
 
@@ -131,17 +225,16 @@ export function CreateVoiceWizard({
     setConsent(false);
     create.reset();
   };
-  const close = (next: boolean) => {
-    onOpenChange(next);
-    if (!next) reset();
+  // The wizard is opened from outside (it has no dialog trigger), so the dialog only ever asks to
+  // close; closing starts the next visit from the first step.
+  const close = () => {
+    onOpenChange(false);
+    reset();
   };
-  const submit = () => {
-    if (!verdict || !clip) return;
-    create.mutate(
-      { name: name.trim(), wav: verdict.wav, source: clip.source },
-      { onSuccess: () => setStep(4) },
-    );
-  };
+  // What "Create voice" uploads: the checked recording and where it came from.
+  const upload = verdict && clip ? { wav: verdict.wav, source: clip.source } : null;
+  const submit = (input: { wav: Blob; source: CapturedClip['source'] }) =>
+    create.mutate({ name: name.trim(), ...input }, { onSuccess: () => setStep(4) });
 
   const canContinue = [
     true,
@@ -150,39 +243,17 @@ export function CreateVoiceWizard({
     Boolean(name.trim() && consent),
     true,
   ][step];
-  const footer =
-    step === 4 ? (
-      <Button variant="primary" onClick={() => close(false)}>
-        Done
-      </Button>
-    ) : (
-      <>
-        {step > 0 ? (
-          <Button
-            icon={<ArrowLeft size={15} />}
-            onClick={() => setStep(step - 1)}
-            disabled={create.isPending}
-          >
-            Back
-          </Button>
-        ) : null}
-        {step === 3 ? (
-          <Button
-            variant="primary"
-            icon={<Sparkles size={15} />}
-            onClick={submit}
-            disabled={!canContinue}
-            loading={create.isPending}
-          >
-            Create voice
-          </Button>
-        ) : (
-          <Button variant="primary" onClick={() => setStep(step + 1)} disabled={!canContinue}>
-            Continue <ArrowRight size={15} />
-          </Button>
-        )}
-      </>
-    );
+  const footer = (
+    <WizardFooter
+      step={step}
+      canContinue={canContinue}
+      pending={create.isPending}
+      onBack={() => setStep(step - 1)}
+      onNext={() => setStep(step + 1)}
+      onCreate={upload ? () => submit(upload) : undefined}
+      onDone={close}
+    />
+  );
 
   return (
     <Dialog
@@ -194,30 +265,23 @@ export function CreateVoiceWizard({
       footer={footer}
     >
       <Stepper step={step} />
-      {step === 0 ? <ReferenceExplainer /> : null}
-      {step === 1 ? (
-        <CaptureStep
-          onCaptured={(captured) => {
-            setClip(captured);
-            setVerdict(null);
-            setStep(2);
-          }}
-        />
-      ) : null}
-      {step === 2 && clip ? (
-        <ReviewStep clip={clip} onRetake={() => setStep(1)} onVerdict={onVerdict} />
-      ) : null}
-      {step === 3 ? (
-        <>
-          <DetailsStep name={name} onName={setName} consent={consent} onConsent={setConsent} />
-          {create.isError ? (
-            <Banner tone="error" className="mt-4">
-              {describeError(create.error)}
-            </Banner>
-          ) : null}
-        </>
-      ) : null}
-      {step === 4 && create.data ? <TestStep profile={create.data} /> : null}
+      <WizardStepContent
+        step={step}
+        clip={clip}
+        profile={create.data}
+        error={create.isError ? create.error : null}
+        name={name}
+        consent={consent}
+        onName={setName}
+        onConsent={setConsent}
+        onCaptured={(captured) => {
+          setClip(captured);
+          setVerdict(null);
+          setStep(2);
+        }}
+        onRetake={() => setStep(1)}
+        onVerdict={onVerdict}
+      />
     </Dialog>
   );
 }

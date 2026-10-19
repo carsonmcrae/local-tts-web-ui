@@ -192,3 +192,131 @@ describe('PlaybackController', () => {
     expect(listener.mock.calls.length).toBe(calls);
   });
 });
+
+describe('PlaybackController edge cases', () => {
+  it('ignores commands and media events until a document is loaded', async () => {
+    const { controller, media, requests } = setup();
+    await controller.play();
+    await controller.next();
+    await controller.nextSection();
+    await controller.previousSection();
+    await controller.setVoice('kokoro:b');
+    controller.pause();
+    media.emit('ended');
+    expect(controller.getState()).toMatchObject({ status: 'idle', voiceId: 'kokoro:b' });
+    expect(requests).toHaveLength(0);
+  });
+
+  it('mirrors pause, play and time updates from the media element', async () => {
+    const { controller, media } = setup();
+    await controller.load(DOC, 0, true);
+    media.emit('pause');
+    media.emit('pause');
+    expect(controller.getState().status).toBe('paused');
+    media.emit('play');
+    media.emit('play');
+    expect(controller.getState().status).toBe('playing');
+    media.currentTime = 1.5;
+    media.emit('timeupdate');
+    expect(controller.getState().currentTime).toBe(1.5);
+  });
+
+  it('starts again from the beginning after the end', async () => {
+    const { controller, media } = setup();
+    await controller.load(DOC, 5, true);
+    media.emit('ended');
+    expect(controller.getState().status).toBe('ended');
+    await controller.play();
+    expect(controller.getState()).toMatchObject({ segmentIndex: 0, status: 'playing' });
+  });
+
+  it('pauses while the next sentence is still being generated', async () => {
+    const { controller, deps, media } = setup();
+    const pending: (() => void)[] = [];
+    deps.fetchSegment = () =>
+      new Promise((resolve) => {
+        pending.push(() => resolve({ url: 'blob:late', duration: 1 }));
+      });
+    const loading = controller.load(DOC, 0, true);
+    expect(controller.getState().status).toBe('loading');
+    await controller.toggle();
+    expect(controller.getState().status).toBe('paused');
+    for (const release of pending) release();
+    await loading;
+    // The audio arriving after the pause must not start playback by itself…
+    expect(media.play).not.toHaveBeenCalled();
+    expect(controller.getState().status).toBe('paused');
+    // …but it is kept, so Play starts it at once without fetching again.
+    await controller.play();
+    expect(media.src).toBe('blob:late');
+    expect(media.play).toHaveBeenCalledTimes(1);
+    expect(controller.getState().status).toBe('playing');
+  });
+
+  it('stays within sections at the edges of the document', async () => {
+    const { controller } = setup();
+    await controller.load(DOC, 5, false);
+    await controller.nextSection();
+    expect(controller.getState().segmentIndex).toBe(5);
+    await controller.previousSection();
+    expect(controller.getState().segmentIndex).toBe(3);
+    await controller.seek(0);
+    await controller.previousSection();
+    expect(controller.getState().segmentIndex).toBe(0);
+    await controller.load({ ...DOC, id: 'flat', sections: [] }, 2, false);
+    await controller.nextSection();
+    await controller.previousSection();
+    expect(controller.getState().segmentIndex).toBe(2);
+    // Segments before the first listed section belong to no section at all.
+    await controller.load({ ...DOC, id: 'tail', sections: DOC.sections.slice(1) }, 1, false);
+    await controller.nextSection();
+    expect(controller.getState().segmentIndex).toBe(1);
+  });
+
+  it('ignores aborted requests', async () => {
+    const { controller, deps } = setup();
+    deps.fetchSegment = () => Promise.reject(new DOMException('gone', 'AbortError'));
+    await controller.load(DOC, 0, true);
+    expect(controller.getState()).toMatchObject({ status: 'loading', error: null });
+  });
+
+  it('ignores late play() results from audio that was already skipped', async () => {
+    const { controller, media } = setup();
+    const settle = { resolve: () => undefined as void, reject: (_error: unknown) => undefined };
+    const deferPlay = () =>
+      media.play.mockImplementationOnce(
+        () =>
+          new Promise<void>((resolve, reject) => {
+            Object.assign(settle, { resolve, reject });
+          }),
+      );
+    deferPlay();
+    const failed = controller.load(DOC, 0, true);
+    await flush();
+    await controller.next();
+    settle.reject(new Error('interrupted'));
+    await failed;
+    expect(controller.getState()).toMatchObject({ segmentIndex: 1, status: 'playing' });
+    deferPlay();
+    const late = controller.seek(3);
+    await flush();
+    controller.pause();
+    await controller.seek(4);
+    settle.resolve();
+    await late;
+    expect(controller.getState()).toMatchObject({ segmentIndex: 4, status: 'paused' });
+  });
+
+  it('treats an interrupted play() as benign and other media failures as errors', async () => {
+    const { controller, media } = setup();
+    media.playError = new DOMException('replaced', 'AbortError');
+    await controller.load(DOC, 0, true);
+    expect(controller.getState().status).toBe('loading');
+    media.playError = new DOMException('bad file', 'NotSupportedError');
+    await controller.next();
+    expect(controller.getState()).toMatchObject({ status: 'error', error: { code: 'test' } });
+    media.playError = new Error('decoder crashed');
+    await controller.play();
+    expect(controller.getState().error?.message).toBe('Error: decoder crashed');
+  });
+});

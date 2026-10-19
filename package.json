@@ -36,11 +36,15 @@
     "api:types": "node scripts/gen-api-types.mjs",
     "api:check": "node scripts/gen-api-types.mjs --check",
     "deps:check": "knip && node scripts/uv-run.mjs --cwd apps/server run --frozen deptry src",
-    "security": "npm audit --omit=dev --audit-level=high && node scripts/uv-run.mjs --cwd apps/server export --frozen --no-dev --no-emit-project --format requirements-txt -o ../../.tools/server-requirements.txt --quiet && node scripts/uv-run.mjs --cwd apps/server run --frozen pip-audit --strict -r ../../.tools/server-requirements.txt",
+    "duplication": "jscpd --config .jscpd.json .",
+    "security": "npm audit --omit=dev --audit-level=high && node scripts/uv-run.mjs --cwd apps/server export --frozen --no-dev --no-emit-project --format requirements-txt -o ../../.tools/server-requirements.txt --quiet && node scripts/uv-run.mjs --cwd apps/server run --frozen pip-audit --strict -r ../../.tools/server-requirements.txt && node scripts/audit-worker.mjs",
     "licenses": "node scripts/license-inventory.mjs",
+    "sonar:coverage": "npm run test:coverage --workspace @ltts/web && node scripts/uv-run.mjs --cwd apps/server run --frozen pytest --cov --cov-report=term --cov-report=xml:coverage.xml",
+    "sonar": "npx --yes @sonar/scan@5.0.1",
     "media:demo": "npm run build && node scripts/media/record-demo.mjs",
     "media:promo": "node scripts/media/render-promo.mjs",
-    "check": "npm run format:check && npm run lint && npm run typecheck && npm run api:check && npm run test && npm run build"
+    "media:screenshots": "npm run build && node scripts/capture-screenshots.mjs",
+    "check": "npm run format:check && npm run lint && npm run typecheck && npm run api:check && npm run deps:check && npm run duplication && npm run test && npm run build"
   },
   "devDependencies": {
     "@axe-core/playwright": "4.13.0",
@@ -52,12 +56,13 @@
     "eslint-plugin-react-hooks": "7.1.1",
     "eslint-plugin-react-refresh": "0.5.7",
     "globals": "17.13.0",
+    "jscpd": "5.4.0",
     "knip": "6.39.0",
     "openapi-typescript": "7.13.0",
     "prettier": "3.9.9",
     "prettier-plugin-tailwindcss": "0.8.1",
     "typescript": "6.0.3",
-    "typescript-eslint": "8.71.0"
+    "typescript-eslint": "8.71.1"
   },
   "overrides": {
     "openapi-typescript": {

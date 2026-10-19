@@ -9,7 +9,7 @@ import { AudioLines, Mic, Search } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router';
 import { describeError } from '@/api/client';
-import { usePreferences, useSavePreferences, useVoices } from '@/api/queries';
+import { usePreferences, useVoices } from '@/api/queries';
 import type { VoiceInfo } from '@/api/types';
 import { buttonClasses } from '@/components/ui/Button';
 import { Banner, EmptyState, Skeleton } from '@/components/ui/Feedback';
@@ -17,7 +17,7 @@ import { Field, Input, Select, Textarea } from '@/components/ui/Field';
 import { PageHeader } from '@/components/ui/Layout';
 import { useToast } from '@/components/ui/Toast';
 import { DefaultVoicesBanner } from '@/features/engines/EngineSetup';
-import { usePlayer } from '@/features/player/PlayerProvider';
+import { useReadingVoice } from '@/features/player/useReadingVoice';
 import { useVoicePreview } from './useVoicePreview';
 import { VoiceCard } from './VoiceCard';
 
@@ -43,8 +43,7 @@ export function filterVoices(voices: readonly VoiceInfo[], filters: VoiceFilters
 export default function VoiceLibraryPage() {
   const voices = useVoices();
   const preferences = usePreferences();
-  const savePreferences = useSavePreferences();
-  const { controller } = usePlayer();
+  const reading = useReadingVoice();
   const preview = useVoicePreview();
   const toast = useToast();
   const [filters, setFilters] = useState<VoiceFilters>({
@@ -57,11 +56,10 @@ export default function VoiceLibraryPage() {
   const all = useMemo(() => voices.data ?? [], [voices.data]);
   const languages = useMemo(() => [...new Set(all.map((voice) => voice.language))].sort(), [all]);
   const shown = useMemo(() => filterVoices(all, filters), [all, filters]);
-  const defaultVoice = preferences.data?.defaultVoiceId;
+  const defaultVoice = reading.current;
 
   const use = (voice: VoiceInfo) => {
-    void controller.setVoice(voice.id);
-    if (preferences.data) savePreferences.mutate({ ...preferences.data, defaultVoiceId: voice.id });
+    reading.choose(voice.id);
     toast.notify('success', `${voice.name} is now your reading voice`);
   };
 

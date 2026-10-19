@@ -48,7 +48,7 @@ export function mockApi(routes: Record<string, Handler | unknown>) {
   return { fetchMock, calls };
 }
 
-export class SilentMedia implements MediaLike {
+class SilentMedia implements MediaLike {
   src = '';
   currentTime = 0;
   playbackRate = 1;

@@ -479,6 +479,7 @@ dependencies = [
     { name = "pypdfium2" },
     { name = "python-docx" },
     { name = "soundfile" },
+    { name = "starlette" },
     { name = "uvicorn" },
 ]
 
@@ -510,6 +511,7 @@ requires-dist = [
     { name = "pypdfium2", specifier = ">=5.14,<6" },
     { name = "python-docx", specifier = ">=1.2,<2" },
     { name = "soundfile", specifier = ">=0.14,<1" },
+    { name = "starlette", specifier = ">=1.7,<2" },
     { name = "uvicorn", specifier = ">=0.54,<1" },
 ]
 

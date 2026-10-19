@@ -7,7 +7,7 @@
  * Does NOT belong: React bindings (PlayerProvider) or UI.
  */
 
-export type PlayerStatus = 'idle' | 'loading' | 'playing' | 'paused' | 'ended' | 'error';
+type PlayerStatus = 'idle' | 'loading' | 'playing' | 'paused' | 'ended' | 'error';
 
 export interface PlayerDocument {
   id: string;
@@ -34,7 +34,7 @@ export interface PlayerState {
   duration: number;
 }
 
-export interface SegmentAudio {
+interface SegmentAudio {
   url: string;
   duration: number;
 }

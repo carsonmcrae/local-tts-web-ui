@@ -17,9 +17,9 @@ import { Field, Input, Textarea } from '@/components/ui/Field';
 import { IndeterminateBar } from '@/components/ui/Spinner';
 import { cn } from '@/lib/cn';
 
-export const ACCEPTED = '.txt,.md,.markdown,.pdf,.docx,.epub';
+const ACCEPTED = '.txt,.md,.markdown,.pdf,.docx,.epub';
 const ACCEPTED_EXTENSIONS = ACCEPTED.split(',');
-export const CLIENT_MAX_BYTES = 25 * 1024 * 1024;
+const CLIENT_MAX_BYTES = 25 * 1024 * 1024;
 
 export function precheck(file: File, maxBytes = CLIENT_MAX_BYTES): string | null {
   const extension = file.name.slice(file.name.lastIndexOf('.')).toLowerCase();

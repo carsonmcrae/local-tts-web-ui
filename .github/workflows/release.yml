@@ -41,13 +41,9 @@ jobs:
         with:
           ref: ${{ env.TAG }}
           fetch-depth: 0
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version-file: .nvmrc
-          cache: npm
+      - uses: ./.github/actions/node-deps
       - name: Check the tag, version and changelog agree
         run: node scripts/release-notes.mjs "$TAG" > "$RUNNER_TEMP/release-notes.md"
-      - run: npm ci
       - name: Bootstrap (verified uv download, Python 3.12, locked deps)
         run: node scripts/setup.mjs
       - run: npm run check

@@ -6,11 +6,12 @@
  *   `scripts/file-size-exceptions.json`. Lockfiles, generated files and fixtures are exempt.
  * Does NOT belong: Formatting or complexity checks (ESLint / ruff).
  */
-import { execFileSync } from 'node:child_process';
+
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { color, ok, warn } from './lib/log.mjs';
 import { repoRoot } from './lib/paths.mjs';
+import { repoFiles } from './lib/repo-files.mjs';
 
 const REVIEW = 400;
 const LIMIT = 500;
@@ -35,16 +36,7 @@ function exceptions() {
   }
 }
 
-const files = execFileSync(
-  process.platform === 'win32' ? 'git.exe' : 'git',
-  ['ls-files', '--cached', '--others', '--exclude-standard'],
-  {
-    cwd: repoRoot,
-    encoding: 'utf8',
-  },
-)
-  .split('\n')
-  .filter((file) => CHECKED.test(file) && !EXEMPT.some((rule) => rule.test(file)));
+const files = repoFiles(CHECKED, EXEMPT);
 
 const allowed = exceptions();
 let failed = 0;

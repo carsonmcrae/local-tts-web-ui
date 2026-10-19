@@ -1,0 +1,17 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "workspaces": {
+    ".": {
+      "entry": [
+        "scripts/e2e-server.mjs",
+        "scripts/media/demo-page.js",
+        "scripts/media/promo/promo.js"
+      ],
+      "ignoreDependencies": ["vite"]
+    },
+    "apps/web": {
+      "ignore": ["src/api/schema.gen.ts"]
+    }
+  },
+  "ignoreUnresolved": ["../../.tools/server-requirements.txt"]
+}

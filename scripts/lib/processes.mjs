@@ -67,6 +67,22 @@ export function stopManaged({ child }) {
 }
 
 /**
+ * Ties this script's lifetime to a managed child: Ctrl+C or SIGTERM stops the child, the script
+ * exits with the child's code if it stops on its own, and the child never outlives the script.
+ * @param {Managed} managed
+ */
+export function exitWithChild(managed) {
+  const stop = () => {
+    stopManaged(managed);
+    process.exit(0);
+  };
+  process.on('SIGINT', stop);
+  process.on('SIGTERM', stop);
+  process.on('exit', () => stopManaged(managed));
+  managed.child.on('exit', (code) => process.exit(code ?? 1));
+}
+
+/**
  * @param {number} port
  * @param {string} host
  * @returns {Promise<boolean>}

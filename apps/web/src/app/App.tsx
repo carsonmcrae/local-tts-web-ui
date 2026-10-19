@@ -58,7 +58,7 @@ function NotFound() {
   );
 }
 
-export function createRouter() {
+function createRouter() {
   return createBrowserRouter([
     {
       element: <AppShell />,
@@ -122,10 +122,7 @@ export function createQueryClient(): QueryClient {
   });
 }
 
-export function Providers({
-  client,
-  children,
-}: Readonly<{ client: QueryClient; children: ReactNode }>) {
+function Providers({ client, children }: Readonly<{ client: QueryClient; children: ReactNode }>) {
   useTheme();
   return (
     <QueryClientProvider client={client}>

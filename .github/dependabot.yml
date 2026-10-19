@@ -39,7 +39,7 @@ updates:
     cooldown:
       default-days: 30
   - package-ecosystem: github-actions
-    directory: /
+    directories: ['/', '/.github/actions/*']
     schedule:
       interval: weekly
     cooldown:

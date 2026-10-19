@@ -54,8 +54,9 @@ for (const file of files) {
     );
     failed += 1;
   } else if (lines > REVIEW) {
+    const exception = allowed[file] ? ` (exception: ${allowed[file]})` : '';
     warn(
-      `${file}: ${lines} lines — over ${REVIEW}, review whether it should be split${allowed[file] ? ` (exception: ${allowed[file]})` : ''}.`,
+      `${file}: ${lines} lines — over ${REVIEW}, review whether it should be split${exception}.`,
     );
   }
 }

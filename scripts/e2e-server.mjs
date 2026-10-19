@@ -56,7 +56,9 @@ async function main() {
   exitWithChild(server);
 }
 
-main().catch((error) => {
+try {
+  await main();
+} catch (error) {
   printFailure(error);
   process.exit(1);
-});
+}

@@ -2,7 +2,8 @@
 /**
  * Purpose: Require a useful module header on every hand-written source file.
  * Scope: TS/TSX/MJS/PY/CSS source under apps/, scripts/ and tests/ must state `Purpose:`,
- *   `Scope:` and `Does NOT belong:` within the first 15 lines, with real content (not TODO).
+ *   `Scope:` and `Does NOT belong:` within the first 15 lines, with real content rather than
+ *   placeholder text.
  * Does NOT belong: Docs, configs without comment syntax, generated files.
  */
 
@@ -29,9 +30,8 @@ for (const file of files) {
   const missing = FIELDS.filter((field) => !head.includes(field));
   const placeholder = /(Purpose|Scope):\s*(TODO|TBD|\.\.\.)/i.test(head);
   if (missing.length || placeholder) {
-    console.error(
-      `${color.red('✗')} ${file}: header ${placeholder ? 'has placeholder text' : `missing ${missing.join(', ')}`}`,
-    );
+    const problem = placeholder ? 'has placeholder text' : `missing ${missing.join(', ')}`;
+    console.error(`${color.red('✗')} ${file}: header ${problem}`);
     failed += 1;
   }
 }

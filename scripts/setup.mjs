@@ -37,19 +37,23 @@ export async function setup({ skipModels = process.env.LTTS_SKIP_MODEL_DOWNLOAD 
   return { uv, modelReady: true };
 }
 
+/** `npm run setup`: like setup(), but a missing default model is an error. */
+async function main() {
+  const { modelReady } = await setup();
+  if (!modelReady && process.env.LTTS_SKIP_MODEL_DOWNLOAD !== '1') {
+    throw new BootstrapError('Setup finished, but the default voice model is missing.', [
+      'Re-run `npm run setup` once you are online, or install it from Settings.',
+    ]);
+  }
+  ok('Setup complete. Start the app with `npm run dev`.');
+}
+
 const invokedDirectly = process.argv[1]?.replaceAll('\\', '/').endsWith('scripts/setup.mjs');
 if (invokedDirectly) {
-  setup()
-    .then(({ modelReady }) => {
-      if (!modelReady && process.env.LTTS_SKIP_MODEL_DOWNLOAD !== '1') {
-        throw new BootstrapError('Setup finished, but the default voice model is missing.', [
-          'Re-run `npm run setup` once you are online, or install it from Settings.',
-        ]);
-      }
-      ok('Setup complete. Start the app with `npm run dev`.');
-    })
-    .catch((error) => {
-      printFailure(error);
-      process.exit(1);
-    });
+  try {
+    await main();
+  } catch (error) {
+    printFailure(error);
+    process.exit(1);
+  }
 }

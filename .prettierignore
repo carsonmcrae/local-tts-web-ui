@@ -3,6 +3,7 @@ dist
 coverage
 /data
 .tools
+.claude
 .e2e-data
 playwright-report
 test-results

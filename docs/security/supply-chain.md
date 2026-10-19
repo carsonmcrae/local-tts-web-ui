@@ -11,7 +11,7 @@
 | `ignore-scripts=true` — no package runs install hooks (audited: none of the 519 packages needs one)                                  | `.npmrc`                                                |
 | Locked Python environments, `uv sync --frozen`                                                                                       | `apps/server/uv.lock`, `apps/chatterbox-worker/uv.lock` |
 | Existing cloning installs record the worker lock's SHA-256 and are offered an update when it changes                                 | `apps/server/src/ltts/engines/chatterbox_env.py`        |
-| 14-day release cool-down for Python resolution (`exclude-newer`); worker versions are picked by hand under the same rule             | `apps/server/pyproject.toml`                            |
+| 14-day release cool-down for Python resolution (`exclude-newer`); not yet enforced for the Chatterbox worker (see below)             | `apps/server/pyproject.toml`                            |
 | Pinned uv binary with SHA-256 for six platforms                                                                                      | `scripts/toolchain.json`                                |
 | Pinned model artifacts with SHA-256 and host allow-list                                                                              | `apps/server/src/ltts/modelstore/manifest.json`         |
 | `npm audit --audit-level=high` and `pip-audit` of the server environment                                                             | `npm run security`, CI                                  |
@@ -23,15 +23,31 @@
 ## Known advisories in the optional Chatterbox environment
 
 `chatterbox-tts` 0.1.7 pins exact versions of its machine-learning stack. Where a patched version is
-compatible, the worker overrides the pin: `diffusers` 0.29.0 → 0.38.0 (two high-severity
-`trust_remote_code` advisories) and `safetensors` 0.5.3 → 0.8.0 (needed by that diffusers). Clone
-quality was measured before and after (mean speaker similarity 0.915 → 0.917).
+compatible, the worker overrides the pin:
 
-As of 2026-10-19, `pip-audit` still reports lower-severity advisories against `torch` 2.6.0 (7),
-`transformers` 5.2.0 (4) and `setuptools` 80.x (1; held below 81 because the Perth watermarker imports
+| Package        | Pinned by chatterbox | Override | Why                                                                                           |
+| -------------- | -------------------- | -------- | --------------------------------------------------------------------------------------------- |
+| `diffusers`    | 0.29.0               | 0.38.0   | Two high-severity `trust_remote_code` advisories                                              |
+| `safetensors`  | 0.5.3                | 0.8.0    | Required by diffusers 0.38                                                                    |
+| `transformers` | 5.2.0                | 5.11.0   | Four high-severity advisories; 5.10.x crashes on torch 2.6 (unguarded torch 2.7 float8 dtype) |
+
+Clone quality was measured with each change: three cloned sentences scored against the same reference
+recording had mean speaker similarity 0.915 before, 0.917 with the new diffusers and 0.917 with the new
+transformers (unrelated voices score 0.60 to 0.65).
+
+Overrides reach people who already installed cloning through **Update available** in Settings →
+Engines: the install marker records the lock's SHA-256, and a changed lock is offered as an in-place
+`uv sync --frozen` ([ADR-8](../architecture/decisions.md)).
+
+As of 2026-10-19, `pip-audit` still reports lower-severity advisories against `torch` 2.6.0 (7, pinned
+exactly by chatterbox) and `setuptools` 80.x (1; held below 81 because the Perth watermarker imports
 `pkg_resources`). They only affect people who install voice cloning. The worker is not yet part of
 `npm run security`, because these advisories need triage and the PyTorch local builds (`+cpu`,
 `+cu124`) are not on PyPI.
+
+The worker lock was also resolved without `exclude-newer`, so 21 of its 123 PyPI packages were less
+than 14 days old on 2026-10-19 (for example `certifi` 2026.10.18 and `fastapi` 0.148.0). Bringing it
+under the same cool-down as the server is tracked with the advisory triage.
 
 ## Updating dependencies
 

@@ -10,16 +10,7 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { DocumentDetail } from '@/api/types';
 import ReaderPage from '@/features/reader/ReaderPage';
-import {
-  documentDetail,
-  json,
-  kokoro,
-  mockApi,
-  preferences,
-  readerRoutes,
-  renderWithApp,
-  voice,
-} from '@/test/render';
+import { documentDetail, json, mockReaderApi, renderWithApp, voice } from '@/test/render';
 import { PlayerBar } from './PlayerBar';
 import { usePlayer } from './PlayerProvider';
 import { groupVoices } from './VoicePicker';
@@ -28,17 +19,6 @@ afterEach(() => {
   vi.unstubAllGlobals();
   Reflect.deleteProperty(navigator, 'mediaSession');
 });
-
-function api(doc: DocumentDetail, overrides: Record<string, unknown> = {}) {
-  return mockApi({
-    'GET /api/engines': [kokoro()],
-    'GET /api/preferences': preferences,
-    'GET /api/voices': [voice()],
-    'PUT /api/documents/': {},
-    ...readerRoutes(doc),
-    ...overrides,
-  });
-}
 
 function renderReader(doc: DocumentDetail, withPlayer = false) {
   return renderWithApp(
@@ -77,7 +57,7 @@ function installMediaSession(unsupported: string[] = []) {
 describe('Media Session', () => {
   it('shows the document on the lock screen and answers hardware media keys', async () => {
     const doc = documentDetail();
-    api(doc);
+    mockReaderApi(doc);
     const { session, handlers, run } = installMediaSession(['nexttrack']);
     const { unmount } = renderReader(doc);
     await waitFor(() =>
@@ -98,7 +78,7 @@ describe('Media Session', () => {
 
   it('falls back to the app name when the position is outside any section', async () => {
     const doc = documentDetail({ sections: [], sectionCount: 0 });
-    api(doc);
+    mockReaderApi(doc);
     const { session } = installMediaSession();
     renderReader(doc);
     await waitFor(() => expect(session.metadata).toMatchObject({ artist: 'Local TTS' }));
@@ -108,7 +88,7 @@ describe('Media Session', () => {
 describe('PlayerProvider', () => {
   it('saves the reading position after a short pause and refreshes the document', async () => {
     const doc = documentDetail();
-    const { calls } = api(doc);
+    const { calls } = mockReaderApi(doc);
     renderReader(doc);
     await waitFor(() => expect(calls.some((call) => call.path.endsWith('/progress'))).toBe(true), {
       timeout: 2000,
@@ -120,7 +100,7 @@ describe('PlayerProvider', () => {
 
   it('ignores a failed progress save', async () => {
     const doc = documentDetail();
-    const { calls } = api(doc, {
+    const { calls } = mockReaderApi(doc, {
       'PUT /api/documents/': json({ error: { code: 'busy', message: 'Busy.' } }, 503),
     });
     renderReader(doc);
@@ -132,7 +112,7 @@ describe('PlayerProvider', () => {
 
   it('reports media failures that are not API errors in plain language', async () => {
     const doc = documentDetail();
-    api(doc);
+    mockReaderApi(doc);
     const user = userEvent.setup();
     const { media } = renderReader(doc, true);
     media.play.mockRejectedValueOnce(new Error('The audio could not be decoded.'));

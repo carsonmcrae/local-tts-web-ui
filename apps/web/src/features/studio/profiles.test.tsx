@@ -10,10 +10,19 @@ import { act, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import type { UserEvent } from '@testing-library/user-event';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { EngineInfo, VoiceProfile } from '@/api/types';
+import type { EngineInfo } from '@/api/types';
 import type { usePlayer } from '@/features/player/PlayerProvider';
 import type * as WavModule from '@/lib/audio/wav';
-import { json, kokoro, mockApi, PlayerSpy, preferences, renderWithApp, voice } from '@/test/render';
+import {
+  json,
+  kokoro,
+  mockApi,
+  PlayerSpy,
+  preferences,
+  renderWithApp,
+  voice,
+  voiceProfile,
+} from '@/test/render';
 import VoiceStudioPage from './VoiceStudioPage';
 
 vi.mock('@/lib/audio/wav', async (importOriginal) => {
@@ -24,12 +33,7 @@ vi.mock('@/lib/audio/wav', async (importOriginal) => {
 
 afterEach(() => vi.unstubAllGlobals());
 
-const profile: VoiceProfile = {
-  id: 'c'.repeat(32), voiceId: `custom:${'c'.repeat(32)}`, name: 'My voice', engineId: 'chatterbox', durationS: 14,
-  sampleRate: 24000, consentedAt: '2026-10-19T10:00:00+00:00', source: 'recording', createdAt: '2026-10-19T10:00:00+00:00',
-  stores: 'A trimmed copy of your reference recording (WAV).',
-  quality: { durationS: 14, speechS: 12, rmsDbfs: -20, peakDbfs: -1, clippingRatio: 0, pauseRatio: 0.2, snrDb: 40, ok: true, issues: [] },
-}; // prettier-ignore
+const profile = voiceProfile({ source: 'recording' });
 
 const cloning = (overrides: Partial<EngineInfo> = {}) =>
   kokoro({ id: 'chatterbox', name: 'Chatterbox Turbo', supportsCloning: true, ...overrides });

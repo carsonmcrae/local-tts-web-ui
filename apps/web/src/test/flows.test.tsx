@@ -9,7 +9,7 @@
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { JobOut, VoiceProfile } from '@/api/types';
+import type { JobOut } from '@/api/types';
 import type * as WavModule from '@/lib/audio/wav';
 import { App } from '@/app/App';
 import { EnginePanel } from '@/features/engines/EngineSetup';
@@ -17,7 +17,16 @@ import LibraryPage from '@/features/library/LibraryPage';
 import { ExportDialog } from '@/features/reader/ExportDialog';
 import VoiceStudioPage from '@/features/studio/VoiceStudioPage';
 import VoiceLibraryPage from '@/features/voices/VoiceLibraryPage';
-import { documentDetail, json, kokoro, mockApi, preferences, renderWithApp, voice } from './render';
+import {
+  documentDetail,
+  json,
+  kokoro,
+  mockApi,
+  preferences,
+  renderWithApp,
+  voice,
+  voiceProfile,
+} from './render';
 
 vi.mock('@/lib/audio/wav', async (importOriginal) => {
   const actual = await importOriginal<typeof WavModule>();
@@ -39,12 +48,7 @@ const job = (overrides: Partial<JobOut>): JobOut => ({
   payload: {}, result: null, errorCode: null, createdAt: '', updatedAt: '', ...overrides,
 }); // prettier-ignore
 
-const profile: VoiceProfile = {
-  id: 'c'.repeat(32), voiceId: `custom:${'c'.repeat(32)}`, name: 'My voice', engineId: 'chatterbox', durationS: 14,
-  sampleRate: 24000, consentedAt: '2026-10-19T10:00:00+00:00', source: 'import', createdAt: '2026-10-19T10:00:00+00:00',
-  stores: 'A trimmed copy of your reference recording (WAV).',
-  quality: { durationS: 14, speechS: 12, rmsDbfs: -20, peakDbfs: -1, clippingRatio: 0, pauseRatio: 0.2, snrDb: 40, ok: true, issues: [] },
-}; // prettier-ignore
+const profile = voiceProfile();
 
 const base = {
   'GET /api/preferences': preferences,

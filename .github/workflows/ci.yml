@@ -33,6 +33,10 @@ jobs:
       - run: npm run format:check
       - run: npm run lint:web
       - run: npm run lint:repo
+      - name: Unused files, exports and dependencies (Knip)
+        run: npx knip
+      - name: Copy-paste detection (jscpd)
+        run: npm run duplication
       - run: npm run typecheck --workspace @ltts/web && npx tsc -p scripts/tsconfig.json && npx tsc -p tests/e2e/tsconfig.json
       - run: npm run test:coverage --workspace @ltts/web
       - run: npm run build
@@ -53,6 +57,8 @@ jobs:
         run: node scripts/setup.mjs
       - run: npm run lint:server
       - run: node scripts/uv-run.mjs --cwd apps/server run --frozen mypy
+      - name: Python dependency declarations (deptry)
+        run: node scripts/uv-run.mjs --cwd apps/server run --frozen deptry src
       - run: node scripts/uv-run.mjs --cwd apps/server run --frozen pytest --cov --cov-report=term-missing
 
   contract:

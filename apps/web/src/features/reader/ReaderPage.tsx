@@ -74,6 +74,7 @@ function Reader({ doc }: Readonly<{ doc: DocumentDetail }>) {
     else void controller.load(playerDoc, index, true);
   };
   const resumeAt = isLoaded ? state.segmentIndex : (doc.progress?.segmentIndex ?? 0);
+  const playingThis = isLoaded && (state.status === 'playing' || state.status === 'loading');
   const nav = (
     <SectionNav sections={doc.sections} viewed={viewed} speaking={speaking} onSelect={jump} />
   );
@@ -96,7 +97,8 @@ function Reader({ doc }: Readonly<{ doc: DocumentDetail }>) {
         <ReaderHeader
           doc={doc}
           onContents={multiSection ? () => setTocOpen(true) : undefined}
-          onPlay={() => playFrom(resumeAt)}
+          onPlay={() => (playingThis ? controller.pause() : playFrom(resumeAt))}
+          playing={playingThis}
         />
         <DefaultVoicesBanner />
         {doc.warnings.map((warning) => (

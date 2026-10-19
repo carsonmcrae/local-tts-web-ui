@@ -26,13 +26,25 @@ export async function uploadFixture(page: Page, name: string): Promise<void> {
 }
 
 export function isSegmentAudio(response: Response, index?: number): boolean {
-  return /\/segments\/\d+\/audio/.test(response.url()) && (index === undefined || response.url().includes(`/segments/${index}/audio`));
+  return (
+    /\/segments\/\d+\/audio/.test(response.url()) &&
+    (index === undefined || response.url().includes(`/segments/${index}/audio`))
+  );
 }
 
 export async function play(page: Page): Promise<void> {
-  await page.getByRole('region', { name: 'Audio player' }).getByRole('button', { name: 'Play', exact: true }).click();
+  await page
+    .getByRole('region', { name: 'Audio player' })
+    .getByRole('button', { name: 'Play', exact: true })
+    .click();
 }
 
-export async function waitForActiveSegment(page: Page, index: number, timeout = 60_000): Promise<void> {
-  await expect(page.locator(`[data-index="${index}"][data-active="true"]`)).toBeVisible({ timeout });
+export async function waitForActiveSegment(
+  page: Page,
+  index: number,
+  timeout = 60_000,
+): Promise<void> {
+  await expect(page.locator(`[data-index="${index}"][data-active="true"]`)).toBeVisible({
+    timeout,
+  });
 }

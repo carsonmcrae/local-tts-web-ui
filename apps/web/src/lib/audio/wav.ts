@@ -14,7 +14,8 @@ export function mixToMono(channels: readonly Float32Array[]): Float32Array {
   if (channels.length === 1) return first;
   const mono = new Float32Array(first.length);
   for (const channel of channels) {
-    for (let i = 0; i < mono.length; i += 1) mono[i] = (mono[i] ?? 0) + (channel[i] ?? 0) / channels.length;
+    for (let i = 0; i < mono.length; i += 1)
+      mono[i] = (mono[i] ?? 0) + (channel[i] ?? 0) / channels.length;
   }
   return mono;
 }
@@ -57,15 +58,23 @@ export interface DecodedClip {
 
 /** Decode compressed or WAV audio and normalise it to mono 24 kHz, keeping at most `maxSeconds`. */
 export async function decodeToClip(data: ArrayBuffer, maxSeconds: number): Promise<DecodedClip> {
-  const AudioCtx = window.AudioContext ?? (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+  const AudioCtx =
+    window.AudioContext ??
+    (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
   const context = new AudioCtx();
   try {
     const buffer = await context.decodeAudioData(data.slice(0));
-    const channels = Array.from({ length: buffer.numberOfChannels }, (_, i) => buffer.getChannelData(i));
+    const channels = Array.from({ length: buffer.numberOfChannels }, (_, i) =>
+      buffer.getChannelData(i),
+    );
     const mono = mixToMono(channels);
     const limit = Math.floor(maxSeconds * buffer.sampleRate);
     const trimmed = mono.length > limit;
-    const samples = await resample(trimmed ? mono.subarray(0, limit) : mono, buffer.sampleRate, TARGET_RATE);
+    const samples = await resample(
+      trimmed ? mono.subarray(0, limit) : mono,
+      buffer.sampleRate,
+      TARGET_RATE,
+    );
     return { samples, sampleRate: TARGET_RATE, trimmed };
   } finally {
     void context.close();

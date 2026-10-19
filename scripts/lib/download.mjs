@@ -40,25 +40,31 @@ export function assertAllowedUrl(url, allowedHosts) {
 function request(url, allowedHosts, redirectsLeft) {
   const target = assertAllowedUrl(url, allowedHosts);
   return new Promise((resolve, reject) => {
-    const req = https.get(target, { headers: { 'user-agent': 'local-tts-web-ui-bootstrap' } }, (res) => {
-      const status = res.statusCode ?? 0;
-      if (status >= 300 && status < 400 && res.headers.location) {
-        res.resume();
-        if (redirectsLeft <= 0) {
-          reject(new BootstrapError('Too many redirects while downloading.'));
+    const req = https.get(
+      target,
+      { headers: { 'user-agent': 'local-tts-web-ui-bootstrap' } },
+      (res) => {
+        const status = res.statusCode ?? 0;
+        if (status >= 300 && status < 400 && res.headers.location) {
+          res.resume();
+          if (redirectsLeft <= 0) {
+            reject(new BootstrapError('Too many redirects while downloading.'));
+            return;
+          }
+          const next = new URL(res.headers.location, target).toString();
+          request(next, allowedHosts, redirectsLeft - 1).then(resolve, reject);
           return;
         }
-        const next = new URL(res.headers.location, target).toString();
-        request(next, allowedHosts, redirectsLeft - 1).then(resolve, reject);
-        return;
-      }
-      if (status !== 200) {
-        res.resume();
-        reject(new BootstrapError(`Download failed with HTTP ${status} from ${target.hostname}.`));
-        return;
-      }
-      resolve(res);
-    });
+        if (status !== 200) {
+          res.resume();
+          reject(
+            new BootstrapError(`Download failed with HTTP ${status} from ${target.hostname}.`),
+          );
+          return;
+        }
+        resolve(res);
+      },
+    );
     req.setTimeout(60_000, () => req.destroy(new Error('Network timeout after 60 seconds.')));
     req.on('error', (error) =>
       reject(
@@ -75,7 +81,14 @@ function request(url, allowedHosts, redirectsLeft) {
  * @param {{ url: string, destination: string, size: number, sha256: string,
  *   allowedHosts: string[], onProgress?: (received: number, total: number) => void }} options
  */
-export async function downloadVerified({ url, destination, size, sha256, allowedHosts, onProgress }) {
+export async function downloadVerified({
+  url,
+  destination,
+  size,
+  sha256,
+  allowedHosts,
+  onProgress,
+}) {
   const res = await request(url, allowedHosts, MAX_REDIRECTS);
   const partial = `${destination}.part`;
   const hash = createHash('sha256');
@@ -102,11 +115,14 @@ export async function downloadVerified({ url, destination, size, sha256, allowed
     }
     const digest = hash.digest('hex');
     if (digest !== sha256) {
-      throw new BootstrapError('Checksum mismatch: the downloaded file was not the pinned artifact.', [
-        `expected ${sha256}`,
-        `received ${digest}`,
-        'Nothing was installed. If this persists, report it — do not bypass the check.',
-      ]);
+      throw new BootstrapError(
+        'Checksum mismatch: the downloaded file was not the pinned artifact.',
+        [
+          `expected ${sha256}`,
+          `received ${digest}`,
+          'Nothing was installed. If this persists, report it — do not bypass the check.',
+        ],
+      );
     }
     await rename(partial, destination);
   } catch (error) {

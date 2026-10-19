@@ -46,7 +46,10 @@ export interface MediaLike {
   preservesPitch?: boolean;
   play(): Promise<void>;
   pause(): void;
-  addEventListener(type: 'ended' | 'timeupdate' | 'error' | 'pause' | 'play', listener: () => void): void;
+  addEventListener(
+    type: 'ended' | 'timeupdate' | 'error' | 'pause' | 'play',
+    listener: () => void,
+  ): void;
 }
 
 export interface ControllerDeps {
@@ -147,7 +150,8 @@ export class PlaybackController {
 
   pause(): void {
     this.deps.media.pause();
-    if (this.state.status === 'playing' || this.state.status === 'loading') this.set({ status: 'paused' });
+    if (this.state.status === 'playing' || this.state.status === 'loading')
+      this.set({ status: 'paused' });
     this.persist();
   }
 
@@ -165,7 +169,8 @@ export class PlaybackController {
 
   previous(): Promise<void> {
     // Like music players: restart the sentence unless we're at its very beginning.
-    const target = this.deps.media.currentTime > 2 ? this.state.segmentIndex : this.state.segmentIndex - 1;
+    const target =
+      this.deps.media.currentTime > 2 ? this.state.segmentIndex : this.state.segmentIndex - 1;
     return this.goTo(target, this.isActive());
   }
 
@@ -179,7 +184,9 @@ export class PlaybackController {
     const section = this.sectionAt(this.state.segmentIndex);
     if (!section) return Promise.resolve();
     const atStart = this.state.segmentIndex - section.startSegment < 2;
-    const target = atStart ? this.state.document?.sections.find((s) => s.index === section.index - 1) : section;
+    const target = atStart
+      ? this.state.document?.sections.find((s) => s.index === section.index - 1)
+      : section;
     return this.goTo(target?.startSegment ?? 0, this.isActive());
   }
 
@@ -209,7 +216,14 @@ export class PlaybackController {
     this.deps.media.pause();
     this.loadedKey = null;
     this.clearCache();
-    this.set({ document: null, status: 'idle', segmentIndex: 0, error: null, currentTime: 0, duration: 0 });
+    this.set({
+      document: null,
+      status: 'idle',
+      segmentIndex: 0,
+      error: null,
+      currentTime: 0,
+      duration: 0,
+    });
   }
 
   sectionAt(index: number) {
@@ -237,14 +251,21 @@ export class PlaybackController {
   private request(index: number, prefetch: boolean): CacheEntry {
     const key = this.key(index);
     const existing = this.cache.get(index);
-    if (existing && existing.key === key) return existing;
+    if (existing?.key === key) return existing;
     if (existing) this.drop(index);
     const controller = new AbortController();
     const documentId = this.state.document?.id ?? '';
     const entry: CacheEntry = {
       key,
       controller,
-      promise: this.deps.fetchSegment(documentId, index, this.state.voiceId, this.state.pace, prefetch, controller.signal),
+      promise: this.deps.fetchSegment(
+        documentId,
+        index,
+        this.state.voiceId,
+        this.state.pace,
+        prefetch,
+        controller.signal,
+      ),
     };
     entry.promise.then(
       (audio) => {
@@ -285,7 +306,12 @@ export class PlaybackController {
     const index = Math.min(Math.max(rawIndex, 0), Math.max(document.segmentCount - 1, 0));
     const generation = ++this.generation;
     this.deps.media.pause();
-    this.set({ segmentIndex: index, status: autoplay ? 'loading' : 'paused', error: null, currentTime: 0 });
+    this.set({
+      segmentIndex: index,
+      status: autoplay ? 'loading' : 'paused',
+      error: null,
+      currentTime: 0,
+    });
     this.persist();
     this.loadedKey = null;
     if (!autoplay) return;
@@ -301,7 +327,11 @@ export class PlaybackController {
       this.set({ duration: audio.duration });
       await this.startMedia(generation);
     } catch (error) {
-      if (generation !== this.generation || (error instanceof DOMException && error.name === 'AbortError')) return;
+      if (
+        generation !== this.generation ||
+        (error instanceof DOMException && error.name === 'AbortError')
+      )
+        return;
       this.set({ status: 'error', error: this.deps.toError(error) });
     }
   }
@@ -314,7 +344,8 @@ export class PlaybackController {
     } catch (error) {
       if (generation !== this.generation) return;
       // Browsers reject play() without a user gesture; stay ready instead of erroring.
-      if (error instanceof DOMException && error.name === 'NotAllowedError') this.set({ status: 'paused' });
+      if (error instanceof DOMException && error.name === 'NotAllowedError')
+        this.set({ status: 'paused' });
       else if (!(error instanceof DOMException && error.name === 'AbortError')) {
         this.set({ status: 'error', error: this.deps.toError(error) });
       }

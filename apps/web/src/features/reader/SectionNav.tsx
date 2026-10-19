@@ -27,12 +27,22 @@ export function SectionNav({ sections, viewed, speaking, onSelect }: Readonly<Se
               aria-current={section.index === viewed ? 'location' : undefined}
               className={cn(
                 'flex w-full items-start gap-2 rounded-[var(--radius-md)] px-2.5 py-2 text-left text-[13px] leading-snug transition-colors',
-                section.index === viewed ? 'bg-accent-soft font-medium text-accent-text' : 'text-muted hover:bg-surface-2 hover:text-text',
+                section.index === viewed
+                  ? 'bg-accent-soft font-medium text-accent-text'
+                  : 'text-muted hover:bg-surface-2 hover:text-text',
               )}
             >
-              <span className="w-5 shrink-0 text-right text-xs tabular-nums opacity-70">{section.index + 1}</span>
+              <span className="w-5 shrink-0 text-right text-xs tabular-nums opacity-70">
+                {section.index + 1}
+              </span>
               <span className="line-clamp-2 flex-1">{section.title}</span>
-              {section.index === speaking ? <Volume2 size={14} className="mt-0.5 shrink-0 text-accent-text" aria-label="Now playing" /> : null}
+              {section.index === speaking ? (
+                <Volume2
+                  size={14}
+                  className="mt-0.5 shrink-0 text-accent-text"
+                  aria-label="Now playing"
+                />
+              ) : null}
             </button>
           </li>
         ))}

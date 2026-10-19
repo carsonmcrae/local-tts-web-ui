@@ -50,15 +50,96 @@ function frameLevels(samples: Float32Array, frame: number): Float64Array {
 type Rule = [metric: keyof LocalReport, below: boolean, threshold: number, issue: LocalIssue];
 
 const RULES: Rule[] = [
-  ['speechS', true, MIN_SPEECH_S, { code: 'too_short', severity: 'error', message: `There's too little speech. Record at least ${MIN_SPEECH_S} seconds of continuous reading.` }],
-  ['speechS', true, RECOMMENDED_SPEECH_S, { code: 'short', severity: 'warning', message: 'This works, but 10–20 seconds of speech gives a more faithful voice.' }],
-  ['rmsDbfs', true, -40, { code: 'too_quiet', severity: 'error', message: 'The recording is very quiet. Move closer to the microphone and try again.' }],
-  ['rmsDbfs', true, -30, { code: 'quiet', severity: 'warning', message: 'The recording is a little quiet; speaking closer to the mic will help.' }],
-  ['clippingRatio', false, 0.01, { code: 'clipping', severity: 'error', message: 'The audio is distorted (clipping). Lower the input volume or move back slightly.' }],
-  ['clippingRatio', false, 0.001, { code: 'clipping', severity: 'warning', message: 'A few peaks clipped. It may still work; a quieter take is safer.' }],
-  ['snrDb', true, 12, { code: 'noisy', severity: 'error', message: "There's a lot of background noise. Find a quieter room and try again." }],
-  ['snrDb', true, 20, { code: 'noisy', severity: 'warning', message: 'Some background noise is audible; a quieter room gives cleaner results.' }],
-  ['pauseRatio', false, 0.5, { code: 'pauses', severity: 'warning', message: 'More than half the recording is silence. Read continuously at a natural pace.' }],
+  [
+    'speechS',
+    true,
+    MIN_SPEECH_S,
+    {
+      code: 'too_short',
+      severity: 'error',
+      message: `There's too little speech. Record at least ${MIN_SPEECH_S} seconds of continuous reading.`,
+    },
+  ],
+  [
+    'speechS',
+    true,
+    RECOMMENDED_SPEECH_S,
+    {
+      code: 'short',
+      severity: 'warning',
+      message: 'This works, but 10–20 seconds of speech gives a more faithful voice.',
+    },
+  ],
+  [
+    'rmsDbfs',
+    true,
+    -40,
+    {
+      code: 'too_quiet',
+      severity: 'error',
+      message: 'The recording is very quiet. Move closer to the microphone and try again.',
+    },
+  ],
+  [
+    'rmsDbfs',
+    true,
+    -30,
+    {
+      code: 'quiet',
+      severity: 'warning',
+      message: 'The recording is a little quiet; speaking closer to the mic will help.',
+    },
+  ],
+  [
+    'clippingRatio',
+    false,
+    0.01,
+    {
+      code: 'clipping',
+      severity: 'error',
+      message: 'The audio is distorted (clipping). Lower the input volume or move back slightly.',
+    },
+  ],
+  [
+    'clippingRatio',
+    false,
+    0.001,
+    {
+      code: 'clipping',
+      severity: 'warning',
+      message: 'A few peaks clipped. It may still work; a quieter take is safer.',
+    },
+  ],
+  [
+    'snrDb',
+    true,
+    12,
+    {
+      code: 'noisy',
+      severity: 'error',
+      message: "There's a lot of background noise. Find a quieter room and try again.",
+    },
+  ],
+  [
+    'snrDb',
+    true,
+    20,
+    {
+      code: 'noisy',
+      severity: 'warning',
+      message: 'Some background noise is audible; a quieter room gives cleaner results.',
+    },
+  ],
+  [
+    'pauseRatio',
+    false,
+    0.5,
+    {
+      code: 'pauses',
+      severity: 'warning',
+      message: 'More than half the recording is silence. Read continuously at a natural pace.',
+    },
+  ],
 ];
 
 export function analyzeSamples(samples: Float32Array, sampleRate: number): LocalReport {

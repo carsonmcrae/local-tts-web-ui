@@ -18,7 +18,8 @@ export const SHORTCUTS: readonly { keys: string[]; action: string }[] = [
   { keys: ['?'], action: 'Show keyboard shortcuts' },
 ];
 
-const INTERACTIVE = 'input, textarea, select, button, a, [contenteditable="true"], [role="slider"], [role="dialog"] *';
+const INTERACTIVE =
+  'input, textarea, select, button, a, [contenteditable="true"], [role="slider"], [role="dialog"] *';
 
 export function stepSpeed(current: number, direction: 1 | -1): number {
   const index = SPEEDS.findIndex((speed) => speed >= current - 0.001);
@@ -41,7 +42,8 @@ export function useShortcuts(
       const actions: Record<string, () => void> = {
         ' ': () => void controller.toggle(),
         k: () => void controller.toggle(),
-        ArrowLeft: () => void (event.shiftKey ? controller.previousSection() : controller.previous()),
+        ArrowLeft: () =>
+          void (event.shiftKey ? controller.previousSection() : controller.previous()),
         ArrowRight: () => void (event.shiftKey ? controller.nextSection() : controller.next()),
         '[': () => onRateChange(stepSpeed(controller.getState().rate, -1)),
         ']': () => onRateChange(stepSpeed(controller.getState().rate, 1)),

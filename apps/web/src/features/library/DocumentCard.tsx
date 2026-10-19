@@ -13,7 +13,13 @@ import { IconButton } from '@/components/ui/Button';
 import { ConfirmDialog } from '@/components/ui/Dialog';
 import { Badge, ProgressBar } from '@/components/ui/Feedback';
 import { usePlayer } from '@/features/player/PlayerProvider';
-import { fileTypeLabel, formatBytes, formatDuration, formatRelativeDate, pluralize } from '@/lib/format';
+import {
+  fileTypeLabel,
+  formatBytes,
+  formatDuration,
+  formatRelativeDate,
+  pluralize,
+} from '@/lib/format';
 
 const ICONS = { pdf: FileType2, epub: BookText, md: Hash } as const;
 
@@ -22,7 +28,9 @@ export function documentFacts(doc: DocumentSummary): string[] {
     fileTypeLabel(doc.fileType),
     formatBytes(doc.sizeBytes),
     doc.pageCount ? pluralize(doc.pageCount, 'page') : pluralize(doc.sectionCount, 'section'),
-    doc.estimatedSeconds < 60 ? '< 1 min listen' : `~${formatDuration(doc.estimatedSeconds)} listen`,
+    doc.estimatedSeconds < 60
+      ? '< 1 min listen'
+      : `~${formatDuration(doc.estimatedSeconds)} listen`,
   ];
 }
 
@@ -40,7 +48,10 @@ export function DocumentCard({ doc }: Readonly<{ doc: DocumentSummary }>) {
       </div>
       <div className="min-w-0 flex-1">
         <h3 className="truncate font-medium">
-          <Link to={`/read/${doc.id}`} className="after:absolute after:inset-0 after:content-[''] focus-visible:outline-none">
+          <Link
+            to={`/read/${doc.id}`}
+            className="after:absolute after:inset-0 after:content-[''] focus-visible:outline-none"
+          >
             {doc.title}
           </Link>
         </h3>
@@ -48,13 +59,19 @@ export function DocumentCard({ doc }: Readonly<{ doc: DocumentSummary }>) {
         <div className="mt-3 flex items-center gap-3">
           {doc.progress ? (
             <>
-              <ProgressBar value={percent / 100} label={`${percent}% listened`} className="max-w-48" />
+              <ProgressBar
+                value={percent / 100}
+                label={`${percent}% listened`}
+                className="max-w-48"
+              />
               <span className="text-xs text-muted tabular-nums">{Math.round(percent)}%</span>
             </>
           ) : (
             <Badge>New</Badge>
           )}
-          <span className="ml-auto text-xs text-subtle">{formatRelativeDate(doc.progress?.updatedAt ?? doc.createdAt)}</span>
+          <span className="ml-auto text-xs text-subtle">
+            {formatRelativeDate(doc.progress?.updatedAt ?? doc.createdAt)}
+          </span>
         </div>
       </div>
       <IconButton

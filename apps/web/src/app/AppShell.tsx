@@ -34,10 +34,25 @@ function EngineStatus() {
   const engines = useEngines();
   const kokoro = engines.data?.find((engine) => engine.id === 'kokoro');
   const ready = kokoro?.status === 'ready';
-  const label = engines.isError ? 'Server offline' : ready ? 'Voices ready' : kokoro?.status === 'installing' ? 'Installing voices…' : 'Voices not installed';
+  const label = engines.isError
+    ? 'Server offline'
+    : ready
+      ? 'Voices ready'
+      : kokoro?.status === 'installing'
+        ? 'Installing voices…'
+        : 'Voices not installed';
   return (
-    <NavLink to="/settings#engines" className="flex items-center gap-2 rounded-[var(--radius-md)] px-2 py-1.5 text-xs text-muted hover:bg-surface-2">
-      <span className={cn('size-2 rounded-full', ready ? 'bg-success' : engines.isError ? 'bg-danger' : 'bg-warning')} aria-hidden="true" />
+    <NavLink
+      to="/settings#engines"
+      className="flex items-center gap-2 rounded-[var(--radius-md)] px-2 py-1.5 text-xs text-muted hover:bg-surface-2"
+    >
+      <span
+        className={cn(
+          'size-2 rounded-full',
+          ready ? 'bg-success' : engines.isError ? 'bg-danger' : 'bg-warning',
+        )}
+        aria-hidden="true"
+      />
       {label}
     </NavLink>
   );
@@ -52,7 +67,10 @@ const linkClass = ({ isActive }: { isActive: boolean }) =>
 export function AppShell() {
   return (
     <div className="flex h-dvh overflow-hidden">
-      <a href="#main" className="sr-only z-50 rounded-md bg-accent px-3 py-2 text-accent-fg focus:not-sr-only focus:fixed focus:top-3 focus:left-3">
+      <a
+        href="#main"
+        className="sr-only z-50 rounded-md bg-accent px-3 py-2 text-accent-fg focus:not-sr-only focus:fixed focus:top-3 focus:left-3"
+      >
         Skip to content
       </a>
       <aside className="hidden w-64 shrink-0 flex-col gap-6 border-r border-line bg-surface px-3 py-5 md:flex">
@@ -76,17 +94,27 @@ export function AppShell() {
         </div>
       </aside>
       <div className="flex min-w-0 flex-1 flex-col">
-        <main id="main" tabIndex={-1} className="scrollbar-thin min-h-0 flex-1 overflow-y-auto focus:outline-none">
+        <main
+          id="main"
+          tabIndex={-1}
+          className="min-h-0 flex-1 scrollbar-thin overflow-y-auto focus:outline-none"
+        >
           <Outlet />
         </main>
         <PlayerBar />
-        <nav aria-label="Main" className="grid grid-cols-4 border-t border-line bg-surface pb-[env(safe-area-inset-bottom)] md:hidden">
+        <nav
+          aria-label="Main"
+          className="grid grid-cols-4 border-t border-line bg-surface pb-[env(safe-area-inset-bottom)] md:hidden"
+        >
           {NAV.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
               className={({ isActive }) =>
-                cn('flex min-h-14 flex-col items-center justify-center gap-0.5 text-[11px] font-medium', isActive ? 'text-accent-text' : 'text-muted')
+                cn(
+                  'flex min-h-14 flex-col items-center justify-center gap-0.5 text-[11px] font-medium',
+                  isActive ? 'text-accent-text' : 'text-muted',
+                )
               }
             >
               {item.icon}

@@ -18,7 +18,7 @@ export function toBlocks(segments: readonly SegmentOut[]): Block[] {
   const blocks: Block[] = [];
   for (const segment of segments) {
     const last = blocks.at(-1);
-    if (last && last.key === segment.paragraphIndex) last.segments.push(segment);
+    if (last?.key === segment.paragraphIndex) last.segments.push(segment);
     else blocks.push({ key: segment.paragraphIndex, kind: segment.kind, segments: [segment] });
   }
   return blocks;
@@ -31,7 +31,12 @@ interface DocumentTextProps {
   onSelect: (index: number) => void;
 }
 
-export function DocumentText({ segments, activeIndex, autoScroll, onSelect }: Readonly<DocumentTextProps>) {
+export function DocumentText({
+  segments,
+  activeIndex,
+  autoScroll,
+  onSelect,
+}: Readonly<DocumentTextProps>) {
   const blocks = useMemo(() => toBlocks(segments), [segments]);
   const container = useRef<HTMLDivElement>(null);
   const lastUserScroll = useRef(0);
@@ -80,7 +85,10 @@ export function DocumentText({ segments, activeIndex, autoScroll, onSelect }: Re
           </span>
         ));
         return block.kind === 'heading' ? (
-          <h2 key={block.key} className="mt-10 mb-4 font-sans text-[1.35em] leading-snug font-semibold tracking-tight first:mt-0">
+          <h2
+            key={block.key}
+            className="mt-10 mb-4 font-sans text-[1.35em] leading-snug font-semibold tracking-tight first:mt-0"
+          >
             {content}
           </h2>
         ) : (

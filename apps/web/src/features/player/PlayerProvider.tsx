@@ -7,7 +7,14 @@
  */
 import { useQueryClient } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
-import { createContext, useContext, useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from 'react';
 import { ApiError, api, describeError, fetchAudio } from '@/api/client';
 import { keys, usePreferences } from '@/api/queries';
 import type { MediaLike, PlayerState } from './controller';
@@ -21,7 +28,10 @@ interface PlayerContextValue {
 const PlayerContext = createContext<PlayerContextValue | null>(null);
 const SAVE_DEBOUNCE_MS = 800;
 
-function createController(media: MediaLike, onSaved: (documentId: string) => void): PlaybackController {
+function createController(
+  media: MediaLike,
+  onSaved: (documentId: string) => void,
+): PlaybackController {
   const timers = new Map<string, number>();
   return new PlaybackController(
     {
@@ -94,7 +104,10 @@ function useMediaSession(controller: PlaybackController, state: PlayerState): vo
   }, [controller]);
 }
 
-export function PlayerProvider({ children, media }: Readonly<{ children: ReactNode; media?: MediaLike }>) {
+export function PlayerProvider({
+  children,
+  media,
+}: Readonly<{ children: ReactNode; media?: MediaLike }>) {
   const queryClient = useQueryClient();
   const [controller] = useState(() =>
     createController(media ?? new Audio(), (documentId) => {

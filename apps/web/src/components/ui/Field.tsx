@@ -6,7 +6,12 @@
  */
 import { Check } from 'lucide-react';
 import { Checkbox as RadixCheckbox, Switch as RadixSwitch } from 'radix-ui';
-import type { InputHTMLAttributes, ReactNode, SelectHTMLAttributes, TextareaHTMLAttributes } from 'react';
+import type {
+  InputHTMLAttributes,
+  ReactNode,
+  SelectHTMLAttributes,
+  TextareaHTMLAttributes,
+} from 'react';
 import { forwardRef, useId } from 'react';
 import { cn } from '@/lib/cn';
 
@@ -47,30 +52,38 @@ export function Field({ label, hint, error, children, className }: Readonly<Fiel
   );
 }
 
-export const Input = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement>>(function Input(
-  { className, ...rest },
-  ref,
-) {
-  return <input ref={ref} className={cn(CONTROL, 'h-10', className)} {...rest} />;
-});
+export const Input = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement>>(
+  function Input({ className, ...rest }, ref) {
+    return <input ref={ref} className={cn(CONTROL, 'h-10', className)} {...rest} />;
+  },
+);
 
-export const Textarea = forwardRef<HTMLTextAreaElement, TextareaHTMLAttributes<HTMLTextAreaElement>>(function Textarea(
-  { className, ...rest },
-  ref,
-) {
-  return <textarea ref={ref} className={cn(CONTROL, 'min-h-28 py-2.5 leading-relaxed', className)} {...rest} />;
-});
-
-export const Select = forwardRef<HTMLSelectElement, SelectHTMLAttributes<HTMLSelectElement>>(function Select(
-  { className, children, ...rest },
-  ref,
-) {
+export const Textarea = forwardRef<
+  HTMLTextAreaElement,
+  TextareaHTMLAttributes<HTMLTextAreaElement>
+>(function Textarea({ className, ...rest }, ref) {
   return (
-    <select ref={ref} className={cn(CONTROL, 'h-10 cursor-pointer appearance-auto pr-8', className)} {...rest}>
-      {children}
-    </select>
+    <textarea
+      ref={ref}
+      className={cn(CONTROL, 'min-h-28 py-2.5 leading-relaxed', className)}
+      {...rest}
+    />
   );
 });
+
+export const Select = forwardRef<HTMLSelectElement, SelectHTMLAttributes<HTMLSelectElement>>(
+  function Select({ className, children, ...rest }, ref) {
+    return (
+      <select
+        ref={ref}
+        className={cn(CONTROL, 'h-10 cursor-pointer appearance-auto pr-8', className)}
+        {...rest}
+      >
+        {children}
+      </select>
+    );
+  },
+);
 
 interface CheckboxProps {
   checked: boolean;

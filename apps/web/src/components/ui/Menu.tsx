@@ -20,9 +20,21 @@ interface PopoverProps {
   label: string;
 }
 
-export function Popover({ trigger, children, open, onOpenChange, align = 'center', side = 'top', className, label }: Readonly<PopoverProps>) {
+export function Popover({
+  trigger,
+  children,
+  open,
+  onOpenChange,
+  align = 'center',
+  side = 'top',
+  className,
+  label,
+}: Readonly<PopoverProps>) {
   return (
-    <RadixPopover.Root {...(open === undefined ? {} : { open })} {...(onOpenChange ? { onOpenChange } : {})}>
+    <RadixPopover.Root
+      {...(open === undefined ? {} : { open })}
+      {...(onOpenChange ? { onOpenChange } : {})}
+    >
       <RadixPopover.Trigger asChild>{trigger}</RadixPopover.Trigger>
       <RadixPopover.Portal>
         <RadixPopover.Content
@@ -51,7 +63,12 @@ interface OptionListProps<T extends string | number> {
   label: string;
 }
 
-export function OptionList<T extends string | number>({ options, value, onSelect, label }: Readonly<OptionListProps<T>>) {
+export function OptionList<T extends string | number>({
+  options,
+  value,
+  onSelect,
+  label,
+}: Readonly<OptionListProps<T>>) {
   return (
     <div role="listbox" aria-label={label} className="flex flex-col">
       {options.map((option) => {

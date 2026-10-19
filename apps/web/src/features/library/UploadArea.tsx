@@ -23,9 +23,11 @@ export const CLIENT_MAX_BYTES = 25 * 1024 * 1024;
 
 export function precheck(file: File, maxBytes = CLIENT_MAX_BYTES): string | null {
   const extension = file.name.slice(file.name.lastIndexOf('.')).toLowerCase();
-  if (!ACCEPTED_EXTENSIONS.includes(extension)) return `“${file.name}” isn't a supported format. Use TXT, Markdown, PDF, DOCX or EPUB.`;
+  if (!ACCEPTED_EXTENSIONS.includes(extension))
+    return `“${file.name}” isn't a supported format. Use TXT, Markdown, PDF, DOCX or EPUB.`;
   if (file.size === 0) return `“${file.name}” is empty.`;
-  if (file.size > maxBytes) return `“${file.name}” is larger than the ${Math.round(maxBytes / 1048576)} MB limit.`;
+  if (file.size > maxBytes)
+    return `“${file.name}” is larger than the ${Math.round(maxBytes / 1048576)} MB limit.`;
   return null;
 }
 
@@ -52,7 +54,10 @@ export function useDocumentIntake() {
   return { submit, error, clearError: () => setError(null), uploading: current };
 }
 
-export function PasteTextDialog({ open, onOpenChange }: Readonly<{ open: boolean; onOpenChange: (open: boolean) => void }>) {
+export function PasteTextDialog({
+  open,
+  onOpenChange,
+}: Readonly<{ open: boolean; onOpenChange: (open: boolean) => void }>) {
   const paste = usePasteText();
   const navigate = useNavigate();
   const [text, setText] = useState('');
@@ -79,7 +84,12 @@ export function PasteTextDialog({ open, onOpenChange }: Readonly<{ open: boolean
       footer={
         <>
           <Button onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button variant="primary" onClick={submit} loading={paste.isPending} disabled={!text.trim()}>
+          <Button
+            variant="primary"
+            onClick={submit}
+            loading={paste.isPending}
+            disabled={!text.trim()}
+          >
             Add to library
           </Button>
         </>
@@ -87,11 +97,26 @@ export function PasteTextDialog({ open, onOpenChange }: Readonly<{ open: boolean
     >
       <div className="flex flex-col gap-4">
         <Field label="Title (optional)">
-          {({ id }) => <Input id={id} value={title} maxLength={200} onChange={(event) => setTitle(event.target.value)} placeholder="Untitled" />}
+          {({ id }) => (
+            <Input
+              id={id}
+              value={title}
+              maxLength={200}
+              onChange={(event) => setTitle(event.target.value)}
+              placeholder="Untitled"
+            />
+          )}
         </Field>
         <Field label="Text" hint={`${text.length.toLocaleString()} characters`}>
           {({ id, describedBy }) => (
-            <Textarea id={id} aria-describedby={describedBy} value={text} onChange={(event) => setText(event.target.value)} className="min-h-64 font-serif text-[15px]" placeholder="Paste or type the text you want to hear…" />
+            <Textarea
+              id={id}
+              aria-describedby={describedBy}
+              value={text}
+              onChange={(event) => setText(event.target.value)}
+              className="min-h-64 font-serif text-[15px]"
+              placeholder="Paste or type the text you want to hear…"
+            />
           )}
         </Field>
         {paste.isError ? <Banner tone="error">{describeError(paste.error)}</Banner> : null}
@@ -142,7 +167,10 @@ export function DropTarget({ onFile, children, className }: Readonly<DropTargetP
   );
 }
 
-export function UploadButtons({ onFile, onPaste }: Readonly<{ onFile: (file: File) => void; onPaste: () => void }>) {
+export function UploadButtons({
+  onFile,
+  onPaste,
+}: Readonly<{ onFile: (file: File) => void; onPaste: () => void }>) {
   const input = useRef<HTMLInputElement>(null);
   return (
     <>
@@ -170,12 +198,20 @@ export function UploadButtons({ onFile, onPaste }: Readonly<{ onFile: (file: Fil
   );
 }
 
-export function UploadStatus({ uploading, error, onDismiss }: Readonly<{ uploading: string | null; error: string | null; onDismiss: () => void }>) {
+export function UploadStatus({
+  uploading,
+  error,
+  onDismiss,
+}: Readonly<{ uploading: string | null; error: string | null; onDismiss: () => void }>) {
   if (uploading) {
     return (
-      <div className="mb-6 rounded-[var(--radius-lg)] border border-line bg-surface p-4" role="status">
+      <div
+        className="mb-6 rounded-[var(--radius-lg)] border border-line bg-surface p-4"
+        role="status"
+      >
         <p className="mb-3 text-sm">
-          Reading <span className="font-medium">{uploading}</span>… Large PDFs and books can take a few seconds.
+          Reading <span className="font-medium">{uploading}</span>… Large PDFs and books can take a
+          few seconds.
         </p>
         <IndeterminateBar />
       </div>
@@ -183,7 +219,16 @@ export function UploadStatus({ uploading, error, onDismiss }: Readonly<{ uploadi
   }
   if (error) {
     return (
-      <Banner tone="error" title="That document couldn't be added" className="mb-6" action={<Button size="sm" variant="ghost" onClick={onDismiss}>Dismiss</Button>}>
+      <Banner
+        tone="error"
+        title="That document couldn't be added"
+        className="mb-6"
+        action={
+          <Button size="sm" variant="ghost" onClick={onDismiss}>
+            Dismiss
+          </Button>
+        }
+      >
         {error}
       </Banner>
     );

@@ -21,7 +21,9 @@ export function useVoicePreview() {
 
   useEffect(() => {
     const element = new Audio();
-    element.addEventListener('ended', () => setState((s) => ({ ...s, status: 'idle', voiceId: null })));
+    element.addEventListener('ended', () =>
+      setState((s) => ({ ...s, status: 'idle', voiceId: null })),
+    );
     audio.current = element;
     const urls = cache.current;
     return () => {
@@ -38,41 +40,42 @@ export function useVoicePreview() {
     setState((s) => ({ ...s, status: 'idle', voiceId: null }));
   }, []);
 
-  const play = useCallback(
-    async (voiceId: string, text: string | undefined, pace = 1) => {
-      const element = audio.current;
-      if (!element) return;
-      pending.current?.abort();
-      element.pause();
-      const key = `${voiceId}|${pace}|${text ?? ''}`;
-      setState({ voiceId, status: 'loading', error: null });
-      try {
-        let url = cache.current.get(key);
-        if (!url) {
-          const controller = new AbortController();
-          pending.current = controller;
-          const result = await fetchAudio(`/api/voices/${voiceId}/preview`, {
-            method: 'POST',
-            json: { text: text?.trim() ? text : null, pace },
-            signal: controller.signal,
-          });
-          url = result.url;
-          cache.current.set(key, url);
-        }
-        element.src = url;
-        await element.play();
-        setState({ voiceId, status: 'playing', error: null });
-      } catch (error) {
-        if (error instanceof DOMException && error.name === 'AbortError') return;
-        setState({
-          voiceId: null,
-          status: 'idle',
-          error: { voiceId, message: describeError(error), code: error instanceof ApiError ? error.code : 'preview_failed' },
+  const play = useCallback(async (voiceId: string, text: string | undefined, pace = 1) => {
+    const element = audio.current;
+    if (!element) return;
+    pending.current?.abort();
+    element.pause();
+    const key = `${voiceId}|${pace}|${text ?? ''}`;
+    setState({ voiceId, status: 'loading', error: null });
+    try {
+      let url = cache.current.get(key);
+      if (!url) {
+        const controller = new AbortController();
+        pending.current = controller;
+        const result = await fetchAudio(`/api/voices/${voiceId}/preview`, {
+          method: 'POST',
+          json: { text: text?.trim() ? text : null, pace },
+          signal: controller.signal,
         });
+        url = result.url;
+        cache.current.set(key, url);
       }
-    },
-    [],
-  );
+      element.src = url;
+      await element.play();
+      setState({ voiceId, status: 'playing', error: null });
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') return;
+      setState({
+        voiceId: null,
+        status: 'idle',
+        error: {
+          voiceId,
+          message: describeError(error),
+          code: error instanceof ApiError ? error.code : 'preview_failed',
+        },
+      });
+    }
+  }, []);
 
   return { state, play, stop };
 }

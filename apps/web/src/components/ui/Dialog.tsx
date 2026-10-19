@@ -22,7 +22,15 @@ interface DialogProps {
 
 const WIDTHS = { sm: 'sm:max-w-md', md: 'sm:max-w-lg', lg: 'sm:max-w-2xl' };
 
-export function Dialog({ open, onOpenChange, title, description, children, footer, size = 'md' }: Readonly<DialogProps>) {
+export function Dialog({
+  open,
+  onOpenChange,
+  title,
+  description,
+  children,
+  footer,
+  size = 'md',
+}: Readonly<DialogProps>) {
   return (
     <RadixDialog.Root open={open} onOpenChange={onOpenChange}>
       <RadixDialog.Portal>
@@ -37,9 +45,13 @@ export function Dialog({ open, onOpenChange, title, description, children, foote
         >
           <div className="flex items-start justify-between gap-4 border-b border-line px-5 pt-5 pb-4 sm:px-6">
             <div className="min-w-0">
-              <RadixDialog.Title className="text-lg font-semibold tracking-tight">{title}</RadixDialog.Title>
+              <RadixDialog.Title className="text-lg font-semibold tracking-tight">
+                {title}
+              </RadixDialog.Title>
               {description ? (
-                <RadixDialog.Description className="mt-1 text-sm text-muted">{description}</RadixDialog.Description>
+                <RadixDialog.Description className="mt-1 text-sm text-muted">
+                  {description}
+                </RadixDialog.Description>
               ) : (
                 <RadixDialog.Description className="sr-only">{title}</RadixDialog.Description>
               )}
@@ -48,7 +60,9 @@ export function Dialog({ open, onOpenChange, title, description, children, foote
               <IconButton label="Close" icon={<X size={18} />} size="sm" className="-mt-1 -mr-2" />
             </RadixDialog.Close>
           </div>
-          <div className="scrollbar-thin min-h-0 flex-1 overflow-y-auto px-5 py-5 sm:px-6">{children}</div>
+          <div className="min-h-0 flex-1 scrollbar-thin overflow-y-auto px-5 py-5 sm:px-6">
+            {children}
+          </div>
           {footer ? (
             <div className="flex flex-col-reverse gap-2 border-t border-line px-5 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:flex-row sm:justify-end sm:px-6">
               {footer}

@@ -32,13 +32,24 @@ function LevelMeter({ level }: Readonly<{ level: number }>) {
     <div className="flex h-8 items-end gap-[3px]" aria-hidden="true">
       {Array.from({ length: bars }, (_, i) => {
         const on = level * bars > i;
-        return <span key={i} className={cn('w-1.5 rounded-sm transition-[height,background-color] duration-75', on ? (i > bars * 0.85 ? 'bg-danger' : 'bg-accent') : 'bg-surface-3')} style={{ height: `${30 + (i / bars) * 70}%` }} />;
+        return (
+          <span
+            key={i}
+            className={cn(
+              'w-1.5 rounded-sm transition-[height,background-color] duration-75',
+              on ? (i > bars * 0.85 ? 'bg-danger' : 'bg-accent') : 'bg-surface-3',
+            )}
+            style={{ height: `${30 + (i / bars) * 70}%` }}
+          />
+        );
       })}
     </div>
   );
 }
 
-export function CaptureStep({ onCaptured }: Readonly<{ onCaptured: (clip: CapturedClip) => void }>) {
+export function CaptureStep({
+  onCaptured,
+}: Readonly<{ onCaptured: (clip: CapturedClip) => void }>) {
   const [scriptIndex, setScriptIndex] = useState(0);
   const [recording, setRecording] = useState(false);
   const [elapsed, setElapsed] = useState(0);
@@ -47,14 +58,16 @@ export function CaptureStep({ onCaptured }: Readonly<{ onCaptured: (clip: Captur
   const [busy, setBusy] = useState(false);
   const recorder = useRef<MicRecorder | null>(null);
   const frame = useRef(0);
-  const started = useRef(0);
   const fileInput = useRef<HTMLInputElement>(null);
   const script = SCRIPTS[scriptIndex] ?? SCRIPTS[0];
 
-  useEffect(() => () => {
-    cancelAnimationFrame(frame.current);
-    recorder.current?.release();
-  }, []);
+  useEffect(
+    () => () => {
+      cancelAnimationFrame(frame.current);
+      recorder.current?.release();
+    },
+    [],
+  );
 
   const finish = async () => {
     cancelAnimationFrame(frame.current);
@@ -74,14 +87,6 @@ export function CaptureStep({ onCaptured }: Readonly<{ onCaptured: (clip: Captur
     }
   };
 
-  const tick = () => {
-    const seconds = (performance.now() - started.current) / 1000;
-    setElapsed(seconds);
-    setLevel(recorder.current?.level() ?? 0);
-    if (seconds >= MAX_RECORD_S) void finish();
-    else frame.current = requestAnimationFrame(tick);
-  };
-
   const start = async () => {
     setError(null);
     const next = new MicRecorder();
@@ -92,9 +97,16 @@ export function CaptureStep({ onCaptured }: Readonly<{ onCaptured: (clip: Captur
       return;
     }
     recorder.current = next;
-    started.current = performance.now();
     setElapsed(0);
     setRecording(true);
+    const begin = performance.now();
+    const tick = () => {
+      const seconds = (performance.now() - begin) / 1000;
+      setElapsed(seconds);
+      setLevel(recorder.current?.level() ?? 0);
+      if (seconds >= MAX_RECORD_S) void finish();
+      else frame.current = requestAnimationFrame(tick);
+    };
     frame.current = requestAnimationFrame(tick);
   };
 
@@ -127,7 +139,13 @@ export function CaptureStep({ onCaptured }: Readonly<{ onCaptured: (clip: Captur
           <p className="text-sm font-medium">
             Read this aloud <span className="font-normal text-muted">· {script?.seconds}</span>
           </p>
-          <Button size="sm" variant="ghost" icon={<RotateCcw size={14} />} disabled={recording} onClick={() => setScriptIndex((scriptIndex + 1) % SCRIPTS.length)}>
+          <Button
+            size="sm"
+            variant="ghost"
+            icon={<RotateCcw size={14} />}
+            disabled={recording}
+            onClick={() => setScriptIndex((scriptIndex + 1) % SCRIPTS.length)}
+          >
             Different passage
           </Button>
         </div>
@@ -142,19 +160,42 @@ export function CaptureStep({ onCaptured }: Readonly<{ onCaptured: (clip: Captur
               {formatClock(elapsed)}
             </p>
             <ProgressBar value={elapsed / TARGET_S} label="Recording length" className="max-w-xs" />
-            <p className="text-[13px] text-muted">{elapsed < TARGET_S ? `Keep reading — aim for about ${TARGET_S} seconds.` : 'That’s plenty. Stop whenever you finish the sentence.'}</p>
-            <Button variant="danger" size="lg" icon={<Square size={16} fill="currentColor" />} onClick={() => void finish()}>
+            <p className="text-[13px] text-muted">
+              {elapsed < TARGET_S
+                ? `Keep reading — aim for about ${TARGET_S} seconds.`
+                : 'That’s plenty. Stop whenever you finish the sentence.'}
+            </p>
+            <Button
+              variant="danger"
+              size="lg"
+              icon={<Square size={16} fill="currentColor" />}
+              onClick={() => void finish()}
+            >
               Stop recording
             </Button>
           </>
         ) : (
           <>
-            <p className="text-center text-sm text-muted">Use a quiet room, keep the mic about a hand’s width away, and read at your normal pace.</p>
+            <p className="text-center text-sm text-muted">
+              Use a quiet room, keep the mic about a hand’s width away, and read at your normal
+              pace.
+            </p>
             <div className="flex flex-wrap justify-center gap-2">
-              <Button variant="primary" size="lg" icon={<Mic size={18} />} onClick={() => void start()} loading={busy}>
+              <Button
+                variant="primary"
+                size="lg"
+                icon={<Mic size={18} />}
+                onClick={() => void start()}
+                loading={busy}
+              >
                 Start recording
               </Button>
-              <Button size="lg" icon={<FileAudio size={18} />} onClick={() => fileInput.current?.click()} disabled={busy}>
+              <Button
+                size="lg"
+                icon={<FileAudio size={18} />}
+                onClick={() => fileInput.current?.click()}
+                disabled={busy}
+              >
                 Import a recording
               </Button>
               <input

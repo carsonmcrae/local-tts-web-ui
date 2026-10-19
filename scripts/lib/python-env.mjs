@@ -16,9 +16,12 @@ export function assertNodeVersion() {
   const [major = 0, minor = 0] = process.versions.node.split('.').map(Number);
   const [needMajor = 0, needMinor = 0] = MIN_NODE;
   if (major < needMajor || (major === needMajor && minor < needMinor)) {
-    throw new BootstrapError(`Node.js ${MIN_NODE.join('.')} or newer is required (found ${process.versions.node}).`, [
-      'Install the current LTS release from https://nodejs.org or with your version manager (see .nvmrc).',
-    ]);
+    throw new BootstrapError(
+      `Node.js ${MIN_NODE.join('.')} or newer is required (found ${process.versions.node}).`,
+      [
+        'Install the current LTS release from https://nodejs.org or with your version manager (see .nvmrc).',
+      ],
+    );
   }
 }
 

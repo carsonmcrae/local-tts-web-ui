@@ -22,12 +22,82 @@ interface VoiceCardProps {
   onUse: () => void;
 }
 
-export function VoiceCard({ voice, isDefault, previewStatus, previewError, onPreview, onStop, onUse }: Readonly<VoiceCardProps>) {
+function PreviewButton({
+  voice,
+  status,
+  onPreview,
+  onStop,
+}: Readonly<{
+  voice: VoiceInfo;
+  status: VoiceCardProps['previewStatus'];
+  onPreview: () => void;
+  onStop: () => void;
+}>) {
+  if (status === 'playing') {
+    return (
+      <Button
+        size="sm"
+        icon={<Square size={13} fill="currentColor" />}
+        onClick={onStop}
+        aria-label={`Stop preview of ${voice.name}`}
+      >
+        Stop
+      </Button>
+    );
+  }
+  const loading = status === 'loading';
+  return (
+    <Button
+      size="sm"
+      icon={
+        loading ? (
+          <Loader2 size={14} className="animate-spin" />
+        ) : (
+          <Play size={14} fill="currentColor" />
+        )
+      }
+      onClick={onPreview}
+      disabled={!voice.available || loading}
+      aria-label={`Preview ${voice.name}`}
+    >
+      {loading ? 'Generating…' : 'Preview'}
+    </Button>
+  );
+}
+
+function describeVoice(voice: VoiceInfo): string {
+  const gender = voice.gender === 'unspecified' ? '' : ` · ${voice.gender}`;
+  return `${voice.language}${gender} · ${ENGINE_NAMES[voice.engineId] ?? voice.engineId}`;
+}
+
+export function VoiceCard({
+  voice,
+  isDefault,
+  previewStatus,
+  previewError,
+  onPreview,
+  onStop,
+  onUse,
+}: Readonly<VoiceCardProps>) {
   const initials = voice.name.slice(0, 2).toUpperCase();
   return (
-    <li className={cn('flex flex-col gap-3 rounded-[var(--radius-lg)] border bg-surface p-4 shadow-soft', isDefault ? 'border-accent' : 'border-line', !voice.available && 'opacity-70')}>
+    <li
+      className={cn(
+        'flex flex-col gap-3 rounded-[var(--radius-lg)] border bg-surface p-4 shadow-soft',
+        isDefault ? 'border-accent' : 'border-line',
+        !voice.available && 'opacity-70',
+      )}
+    >
       <div className="flex items-start gap-3">
-        <div className={cn('flex size-10 shrink-0 items-center justify-center rounded-full text-sm font-semibold', voice.category === 'custom' ? 'bg-success-soft text-success' : 'bg-accent-soft text-accent-text')} aria-hidden="true">
+        <div
+          className={cn(
+            'flex size-10 shrink-0 items-center justify-center rounded-full text-sm font-semibold',
+            voice.category === 'custom'
+              ? 'bg-success-soft text-success'
+              : 'bg-accent-soft text-accent-text',
+          )}
+          aria-hidden="true"
+        >
           {initials}
         </div>
         <div className="min-w-0 flex-1">
@@ -35,40 +105,40 @@ export function VoiceCard({ voice, isDefault, previewStatus, previewError, onPre
             <span className="truncate">{voice.name}</span>
             {isDefault ? <Badge tone="accent">Default</Badge> : null}
           </h3>
-          <p className="truncate text-[13px] text-muted">
-            {voice.language}
-            {voice.gender !== 'unspecified' ? ` · ${voice.gender}` : ''} · {ENGINE_NAMES[voice.engineId] ?? voice.engineId}
-          </p>
+          <p className="truncate text-[13px] text-muted">{describeVoice(voice)}</p>
         </div>
         {voice.qualityGrade ? (
-          <span title="Upstream quality grade (A is best)" className="rounded-md border border-line px-1.5 py-0.5 text-xs font-semibold text-muted tabular-nums">
+          <span
+            title="Upstream quality grade (A is best)"
+            className="rounded-md border border-line px-1.5 py-0.5 text-xs font-semibold text-muted tabular-nums"
+          >
             {voice.qualityGrade}
           </span>
         ) : null}
       </div>
       <div className="flex flex-wrap gap-1.5">
-        <Badge tone={voice.category === 'custom' ? 'success' : 'neutral'}>{voice.category === 'custom' ? 'Custom' : 'Built-in'}</Badge>
+        <Badge tone={voice.category === 'custom' ? 'success' : 'neutral'}>
+          {voice.category === 'custom' ? 'Custom' : 'Built-in'}
+        </Badge>
         {!voice.available ? <Badge tone="warning">Engine not installed</Badge> : null}
       </div>
-      {voice.description ? <p className="text-[13px] leading-snug text-muted">{voice.description}</p> : null}
-      {previewError ? <p className="text-[13px] text-danger" role="alert">{previewError}</p> : null}
+      {voice.description ? (
+        <p className="text-[13px] leading-snug text-muted">{voice.description}</p>
+      ) : null}
+      {previewError ? (
+        <p className="text-[13px] text-danger" role="alert">
+          {previewError}
+        </p>
+      ) : null}
       <div className="mt-auto flex gap-2">
-        {previewStatus === 'playing' ? (
-          <Button size="sm" icon={<Square size={13} fill="currentColor" />} onClick={onStop} aria-label={`Stop preview of ${voice.name}`}>
-            Stop
-          </Button>
-        ) : (
-          <Button
-            size="sm"
-            icon={previewStatus === 'loading' ? <Loader2 size={14} className="animate-spin" /> : <Play size={14} fill="currentColor" />}
-            onClick={onPreview}
-            disabled={!voice.available || previewStatus === 'loading'}
-            aria-label={`Preview ${voice.name}`}
-          >
-            {previewStatus === 'loading' ? 'Generating…' : 'Preview'}
-          </Button>
-        )}
-        <Button size="sm" variant={isDefault ? 'subtle' : 'ghost'} icon={isDefault ? <Check size={14} /> : undefined} onClick={onUse} disabled={!voice.available || isDefault}>
+        <PreviewButton voice={voice} status={previewStatus} onPreview={onPreview} onStop={onStop} />
+        <Button
+          size="sm"
+          variant={isDefault ? 'subtle' : 'ghost'}
+          icon={isDefault ? <Check size={14} /> : undefined}
+          onClick={onUse}
+          disabled={!voice.available || isDefault}
+        >
           {isDefault ? 'Reading voice' : 'Use for reading'}
         </Button>
       </div>

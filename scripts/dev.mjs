@@ -41,7 +41,19 @@ async function main() {
     name: 'api',
     label: color.magenta('[api]'),
     command: uv,
-    args: ['run', '--frozen', '--project', serverDir, 'ltts', 'serve', '--host', HOST, '--port', String(apiPort), '--reload'],
+    args: [
+      'run',
+      '--frozen',
+      '--project',
+      serverDir,
+      'ltts',
+      'serve',
+      '--host',
+      HOST,
+      '--port',
+      String(apiPort),
+      '--reload',
+    ],
     cwd: repoRoot,
     env: { ...uvEnv(), LTTS_ENV: 'development', LTTS_UV_BIN: uv },
   });
@@ -58,13 +70,22 @@ async function main() {
   process.on('SIGTERM', () => shutdown(0));
   api.child.on('exit', (code) => {
     if (!shuttingDown) {
-      printFailure(new BootstrapError(`The API server exited unexpectedly (code ${code}).`, ['See the [api] lines above.']));
+      printFailure(
+        new BootstrapError(`The API server exited unexpectedly (code ${code}).`, [
+          'See the [api] lines above.',
+        ]),
+      );
       shutdown(1);
     }
   });
 
-  const healthy = await waitForHttp(`http://${HOST}:${apiPort}/api/health`, 90_000, () => api.child.exitCode === null);
-  if (!healthy) throw new BootstrapError('The API server did not become healthy within 90 seconds.');
+  const healthy = await waitForHttp(
+    `http://${HOST}:${apiPort}/api/health`,
+    90_000,
+    () => api.child.exitCode === null,
+  );
+  if (!healthy)
+    throw new BootstrapError('The API server did not become healthy within 90 seconds.');
   ok('API healthy');
 
   const openBrowser = process.env.LTTS_NO_OPEN !== '1' && !process.env.CI;
@@ -72,7 +93,15 @@ async function main() {
     name: 'web',
     label: color.cyan('[web]'),
     command: process.execPath,
-    args: [viteBin(), '--host', HOST, '--port', String(webPort), '--strictPort', ...(openBrowser ? ['--open'] : [])],
+    args: [
+      viteBin(),
+      '--host',
+      HOST,
+      '--port',
+      String(webPort),
+      '--strictPort',
+      ...(openBrowser ? ['--open'] : []),
+    ],
     cwd: webDir,
     env: { ...process.env, LTTS_API_PORT: String(apiPort) },
   });
@@ -83,7 +112,11 @@ async function main() {
       shutdown(1);
     }
   });
-  const webReady = await waitForHttp(`http://${HOST}:${webPort}/`, 60_000, () => web.child.exitCode === null);
+  const webReady = await waitForHttp(
+    `http://${HOST}:${webPort}/`,
+    60_000,
+    () => web.child.exitCode === null,
+  );
   if (!webReady) throw new BootstrapError('The web dev server did not start within 60 seconds.');
   console.log('');
   ok(`${color.bold('Local TTS is running:')} ${color.cyan(`http://${HOST}:${webPort}`)}`);

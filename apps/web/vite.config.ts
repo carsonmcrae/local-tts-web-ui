@@ -11,7 +11,9 @@ import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vitest/config';
 
 const apiPort = process.env.LTTS_API_PORT ?? '8765';
-const { version } = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8')) as { version: string };
+const { version } = JSON.parse(
+  readFileSync(new URL('./package.json', import.meta.url), 'utf8'),
+) as { version: string };
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],

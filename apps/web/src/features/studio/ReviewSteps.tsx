@@ -6,10 +6,9 @@
  */
 import { CheckCircle2, CircleAlert, RotateCcw, XCircle } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo } from 'react';
 import { api, describeError } from '@/api/client';
 import { analyzeRecording } from '@/api/queries';
-import type { QualityReport } from '@/api/types';
 import { Button } from '@/components/ui/Button';
 import { Banner } from '@/components/ui/Feedback';
 import { Checkbox, Field, Input } from '@/components/ui/Field';
@@ -30,35 +29,40 @@ interface ReviewProps {
   onVerdict: (ok: boolean, wav: Blob) => void;
 }
 
-function useServerAnalysis(wav: Blob) {
-  const [state, setState] = useState<{ data?: QualityReport; error?: unknown; pending: boolean }>({ pending: true });
-  useEffect(() => {
-    let current = true;
-    setState({ pending: true });
-    analyzeRecording(wav).then(
-      (data) => current && setState({ data, pending: false }),
-      (error: unknown) => current && setState({ error, pending: false }),
-    );
-    return () => {
-      current = false;
-    };
-  }, [wav]);
-  return state;
+const blobIds = new WeakMap<Blob, number>();
+let nextBlobId = 1;
+function blobId(blob: Blob): number {
+  let id = blobIds.get(blob);
+  if (id === undefined) {
+    id = nextBlobId++;
+    blobIds.set(blob, id);
+  }
+  return id;
 }
 
-function useObjectUrl(blob: Blob): string | undefined {
-  const [url, setUrl] = useState<string>();
-  useEffect(() => {
-    const next = URL.createObjectURL(blob);
-    setUrl(next);
-    return () => URL.revokeObjectURL(next);
-  }, [blob]);
-  return url;
+function useServerAnalysis(wav: Blob) {
+  const query = useQuery({
+    queryKey: ['analyze', blobId(wav)],
+    queryFn: () => analyzeRecording(wav),
+    staleTime: Infinity,
+    retry: false,
+  });
+  return { data: query.data, error: query.error, pending: query.isPending };
+}
+
+/** Attach a blob to a media element for exactly as long as the element is mounted. */
+function attachBlob(blob: Blob) {
+  return (element: HTMLAudioElement | null) => {
+    if (!element) return undefined;
+    const url = URL.createObjectURL(blob);
+    element.src = url;
+    return () => URL.revokeObjectURL(url);
+  };
 }
 
 export function ReviewStep({ clip, onRetake, onVerdict }: Readonly<ReviewProps>) {
   const wav = useMemo(() => encodeWav(clip.samples, clip.sampleRate), [clip]);
-  const url = useObjectUrl(wav);
+  const audioRef = useMemo(() => attachBlob(wav), [wav]);
   const local = useMemo(() => analyzeSamples(clip.samples, clip.sampleRate), [clip]);
   const server = useServerAnalysis(wav);
   const report = server.data ?? local;
@@ -68,7 +72,9 @@ export function ReviewStep({ clip, onRetake, onVerdict }: Readonly<ReviewProps>)
     <div className="flex flex-col gap-5">
       <div className="flex flex-col gap-3 rounded-[var(--radius-lg)] border border-line p-4">
         <p className="text-sm font-medium">Listen back</p>
-        <audio controls src={url} className="w-full" aria-label="Your recording" />
+        {/* The speaker's own recording of the passage shown in the previous step; no captions exist. */}
+        {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+        <audio controls ref={audioRef} className="w-full" aria-label="Your recording" />
         <p className="text-[13px] text-muted">
           {report.durationS.toFixed(1)} s total · {report.speechS.toFixed(1)} s of speech
           {clip.note ? ` · ${clip.note}` : ''}
@@ -77,7 +83,9 @@ export function ReviewStep({ clip, onRetake, onVerdict }: Readonly<ReviewProps>)
       <div>
         <div className="mb-2 flex items-center gap-2 text-sm font-medium">
           Quality checks {server.pending ? <Spinner size={14} /> : null}
-          <span className="text-xs font-normal text-subtle">{server.data ? 'verified by the local server' : 'instant preview'}</span>
+          <span className="text-xs font-normal text-subtle">
+            {server.data ? 'verified by the local server' : 'instant preview'}
+          </span>
         </div>
         <ul className="flex flex-col gap-2">
           {report.issues.length === 0 ? (
@@ -112,22 +120,41 @@ interface DetailsProps {
 }
 
 export function DetailsStep({ name, onName, consent, onConsent }: Readonly<DetailsProps>) {
-  const statement = useQuery({ queryKey: ['consent'], queryFn: () => api<{ statement: string }>('/api/voice-profiles/consent'), staleTime: Infinity });
+  const statement = useQuery({
+    queryKey: ['consent'],
+    queryFn: () => api<{ statement: string }>('/api/voice-profiles/consent'),
+    staleTime: Infinity,
+  });
   return (
     <div className="flex flex-col gap-5">
       <Field label="Voice name" hint="Shown in the voice picker. You can rename it later.">
-        {({ id, describedBy }) => <Input id={id} aria-describedby={describedBy} value={name} maxLength={60} onChange={(event) => onName(event.target.value)} placeholder="e.g. My reading voice" autoFocus />}
+        {({ id, describedBy }) => (
+          <Input
+            id={id}
+            aria-describedby={describedBy}
+            value={name}
+            maxLength={60}
+            onChange={(event) => onName(event.target.value)}
+            placeholder="e.g. My reading voice"
+          />
+        )}
       </Field>
       <div className="rounded-[var(--radius-lg)] border border-line bg-surface-2 p-4">
         <p className="mb-3 text-sm font-medium">Permission</p>
         {statement.data ? (
-          <Checkbox checked={consent} onCheckedChange={onConsent} label={statement.data.statement} />
+          <Checkbox
+            checked={consent}
+            onCheckedChange={onConsent}
+            label={statement.data.statement}
+          />
         ) : (
           <Spinner />
         )}
       </div>
       <Banner tone="info" title="What gets stored">
-        A trimmed copy of this recording (WAV) is saved in this app’s data folder on this computer. No model is trained, nothing is uploaded, and deleting the voice removes the recording and any audio generated with it.
+        A trimmed copy of this recording (WAV) is saved in this app’s data folder on this computer.
+        No model is trained, nothing is uploaded, and deleting the voice removes the recording and
+        any audio generated with it.
       </Banner>
     </div>
   );

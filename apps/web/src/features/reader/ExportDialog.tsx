@@ -6,7 +6,7 @@
  * Does NOT belong: Export assembly (server) or live playback.
  */
 import { Download, FileAudio, RotateCcw } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { api, describeError } from '@/api/client';
 import { isJobActive, useCancelJob, useJob, usePreferences, useStartExport } from '@/api/queries';
 import type { JobOut, SectionOut } from '@/api/types';
@@ -36,7 +36,12 @@ function JobStatus({ job, onResume }: Readonly<{ job: JobOut; onResume: () => vo
         <ProgressBar value={job.progress} label="Export progress" />
         <div className="flex items-center justify-between gap-3 text-sm text-muted">
           <span aria-live="polite">{job.message}</span>
-          <Button size="sm" variant="ghost" onClick={() => cancel.mutate(job.id)} loading={cancel.isPending}>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => cancel.mutate(job.id)}
+            loading={cancel.isPending}
+          >
             Cancel
           </Button>
         </div>
@@ -50,7 +55,11 @@ function JobStatus({ job, onResume }: Readonly<{ job: JobOut; onResume: () => vo
         tone="success"
         title="Your audio is ready"
         action={
-          <a href={`/api/exports/${job.id}/download`} download className={buttonClasses('primary', 'sm')}>
+          <a
+            href={`/api/exports/${job.id}/download`}
+            download
+            className={buttonClasses('primary', 'sm')}
+          >
             <Download size={15} /> Download
           </a>
         }
@@ -74,9 +83,17 @@ function JobStatus({ job, onResume }: Readonly<{ job: JobOut; onResume: () => vo
   );
 }
 
-export function ExportDialog({ open, onOpenChange, documentId, sections, currentSection, voiceId, pace }: Readonly<ExportDialogProps>) {
+export function ExportDialog({
+  open,
+  onOpenChange,
+  documentId,
+  sections,
+  currentSection,
+  voiceId,
+  pace,
+}: Readonly<ExportDialogProps>) {
   const preferences = usePreferences();
-  const [format, setFormat] = useState<'mp3' | 'wav'>('mp3');
+  const [chosenFormat, setFormat] = useState<'mp3' | 'wav' | null>(null);
   const [layout, setLayout] = useState<'single' | 'chapters'>('single');
   const [range, setRange] = useState<Range>('all');
   const [first, setFirst] = useState(0);
@@ -86,9 +103,7 @@ export function ExportDialog({ open, onOpenChange, documentId, sections, current
   const start = useStartExport();
   const job = useJob(jobId);
 
-  useEffect(() => {
-    if (preferences.data) setFormat(preferences.data.exportFormat);
-  }, [preferences.data]);
+  const format = chosenFormat ?? preferences.data?.exportFormat ?? 'mp3';
 
   const bounds = (): [number | null, number | null] => {
     if (range === 'current') return [currentSection, currentSection];
@@ -101,7 +116,10 @@ export function ExportDialog({ open, onOpenChange, documentId, sections, current
     setError(null);
     start.mutate(
       { documentId, voiceId, pace, format, layout, firstSection, lastSection },
-      { onSuccess: (created) => setJobId(created.id), onError: (failure) => setError(describeError(failure)) },
+      {
+        onSuccess: (created) => setJobId(created.id),
+        onError: (failure) => setError(describeError(failure)),
+      },
     );
   };
 
@@ -121,8 +139,16 @@ export function ExportDialog({ open, onOpenChange, documentId, sections, current
       description="Generate the whole document (or part of it) with the current voice and download it."
       footer={
         <>
-          <Button onClick={() => onOpenChange(false)}>{active ? 'Keep running in background' : 'Close'}</Button>
-          <Button variant="primary" icon={<FileAudio size={16} />} onClick={begin} loading={start.isPending} disabled={active}>
+          <Button onClick={() => onOpenChange(false)}>
+            {active ? 'Keep running in background' : 'Close'}
+          </Button>
+          <Button
+            variant="primary"
+            icon={<FileAudio size={16} />}
+            onClick={begin}
+            loading={start.isPending}
+            disabled={active}
+          >
             Start export
           </Button>
         </>
@@ -130,17 +156,37 @@ export function ExportDialog({ open, onOpenChange, documentId, sections, current
     >
       <div className="flex flex-col gap-5">
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Format" hint={format === 'mp3' ? 'Smaller files, plays everywhere.' : 'Lossless, larger files.'}>
+          <Field
+            label="Format"
+            hint={format === 'mp3' ? 'Smaller files, plays everywhere.' : 'Lossless, larger files.'}
+          >
             {({ id, describedBy }) => (
-              <Select id={id} aria-describedby={describedBy} value={format} onChange={(event) => setFormat(event.target.value as 'mp3' | 'wav')}>
+              <Select
+                id={id}
+                aria-describedby={describedBy}
+                value={format}
+                onChange={(event) => setFormat(event.target.value as 'mp3' | 'wav')}
+              >
                 <option value="mp3">MP3</option>
                 <option value="wav">WAV</option>
               </Select>
             )}
           </Field>
-          <Field label="Files" hint={layout === 'chapters' ? 'A ZIP with one file per chapter and a playlist.' : 'One continuous file.'}>
+          <Field
+            label="Files"
+            hint={
+              layout === 'chapters'
+                ? 'A ZIP with one file per chapter and a playlist.'
+                : 'One continuous file.'
+            }
+          >
             {({ id, describedBy }) => (
-              <Select id={id} aria-describedby={describedBy} value={layout} onChange={(event) => setLayout(event.target.value as 'single' | 'chapters')}>
+              <Select
+                id={id}
+                aria-describedby={describedBy}
+                value={layout}
+                onChange={(event) => setLayout(event.target.value as 'single' | 'chapters')}
+              >
                 <option value="single">Single file</option>
                 <option value="chapters">One file per chapter</option>
               </Select>
@@ -149,7 +195,11 @@ export function ExportDialog({ open, onOpenChange, documentId, sections, current
         </div>
         <Field label="What to export">
           {({ id }) => (
-            <Select id={id} value={range} onChange={(event) => setRange(event.target.value as Range)}>
+            <Select
+              id={id}
+              value={range}
+              onChange={(event) => setRange(event.target.value as Range)}
+            >
               <option value="all">Whole document ({sections.length} sections)</option>
               <option value="current">Current section only</option>
               <option value="custom">A range of sections</option>
@@ -166,7 +216,11 @@ export function ExportDialog({ open, onOpenChange, documentId, sections, current
             ).map(([label, value, setter]) => (
               <Field key={label} label={label}>
                 {({ id }) => (
-                  <Select id={id} value={value} onChange={(event) => setter(Number(event.target.value))}>
+                  <Select
+                    id={id}
+                    value={value}
+                    onChange={(event) => setter(Number(event.target.value))}
+                  >
                     {sections.map((section) => (
                       <option key={section.index} value={section.index}>
                         {section.index + 1}. {section.title}

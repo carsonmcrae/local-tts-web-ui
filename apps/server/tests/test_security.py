@@ -65,6 +65,10 @@ def test_network_mode_requires_token_for_remote_clients(settings: Settings, serv
     assert remote.get("/api/health", cookies={"ltts_token": token}).status_code == 200
     local = TestClient(app, client=("127.0.0.1", 50000))
     assert local.get("/api/health").status_code == 200
+    first_visit = TestClient(app, client=("192.168.1.51", 50000))
+    landing = first_visit.get(f"/api/health?token={token}")
+    assert landing.status_code == 200 and "HttpOnly" in landing.headers["set-cookie"]
+    assert first_visit.get("/api/health").status_code == 200  # the cookie now authenticates
 
 
 def test_cli_refuses_public_bind_without_opt_in() -> None:

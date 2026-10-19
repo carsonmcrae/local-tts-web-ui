@@ -195,6 +195,23 @@ export type paths = {
     patch?: never;
     trace?: never;
   };
+  '/api/engines/{engine_id}/update': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Update Engine */
+    post: operations['update_engine_api_engines__engine_id__update_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/exports': {
     parameters: {
       query?: never;
@@ -640,6 +657,11 @@ export type components = {
       statusMessage: string;
       /** Supportscloning */
       supportsCloning: boolean;
+      /**
+       * Updateavailable
+       * @default false
+       */
+      updateAvailable: boolean;
     };
     /** ExportRequest */
     ExportRequest: {
@@ -1362,6 +1384,37 @@ export interface operations {
         'application/json': components['schemas']['InstallRequest'];
       };
     };
+    responses: {
+      /** @description Successful Response */
+      202: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['JobOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  update_engine_api_engines__engine_id__update_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        engine_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
     responses: {
       /** @description Successful Response */
       202: {

@@ -2,7 +2,7 @@
 
 Scope: Uploads of every supported format through the real raw-body endpoint, validation errors and
 limits, library/detail/section/progress/delete, segment audio and previews (fake engine), engine
-listing/installation, preferences round-trip, health/system info and cache clearing.
+listing/installation/updates, preferences round-trip, health/system info and cache clearing.
 Does NOT belong: Middleware security tests (test_security.py) or real inference.
 """
 
@@ -11,6 +11,7 @@ from __future__ import annotations
 import io
 import time
 from pathlib import Path
+from typing import Any
 
 import soundfile as sf
 from fastapi.testclient import TestClient
@@ -136,6 +137,25 @@ def test_engine_install_job_runs(client: TestClient, engines: dict[str, FakeEngi
         time.sleep(0.05)
     assert state["status"] == "succeeded" and state["result"] == {"option": "cpu"}
     assert next(e for e in client.get("/api/engines").json() if e["id"] == "chatterbox")["status"] == "ready"
+
+
+def test_engine_update_job_runs_only_when_offered(client: TestClient, engines: dict[str, FakeEngine]) -> None:
+    def chatterbox() -> dict[str, Any]:
+        return next(e for e in client.get("/api/engines").json() if e["id"] == "chatterbox")
+
+    assert chatterbox()["updateAvailable"] is False
+    refused = client.post("/api/engines/chatterbox/update")
+    assert refused.status_code == 409 and refused.json()["error"]["code"] == "no_update"
+    engines["chatterbox"].update_available = True
+    assert chatterbox()["updateAvailable"] is True
+    job = client.post("/api/engines/chatterbox/update").json()
+    assert job["kind"] == "install" and job["payload"]["update"] is True
+    for _ in range(50):
+        state = client.get(f"/api/jobs/{job['id']}").json()
+        if state["status"] == "succeeded":
+            break
+        time.sleep(0.05)
+    assert state["status"] == "succeeded" and chatterbox()["updateAvailable"] is False
 
 
 def test_preferences_round_trip(client: TestClient) -> None:

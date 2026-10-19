@@ -26,7 +26,7 @@ from ltts.engines.base import VoiceSpec
 from ltts.engines.chatterbox import ChatterboxEngine
 from ltts.engines.kokoro import KokoroEngine
 from ltts.engines.worker_client import WorkerClient, WorkerError
-from ltts.errors import EngineUnavailableError
+from ltts.errors import ConflictError, EngineUnavailableError
 from ltts.hardware import GpuInfo
 from ltts.logging_setup import KeyValueFormatter
 from ltts.modelstore.store import ModelStore
@@ -77,6 +77,9 @@ def test_kokoro_not_installed(tmp_path: Path) -> None:
     with pytest.raises(EngineUnavailableError) as error:
         engine.synthesize("Hi.", VoiceSpec("af_heart"), 1.0)
     assert error.value.code == "engine_not_installed"
+    assert not info.update_available
+    with pytest.raises(ConflictError):
+        engine.update(None)  # type: ignore[arg-type]
 
 
 def test_chatterbox_install_options_follow_hardware(settings: Settings, monkeypatch: pytest.MonkeyPatch) -> None:

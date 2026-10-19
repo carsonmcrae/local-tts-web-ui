@@ -162,6 +162,16 @@ export function useInstallEngine() {
   });
 }
 
+/** Re-syncs an installed engine's runtime to the app's current lock (offered when `updateAvailable`). */
+export function useUpdateEngine() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (engineId: string) =>
+      api<JobOut>(`/api/engines/${engineId}/update`, { method: 'POST' }),
+    onSuccess: () => client.invalidateQueries({ queryKey: keys.engines }),
+  });
+}
+
 export function useUninstallEngine() {
   const client = useQueryClient();
   return useMutation({

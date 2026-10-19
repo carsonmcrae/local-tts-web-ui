@@ -16,7 +16,7 @@ import numpy as np
 
 from ltts.engines.base import AudioClip, EngineControl, EngineInfo, InstallOption, VoiceInfo, VoiceSpec
 from ltts.engines.kokoro_voices import GRADES, describe
-from ltts.errors import EngineUnavailableError, SynthesisError
+from ltts.errors import ConflictError, EngineUnavailableError, SynthesisError
 from ltts.jobs import JobContext
 from ltts.modelstore.store import ModelStore
 
@@ -160,6 +160,10 @@ class KokoroEngine:
         self.close()
         self._ensure_loaded()
         return {"artifact": ARTIFACT}
+
+    def update(self, context: JobContext) -> dict[str, Any]:  # noqa: ARG002 - nothing to run
+        """Kokoro runs in-process from checksum-pinned files; there is no separate runtime to update."""
+        raise ConflictError("Kokoro is already up to date.", code="no_update")
 
     def uninstall(self) -> None:
         self.close()

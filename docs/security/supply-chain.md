@@ -10,6 +10,7 @@
 | Exact npm versions, `save-exact`, committed `package-lock.json`                                                                      | `package.json`, `.npmrc`                                              |
 | `ignore-scripts=true` — no package runs install hooks (audited: none of the 519 packages needs one)                                  | `.npmrc`                                                              |
 | Locked Python environments, `uv sync --frozen`                                                                                       | `apps/server/uv.lock`, `apps/chatterbox-worker/uv.lock`               |
+| Existing cloning installs record the worker lock's SHA-256 and are offered an update when it changes                                 | `apps/server/src/ltts/engines/chatterbox_env.py`                      |
 | 14-day release cool-down for Python resolution (`exclude-newer`, the same date in both projects)                                     | `apps/server/pyproject.toml`, `apps/chatterbox-worker/pyproject.toml` |
 | Pinned uv binary with SHA-256 for six platforms                                                                                      | `scripts/toolchain.json`                                              |
 | Pinned model artifacts with SHA-256 and host allow-list                                                                              | `apps/server/src/ltts/modelstore/manifest.json`                       |
@@ -36,6 +37,10 @@ would detach torch from the per-extra PyTorch index). `npm run security` audits 
 
 The cu126 build supports the same GPUs as cu124 did (sm_50 to sm_90, Maxwell through Hopper). Linux
 wheels now need glibc 2.28 or newer.
+
+Overrides reach people who already installed cloning through **Update available** in Settings →
+Engines & models: the install marker records the lock's SHA-256, and a changed lock is offered as an
+in-place `uv sync --frozen` ([ADR-8](../architecture/decisions.md)).
 
 ### Triage (2026-10-19)
 

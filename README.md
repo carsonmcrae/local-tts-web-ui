@@ -1,178 +1,155 @@
-# Local Kokoro TTS Web UI
+# Local TTS
 
-A local text-to-speech tool using Kokoro with a simple web interface.
+**Read documents aloud with natural voices — privately, on your own computer.**
 
-> ⚠️ **Python Version Requirement**
->
-> This project requires **Python 3.12**.
-> 
-> Python 3.13 is **not currently supported** and will cause installation errors.
->
-> Verify your version with `py -0`
->
-> Install 3.12 from the official website or run `winget install -e --id Python.Python.3.12`
+Upload a PDF, Word document, EPUB, Markdown or text file, press Play, and follow along as each sentence
+is highlighted. Everything runs locally: no accounts, no cloud, no telemetry. Optionally, create a
+narration voice from a short recording of yourself.
 
+[![CI](https://github.com/carsonmcrae/local-tts-web-ui/actions/workflows/ci.yml/badge.svg)](https://github.com/carsonmcrae/local-tts-web-ui/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-## Preview
-
-![App Screenshot](tts_screenshot.png)
-
-## Demo
-
-https://github.com/user-attachments/assets/c17bf75f-4ffe-4e35-a5b1-59877f452851
+![The reader narrating a document with the current sentence highlighted](docs/images/reader-light.png)
 
 ## Features
 
-- 50+ voice options
-- Adjustable speech speed
-- Voice preview with caching (fast after first load)
-- Batch processing support
-- Upload or browse text files
-- Automatic model download on first run
+- **Reader** — PDF, DOCX, EPUB, Markdown, TXT or pasted text. Sentence-by-sentence read-along, chapter and
+  page navigation, resume where you left off, keyboard shortcuts and lock-screen media controls.
+- **Starts instantly, even for whole books** — sentences are generated just ahead of you and cached, so
+  playback begins in about a second and long documents never need to be rendered up front.
+- **54 natural voices** (Kokoro-82M) across English (US/UK), Spanish, French, Hindi, Italian, Portuguese,
+  Japanese and Mandarin, with quality grades and side-by-side comparison on your own passage.
+- **Voice Studio (optional)** — create a voice from a 10–20 second recording or an existing clip, with live
+  quality checks, explicit consent, a test generation and one-click permanent deletion.
+- **Export** — WAV or MP3, the whole document or selected chapters, one file or one per chapter.
+- **Private by design** — binds to `127.0.0.1`, works offline after setup, and never sends documents or
+  recordings anywhere.
+- Light and dark themes, responsive layout for phones and tablets, accessible controls (WCAG 2.2 AA target,
+  axe-checked).
 
-## Accessing the UI
+## Quick start
 
-Run the app locally and open:
+You need **Node.js 22.12 or newer** and Git. That's all — the first run installs everything else inside
+this folder.
 
-`http://127.0.0.1:7860`
-
-Use the interface to select a voice, adjust speed, and generate speech from text files or uploads.
-
-## Setup
-
-1. Open Command Prompt
-
-2. Create a folder where you want the project saved, for example:
-
-```
-cd "%USERPROFILE%\OneDrive\Desktop"
-```
-
-```
-mkdir local-tts-web-ui
-```
-
-3. Clone the repository: 
-
-```
+```bash
 git clone https://github.com/carsonmcrae/local-tts-web-ui.git
-```
-
-4. Navigate into the project folder:
-
-```
 cd local-tts-web-ui
+npm install
+npm run dev
 ```
 
-5. Create and activate virtual environment:
+The first `npm run dev` downloads a checksum-verified copy of [uv](https://docs.astral.sh/uv/), which
+installs Python 3.12 and the locked dependencies into `.tools/` and `apps/server/.venv`, then downloads the
+Kokoro voice model (~340 MB, SHA-256 verified). Later starts take a few seconds. Your browser opens at
+`http://127.0.0.1:5173`. Press **Ctrl+C** to stop.
 
-```
-py -3.12 -m venv venv
-```
+Nothing is installed system-wide. To remove everything, delete the folder.
 
-```
-venv\Scripts\activate
-```
+## Requirements
 
-```
-python --version
-```
-> *(Note: You should be on Version 3.12.x)*
+|         | Basic reader (Kokoro)     | Voice cloning (Chatterbox, optional)                                          |
+| ------- | ------------------------- | ----------------------------------------------------------------------------- |
+| Disk    | ~0.7 GB (runtime + model) | +8 GB with NVIDIA CUDA (measured); about +4.5 GB CPU-only (estimated)         |
+| Memory  | ~1 GB while speaking      | 4 GB+ RAM; 4 GB+ VRAM with a GPU                                              |
+| GPU     | Not needed                | Recommended (NVIDIA or Apple Silicon); CPU works but is slower than real time |
+| Network | First run only            | One-time download from Settings                                               |
 
+## Supported formats
 
-5. Install dependencies:
+| Format        | Notes                                                                                                                                                                                           |
+| ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| PDF           | Text PDFs; chapters from the outline or one section per page; running headers, footers and page numbers removed. Scanned (image-only) PDFs are detected and reported — OCR isn't supported yet. |
+| DOCX          | Headings become chapters; tables are read row by row. Macros and embedded objects are ignored.                                                                                                  |
+| EPUB 2/3      | Chapters from the table of contents. Scripts and styles are ignored.                                                                                                                            |
+| Markdown, TXT | Headings / "Chapter N" lines become sections; UTF-8, UTF-16 and Windows-1252 text.                                                                                                              |
 
-```
-pip install -r requirements.txt
-```
-> *(Note: This installs required Python packages such as `gradio` and `kokoro-tts`, along with their dependencies. On first run, the app will automatically download the Kokoro model files (~350MB), including `kokoro-v1.0.onnx` and `voices-v1.0.bin`.)*
+Limits (configurable): 25 MB per file, 2 million characters, 2,000 PDF pages.
 
-## Run
+## Platforms
 
-```
-python kokoro_tts_ui.py
-```
+| Platform               | Status                                                                                                                                 |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| Windows 11             | ✅ Fully tested: setup, unit/integration tests, real inference, Playwright (Chromium, Firefox, WebKit, mobile emulation)               |
+| macOS, Linux           | Unit and API tests run in CI on macOS 15 and Ubuntu 24.04. The full app was not manually tested on them.                               |
+| Chrome / Edge, Firefox | ✅ End-to-end tested                                                                                                                   |
+| Safari                 | Tested with Playwright's WebKit build (Windows); not verified on real Apple hardware                                                   |
+| Phones                 | Layout and playback tested with Pixel 7 and iPhone 13 emulation; see [LAN access](docs/guides/lan-access.md) to try it on a real phone |
 
-On first run, required model files (~350MB) will be downloaded automatically.
+## Voices and models
 
-## Usage
+| Engine                                                                                                                 | What it does                                                                                                                                 | Licences                     |
+| ---------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------- |
+| [Kokoro-82M](https://huggingface.co/hexgrad/Kokoro-82M) via [kokoro-onnx](https://github.com/thewh1teagle/kokoro-onnx) | Default. 54 built-in voices, adjustable pace, fast on any modern CPU.                                                                        | Weights Apache-2.0, code MIT |
+| [Chatterbox Turbo](https://github.com/resemble-ai/chatterbox)                                                          | Optional. Zero-shot voice cloning from a short reference recording. Installed from **Settings → Engines** into its own isolated environment. | Code and weights MIT         |
 
-- Place `.txt` files in the **Text Prompts** folder to use the Browse feature
-- Or upload a file directly in the UI
-- Generated audio files are saved in the **outputs** folder
+### How custom voices work
 
-## Controls
+Chatterbox copies a voice at the moment it speaks from a **short reference** (10–20 seconds is ideal; the
+engine only uses roughly the first 10–15 seconds, so longer recordings don't help). No model is trained —
+**fine-tuning** a model on 30+ minutes of audio can sound closer, but it needs hours of GPU time and isn't
+offered here. Only the trimmed reference recording is stored, locally. You must confirm the voice is yours
+or that the speaker gave permission; generated audio carries Resemble AI's inaudible Perth watermark.
 
-### Start the app
+## Privacy
 
-```
-cd C:\Users\YourName\Desktop
-```
+No telemetry, analytics or accounts. Documents, recordings and generated audio stay in the `data/` folder.
+The only network requests are the downloads you start (setup and optional engines), from pinned URLs with
+checksums. After that the app works fully offline. See [SECURITY.md](SECURITY.md) and the
+[threat model](docs/security/threat-model.md).
 
-```
-venv\Scripts\activate
-```
+## Screenshots
 
-```
-python kokoro_tts_ui.py
-```
+| Library                                 | Voice library                         |
+| --------------------------------------- | ------------------------------------- |
+| ![Library](docs/images/library.png)     | ![Voices](docs/images/voices.png)     |
+| **Voice Studio**                        | **Settings**                          |
+| ![Voice Studio](docs/images/studio.png) | ![Settings](docs/images/settings.png) |
 
-### Stop the app
+<p align="center"><img src="docs/images/mobile-reader.png" alt="The reader on a phone in dark mode" width="280" /></p>
 
-- Press: `Ctrl + C`
-- If prompted: type `Y`
+## How it works
 
-## Notes
+A React + TypeScript app talks to one local FastAPI service. Documents are parsed in a sandboxed
+subprocess and split into sentences; each sentence is synthesised on demand, cached by content hash and
+streamed to the browser, which plays it and highlights the matching text. Details:
+[architecture](docs/architecture/overview.md) · [decisions](docs/architecture/decisions.md) ·
+[open-source evaluation](docs/research/open-source-evaluation.md) · [legacy audit](docs/architecture/legacy-audit.md).
 
-- Voice previews are cached after first generation for faster playback
-- Model files are not included in the repo and will download automatically
+## Development
 
-## About This Project
+| Command                                        | Purpose                                                   |
+| ---------------------------------------------- | --------------------------------------------------------- |
+| `npm run dev`                                  | Start API + UI with hot reload                            |
+| `npm run start`                                | Production-style: one process serves the built UI and API |
+| `npm run check`                                | Format, lint, types, API contract, tests, build           |
+| `npm run test` · `test:inference` · `test:e2e` | Unit tests · real-model tests · Playwright journeys       |
+| `npm run doctor`                               | Diagnose the environment                                  |
+| `npm run security` · `npm run licenses`        | Dependency audits · licence inventory                     |
 
-This project is a local text-to-speech (TTS) web application built on top of the Kokoro TTS engine. It allows users to convert written text into spoken audio using a variety of synthetic voices, all running entirely on their own machine.
+See [CONTRIBUTING.md](CONTRIBUTING.md), [testing](docs/guides/testing.md),
+[configuration](docs/guides/configuration.md), [performance](docs/guides/performance.md) and
+[troubleshooting](docs/guides/troubleshooting.md).
 
-The primary goal of this project is to provide a simple, user-friendly interface for high-quality text-to-speech generation without requiring any external APIs or paid services. Everything runs locally, which means no internet dependency after setup and no data leaving your machine.
+## Roadmap
 
-## How It Works
+- Word-level highlighting from real model timings
+- OCR for scanned PDFs (optional, to keep setup light)
+- Multilingual voice cloning (Chatterbox Multilingual) and a lighter CPU cloning option
+- Better English pronunciation with the misaki G2P used to train Kokoro
+- M4B audiobook export with chapter markers
 
-At a high level, the application combines three main components:
+## Licence and credits
 
-1. **Frontend Interface (Gradio)**  
-   A lightweight web UI that runs locally in your browser. It allows users to:
-   - select voices  
-   - adjust speech speed  
-   - upload or browse text files  
-   - preview and generate audio  
+MIT — see [LICENSE](LICENSE). Model weights and dependencies have their own licences; see the
+[licence inventory](docs/security/license-inventory.md).
 
-2. **TTS Engine (Kokoro)**  
-   The core text-to-speech system that converts text into audio. This is installed as a Python package and handles the actual synthesis logic.
-
-3. **Local Model Files**  
-   On first run, the app automatically downloads required model files:
-   - `kokoro-v1.0.onnx` (speech model)  
-   - `voices-v1.0.bin` (voice data)  
-
-   These files are used by the TTS engine to generate realistic speech and are stored locally.
-
-## Why This Exists
-
-Most modern text-to-speech tools rely on cloud-based APIs, which can:
-- require subscriptions or usage fees  
-- introduce latency  
-- raise privacy concerns  
-
-This project was built to explore a fully local alternative that:
-- is free to use  
-- works offline after setup  
-- gives users full control over their data  
-
-## Intended Use Cases
-
-- Converting written content into audio for review  
-- Testing and comparing different synthetic voices  
-- Generating narration for small projects  
-- Experimenting with local AI tools  
-
----
-
-This project is designed to be simple, fast, and accessible while still exposing the core capabilities of a modern TTS system.
+- [Kokoro-82M](https://huggingface.co/hexgrad/Kokoro-82M) by hexgrad (Apache-2.0); its training data includes
+  CC-BY material from the Koniwa (CC BY 3.0) and SIWIS (CC BY 4.0) corpora.
+- [kokoro-onnx](https://github.com/thewh1teagle/kokoro-onnx) by thewh1teagle (MIT).
+- [Chatterbox](https://github.com/resemble-ai/chatterbox) by Resemble AI (MIT).
+- [espeak-ng](https://github.com/espeak-ng/espeak-ng) (GPL-3.0) for phonemisation, installed as a dependency.
+- [PDFium](https://pdfium.googlesource.com/pdfium/) via pypdfium2, [python-docx](https://github.com/python-openxml/python-docx),
+  [FastAPI](https://fastapi.tiangolo.com), [React](https://react.dev), [Radix UI](https://www.radix-ui.com),
+  [Tailwind CSS](https://tailwindcss.com), [Lucide](https://lucide.dev), and the Inter and Literata typefaces (OFL).
+- Sample text: "A Scandal in Bohemia" by Arthur Conan Doyle (public domain).

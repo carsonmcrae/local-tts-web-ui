@@ -15,7 +15,7 @@ import {
   useState,
   useSyncExternalStore,
 } from 'react';
-import { ApiError, api, describeError, fetchAudio } from '@/api/client';
+import { ApiError, api, describeError, prepareAudio } from '@/api/client';
 import { keys, usePreferences } from '@/api/queries';
 import type { MediaLike, PlayerState } from './controller';
 import { PlaybackController } from './controller';
@@ -37,11 +37,10 @@ function createController(
     {
       media,
       fetchSegment: (documentId, index, voiceId, pace, prefetch, signal) =>
-        fetchAudio(`/api/documents/${documentId}/segments/${index}/audio`, {
+        prepareAudio(`/api/documents/${documentId}/segments/${index}/audio`, {
           query: { voice: voiceId, pace, prefetch: prefetch || undefined },
           signal,
         }),
-      revoke: (url) => URL.revokeObjectURL(url),
       saveProgress: (documentId, index, voiceId) => {
         window.clearTimeout(timers.get(documentId));
         timers.set(

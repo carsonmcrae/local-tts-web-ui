@@ -5,7 +5,7 @@
  * Does NOT belong: Component rendering.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { ApiError, api, buildUrl, CLIENT_HEADER, describeError, fetchAudio } from '@/api/client';
+import { ApiError, api, buildUrl, CLIENT_HEADER, describeError, prepareAudio } from '@/api/client';
 import { stepSpeed } from '@/features/player/useShortcuts';
 import { analyzeSamples } from './audio/analysis';
 import { encodeWav, encodeWavBuffer, mixToMono, resampleLinear } from './audio/wav';
@@ -149,14 +149,24 @@ describe('api client', () => {
     expect(describeError('weird')).toBe('Something went wrong.');
   });
 
-  it('fetches audio as an object URL with its duration', async () => {
+  it('prepares audio and returns the direct URL the server advertises', async () => {
+    const headers = { 'X-Audio-Duration': '2.5', 'X-Audio-Url': '/api/audio/k' };
     vi.stubGlobal(
       'fetch',
-      vi.fn(
-        async () => new Response(new Blob(['abc']), { headers: { 'X-Audio-Duration': '2.5' } }),
-      ),
+      vi.fn(async () => new Response('abc', { headers })),
     );
-    await expect(fetchAudio('/api/a')).resolves.toEqual({ url: 'blob:mock', duration: 2.5 });
+    await expect(prepareAudio('/api/a', { query: { v: 1 } })).resolves.toEqual({
+      url: '/api/audio/k',
+      duration: 2.5,
+    });
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => new Response('abc')),
+    );
+    await expect(prepareAudio('/api/b', { query: { v: 1 } })).resolves.toEqual({
+      url: '/api/b?v=1',
+      duration: 0,
+    });
     expect(buildUrl('/p', { a: 1, b: true })).toBe('/p?a=1&b=true');
   });
 });

@@ -92,17 +92,25 @@ export async function api<T>(path: string, options: RequestOptions = {}): Promis
   return (await response.json()) as T;
 }
 
-export interface AudioBlob {
+export interface PreparedAudio {
+  /** Direct same-origin URL for an audio element (WebKit refuses media from Blob URLs). */
   url: string;
   duration: number;
 }
 
-/** Fetch audio as an object URL (caller must revoke it with `URL.revokeObjectURL`). */
-export async function fetchAudio(path: string, options: RequestOptions = {}): Promise<AudioBlob> {
+/**
+ * Make sure audio exists (failures arrive as JSON errors), then return the direct URL the server
+ * advertises for the cached clip. The response body is discarded; the media element streams it.
+ */
+export async function prepareAudio(
+  path: string,
+  options: RequestOptions = {},
+): Promise<PreparedAudio> {
   const response = await send(path, options);
   const duration = Number(response.headers.get('X-Audio-Duration') ?? '0');
-  const blob = await response.blob();
-  return { url: URL.createObjectURL(blob), duration: Number.isFinite(duration) ? duration : 0 };
+  const url = response.headers.get('X-Audio-Url') ?? buildUrl(path, options.query);
+  await response.body?.cancel().catch(() => undefined);
+  return { url, duration: Number.isFinite(duration) ? duration : 0 };
 }
 
 export function describeError(error: unknown): string {

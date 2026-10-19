@@ -29,7 +29,7 @@ CLIENT_HEADER = b"x-ltts-client"
 SAFE_METHODS = {"GET", "HEAD", "OPTIONS"}
 CSP = (
     "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; "
-    "media-src 'self' blob:; connect-src 'self'; font-src 'self'; worker-src 'self' blob:; object-src 'none'; "
+    "media-src 'self' blob: data:; connect-src 'self'; font-src 'self'; worker-src 'self' blob:; object-src 'none'; "
     "base-uri 'none'; form-action 'self'; frame-ancestors 'none'"
 )
 SECURITY_HEADERS = [

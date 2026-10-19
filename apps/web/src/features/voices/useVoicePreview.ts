@@ -1,11 +1,11 @@
 /**
  * Purpose: Play short voice previews, one at a time, reusing audio already generated.
- * Scope: A single preview audio element, per-(voice, text, pace) object-URL cache, loading/playing
+ * Scope: A single preview audio element, a per-(voice, text, pace) cache of direct audio URLs, loading/playing
  *   state per voice, cancellation of superseded requests and cleanup on unmount.
  * Does NOT belong: Document narration (PlaybackController).
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ApiError, describeError, fetchAudio } from '@/api/client';
+import { ApiError, describeError, prepareAudio } from '@/api/client';
 
 export interface PreviewState {
   voiceId: string | null;
@@ -29,7 +29,6 @@ export function useVoicePreview() {
     return () => {
       element.pause();
       pending.current?.abort();
-      for (const url of urls.values()) URL.revokeObjectURL(url);
       urls.clear();
     };
   }, []);
@@ -52,7 +51,7 @@ export function useVoicePreview() {
       if (!url) {
         const controller = new AbortController();
         pending.current = controller;
-        const result = await fetchAudio(`/api/voices/${voiceId}/preview`, {
+        const result = await prepareAudio(`/api/voices/${voiceId}/preview`, {
           method: 'POST',
           json: { text: text?.trim() ? text : null, pace },
           signal: controller.signal,

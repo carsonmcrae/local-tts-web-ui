@@ -1,8 +1,9 @@
 """Purpose: Audio endpoints: per-segment narration audio and short voice previews.
 
-Scope: Streams cached WAV files with their duration in a response header; previews accept a short
-custom passage so voices can be compared on identical text. Requests a client abandons release
-their queued synthesis work.
+Scope: Streams cached WAV files (with byte-range support) and their duration in a response header;
+previews accept a short custom passage so voices can be compared on identical text and also expose a
+direct GET URL for the cached clip (``X-Audio-Url``) because some browsers (WebKit) will not play
+media from Blob URLs. Requests a client abandons release their queued synthesis work.
 Does NOT belong: Synthesis logic (``service.py``).
 """
 
@@ -16,6 +17,7 @@ from pydantic import Field
 
 from ltts.common import ApiModel
 from ltts.container import ServicesDep
+from ltts.errors import NotFoundError
 from ltts.synthesis.cache import CachedAudio
 from ltts.synthesis.scheduler import PRIORITY_PLAYBACK, PRIORITY_PREFETCH, PRIORITY_PREVIEW
 from ltts.synthesis.service import MAX_PREVIEW_CHARS, ClientGoneError
@@ -39,8 +41,21 @@ def _audio_response(audio: CachedAudio) -> FileResponse:
     return FileResponse(
         audio.path,
         media_type="audio/wav",
-        headers={"X-Audio-Duration": f"{audio.duration_s:.3f}", "Cache-Control": "no-store"},
+        headers={
+            "X-Audio-Duration": f"{audio.duration_s:.3f}",
+            "X-Audio-Url": f"/api/audio/{audio.key}",
+            "Cache-Control": "no-store",
+        },
     )
+
+
+@router.get("/audio/{key}", response_class=FileResponse)
+def cached_audio(key: Annotated[str, Path(pattern=r"^[0-9a-f]{64}$")], services: ServicesDep) -> Response:
+    """Play an already-generated clip by its content key (previews, direct media URLs)."""
+    audio = services.audio_cache.get(key)
+    if audio is None:
+        raise NotFoundError("That audio is no longer cached. Generate it again.", code="audio_not_cached")
+    return _audio_response(audio)
 
 
 @router.get("/documents/{document_id}/segments/{index}/audio", response_class=FileResponse)

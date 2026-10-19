@@ -4,6 +4,26 @@
  * Does NOT belong: Hand-written helpers — regenerate with `npm run api:types`.
  */
 export type paths = {
+  '/api/audio/{key}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Cached Audio
+     * @description Play an already-generated clip by its content key (previews, direct media URLs).
+     */
+    get: operations['cached_audio_api_audio__key__get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/documents': {
     parameters: {
       query?: never;
@@ -1007,6 +1027,35 @@ export type components = {
 };
 export type $defs = Record<string, never>;
 export interface operations {
+  cached_audio_api_audio__key__get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
   list_documents_api_documents_get: {
     parameters: {
       query?: never;

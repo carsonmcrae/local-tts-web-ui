@@ -13,6 +13,7 @@ import logging
 import sys
 import time
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 from fastapi.testclient import TestClient
@@ -88,10 +89,16 @@ def test_chatterbox_install_options_follow_hardware(settings: Settings, monkeypa
     monkeypatch.setattr(
         chatterbox_module, "detect_gpus", lambda: (GpuInfo(vendor="NVIDIA", name="Test GPU", memory_mb=8000),)
     )
+    # Pin the platform so every OS covers both the CUDA and the Apple Silicon branches.
+    monkeypatch.setattr(chatterbox_module, "sys", SimpleNamespace(platform="linux"))
     with_gpu = engine.info()
     assert with_gpu.supports_cloning and with_gpu.controls == [] and with_gpu.status == "not_installed"
-    if sys.platform != "darwin":
-        assert [o.id for o in with_gpu.install_options] == ["cuda", "cpu"] and with_gpu.install_options[0].recommended
+    assert [(o.id, o.label) for o in with_gpu.install_options] == [("cuda", "NVIDIA GPU (CUDA)"), ("cpu", "CPU only")]
+    assert with_gpu.install_options[0].recommended and not with_gpu.install_options[1].recommended
+    # macOS never offers CUDA, even if an NVIDIA card is reported.
+    monkeypatch.setattr(chatterbox_module, "sys", SimpleNamespace(platform="darwin"))
+    mac = engine.info().install_options
+    assert [(o.id, o.label) for o in mac] == [("cpu", "Apple Silicon / CPU")] and mac[0].recommended
     monkeypatch.setattr(chatterbox_module, "detect_gpus", lambda: ())
     assert [o.id for o in engine.info().install_options] == ["cpu"]
     assert engine.voices()[0].available is False

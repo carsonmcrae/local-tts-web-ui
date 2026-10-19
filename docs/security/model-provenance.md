@@ -27,7 +27,7 @@ SHA-256. Hashes were confirmed against the publisher's own metadata and a local 
 | Checksum source          | Hugging Face LFS `oid` (SHA-256) for large files; local SHA-256 for small tokenizer files                                                                                                               |
 | Format risk              | safetensors (data). `conds.pt` is a PyTorch pickle loaded with `torch.load(weights_only=True)`, which blocks arbitrary code. The worker runs with `HF_HUB_OFFLINE=1`, so it cannot fetch anything else. |
 | Output                   | Every clip carries Resemble AI's imperceptible Perth watermark (resemble-perth, MIT).                                                                                                                   |
-| Environment              | `apps/chatterbox-worker/uv.lock`: chatterbox-tts 0.1.7, torch 2.6.0 (+cpu or +cu124 from download.pytorch.org), gradio removed via override.                                                            |
+| Environment              | `apps/chatterbox-worker/uv.lock`: chatterbox-tts 0.1.7, torch 2.11.0 (+cpu or +cu126 from download.pytorch.org), transformers 5.11.0, gradio removed via override.                                      |
 
 ## Reference audio and samples
 

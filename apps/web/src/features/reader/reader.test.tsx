@@ -14,13 +14,11 @@ import type { usePlayer } from '@/features/player/PlayerProvider';
 import {
   documentDetail,
   json,
-  kokoro,
   mockApi,
   PlayerSpy,
   preferences,
-  readerRoutes,
+  mockReaderApi,
   renderWithApp,
-  voice,
 } from '@/test/render';
 import ReaderPage from './ReaderPage';
 
@@ -33,17 +31,6 @@ const book = documentDetail({
     { index: 1, title: 'Chapter Two', startSegment: 3, segmentCount: 3, page: 5 },
   ],
 });
-
-function api(doc: DocumentDetail = book, overrides: Record<string, unknown> = {}) {
-  return mockApi({
-    'GET /api/engines': [kokoro()],
-    'GET /api/preferences': preferences,
-    'GET /api/voices': [voice()],
-    'PUT /api/documents/': {},
-    ...readerRoutes(doc),
-    ...overrides,
-  });
-}
 
 type Player = ReturnType<typeof usePlayer>;
 
@@ -70,7 +57,7 @@ const sentence = (text: string) => screen.getByRole('button', { name: text });
 
 describe('Reader navigation', () => {
   it('jumps through the contents dialog, the sidebar and the section pager', async () => {
-    api();
+    mockReaderApi(book);
     const { user, state } = await openReader();
     expect(screen.getByText('Section 1 of 2 · Chapter One')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Contents' }));
@@ -89,7 +76,7 @@ describe('Reader navigation', () => {
   });
 
   it('keeps the playback position when the reader is opened again', async () => {
-    api();
+    mockReaderApi(book);
     const { router, state, controller } = await openReader();
     await act(() => controller().seek(2));
     await act(() => router.navigate('/library'));
@@ -99,7 +86,7 @@ describe('Reader navigation', () => {
   });
 
   it('loads the document again when jumping after the player was cleared', async () => {
-    api();
+    mockReaderApi(book);
     const { user, controller, state } = await openReader();
     act(() => controller().unload());
     const sidebar = screen.getByRole('complementary', { name: 'Document contents' });
@@ -111,7 +98,7 @@ describe('Reader navigation', () => {
 
 describe('Reader playback', () => {
   it('resumes from the saved sentence and pauses from the header', async () => {
-    api(
+    mockReaderApi(
       documentDetail({
         ...book,
         filename: null,
@@ -132,7 +119,7 @@ describe('Reader playback', () => {
   });
 
   it('plays from a clicked sentence, restarting it when it is already playing', async () => {
-    api();
+    mockReaderApi(book);
     const { user, state, controller } = await openReader();
     await user.click(await screen.findByText('Sentence 2.'));
     await waitFor(() => expect(state()).toMatchObject({ segmentIndex: 1, status: 'playing' }));
@@ -144,7 +131,7 @@ describe('Reader playback', () => {
   });
 
   it('makes the text one tab stop with arrow keys between sentences', async () => {
-    api();
+    mockReaderApi(book);
     const { user, state } = await openReader();
     const heading = await screen.findByRole('button', { name: 'Chapter One' });
     expect(heading).toHaveAttribute('tabindex', '0');
@@ -168,7 +155,7 @@ describe('Read-along scrolling', () => {
   const inMain = (page: ReactNode) => <main>{page}</main>;
 
   it('keeps the spoken sentence in view, smoothly or instantly', async () => {
-    api();
+    mockReaderApi(book);
     const scroll = vi.mocked(Element.prototype.scrollIntoView);
     scroll.mockClear();
     const { controller } = await openReader(book, inMain);
@@ -180,7 +167,7 @@ describe('Read-along scrolling', () => {
   });
 
   it('leaves the page alone while the sentence is visible or the reader scrolled recently', async () => {
-    api();
+    mockReaderApi(book);
     const scroll = vi.mocked(Element.prototype.scrollIntoView);
     const { controller } = await openReader(book, inMain);
     const visible = { top: 300, bottom: 320, left: 0, right: 10, width: 10, height: 20 };
@@ -197,7 +184,7 @@ describe('Read-along scrolling', () => {
   });
 
   it('does not scroll when following along is turned off', async () => {
-    api(book, { 'GET /api/preferences': { ...preferences, autoScroll: false } });
+    mockReaderApi(book, { 'GET /api/preferences': { ...preferences, autoScroll: false } });
     const scroll = vi.mocked(Element.prototype.scrollIntoView);
     const { controller } = await openReader(book, inMain);
     await waitFor(() => expect(screen.getByRole('button', { name: 'Play' })).toBeEnabled());
@@ -208,7 +195,7 @@ describe('Read-along scrolling', () => {
   });
 
   it('skips scrolling when the spoken sentence is in another section or nothing is loaded', async () => {
-    api();
+    mockReaderApi(book);
     const scroll = vi.mocked(Element.prototype.scrollIntoView);
     const { user, controller } = await openReader(book, inMain);
     const pager = screen.getByRole('navigation', { name: 'Section navigation' });
@@ -224,7 +211,7 @@ describe('Read-along scrolling', () => {
 
 describe('Reader states', () => {
   it('shows warnings and explains a section that fails to load', async () => {
-    api(documentDetail({ ...book, warnings: ['Two pages had no text.'] }), {
+    mockReaderApi(documentDetail({ ...book, warnings: ['Two pages had no text.'] }), {
       [`GET /api/documents/${book.id}/sections/`]: json(
         { error: { code: 'section_missing', message: 'That section is missing.' } },
         404,

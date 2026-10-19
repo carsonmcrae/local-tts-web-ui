@@ -13,7 +13,7 @@ import type { ReactNode } from 'react';
 import { useEffect } from 'react';
 import { createMemoryRouter, RouterProvider } from 'react-router';
 import { vi } from 'vitest';
-import type { DocumentDetail, EngineInfo, Preferences, VoiceInfo } from '@/api/types';
+import type { DocumentDetail, EngineInfo, Preferences, VoiceInfo, VoiceProfile } from '@/api/types';
 import { createQueryClient } from '@/app/App';
 import { ToastProvider } from '@/components/ui/Toast';
 import type { MediaLike } from '@/features/player/controller';
@@ -207,6 +207,26 @@ export function readerRoutes(doc: DocumentDetail = documentDetail()) {
 }
 
 type Player = ReturnType<typeof usePlayer>;
+
+/** The API a reader page needs: one engine, preferences, one voice and the document's routes. */
+export function mockReaderApi(doc: DocumentDetail, overrides: Record<string, unknown> = {}) {
+  return mockApi({
+    'GET /api/engines': [kokoro()],
+    'GET /api/preferences': preferences,
+    'GET /api/voices': [voice()],
+    'PUT /api/documents/': {},
+    ...readerRoutes(doc),
+    ...overrides,
+  });
+}
+
+export const voiceProfile = (overrides: Partial<VoiceProfile> = {}): VoiceProfile => ({
+  id: 'c'.repeat(32), voiceId: `custom:${'c'.repeat(32)}`, name: 'My voice', engineId: 'chatterbox', durationS: 14,
+  sampleRate: 24000, consentedAt: '2026-10-19T10:00:00+00:00', source: 'import', createdAt: '2026-10-19T10:00:00+00:00',
+  stores: 'A trimmed copy of your reference recording (WAV).',
+  quality: { durationS: 14, speechS: 12, rmsDbfs: -20, peakDbfs: -1, clippingRatio: 0, pauseRatio: 0.2, snrDb: 40, ok: true, issues: [] },
+  ...overrides,
+}); // prettier-ignore
 
 /** Hands the app's player (controller and current state) to a test after every render. */
 export function PlayerSpy({ onPlayer }: Readonly<{ onPlayer: (player: Player) => void }>) {

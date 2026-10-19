@@ -8,6 +8,8 @@ Does NOT belong: The JSON-lines protocol and model handling (``__main__``).
 
 from __future__ import annotations
 
+# importlib.resources.files needs Python 3.9; this worker requires 3.11.
+# nosemgrep: python.lang.compatibility.python37.python37-compatibility-importlib2
 import importlib.resources
 import importlib.util
 import sys

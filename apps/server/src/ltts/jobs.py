@@ -93,6 +93,18 @@ def _row_to_job(row: Any) -> JobOut:
     )
 
 
+_UPDATE_SQL = """
+UPDATE jobs SET
+    status = COALESCE(:status, status),
+    progress = COALESCE(:progress, progress),
+    message = COALESCE(:message, message),
+    result_json = COALESCE(:result_json, result_json),
+    error_code = COALESCE(:error_code, error_code),
+    updated_at = :updated_at
+WHERE id = :id
+"""
+
+
 class JobManager:
     def __init__(self, db: Database):
         self._db = db
@@ -106,15 +118,28 @@ class JobManager:
                 (JobStatus.INTERRUPTED, "Stopped when the app shut down.", utc_now(), *ACTIVE),
             ).rowcount
 
-    def _write(self, job_id: str, **fields: Any) -> None:
-        if "result" in fields:
-            fields["result_json"] = json.dumps(fields.pop("result"))
-        assignments = ", ".join(f"{name} = :{name}" for name in fields)
+    def _write(
+        self,
+        job_id: str,
+        *,
+        status: JobStatus | None = None,
+        progress: float | None = None,
+        message: str | None = None,
+        result: dict[str, Any] | None = None,
+        error_code: str | None = None,
+    ) -> None:
+        """Updates the given columns; the others keep their value (no column is ever cleared)."""
+        params = {
+            "status": status,
+            "progress": progress,
+            "message": message,
+            "result_json": None if result is None else json.dumps(result),
+            "error_code": error_code,
+            "updated_at": utc_now(),
+            "id": job_id,
+        }
         with self._db.connect() as conn:
-            conn.execute(
-                f"UPDATE jobs SET {assignments}, updated_at = :updated_at WHERE id = :id",  # noqa: S608 - fixed names
-                {**fields, "updated_at": utc_now(), "id": job_id},
-            )
+            conn.execute(_UPDATE_SQL, params)
 
     def find_active(self, kind: str, key: str) -> JobOut | None:
         for job in self.list_recent(kind=kind):
@@ -176,11 +201,14 @@ class JobManager:
         return _row_to_job(row)
 
     def list_recent(self, *, kind: str | None = None, limit: int = 50) -> list[JobOut]:
-        where = " WHERE kind = ?" if kind else ""
-        query = f"SELECT * FROM jobs{where} ORDER BY created_at DESC LIMIT ?"  # noqa: S608 - constant fragments
-        params: tuple[Any, ...] = (kind, limit) if kind else (limit,)
         with self._db.connect() as conn:
-            return [_row_to_job(row) for row in conn.execute(query, params).fetchall()]
+            if kind:
+                rows = conn.execute(
+                    "SELECT * FROM jobs WHERE kind = ? ORDER BY created_at DESC LIMIT ?", (kind, limit)
+                ).fetchall()
+            else:
+                rows = conn.execute("SELECT * FROM jobs ORDER BY created_at DESC LIMIT ?", (limit,)).fetchall()
+        return [_row_to_job(row) for row in rows]
 
     def cancel(self, job_id: str) -> JobOut:
         event = self._cancel.get(job_id)

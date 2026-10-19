@@ -5,20 +5,20 @@
 
 ## Controls
 
-| Control                                                                                                                              | Where                                                                 |
-| ------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------- |
-| Exact npm versions, `save-exact`, committed `package-lock.json`                                                                      | `package.json`, `.npmrc`                                              |
-| `ignore-scripts=true` — no package runs install hooks (audited: none of the 519 packages needs one)                                  | `.npmrc`                                                              |
-| Locked Python environments, `uv sync --frozen`                                                                                       | `apps/server/uv.lock`, `apps/chatterbox-worker/uv.lock`               |
-| Existing cloning installs record the worker lock's SHA-256 and are offered an update when it changes                                 | `apps/server/src/ltts/engines/chatterbox_env.py`                      |
-| 14-day release cool-down for Python resolution (`exclude-newer`, the same date in both projects)                                     | `apps/server/pyproject.toml`, `apps/chatterbox-worker/pyproject.toml` |
-| Pinned uv binary with SHA-256 for six platforms                                                                                      | `scripts/toolchain.json`                                              |
-| Pinned model artifacts with SHA-256 and host allow-list                                                                              | `apps/server/src/ltts/modelstore/manifest.json`                       |
-| `npm audit --audit-level=high`, `pip-audit` of the server environment and of both Chatterbox extras (OSV, no install)                | `npm run security` (`scripts/audit-worker.mjs`), CI                   |
-| Secret scanning (gitleaks), CodeQL (JS/TS + Python), dependency review on PRs (fails on high severity, covers both Python lockfiles) | `.github/workflows`                                                   |
-| Dependabot with a 7-day cool-down and grouped updates                                                                                | `.github/dependabot.yml`                                              |
-| License inventory that fails on unreviewed copyleft or unknown licences                                                              | `npm run licenses`                                                    |
-| GitHub Actions pinned to commit SHAs                                                                                                 | `.github/workflows`                                                   |
+| Control                                                                                                                              | Where                                                   |
+| ------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------- |
+| Exact npm versions, `save-exact`, committed `package-lock.json`                                                                      | `package.json`, `.npmrc`                                |
+| `ignore-scripts=true` — no package runs install hooks (audited: none of the 519 packages needs one)                                  | `.npmrc`                                                |
+| Locked Python environments, `uv sync --frozen`                                                                                       | `apps/server/uv.lock`, `apps/chatterbox-worker/uv.lock` |
+| Existing cloning installs record the worker lock's SHA-256 and are offered an update when it changes                                 | `apps/server/src/ltts/engines/chatterbox_env.py`        |
+| 14-day release cool-down: `exclude-newer = "14 days"` in both Python projects and `min-release-age=14` for npm                       | `apps/*/pyproject.toml`, `.npmrc`                       |
+| Pinned uv binary with SHA-256 for six platforms                                                                                      | `scripts/toolchain.json`                                |
+| Pinned model artifacts with SHA-256 and host allow-list                                                                              | `apps/server/src/ltts/modelstore/manifest.json`         |
+| `npm audit --audit-level=high`, `pip-audit` of the server environment and of both Chatterbox extras (OSV, no install)                | `npm run security` (`scripts/audit-worker.mjs`), CI     |
+| Secret scanning (gitleaks), CodeQL (JS/TS + Python), dependency review on PRs (fails on high severity, covers both Python lockfiles) | `.github/workflows`                                     |
+| Dependabot with a 7-day cool-down and grouped updates                                                                                | `.github/dependabot.yml`                                |
+| License inventory that fails on unreviewed copyleft or unknown licences                                                              | `npm run licenses`                                      |
+| GitHub Actions pinned to commit SHAs                                                                                                 | `.github/workflows`                                     |
 
 ## Known advisories in the optional Chatterbox environment
 
@@ -101,16 +101,20 @@ also loads, clones (0.910 on one sentence) and watermarks. `npm run test:inferen
 ### Release cool-down
 
 The worker lock was first resolved without `exclude-newer`, so 21 of its packages were less than 14
-days old on 2026-10-19. It now has the same `exclude-newer` date as the server, and 20 of them went back
+days old on 2026-10-19. It now uses the same cool-down as the server, and 20 of them went back
 to their newest releases that are old enough (for example `certifi` 2026.10.18 → 2026.7.22).
 `omegaconf` keeps 2.4.0 (2026-10-09) through an `exclude-newer-package` exception, because every older
 release needs `antlr4-python3-runtime` 4.9, which ships only as an sdist and would run its `setup.py` on
-install. Remove the exception once `exclude-newer` passes 2026-10-23.
+install. Remove the exception after 2026-10-23, when the 14-day window covers that release.
+
+Both Python projects use a rolling window (`exclude-newer = "14 days"`, uv 0.9.17 or newer), so a
+re-lock always considers releases at least 14 days old without a date to bump. npm applies the same
+rule to new resolutions through `min-release-age=14` in `.npmrc` (npm 11.10 or newer).
 
 ## Updating dependencies
 
 1. Let Dependabot propose updates (or bump manually), never adopting a release younger than 14 days.
-2. For Python: move `exclude-newer` forward in both `pyproject.toml` files, run
+2. For Python: run
    `node scripts/uv-run.mjs --cwd apps/server lock` (and `--cwd apps/chatterbox-worker lock`), review the
    lock diff (new packages, changed sources, anything that only ships as an sdist).
 3. Run `npm run check`, `npm run test:inference` and `npm run test:e2e`.

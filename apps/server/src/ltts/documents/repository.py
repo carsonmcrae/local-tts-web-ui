@@ -29,6 +29,8 @@ _SUMMARY_SQL = """
 SELECT d.*, p.segment_idx AS p_segment, p.voice_id AS p_voice, p.updated_at AS p_updated
 FROM documents d LEFT JOIN progress p ON p.document_id = d.id
 """
+_LIST_SQL = _SUMMARY_SQL + " ORDER BY COALESCE(p.updated_at, d.created_at) DESC"
+_GET_SQL = _SUMMARY_SQL + " WHERE d.id = ?"
 
 
 def _summary(row: sqlite3.Row) -> DocumentSummary:
@@ -86,12 +88,12 @@ class DocumentRepository:
 
     def list_all(self) -> list[DocumentSummary]:
         with self._db.connect() as conn:
-            rows = conn.execute(_SUMMARY_SQL + " ORDER BY COALESCE(p.updated_at, d.created_at) DESC").fetchall()
+            rows = conn.execute(_LIST_SQL).fetchall()
         return [_summary(row) for row in rows]
 
     def get(self, document_id: str) -> DocumentDetail:
         with self._db.connect() as conn:
-            row = conn.execute(_SUMMARY_SQL + " WHERE d.id = ?", (document_id,)).fetchone()
+            row = conn.execute(_GET_SQL, (document_id,)).fetchone()
             if row is None:
                 raise NotFoundError("That document no longer exists.", code="document_not_found")
             conn.execute("UPDATE documents SET last_opened_at = ? WHERE id = ?", (utc_now(), document_id))

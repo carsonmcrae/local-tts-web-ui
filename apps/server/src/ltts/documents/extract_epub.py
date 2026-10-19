@@ -11,6 +11,9 @@ from __future__ import annotations
 import posixpath
 from pathlib import Path
 from urllib.parse import unquote
+
+# Type only: every document is parsed with defusedxml (SafeET below), never with xml.etree.
+# nosemgrep: python.lang.security.use-defused-xml.use-defused-xml
 from xml.etree.ElementTree import Element
 
 from defusedxml import ElementTree as SafeET

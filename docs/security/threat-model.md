@@ -45,6 +45,10 @@ and the integrity of installed model files and Python/npm dependencies.
 - **Only Linux has a per-process memory limit** in the sandbox (`RLIMIT_AS`). Windows has no
   equivalent, and macOS reserves more virtual address space at start-up than any useful cap allows.
   The timeout, archive and text limits still apply everywhere.
+- **The optional Chatterbox environment has known lower-severity advisories** in `torch`,
+  `transformers` and `setuptools`, pinned by `chatterbox-tts`
+  ([supply-chain.md](supply-chain.md#known-advisories-in-the-optional-chatterbox-environment)). The
+  default Kokoro reader does not install them.
 - **PDFium and libxml2 are native code.** They are mature and fuzzed, and run in a separate, killable
   process, but a memory-safety bug could still compromise that process.
 - **Network mode uses plain HTTP.** The token protects access but not confidentiality on the LAN, and

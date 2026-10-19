@@ -31,3 +31,25 @@ window.HTMLMediaElement.prototype.play = vi.fn(() => Promise.resolve());
 window.HTMLMediaElement.prototype.pause = vi.fn();
 
 (globalThis as unknown as { __APP_VERSION__: string }).__APP_VERSION__ = 'test';
+
+// Radix primitives (Slider) measure elements with ResizeObserver, which jsdom lacks.
+class ResizeObserverStub {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+globalThis.ResizeObserver ??= ResizeObserverStub as unknown as typeof ResizeObserver;
+
+// jsdom's Blob/File lack arrayBuffer(), which every supported browser implements.
+if (!('arrayBuffer' in Blob.prototype)) {
+  Object.defineProperty(Blob.prototype, 'arrayBuffer', {
+    value(this: Blob) {
+      return new Promise<ArrayBuffer>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as ArrayBuffer);
+        reader.onerror = () => reject(reader.error ?? new Error('read failed'));
+        reader.readAsArrayBuffer(this);
+      });
+    },
+  });
+}

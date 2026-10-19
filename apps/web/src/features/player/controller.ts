@@ -75,6 +75,8 @@ interface CacheEntry {
   controller: AbortController;
   promise: Promise<SegmentAudio>;
   audio?: SegmentAudio;
+  /** Set when the fetch failed, so a retry requests the audio again instead of reusing the error. */
+  failed?: boolean;
 }
 
 type Listener = (state: PlayerState) => void;
@@ -251,7 +253,7 @@ export class PlaybackController {
   private request(index: number, prefetch: boolean): CacheEntry {
     const key = this.key(index);
     const existing = this.cache.get(index);
-    if (existing?.key === key) return existing;
+    if (existing?.key === key && !existing.failed) return existing;
     if (existing) this.drop(index);
     const controller = new AbortController();
     const documentId = this.state.document?.id ?? '';
@@ -272,7 +274,9 @@ export class PlaybackController {
         entry.audio = audio;
         if (this.cache.get(index) !== entry) this.deps.revoke(audio.url);
       },
-      () => undefined,
+      () => {
+        entry.failed = true;
+      },
     );
     this.cache.set(index, entry);
     return entry;

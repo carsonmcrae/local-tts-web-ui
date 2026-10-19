@@ -1,9 +1,46 @@
-venv/
-outputs/
+# Purpose: Keep runtime data, models, toolchains and build output out of Git.
+# Scope: Repository-wide ignore rules.
+# Does NOT belong: Editor-specific files a contributor can ignore globally.
+
+# Dependencies and toolchains
+node_modules/
+.tools/
+.venv/
 __pycache__/
-*.pyc
-*.pyo
-*.pyd
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Runtime data: documents, voice recordings, audio cache, models, databases
+/data/
+/.e2e-data/
+*.onnx
+*.safetensors
+*.pt
+*.bin
+*.sqlite3
+*.sqlite3-*
+
+# Build and test output
+dist/
+coverage/
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+playwright-report/
+test-results/
+blob-report/
+*.tsbuildinfo
+
+# Environment and secrets (the example file is the only tracked env file)
 .env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# OS noise
 .DS_Store
-Thumbs.db 
+Thumbs.db

@@ -1,0 +1,13 @@
+node_modules
+dist
+coverage
+/data
+.tools
+.e2e-data
+playwright-report
+test-results
+package-lock.json
+apps/server
+apps/chatterbox-worker
+apps/web/src/api/schema.gen.ts
+CHANGELOG.md

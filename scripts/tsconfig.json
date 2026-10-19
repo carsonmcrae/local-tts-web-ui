@@ -1,0 +1,14 @@
+{
+  "//": "Purpose: Type-check the JSDoc-annotated bootstrap scripts (checkJs). Scope: scripts/**/*.mjs. Does NOT belong: Web app sources.",
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "allowJs": true,
+    "checkJs": true,
+    "types": ["node"],
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "verbatimModuleSyntax": false,
+    "exactOptionalPropertyTypes": false
+  },
+  "include": ["./**/*.mjs"]
+}

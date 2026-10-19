@@ -4,7 +4,7 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/). See [docs/guides/release-process.md](docs/guides/release-process.md).
 
-## [2.0.0] - Unreleased
+## [2.0.0] - 2026-10-19
 
 A complete rebuild. v1 was a single Gradio script; v2 is a local-first document reader and voice
 studio with a React UI and a hardened Python service. Nothing from v1 is required to upgrade — start
@@ -30,6 +30,15 @@ fresh with `npm install && npm run dev`.
 - Security hardening: loopback binding, Host/CSRF/cross-site checks, CSP, sandboxed document parsing,
   archive/XML attack defences, upload and processing limits, pinned and SHA-256-verified model downloads.
 - Tests (pytest, Vitest, Playwright with real inference), CI workflows, documentation and license inventory.
+- Releases: pushing a version tag checks it against the app version and this changelog, runs the full
+  check suite, and publishes the source, the prebuilt web UI, CycloneDX SBOMs and `SHA256SUMS.txt`
+  with signed build provenance.
+- A user guide in the [wiki](https://github.com/carsonmcrae/local-tts-web-ui/wiki), kept in
+  `docs/wiki/` and published automatically.
+- A demo video recorded from the running app with its real narration, and a short showcase video whose
+  voice-over is spoken by Local TTS (`docs/media/`, reproducible with `npm run media:demo` and
+  `npm run media:promo`).
+- Community files: code of conduct, support guide, issue labels and release-note categories.
 
 ### Changed
 
@@ -48,7 +57,8 @@ fresh with `npm install && npm run dev`.
 
 ## [1.0.0] - 2025
 
-Initial Gradio prototype (`kokoro_tts_ui.py`), preserved in Git history at commit `1452251`. It was never
-tagged; see [docs/architecture/legacy-audit.md](docs/architecture/legacy-audit.md).
+Initial Gradio prototype (`kokoro_tts_ui.py`), tagged `v1.0.0` at commit `1452251`. See
+[docs/architecture/legacy-audit.md](docs/architecture/legacy-audit.md).
 
-[2.0.0]: https://github.com/carsonmcrae/local-tts-web-ui/compare/1452251...HEAD
+[2.0.0]: https://github.com/carsonmcrae/local-tts-web-ui/compare/v1.0.0...v2.0.0
+[1.0.0]: https://github.com/carsonmcrae/local-tts-web-ui/tree/v1.0.0

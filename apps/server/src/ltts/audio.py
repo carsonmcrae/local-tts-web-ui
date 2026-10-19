@@ -1,0 +1,82 @@
+"""Purpose: Small, dependency-light audio utilities shared by synthesis, export and voice profiles.
+
+Scope: Natural pauses after segments (by boundary type), click-free fades, peak normalisation,
+silence trimming, mono conversion, and WAV encode/decode through soundfile (libsndfile).
+Does NOT belong: Engine inference or recording-quality analysis (``voices/quality.py``).
+"""
+
+from __future__ import annotations
+
+import io
+from pathlib import Path
+
+import numpy as np
+import numpy.typing as npt
+import soundfile as sf
+
+Float32Array = npt.NDArray[np.float32]
+
+PAUSE_SECONDS = {"sentence": 0.28, "paragraph": 0.62, "section": 1.2}
+FADE_SECONDS = 0.006
+
+
+def to_mono(samples: npt.NDArray[np.floating]) -> Float32Array:
+    data = np.asarray(samples, dtype=np.float32)
+    return data.mean(axis=1).astype(np.float32) if data.ndim == 2 else data
+
+
+def apply_fades(samples: Float32Array, sample_rate: int, seconds: float = FADE_SECONDS) -> Float32Array:
+    out = samples.copy()
+    n = min(int(sample_rate * seconds), len(out) // 2)
+    if n > 0:
+        ramp = np.linspace(0.0, 1.0, n, dtype=np.float32)
+        out[:n] *= ramp
+        out[-n:] *= ramp[::-1]
+    return out
+
+
+def finalize_segment(samples: Float32Array, sample_rate: int, boundary: str) -> Float32Array:
+    """Fade the clip edges and append the pause that follows this kind of boundary."""
+    pause = np.zeros(int(sample_rate * PAUSE_SECONDS.get(boundary, 0.3)), dtype=np.float32)
+    clipped = np.clip(apply_fades(samples, sample_rate), -1.0, 1.0)
+    return np.concatenate([clipped, pause])
+
+
+def normalize_peak(samples: Float32Array, target_dbfs: float = -1.0) -> Float32Array:
+    peak = float(np.max(np.abs(samples))) if samples.size else 0.0
+    if peak <= 1e-6:
+        return samples
+    gain = (10 ** (target_dbfs / 20)) / peak
+    return (samples * gain).astype(np.float32)
+
+
+def frame_rms_db(samples: Float32Array, sample_rate: int, frame_s: float = 0.03) -> Float32Array:
+    frame = max(int(sample_rate * frame_s), 1)
+    usable = len(samples) - len(samples) % frame
+    if usable == 0:
+        return np.array([-120.0], dtype=np.float32)
+    frames = samples[:usable].reshape(-1, frame)
+    rms = np.sqrt(np.mean(frames**2, axis=1) + 1e-12)
+    return (20 * np.log10(rms)).astype(np.float32)
+
+
+def trim_silence(samples: Float32Array, sample_rate: int, threshold_db: float = -45.0) -> Float32Array:
+    frame = max(int(sample_rate * 0.03), 1)
+    levels = frame_rms_db(samples, sample_rate)
+    voiced = np.nonzero(levels > threshold_db)[0]
+    if voiced.size == 0:
+        return samples[:0]
+    start = max(int(voiced[0]) - 2, 0) * frame
+    end = min((int(voiced[-1]) + 3) * frame, len(samples))
+    return samples[start:end]
+
+
+def encode_wav(samples: Float32Array, sample_rate: int) -> bytes:
+    buffer = io.BytesIO()
+    sf.write(buffer, samples, sample_rate, format="WAV", subtype="PCM_16")
+    return buffer.getvalue()
+
+
+def read_audio(path: Path) -> tuple[Float32Array, int]:
+    data, sample_rate = sf.read(str(path), dtype="float32", always_2d=False)
+    return to_mono(data), int(sample_rate)

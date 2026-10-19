@@ -8,7 +8,7 @@
 import { ArrowLeft, ArrowRight, Check, Play, Sparkles } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { describeError } from '@/api/client';
-import { useCreateProfile, useEngines, usePreferences, useSavePreferences } from '@/api/queries';
+import { useCreateProfile, useEngines } from '@/api/queries';
 import type { VoiceProfile } from '@/api/types';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
@@ -16,7 +16,7 @@ import { Banner } from '@/components/ui/Feedback';
 import { Textarea } from '@/components/ui/Field';
 import { cn } from '@/lib/cn';
 import { EnginePanel } from '@/features/engines/EngineSetup';
-import { usePlayer } from '@/features/player/PlayerProvider';
+import { useReadingVoice } from '@/features/player/useReadingVoice';
 import { useVoicePreview } from '@/features/voices/useVoicePreview';
 import type { CapturedClip } from './CaptureStep';
 import { CaptureStep } from './CaptureStep';
@@ -54,12 +54,10 @@ function Stepper({ step }: Readonly<{ step: number }>) {
 function TestStep({ profile }: Readonly<{ profile: VoiceProfile }>) {
   const engines = useEngines();
   const preview = useVoicePreview();
-  const preferences = usePreferences();
-  const save = useSavePreferences();
-  const { controller } = usePlayer();
+  const reading = useReadingVoice();
   const [text, setText] = useState(TEST_TEXT);
   const engine = engines.data?.find((item) => item.id === profile.engineId);
-  const isDefault = preferences.data?.defaultVoiceId === profile.voiceId;
+  const isDefault = reading.current === profile.voiceId;
 
   if (engine && engine.status !== 'ready') {
     return (
@@ -98,11 +96,7 @@ function TestStep({ profile }: Readonly<{ profile: VoiceProfile }>) {
         <Button
           icon={isDefault ? <Check size={15} /> : undefined}
           disabled={isDefault}
-          onClick={() => {
-            void controller.setVoice(profile.voiceId);
-            if (preferences.data)
-              save.mutate({ ...preferences.data, defaultVoiceId: profile.voiceId });
-          }}
+          onClick={() => reading.choose(profile.voiceId)}
         >
           {isDefault ? 'Used for reading' : 'Use for reading'}
         </Button>

@@ -31,7 +31,7 @@ function toPlayerDocument(doc: DocumentDetail): PlayerDocument {
   };
 }
 
-export function sectionOf(doc: Pick<DocumentDetail, 'sections'>, segment: number): number {
+function sectionOf(doc: Pick<DocumentDetail, 'sections'>, segment: number): number {
   return (
     doc.sections.find((s) => segment >= s.startSegment && segment < s.startSegment + s.segmentCount)
       ?.index ?? 0

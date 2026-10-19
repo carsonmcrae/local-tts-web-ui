@@ -22,7 +22,7 @@ const exe = process.platform === 'win32' ? 'uv.exe' : 'uv';
  * @param {string} b
  * @returns {number} negative if a < b, 0 if equal, positive if a > b
  */
-export function compareVersions(a, b) {
+function compareVersions(a, b) {
   const pa = a.split('.').map((part) => Number.parseInt(part, 10) || 0);
   const pb = b.split('.').map((part) => Number.parseInt(part, 10) || 0);
   for (let i = 0; i < Math.max(pa.length, pb.length); i += 1) {
@@ -49,7 +49,7 @@ function probeVersion(binary) {
 }
 
 /** @returns {string} platform key used in scripts/toolchain.json */
-export function platformKey() {
+function platformKey() {
   return `${process.platform}-${process.arch}`;
 }
 

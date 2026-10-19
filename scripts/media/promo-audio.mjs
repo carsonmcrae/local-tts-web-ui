@@ -14,9 +14,9 @@ import path from 'node:path';
 import { duration, findTool, run } from './ffmpeg.mjs';
 import { writeEffects, writeMusic } from './promo-music.mjs';
 
-export const VOICE = 'kokoro:af_heart';
+const VOICE = 'kokoro:af_heart';
 /** Voice-over lines; `start` matches each scene in promo/promo.js and `limit` is the scene's end. */
-export const CUES = [
+const CUES = [
   { start: 0.6, limit: 5.4, text: 'Any document can become something you listen to.' },
   {
     start: 5.9,
@@ -49,8 +49,8 @@ export const CUES = [
     text: 'Local TTS. Free and open source. And yes, it made this voice-over.',
   },
 ];
-export const WHOOSHES = [5.4, 12.0, 19.6, 25.6, 32.0, 38.2];
-export const CHIME = 38.45;
+const WHOOSHES = [5.4, 12.0, 19.6, 25.6, 32.0, 38.2];
+const CHIME = 38.45;
 
 /**
  * @param {string} base app origin, e.g. http://127.0.0.1:8793

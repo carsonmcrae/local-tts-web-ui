@@ -10,7 +10,7 @@ import { mkdirSync, rmSync } from 'node:fs';
 import path from 'node:path';
 import { color, printFailure } from './lib/log.mjs';
 import { repoRoot, serverDir, webDir } from './lib/paths.mjs';
-import { startManaged, stopManaged } from './lib/processes.mjs';
+import { exitWithChild, startManaged } from './lib/processes.mjs';
 import { resolveUv, uvEnv } from './lib/uv.mjs';
 
 const args = process.argv.slice(2);
@@ -53,14 +53,7 @@ async function main() {
     cwd: repoRoot,
     env,
   });
-  const stop = () => {
-    stopManaged(server);
-    process.exit(0);
-  };
-  process.on('SIGINT', stop);
-  process.on('SIGTERM', stop);
-  process.on('exit', () => stopManaged(server));
-  server.child.on('exit', (code) => process.exit(code ?? 1));
+  exitWithChild(server);
 }
 
 main().catch((error) => {

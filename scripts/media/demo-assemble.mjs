@@ -22,7 +22,7 @@ const NAME = 'local-tts-demo';
  * Pairs each `playing` event with the next pause/end/source change on the same audio element.
  * @param {MediaEvent[]} media @param {number} end @returns {Piece[]}
  */
-export function toPieces(media, end) {
+function toPieces(media, end) {
   /** @type {Map<number, Piece>} */
   const open = new Map();
   /** @type {Piece[]} */

@@ -52,7 +52,7 @@ function usePlayerPreferences() {
 }
 
 /** Fraction of the document already heard, including progress inside the current sentence. */
-export function listenedFraction(state: PlayerState, position: number): number {
+function listenedFraction(state: PlayerState, position: number): number {
   const count = Math.max(state.document?.segmentCount ?? 1, 1);
   const within = state.duration > 0 ? state.currentTime / state.duration : 0;
   return Math.min((position + within) / count, 1);

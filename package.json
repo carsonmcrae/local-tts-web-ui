@@ -40,6 +40,7 @@
     "licenses": "node scripts/license-inventory.mjs",
     "media:demo": "npm run build && node scripts/media/record-demo.mjs",
     "media:promo": "node scripts/media/render-promo.mjs",
+    "media:screenshots": "npm run build && node scripts/capture-screenshots.mjs",
     "check": "npm run format:check && npm run lint && npm run typecheck && npm run api:check && npm run test && npm run build"
   },
   "devDependencies": {

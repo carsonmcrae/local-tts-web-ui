@@ -150,6 +150,15 @@ describe('Export', () => {
   });
 });
 
+/** Renders Chatterbox with an update on offer, checks the notice and presses Update. */
+async function startChatterboxUpdate() {
+  const user = userEvent.setup();
+  const engine = kokoro({ id: 'chatterbox', name: 'Chatterbox Turbo', supportsCloning: true, updateAvailable: true }); // prettier-ignore
+  renderWithApp(<EnginePanel engine={engine} />);
+  expect(screen.getAllByText('Update available')).toHaveLength(2); // badge + notice
+  await user.click(screen.getByRole('button', { name: 'Update Chatterbox Turbo' }));
+}
+
 describe('Engines', () => {
   it('installs an engine and shows progress until ready', async () => {
     let state = 0;
@@ -194,11 +203,7 @@ describe('Engines', () => {
           ? updateJob({ progress: 0.05, message: 'Updating runtime: Installed 2 packages' })
           : updateJob({ status: 'succeeded', progress: 1, message: 'Done' }),
     });
-    const user = userEvent.setup();
-    const engine = kokoro({ id: 'chatterbox', name: 'Chatterbox Turbo', supportsCloning: true, updateAvailable: true }); // prettier-ignore
-    renderWithApp(<EnginePanel engine={engine} />);
-    expect(screen.getAllByText('Update available')).toHaveLength(2); // badge + notice
-    await user.click(screen.getByRole('button', { name: 'Update Chatterbox Turbo' }));
+    await startChatterboxUpdate();
     expect(
       await screen.findByRole('progressbar', { name: 'Updating Chatterbox Turbo' }),
     ).toBeInTheDocument();
@@ -217,10 +222,7 @@ describe('Engines', () => {
         message: 'Updating the Chatterbox runtime failed. Your installation was not removed.',
       }), // prettier-ignore
     });
-    const user = userEvent.setup();
-    const engine = kokoro({ id: 'chatterbox', name: 'Chatterbox Turbo', supportsCloning: true, updateAvailable: true }); // prettier-ignore
-    renderWithApp(<EnginePanel engine={engine} />);
-    await user.click(screen.getByRole('button', { name: 'Update Chatterbox Turbo' }));
+    await startChatterboxUpdate();
     const failure = await screen.findByRole('alert');
     expect(within(failure).getByText('Update failed')).toBeInTheDocument();
     expect(within(failure).getByText(/installation was not removed/)).toBeInTheDocument();

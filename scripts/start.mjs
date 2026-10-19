@@ -10,7 +10,7 @@ import path from 'node:path';
 import { setup } from './setup.mjs';
 import { BootstrapError, color, printFailure, step } from './lib/log.mjs';
 import { repoRoot, serverDir, webDir } from './lib/paths.mjs';
-import { findFreePort, startManaged, stopManaged } from './lib/processes.mjs';
+import { exitWithChild, findFreePort, startManaged } from './lib/processes.mjs';
 import { uvEnv } from './lib/uv.mjs';
 
 async function main() {
@@ -54,13 +54,7 @@ async function main() {
     cwd: repoRoot,
     env: { ...uvEnv(), LTTS_ENV: 'production', LTTS_UV_BIN: uv },
   });
-  const stop = () => {
-    stopManaged(server);
-    process.exit(0);
-  };
-  process.on('SIGINT', stop);
-  process.on('SIGTERM', stop);
-  server.child.on('exit', (code) => process.exit(code ?? 1));
+  exitWithChild(server);
 }
 
 main().catch((error) => {

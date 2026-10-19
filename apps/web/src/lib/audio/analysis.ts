@@ -6,7 +6,7 @@
  * Does NOT belong: Decoding (wav.ts) or UI.
  */
 
-export interface LocalIssue {
+interface LocalIssue {
   code: string;
   severity: 'error' | 'warning';
   message: string;
@@ -24,8 +24,8 @@ export interface LocalReport {
   issues: LocalIssue[];
 }
 
-export const MIN_SPEECH_S = 6;
-export const RECOMMENDED_SPEECH_S = 10;
+const MIN_SPEECH_S = 6;
+const RECOMMENDED_SPEECH_S = 10;
 const SILENCE_DB = -45;
 const FRAME_S = 0.03;
 

@@ -13,6 +13,9 @@ requires-python = ">=3.11,<3.12"
 dependencies = [
   "chatterbox-tts==0.1.7",
   "soundfile>=0.13,<1",
+  # resemble-perth (Chatterbox's watermarker) imports pkg_resources; without it the watermarker
+  # silently resolves to None and model loading fails. setuptools 81 drops pkg_resources.
+  "setuptools>=70,<81",
 ]
 
 [project.optional-dependencies]

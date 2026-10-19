@@ -7,6 +7,7 @@ Does NOT belong: Business logic or HTTP routes.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Annotated
 
@@ -17,6 +18,7 @@ if TYPE_CHECKING:
     from ltts.db import Database
     from ltts.documents.repository import DocumentRepository
     from ltts.documents.service import DocumentService
+    from ltts.engines.base import Engine
     from ltts.engines.registry import EngineRegistry
     from ltts.exports.service import ExportService
     from ltts.jobs import JobManager
@@ -25,6 +27,9 @@ if TYPE_CHECKING:
     from ltts.synthesis.cache import AudioCache
     from ltts.synthesis.service import SynthesisService
     from ltts.voices.profiles import VoiceProfileService
+
+
+EngineFactory = Callable[["Settings", "ModelStore"], list["Engine"]]
 
 
 @dataclass
@@ -43,7 +48,13 @@ class Services:
     preferences: PreferenceStore
 
 
-def build_services(settings: Settings, *, isolate_extraction: bool = True) -> Services:
+def build_services(
+    settings: Settings,
+    *,
+    isolate_extraction: bool = True,
+    engine_factory: EngineFactory | None = None,
+) -> Services:
+    """Wire the app. ``engine_factory`` lets tests substitute deterministic engines."""
     from ltts.common import MB
     from ltts.db import Database
     from ltts.documents.repository import DocumentRepository
@@ -57,19 +68,19 @@ def build_services(settings: Settings, *, isolate_extraction: bool = True) -> Se
     from ltts.preferences import PreferenceStore
     from ltts.synthesis.cache import AudioCache
     from ltts.synthesis.service import SynthesisService
-    from ltts.voices.profiles import VoiceProfileService
+    from ltts.voices.profiles import CLONING_ENGINE, VoiceProfileService
 
     db = Database(settings.database_path)
     db.migrate()
     jobs = JobManager(db)
     documents = DocumentRepository(db)
     store = ModelStore(settings.resolved_models_dir, reserve_mb=settings.min_free_disk_mb)
-    chatterbox = ChatterboxEngine(settings, store)
-    registry = EngineRegistry([KokoroEngine(store), chatterbox], jobs)
+    factory = engine_factory or (lambda s, m: [KokoroEngine(m), ChatterboxEngine(s, m)])
+    registry = EngineRegistry(factory(settings, store), jobs)
     cache = AudioCache(settings.path("cache", "audio"), db, settings.audio_cache_max_mb * MB)
     synthesis = SynthesisService(registry, cache, documents)
     voices = VoiceProfileService(settings, db, cache.purge_voice)
-    registry.attach_custom_voices(voices.resolve, lambda: voices.as_voices(chatterbox.is_ready))
+    registry.attach_custom_voices(voices.resolve, lambda: voices.as_voices(lambda: registry.is_ready(CLONING_ENGINE)))
     return Services(
         settings=settings,
         db=db,

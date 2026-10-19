@@ -30,6 +30,7 @@ class Settings(BaseSettings):
     env: Literal["development", "production", "test"] = "production"
     data_dir: Path = REPO_ROOT / "data"
     models_dir: Path | None = Field(default=None, description="Defaults to <data_dir>/models")
+    engines_dir: Path | None = Field(default=None, description="Defaults to <data_dir>/engines")
 
     # Network exposure. Loopback only unless the user explicitly opts in (see docs/guides/lan-access.md).
     host: str = "127.0.0.1"
@@ -67,6 +68,10 @@ class Settings(BaseSettings):
     @cached_property
     def resolved_models_dir(self) -> Path:
         return (self.models_dir or self.data_dir / "models").resolve()
+
+    @cached_property
+    def resolved_engines_dir(self) -> Path:
+        return (self.engines_dir or self.data_dir / "engines").resolve()
 
     @cached_property
     def resolved_data_dir(self) -> Path:

@@ -53,7 +53,7 @@ class ChatterboxEngine:
     def __init__(self, settings: Settings, store: ModelStore):
         self._settings = settings
         self._store = store
-        self._root = settings.resolved_data_dir / "engines" / "chatterbox"
+        self._root = settings.resolved_engines_dir / "chatterbox"
         self._worker: WorkerClient | None = None
         self._lock = threading.Lock()
 
@@ -167,10 +167,15 @@ class ChatterboxEngine:
             ),
             lambda: context.canceled,
         )
+        context.update(0.92, "Loading the model to verify the installation…", force=True)
+        try:
+            loaded = self._ensure_worker(choice)
+        except Exception:
+            self.close()
+            raise
+        # Only a verified load marks the engine as installed.
         marker = {"option": choice, "installedAt": utc_now(), "envBytes": _tree_bytes(self._venv)}
         self._marker.write_text(json.dumps(marker), encoding="utf-8")
-        context.update(0.92, "Loading the model to verify the installation…", force=True)
-        loaded = self._ensure_worker()
         return {"option": choice, "device": loaded.get("device")}
 
     def _sync_environment(self, uv: str, choice: str, context: JobContext) -> None:
@@ -201,7 +206,7 @@ class ChatterboxEngine:
         self._store.remove(ARTIFACT)
 
     # -- runtime ----------------------------------------------------------
-    def _ensure_worker(self) -> dict[str, Any]:
+    def _ensure_worker(self, option: str | None = None) -> dict[str, Any]:
         with self._lock:
             if self._worker is None:
                 env = {k: v for k, v in os.environ.items() if not k.startswith(("LTTS_", "UV_"))}
@@ -213,7 +218,7 @@ class ChatterboxEngine:
                     self._settings.clone_worker_idle_unload_s,
                 )
             if not self._worker.loaded:
-                device = self._installed_option() or "auto"
+                device = option or self._installed_option() or "auto"
                 model_dir = str(self._store.directory(ARTIFACT))
                 self._worker.loaded = self._worker.call("load", LOAD_TIMEOUT_S, modelDir=model_dir, device=device)
                 log.info("chatterbox loaded", extra={"device": self._worker.loaded.get("device")})

@@ -43,6 +43,10 @@ class EngineRegistry:
         except KeyError as exc:
             raise NotFoundError("Unknown engine.", code="engine_not_found") from exc
 
+    def is_ready(self, engine_id: str) -> bool:
+        engine = self._engines.get(engine_id)
+        return engine is not None and engine.is_ready()
+
     def all(self) -> list[Engine]:
         return list(self._engines.values())
 

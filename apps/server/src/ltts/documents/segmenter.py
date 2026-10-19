@@ -27,15 +27,14 @@ _CLAUSE = re.compile(r"(?<=[;:,—])\s+")
 
 def _is_false_break(text: str, end: int) -> bool:
     """True when the punctuation before ``end`` does not end a sentence."""
-    before = text[:end].rstrip()
-    match = re.search(r"([\w.]+)[.]$", before)
+    following = text[end:].lstrip()[:1]
+    if following and following.islower():  # '"Really?" she asked.' / 'wait... then left'
+        return True
+    match = re.search(r"([\w.]+)[.]$", text[:end].rstrip())
     if not match:
         return False
     word = match.group(1).lower()
-    if word in _ABBREVIATIONS or re.fullmatch(r"[a-z]", word):  # initials like "J. K. Rowling"
-        return True
-    following = text[end:].lstrip()[:1]
-    return bool(following) and following.islower()
+    return word in _ABBREVIATIONS or bool(re.fullmatch(r"[a-z]", word))  # initials like "J. K. Rowling"
 
 
 def split_sentences(paragraph: str) -> list[str]:

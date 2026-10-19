@@ -236,7 +236,7 @@ class ChatterboxEngine:
     def synthesize(self, text: str, voice: VoiceSpec, pace: float) -> AudioClip:  # noqa: ARG002 - no pace control
         if not self.is_ready():
             raise EngineUnavailableError(
-                "Chatterbox isn't installed. Install it from Settings → Engines.", code="engine_not_installed"
+                "Chatterbox isn't installed. Install it from Settings → Engines & models.", code="engine_not_installed"
             )
         self._ensure_worker()
         if self._worker is None:

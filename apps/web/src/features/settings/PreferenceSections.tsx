@@ -1,7 +1,7 @@
 /**
  * Purpose: Settings sections for appearance and playback preferences.
- * Scope: Theme (per device), default voice, playback speed, speaking pace, export format, skip
- *   interval and read-along auto-scroll — saved to the server so every browser shares them.
+ * Scope: Theme (per device), default voice, playback speed, speaking pace, export format and
+ *   read-along auto-scroll — saved to the server so every browser shares them.
  * Does NOT belong: Engines, storage or diagnostics (SystemSections).
  */
 import { Monitor, Moon, Sun } from 'lucide-react';

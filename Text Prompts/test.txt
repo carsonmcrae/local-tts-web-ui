@@ -1,1 +1,0 @@
-Hello Carson, this is a Kokoro test. 

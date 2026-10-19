@@ -165,3 +165,14 @@ def test_document_limit(settings: Settings, engines: dict[str, FakeEngine]) -> N
         assert client.post("/api/documents/text", json={"text": "One."}).status_code == 201
         second = client.post("/api/documents/text", json={"text": "Two."})
     assert second.status_code == 409 and second.json()["error"]["code"] == "document_limit"
+
+
+def test_audio_is_playable_from_a_direct_url(client: TestClient) -> None:
+    preview = client.post("/api/voices/kokoro:alpha/preview", json={"text": "Direct URL check."})
+    url = preview.headers["x-audio-url"]
+    assert url.startswith("/api/audio/") and len(url.rsplit("/", 1)[1]) == 64
+    direct = client.get(url)
+    assert direct.status_code == 200 and direct.content == preview.content
+    partial = client.get(url, headers={"Range": "bytes=0-99"})
+    assert partial.status_code == 206 and len(partial.content) == 100  # media elements use ranges
+    assert client.get("/api/audio/" + "0" * 64).json()["error"]["code"] == "audio_not_cached"

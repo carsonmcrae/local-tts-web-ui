@@ -55,7 +55,6 @@ function setup() {
       requests.push({ index, voice, pace, prefetch, signal });
       return Promise.resolve({ url: `blob:${voice}:${index}`, duration: 2 });
     },
-    revoke: vi.fn(),
     saveProgress: vi.fn(),
     toError: (error) => ({ code: 'test', message: String(error) }),
   };
@@ -134,14 +133,13 @@ describe('PlaybackController', () => {
     expect(controller.sectionAt(4)?.title).toBe('Two');
   });
 
-  it('re-fetches with a new voice or pace and revokes old audio', async () => {
-    const { controller, media, requests, deps } = setup();
+  it('re-fetches with a new voice or pace', async () => {
+    const { controller, media, requests } = setup();
     await controller.load(DOC, 0, true);
     await controller.setVoice('kokoro:b');
     expect(media.src).toBe('blob:kokoro:b:0');
     await controller.setPace(1.2);
     expect(requests.at(-4)).toMatchObject({ index: 0, voice: 'kokoro:b', pace: 1.2 });
-    expect(deps.revoke).toHaveBeenCalled();
     controller.setRate(1.5);
     expect(media.playbackRate).toBe(1.5);
   });

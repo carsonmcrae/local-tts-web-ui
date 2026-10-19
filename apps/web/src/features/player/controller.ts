@@ -62,7 +62,6 @@ export interface ControllerDeps {
     prefetch: boolean,
     signal: AbortSignal,
   ) => Promise<SegmentAudio>;
-  revoke: (url: string) => void;
   saveProgress: (documentId: string, index: number, voiceId: string) => void;
   toError: (error: unknown) => PlayerError;
 }
@@ -272,7 +271,6 @@ export class PlaybackController {
     entry.promise.then(
       (audio) => {
         entry.audio = audio;
-        if (this.cache.get(index) !== entry) this.deps.revoke(audio.url);
       },
       () => {
         entry.failed = true;
@@ -287,7 +285,6 @@ export class PlaybackController {
     if (!entry) return;
     this.cache.delete(index);
     entry.controller.abort();
-    if (entry.audio) this.deps.revoke(entry.audio.url);
   }
 
   private clearCache(): void {

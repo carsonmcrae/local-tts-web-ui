@@ -50,19 +50,27 @@ function useServerAnalysis(wav: Blob) {
   return { data: query.data, error: query.error, pending: query.isPending };
 }
 
-/** Attach a blob to a media element for exactly as long as the element is mounted. */
-function attachBlob(blob: Blob) {
-  return (element: HTMLAudioElement | null) => {
-    if (!element) return undefined;
-    const url = URL.createObjectURL(blob);
-    element.src = url;
-    return () => URL.revokeObjectURL(url);
-  };
+function readAsDataUrl(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(reader.error ?? new Error('Could not read the recording.'));
+    reader.readAsDataURL(blob);
+  });
+}
+
+/** A data: URL for local playback — WebKit refuses to play media from Blob URLs. */
+function useDataUrl(blob: Blob): string | undefined {
+  return useQuery({
+    queryKey: ['data-url', blobId(blob)],
+    queryFn: () => readAsDataUrl(blob),
+    staleTime: Infinity,
+  }).data;
 }
 
 export function ReviewStep({ clip, onRetake, onVerdict }: Readonly<ReviewProps>) {
   const wav = useMemo(() => encodeWav(clip.samples, clip.sampleRate), [clip]);
-  const audioRef = useMemo(() => attachBlob(wav), [wav]);
+  const audioUrl = useDataUrl(wav);
   const local = useMemo(() => analyzeSamples(clip.samples, clip.sampleRate), [clip]);
   const server = useServerAnalysis(wav);
   const report = server.data ?? local;
@@ -74,7 +82,7 @@ export function ReviewStep({ clip, onRetake, onVerdict }: Readonly<ReviewProps>)
         <p className="text-sm font-medium">Listen back</p>
         {/* The speaker's own recording of the passage shown in the previous step; no captions exist. */}
         {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
-        <audio controls ref={audioRef} className="w-full" aria-label="Your recording" />
+        <audio controls src={audioUrl} className="w-full" aria-label="Your recording" />
         <p className="text-[13px] text-muted">
           {report.durationS.toFixed(1)} s total · {report.speechS.toFixed(1)} s of speech
           {clip.note ? ` · ${clip.note}` : ''}

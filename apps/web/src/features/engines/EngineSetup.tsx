@@ -61,19 +61,19 @@ function EngineFacts({
   return (
     <>
       <dl className="grid gap-x-6 gap-y-2 text-[13px] sm:grid-cols-2">
-        <div className="flex gap-2">
-          <Cpu size={15} className="mt-0.5 shrink-0 text-subtle" />
-          <div>
-            <dt className="sr-only">Hardware</dt>
-            <dd className="text-muted">{engine.hardwareNote}</dd>
-          </div>
+        <div>
+          <dt className="sr-only">Hardware</dt>
+          <dd className="flex gap-2 text-muted">
+            <Cpu size={15} className="mt-0.5 shrink-0 text-subtle" aria-hidden="true" />
+            {engine.hardwareNote}
+          </dd>
         </div>
-        <div className="flex gap-2">
-          <HardDrive size={15} className="mt-0.5 shrink-0 text-subtle" />
-          <div>
-            <dt className="sr-only">Storage</dt>
-            <dd className="text-muted">{storage}</dd>
-          </div>
+        <div>
+          <dt className="sr-only">Storage</dt>
+          <dd className="flex gap-2 text-muted">
+            <HardDrive size={15} className="mt-0.5 shrink-0 text-subtle" aria-hidden="true" />
+            {storage}
+          </dd>
         </div>
       </dl>
       <p className="text-xs text-subtle">License: {engine.license}</p>

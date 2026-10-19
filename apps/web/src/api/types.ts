@@ -9,10 +9,10 @@ type Schemas = components['schemas'];
 
 export type DocumentSummary = Schemas['DocumentSummary'];
 export type DocumentDetail = Schemas['DocumentDetail'];
+export type ReadingProgress = Schemas['ReadingProgress'];
 export type SectionOut = Schemas['SectionOut'];
 export type SectionContent = Schemas['SectionContent'];
 export type SegmentOut = Schemas['SegmentOut'];
-export type ReadingProgress = Schemas['ReadingProgress'];
 export type VoiceInfo = Schemas['VoiceInfo'];
 export type EngineInfo = Schemas['EngineInfo'];
 export type InstallOption = Schemas['InstallOption'];
@@ -21,5 +21,4 @@ export type Preferences = Schemas['Preferences'];
 export type SystemInfo = Schemas['SystemInfo'];
 export type VoiceProfile = Schemas['VoiceProfileOut'];
 export type QualityReport = Schemas['QualityReport'];
-export type QualityIssue = Schemas['QualityIssue'];
 export type ExportRequest = Schemas['ExportRequest'];

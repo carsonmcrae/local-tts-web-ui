@@ -6,11 +6,21 @@
  *   it, and permanently deletes it. Also records with Chromium's fake microphone.
  * Does NOT belong: Built-in voice previews (reader.spec.ts).
  */
+import type { Page } from '@playwright/test';
 import { expect, test } from '@playwright/test';
 import { writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { pasteText, play } from './helpers';
+
+/** Opens Voice Studio's "Create a voice" wizard and moves past its introduction. */
+async function openWizard(page: Page) {
+  await page.goto('/studio');
+  await page.getByRole('button', { name: 'Create voice' }).first().click();
+  const wizard = page.getByRole('dialog', { name: 'Create a voice' });
+  await wizard.getByRole('button', { name: /Continue/ }).click();
+  return wizard;
+}
 
 const PASSAGE =
   'Hello! I am recording a short sample so this app can learn the sound of my voice. On quiet mornings, I like to ' +
@@ -32,10 +42,7 @@ test('create, use and delete a custom voice', async ({ page, request }) => {
   const file = path.join(tmpdir(), 'ltts-e2e-reference.wav');
   writeFileSync(file, await reference.body());
 
-  await page.goto('/studio');
-  await page.getByRole('button', { name: 'Create voice' }).first().click();
-  const wizard = page.getByRole('dialog', { name: 'Create a voice' });
-  await wizard.getByRole('button', { name: /Continue/ }).click();
+  const wizard = await openWizard(page);
   await wizard.getByTestId('voice-file-input').setInputFiles(file);
   await expect(wizard.getByText('verified by the local server')).toBeVisible();
   await wizard.getByRole('button', { name: /Continue/ }).click();
@@ -79,10 +86,7 @@ test('create, use and delete a custom voice', async ({ page, request }) => {
 
 test('guided recording with the microphone', async ({ page, browserName }) => {
   test.skip(browserName !== 'chromium', 'Fake microphone flags are Chromium-only');
-  await page.goto('/studio');
-  await page.getByRole('button', { name: 'Create voice' }).first().click();
-  const wizard = page.getByRole('dialog', { name: 'Create a voice' });
-  await wizard.getByRole('button', { name: /Continue/ }).click();
+  const wizard = await openWizard(page);
   await wizard.getByRole('button', { name: 'Start recording' }).click();
   await expect(wizard.getByRole('button', { name: 'Stop recording' })).toBeVisible();
   await page.waitForTimeout(3000);

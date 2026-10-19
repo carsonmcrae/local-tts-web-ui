@@ -13,20 +13,22 @@ from typing import TYPE_CHECKING, Annotated
 
 from fastapi import Depends, Request
 
+from ltts.common import MB
+from ltts.db import Database
+from ltts.documents.repository import DocumentRepository
+from ltts.documents.service import DocumentService
+from ltts.engines.registry import EngineRegistry
+from ltts.exports.service import ExportService
+from ltts.jobs import JobManager
+from ltts.modelstore.store import ModelStore
+from ltts.synthesis.cache import AudioCache
+from ltts.synthesis.service import SynthesisService
+from ltts.voices.profiles import CLONING_ENGINE, VoiceProfileService
+
 if TYPE_CHECKING:
     from ltts.config import Settings
-    from ltts.db import Database
-    from ltts.documents.repository import DocumentRepository
-    from ltts.documents.service import DocumentService
     from ltts.engines.base import Engine
-    from ltts.engines.registry import EngineRegistry
-    from ltts.exports.service import ExportService
-    from ltts.jobs import JobManager
-    from ltts.modelstore.store import ModelStore
     from ltts.preferences import PreferenceStore
-    from ltts.synthesis.cache import AudioCache
-    from ltts.synthesis.service import SynthesisService
-    from ltts.voices.profiles import VoiceProfileService
 
 
 EngineFactory = Callable[["Settings", "ModelStore"], list["Engine"]]
@@ -55,20 +57,10 @@ def build_services(
     engine_factory: EngineFactory | None = None,
 ) -> Services:
     """Wire the app. ``engine_factory`` lets tests substitute deterministic engines."""
-    from ltts.common import MB
-    from ltts.db import Database
-    from ltts.documents.repository import DocumentRepository
-    from ltts.documents.service import DocumentService
+    # Engines load heavy runtimes, and preferences imports this module for its routes: both stay lazy.
     from ltts.engines.chatterbox import ChatterboxEngine
     from ltts.engines.kokoro import KokoroEngine
-    from ltts.engines.registry import EngineRegistry
-    from ltts.exports.service import ExportService
-    from ltts.jobs import JobManager
-    from ltts.modelstore.store import ModelStore
     from ltts.preferences import PreferenceStore
-    from ltts.synthesis.cache import AudioCache
-    from ltts.synthesis.service import SynthesisService
-    from ltts.voices.profiles import CLONING_ENGINE, VoiceProfileService
 
     db = Database(settings.database_path)
     db.migrate()

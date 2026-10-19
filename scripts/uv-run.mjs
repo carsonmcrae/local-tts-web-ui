@@ -24,7 +24,9 @@ async function main() {
   process.exit(result.status ?? 1);
 }
 
-main().catch((error) => {
+try {
+  await main();
+} catch (error) {
   printFailure(error);
   process.exit(1);
-});
+}

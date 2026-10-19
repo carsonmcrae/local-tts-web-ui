@@ -26,7 +26,8 @@ const version = /** @type {{ version: string }} */ (
 if (tag !== `v${version}`) fail(`tag "${tag}" does not match package.json version ${version}`);
 
 const changelog = readFileSync(path.join(repoRoot, 'CHANGELOG.md'), 'utf8');
-const heading = new RegExp(`^## \\[${version.replaceAll('.', '\\.')}\\] - (.+)$`, 'm');
+const escapedVersion = version.replaceAll('.', String.raw`\.`);
+const heading = new RegExp(String.raw`^## \[${escapedVersion}\] - (.+)$`, 'm');
 const match = heading.exec(changelog);
 if (!match) fail(`CHANGELOG.md has no "## [${version}] - <date>" entry`);
 const date = match?.[1]?.trim() ?? '';
@@ -35,7 +36,7 @@ if (!/^\d{4}-\d{2}-\d{2}$/.test(date))
 
 const start = (match?.index ?? 0) + (match?.[0].length ?? 0);
 const next = changelog.indexOf('\n## [', start);
-const body = changelog.slice(start, next === -1 ? undefined : next).trim();
+const body = changelog.slice(start, next === -1 ? changelog.length : next).trim();
 
 console.log(`${body}
 

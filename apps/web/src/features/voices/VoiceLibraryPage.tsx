@@ -6,18 +6,19 @@
  * Does NOT belong: Creating custom voices (Voice Studio).
  */
 import { AudioLines, Mic, Search } from 'lucide-react';
+import type { ReactNode } from 'react';
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router';
 import { describeError } from '@/api/client';
-import { usePreferences, useSavePreferences, useVoices } from '@/api/queries';
+import { usePreferences, useVoices } from '@/api/queries';
 import type { VoiceInfo } from '@/api/types';
 import { buttonClasses } from '@/components/ui/Button';
-import { Banner, EmptyState, Skeleton } from '@/components/ui/Feedback';
+import { Banner, EmptyState, Skeleton, StatusRegion } from '@/components/ui/Feedback';
 import { Field, Input, Select, Textarea } from '@/components/ui/Field';
 import { PageHeader } from '@/components/ui/Layout';
 import { useToast } from '@/components/ui/Toast';
 import { DefaultVoicesBanner } from '@/features/engines/EngineSetup';
-import { usePlayer } from '@/features/player/PlayerProvider';
+import { useReadingVoice } from '@/features/player/useReadingVoice';
 import { useVoicePreview } from './useVoicePreview';
 import { VoiceCard } from './VoiceCard';
 
@@ -40,11 +41,42 @@ export function filterVoices(voices: readonly VoiceInfo[], filters: VoiceFilters
   );
 }
 
+/** Loading, error and no-match states around the voice grid. */
+function VoiceResults({
+  voices,
+  shown,
+  children,
+}: Readonly<{ voices: ReturnType<typeof useVoices>; shown: number; children: ReactNode }>) {
+  if (voices.isPending) {
+    return (
+      <StatusRegion label="Loading voices" className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        {[0, 1, 2, 3, 4, 5].map((key) => (
+          <Skeleton key={key} className="h-40" />
+        ))}
+      </StatusRegion>
+    );
+  }
+  if (voices.isError) {
+    return (
+      <Banner tone="error" title="Couldn't load voices">
+        {describeError(voices.error)}
+      </Banner>
+    );
+  }
+  if (shown === 0) {
+    return (
+      <EmptyState icon={<AudioLines size={26} />} title="No voices match these filters">
+        Try clearing the search or choosing another language.
+      </EmptyState>
+    );
+  }
+  return children;
+}
+
 export default function VoiceLibraryPage() {
   const voices = useVoices();
   const preferences = usePreferences();
-  const savePreferences = useSavePreferences();
-  const { controller } = usePlayer();
+  const reading = useReadingVoice();
   const preview = useVoicePreview();
   const toast = useToast();
   const [filters, setFilters] = useState<VoiceFilters>({
@@ -55,13 +87,15 @@ export default function VoiceLibraryPage() {
   });
   const [passage, setPassage] = useState('');
   const all = useMemo(() => voices.data ?? [], [voices.data]);
-  const languages = useMemo(() => [...new Set(all.map((voice) => voice.language))].sort(), [all]);
+  const languages = useMemo(
+    () => [...new Set(all.map((voice) => voice.language))].sort((a, b) => a.localeCompare(b)),
+    [all],
+  );
   const shown = useMemo(() => filterVoices(all, filters), [all, filters]);
-  const defaultVoice = preferences.data?.defaultVoiceId;
+  const defaultVoice = reading.current;
 
   const use = (voice: VoiceInfo) => {
-    void controller.setVoice(voice.id);
-    if (preferences.data) savePreferences.mutate({ ...preferences.data, defaultVoiceId: voice.id });
+    reading.choose(voice.id);
     toast.notify('success', `${voice.name} is now your reading voice`);
   };
 
@@ -153,50 +187,28 @@ export default function VoiceLibraryPage() {
         </Field>
       </div>
 
-      {voices.isPending ? (
-        <div
-          className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3"
-          role="status"
-          aria-label="Loading voices"
-        >
-          {[0, 1, 2, 3, 4, 5].map((key) => (
-            <Skeleton key={key} className="h-40" />
+      <VoiceResults voices={voices} shown={shown.length}>
+        <p className="mb-3 text-[13px] text-muted" aria-live="polite">
+          Showing {shown.length} of {all.length} voices. Grades are the upstream model's own quality
+          ratings (A is best).
+        </p>
+        <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          {shown.map((voice) => (
+            <VoiceCard
+              key={voice.id}
+              voice={voice}
+              isDefault={voice.id === defaultVoice}
+              previewStatus={preview.state.voiceId === voice.id ? preview.state.status : 'idle'}
+              previewError={
+                preview.state.error?.voiceId === voice.id ? preview.state.error.message : undefined
+              }
+              onPreview={() => void preview.play(voice.id, passage, preferences.data?.pace ?? 1)}
+              onStop={preview.stop}
+              onUse={() => use(voice)}
+            />
           ))}
-        </div>
-      ) : voices.isError ? (
-        <Banner tone="error" title="Couldn't load voices">
-          {describeError(voices.error)}
-        </Banner>
-      ) : shown.length === 0 ? (
-        <EmptyState icon={<AudioLines size={26} />} title="No voices match these filters">
-          Try clearing the search or choosing another language.
-        </EmptyState>
-      ) : (
-        <>
-          <p className="mb-3 text-[13px] text-muted" aria-live="polite">
-            Showing {shown.length} of {all.length} voices. Grades are the upstream model's own
-            quality ratings (A is best).
-          </p>
-          <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-            {shown.map((voice) => (
-              <VoiceCard
-                key={voice.id}
-                voice={voice}
-                isDefault={voice.id === defaultVoice}
-                previewStatus={preview.state.voiceId === voice.id ? preview.state.status : 'idle'}
-                previewError={
-                  preview.state.error?.voiceId === voice.id
-                    ? preview.state.error.message
-                    : undefined
-                }
-                onPreview={() => void preview.play(voice.id, passage, preferences.data?.pace ?? 1)}
-                onStop={preview.stop}
-                onUse={() => use(voice)}
-              />
-            ))}
-          </ul>
-        </>
-      )}
+        </ul>
+      </VoiceResults>
     </div>
   );
 }

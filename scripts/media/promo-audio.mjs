@@ -14,13 +14,13 @@ import path from 'node:path';
 import { duration, findTool, run } from './ffmpeg.mjs';
 import { writeEffects, writeMusic } from './promo-music.mjs';
 
-export const VOICE = 'kokoro:af_heart';
+const VOICE = 'kokoro:af_heart';
 /** Voice-over lines; `start` matches each scene in promo/promo.js and `limit` is the scene's end. */
-export const CUES = [
+const CUES = [
   { start: 0.6, limit: 5.4, text: 'Any document can become something you listen to.' },
   {
     start: 5.9,
-    limit: 12.0,
+    limit: 12,
     text: 'Open a PDF, an e-book, or a Word file, and Local TTS reads it aloud.',
   },
   {
@@ -35,7 +35,7 @@ export const CUES = [
   },
   {
     start: 26.1,
-    limit: 32.0,
+    limit: 32,
     text: 'Want your own voice? Record a short sample, give consent, and it reads for you.',
   },
   {
@@ -49,8 +49,8 @@ export const CUES = [
     text: 'Local TTS. Free and open source. And yes, it made this voice-over.',
   },
 ];
-export const WHOOSHES = [5.4, 12.0, 19.6, 25.6, 32.0, 38.2];
-export const CHIME = 38.45;
+const WHOOSHES = [5.4, 12, 19.6, 25.6, 32, 38.2];
+const CHIME = 38.45;
 
 /**
  * @param {string} base app origin, e.g. http://127.0.0.1:8793
@@ -98,9 +98,10 @@ export async function mix(dir, cues, total) {
     (c, i) =>
       `[${i}:a]aresample=48000,aformat=channel_layouts=stereo,adelay=${Math.round(c.start * 1000)}:all=1[v${i}]`,
   );
+  const labels = cues.map((_, i) => `[v${i}]`).join('');
   const graph = [
     ...voices,
-    `${cues.map((_, i) => `[v${i}]`).join('')}amix=inputs=${m}:normalize=0,apad,atrim=duration=${total}[vo]`,
+    `${labels}amix=inputs=${m}:normalize=0,apad,atrim=duration=${total}[vo]`,
     '[vo]asplit=2[voice][key]',
     `[${m}:a]volume=0.9,aecho=0.8:0.6:90|180:0.22|0.12[pad]`,
     '[pad][key]sidechaincompress=threshold=0.03:ratio=5:attack=40:release=600[ducked]',

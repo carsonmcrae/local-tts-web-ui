@@ -22,7 +22,7 @@ const NAME = 'local-tts-demo';
  * Pairs each `playing` event with the next pause/end/source change on the same audio element.
  * @param {MediaEvent[]} media @param {number} end @returns {Piece[]}
  */
-export function toPieces(media, end) {
+function toPieces(media, end) {
   /** @type {Map<number, Piece>} */
   const open = new Map();
   /** @type {Piece[]} */
@@ -45,7 +45,7 @@ export function toPieces(media, end) {
       });
     }
   }
-  for (const id of [...open.keys()]) close(id, end);
+  for (const id of open.keys()) close(id, end);
   return pieces;
 }
 
@@ -110,7 +110,8 @@ async function soundtrack(ffmpeg, pieces, files, t0, total, out) {
     const tempo = Math.abs(p.rate - 1) > 0.01 ? `,atempo=${p.rate.toFixed(3)}` : '';
     return `[${i}:a]atrim=start=${p.at.toFixed(3)}:duration=${length.toFixed(3)},asetpts=PTS-STARTPTS,aresample=48000,aformat=channel_layouts=stereo${tempo},adelay=${delay}:all=1[a${i}]`;
   });
-  const mix = `${pieces.map((_, i) => `[a${i}]`).join('')}amix=inputs=${pieces.length}:normalize=0:dropout_transition=0,apad,atrim=duration=${total.toFixed(3)}`;
+  const labels = pieces.map((_, i) => `[a${i}]`).join('');
+  const mix = `${labels}amix=inputs=${pieces.length}:normalize=0:dropout_transition=0,apad,atrim=duration=${total.toFixed(3)}`;
   const raw = out.replace(/\.wav$/, '-raw.wav');
   await run(ffmpeg, [
     '-y',
@@ -163,7 +164,7 @@ export async function assemble({ work, frames, media, captions, end, clips }) {
   const ffmpeg = findTool('ffmpeg');
   mkdirSync(OUT, { recursive: true });
   const first = frames[0];
-  const last = frames[frames.length - 1];
+  const last = frames.at(-1);
   if (!first || !last) throw new Error('no frames were captured');
   const t0 = first.t;
   const total = end - t0;

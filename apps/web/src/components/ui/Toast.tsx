@@ -31,6 +31,38 @@ const ICONS: Record<ToastTone, ReactNode> = {
   error: <XCircle size={18} className="text-danger" />,
 };
 
+const CARD =
+  'pointer-events-auto flex w-full max-w-sm items-start gap-3 rounded-[var(--radius-lg)] border border-line bg-surface p-3.5 shadow-raised';
+const CARD_STYLE = { animation: 'ltts-fade-in 160ms ease-out' };
+
+/** Errors are alerts; other toasts are <output> (implicit status role) inside the polite region. */
+function ToastCard({ item, onDismiss }: Readonly<{ item: ToastItem; onDismiss: () => void }>) {
+  const content = (
+    <>
+      <span className="mt-0.5">{ICONS[item.tone]}</span>
+      <div className="min-w-0 flex-1 text-sm">
+        <p className="font-medium">{item.title}</p>
+        {item.description ? <p className="mt-0.5 text-muted">{item.description}</p> : null}
+      </div>
+      <IconButton
+        label="Dismiss notification"
+        icon={<X size={16} />}
+        size="sm"
+        onClick={onDismiss}
+      />
+    </>
+  );
+  return item.tone === 'error' ? (
+    <div role="alert" className={CARD} style={CARD_STYLE}>
+      {content}
+    </div>
+  ) : (
+    <output className={CARD} style={CARD_STYLE}>
+      {content}
+    </output>
+  );
+}
+
 export function ToastProvider({ children }: Readonly<{ children: ReactNode }>) {
   const [items, setItems] = useState<ToastItem[]>([]);
   const nextId = useRef(1);
@@ -44,7 +76,7 @@ export function ToastProvider({ children }: Readonly<{ children: ReactNode }>) {
     (tone, title, description) => {
       const id = nextId.current++;
       setItems((current) => [...current.slice(-3), { id, tone, title, description }]);
-      if (tone !== 'error') window.setTimeout(() => dismiss(id), AUTO_DISMISS_MS);
+      if (tone !== 'error') globalThis.setTimeout(() => dismiss(id), AUTO_DISMISS_MS);
     },
     [dismiss],
   );
@@ -60,24 +92,7 @@ export function ToastProvider({ children }: Readonly<{ children: ReactNode }>) {
         className="pointer-events-none fixed inset-x-0 top-3 z-[60] flex flex-col items-center gap-2 px-4 sm:top-auto sm:right-4 sm:bottom-28 sm:left-auto sm:items-end"
       >
         {items.map((item) => (
-          <div
-            key={item.id}
-            role={item.tone === 'error' ? 'alert' : 'status'}
-            className="pointer-events-auto flex w-full max-w-sm items-start gap-3 rounded-[var(--radius-lg)] border border-line bg-surface p-3.5 shadow-raised"
-            style={{ animation: 'ltts-fade-in 160ms ease-out' }}
-          >
-            <span className="mt-0.5">{ICONS[item.tone]}</span>
-            <div className="min-w-0 flex-1 text-sm">
-              <p className="font-medium">{item.title}</p>
-              {item.description ? <p className="mt-0.5 text-muted">{item.description}</p> : null}
-            </div>
-            <IconButton
-              label="Dismiss notification"
-              icon={<X size={16} />}
-              size="sm"
-              onClick={() => dismiss(item.id)}
-            />
-          </div>
+          <ToastCard key={item.id} item={item} onDismiss={() => dismiss(item.id)} />
         ))}
       </div>
     </ToastContext.Provider>

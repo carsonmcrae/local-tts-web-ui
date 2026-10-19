@@ -17,26 +17,11 @@ import numpy as np
 import soundfile as sf
 from fastapi.testclient import TestClient
 
-from conftest import FakeEngine, speech_like
+from conftest import FakeEngine, speech_like, wait_job, wav_bytes
 from ltts.container import Services
 from ltts.errors import AppError
 from ltts.jobs import JobManager, JobStatus
 from ltts.voices.quality import analyze
-
-
-def wav_bytes(samples: np.ndarray, rate: int = 24_000) -> bytes:
-    buffer = io.BytesIO()
-    sf.write(buffer, samples, rate, format="WAV", subtype="PCM_16")
-    return buffer.getvalue()
-
-
-def wait_job(client: TestClient, job_id: str) -> dict:  # type: ignore[type-arg]
-    for _ in range(200):
-        job = client.get(f"/api/jobs/{job_id}").json()
-        if job["status"] not in ("queued", "running"):
-            return job
-        time.sleep(0.05)
-    raise AssertionError("job did not finish")
 
 
 def test_quality_analysis_rules() -> None:

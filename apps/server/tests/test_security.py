@@ -72,4 +72,5 @@ def test_network_mode_requires_token_for_remote_clients(settings: Settings, serv
 
 
 def test_cli_refuses_public_bind_without_opt_in() -> None:
-    assert cli_main(["serve", "--host", "0.0.0.0"]) == 2  # noqa: S104 - verifying the refusal
+    # Binding every interface is exactly what this test expects the CLI to refuse.
+    assert cli_main(["serve", "--host", "0.0.0.0"]) == 2  # noqa: S104

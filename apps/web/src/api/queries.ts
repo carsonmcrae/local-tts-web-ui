@@ -27,7 +27,6 @@ export const keys = {
   voices: ['voices'] as const,
   engines: ['engines'] as const,
   job: (id: string) => ['jobs', id] as const,
-  jobs: ['jobs'] as const,
   preferences: ['preferences'] as const,
   system: ['system'] as const,
   profiles: ['voice-profiles'] as const,
@@ -85,10 +84,6 @@ export function useJob(id: string | null | undefined) {
 
 export function isJobActive(job: JobOut | undefined): boolean {
   return Boolean(job && ACTIVE_JOB.has(job.status));
-}
-
-export function useJobs() {
-  return useQuery({ queryKey: keys.jobs, queryFn: () => api<JobOut[]>('/api/jobs') });
 }
 
 export function usePreferences() {
@@ -158,6 +153,16 @@ export function useInstallEngine() {
         method: 'POST',
         json: { option: input.option ?? null },
       }),
+    onSuccess: () => client.invalidateQueries({ queryKey: keys.engines }),
+  });
+}
+
+/** Re-syncs an installed engine's runtime to the app's current lock (offered when `updateAvailable`). */
+export function useUpdateEngine() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (engineId: string) =>
+      api<JobOut>(`/api/engines/${engineId}/update`, { method: 'POST' }),
     onSuccess: () => client.invalidateQueries({ queryKey: keys.engines }),
   });
 }

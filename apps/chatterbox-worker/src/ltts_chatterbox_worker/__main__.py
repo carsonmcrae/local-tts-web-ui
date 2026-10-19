@@ -15,10 +15,14 @@ import sys
 import traceback
 from typing import Any
 
+from ltts_chatterbox_worker.compat import install_pkg_resources_shim
+
 os.environ["HF_HUB_OFFLINE"] = "1"
 os.environ["TRANSFORMERS_OFFLINE"] = "1"
 os.environ["HF_HUB_DISABLE_TELEMETRY"] = "1"
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
+# Perth (Chatterbox's watermarker) imports pkg_resources, which setuptools 81+ no longer ships.
+install_pkg_resources_shim()
 
 
 class Worker:
@@ -79,7 +83,8 @@ def main() -> None:
             break
         try:
             reply = {"id": request.get("id"), "ok": True, **handlers[request["op"]](request)}
-        except Exception as exc:  # noqa: BLE001 - reported to the server, which maps it to a user error
+        # Any failure is reported to the server, which maps it to a user-facing error.
+        except Exception as exc:  # noqa: BLE001
             traceback.print_exc()
             reply = {"id": request.get("id"), "ok": False, "error": type(exc).__name__, "message": str(exc)[:300]}
         protocol.write(json.dumps(reply) + "\n")

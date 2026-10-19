@@ -37,7 +37,7 @@ export function PageHeader({ title, description, actions, eyebrow }: Readonly<Pa
   );
 }
 
-export function Panel({
+function Panel({
   children,
   className,
   as: Tag = 'div',

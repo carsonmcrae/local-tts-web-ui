@@ -29,14 +29,14 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          node-version-file: .nvmrc
-          cache: npm
-      - run: npm ci
+      - uses: ./.github/actions/node-deps
       - run: npm run format:check
       - run: npm run lint:web
       - run: npm run lint:repo
+      - name: Unused files, exports and dependencies (Knip)
+        run: npx knip
+      - name: Copy-paste detection (jscpd)
+        run: npm run duplication
       - run: npm run typecheck --workspace @ltts/web && npx tsc -p scripts/tsconfig.json && npx tsc -p tests/e2e/tsconfig.json
       - run: npm run test:coverage --workspace @ltts/web
       - run: npm run build
@@ -50,13 +50,15 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: .nvmrc
       - name: Bootstrap (verified uv download, Python 3.12, locked deps)
         run: node scripts/setup.mjs
       - run: npm run lint:server
       - run: node scripts/uv-run.mjs --cwd apps/server run --frozen mypy
+      - name: Python dependency declarations (deptry)
+        run: node scripts/uv-run.mjs --cwd apps/server run --frozen deptry src
       - run: node scripts/uv-run.mjs --cwd apps/server run --frozen pytest --cov --cov-report=term-missing
 
   contract:
@@ -64,11 +66,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          node-version-file: .nvmrc
-          cache: npm
-      - run: npm ci
+      - uses: ./.github/actions/node-deps
       - run: node scripts/setup.mjs
       - run: npm run api:check
       - run: npm run licenses
@@ -81,11 +79,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          node-version-file: .nvmrc
-          cache: npm
-      - run: npm ci
+      - uses: ./.github/actions/node-deps
       - run: node scripts/setup.mjs
       - name: npm audit + pip-audit
         run: npm run security

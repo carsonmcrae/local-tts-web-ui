@@ -1,0 +1,23 @@
+{
+  "threshold": 0,
+  "minLines": 5,
+  "minTokens": 50,
+  "format": ["typescript", "tsx", "javascript", "python", "css", "yaml", "markup"],
+  "gitignore": true,
+  "ignore": [
+    "**/node_modules/**",
+    "**/.venv/**",
+    "**/dist/**",
+    "**/coverage/**",
+    ".claude/**",
+    ".tools/**",
+    "data/**",
+    "**/*.lock",
+    "**/package-lock.json",
+    "apps/web/src/api/schema.gen.ts",
+    "tests/fixtures/**"
+  ],
+  "reporters": ["console", "json"],
+  "output": ".tools/jscpd",
+  "absolute": false
+}

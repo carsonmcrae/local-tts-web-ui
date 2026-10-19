@@ -10,7 +10,7 @@ import { describeError } from '@/api/client';
 import { useSection } from '@/api/queries';
 import type { DocumentDetail, SectionOut } from '@/api/types';
 import { Button, IconButton } from '@/components/ui/Button';
-import { Badge, Banner, Skeleton } from '@/components/ui/Feedback';
+import { Badge, Banner, Skeleton, StatusRegion } from '@/components/ui/Feedback';
 import { documentFacts } from '@/features/library/DocumentCard';
 import { DocumentText } from './DocumentText';
 
@@ -19,6 +19,12 @@ interface HeaderProps {
   onContents: (() => void) | undefined;
   onPlay: () => void;
   playing: boolean;
+}
+
+/** The header's play button label: pause while narrating, otherwise resume or start. */
+function playLabel(playing: boolean, resuming: boolean): string {
+  if (playing) return 'Pause';
+  return resuming ? 'Resume' : 'Play';
 }
 
 export function ReaderHeader({ doc, onContents, onPlay, playing }: Readonly<HeaderProps>) {
@@ -69,7 +75,7 @@ export function ReaderHeader({ doc, onContents, onPlay, playing }: Readonly<Head
             }
             onClick={onPlay}
           >
-            {playing ? 'Pause' : resuming ? 'Resume' : 'Play'}
+            {playLabel(playing, resuming)}
           </Button>
         </div>
       </div>
@@ -95,11 +101,11 @@ export function SectionBody({
   const section = useSection(documentId, sectionIndex);
   if (section.isPending) {
     return (
-      <div className="flex flex-col gap-3" role="status" aria-label="Loading text">
+      <StatusRegion label="Loading text" className="flex flex-col gap-3">
         {[0, 1, 2, 3].map((key) => (
           <Skeleton key={key} className="h-5 w-full" />
         ))}
-      </div>
+      </StatusRegion>
     );
   }
   if (section.isError) {

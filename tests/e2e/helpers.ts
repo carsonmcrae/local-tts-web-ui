@@ -8,7 +8,7 @@ import type { Page, Response } from '@playwright/test';
 import { expect } from '@playwright/test';
 import path from 'node:path';
 
-export const FIXTURES = path.join(process.cwd(), 'tests', 'fixtures', 'documents');
+const FIXTURES = path.join(process.cwd(), 'tests', 'fixtures', 'documents');
 
 export async function pasteText(page: Page, text: string, title?: string): Promise<void> {
   await page.goto('/library');

@@ -8,30 +8,32 @@
 
 export const TARGET_RATE = 24_000;
 
+/** Averages the channels, sized to the first; a shorter channel counts as silence past its end. */
 export function mixToMono(channels: readonly Float32Array[]): Float32Array {
   const first = channels[0];
   if (!first) return new Float32Array(0);
   if (channels.length === 1) return first;
-  const mono = new Float32Array(first.length);
-  for (const channel of channels) {
-    for (let i = 0; i < mono.length; i += 1)
-      mono[i] = (mono[i] ?? 0) + (channel[i] ?? 0) / channels.length;
-  }
-  return mono;
+  return first.map(
+    (_, i) => channels.reduce((sum, channel) => sum + (channel[i] ?? 0), 0) / channels.length,
+  );
 }
 
+/** Linear-interpolation resampler, used when OfflineAudioContext is unavailable. */
 export function resampleLinear(samples: Float32Array, from: number, to: number): Float32Array {
   if (from === to) return samples;
   const ratio = from / to;
   const out = new Float32Array(Math.floor(samples.length / ratio));
-  for (let i = 0; i < out.length; i += 1) {
-    const position = i * ratio;
-    const index = Math.floor(position);
-    const fraction = position - index;
-    const a = samples[index] ?? 0;
-    const b = samples[index + 1] ?? a;
-    out[i] = a + (b - a) * fraction;
-  }
+  let written = 0;
+  let previous = 0;
+  // Walk the input once: every output position between two input samples is interpolated.
+  samples.forEach((current, index) => {
+    for (; written < out.length && written * ratio < index; written += 1) {
+      out[written] = previous + (current - previous) * (written * ratio - (index - 1));
+    }
+    previous = current;
+  });
+  // Positions at or after the last input sample hold its value.
+  out.fill(previous, written);
   return out;
 }
 
@@ -59,8 +61,8 @@ export interface DecodedClip {
 /** Decode compressed or WAV audio and normalise it to mono 24 kHz, keeping at most `maxSeconds`. */
 export async function decodeToClip(data: ArrayBuffer, maxSeconds: number): Promise<DecodedClip> {
   const AudioCtx =
-    window.AudioContext ??
-    (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+    globalThis.AudioContext ??
+    (globalThis as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
   const context = new AudioCtx();
   try {
     const buffer = await context.decodeAudioData(data.slice(0));
@@ -87,9 +89,9 @@ export function encodeWavBuffer(samples: Float32Array, sampleRate: number): Arra
   const dataSize = samples.length * bytesPerSample;
   const buffer = new ArrayBuffer(44 + dataSize);
   const view = new DataView(buffer);
-  const writeString = (offset: number, value: string) => {
-    for (let i = 0; i < value.length; i += 1) view.setUint8(offset + i, value.charCodeAt(i));
-  };
+  const ascii = new TextEncoder();
+  const writeString = (offset: number, value: string) =>
+    new Uint8Array(buffer, offset, value.length).set(ascii.encode(value));
   writeString(0, 'RIFF');
   view.setUint32(4, 36 + dataSize, true);
   writeString(8, 'WAVE');
@@ -103,10 +105,10 @@ export function encodeWavBuffer(samples: Float32Array, sampleRate: number): Arra
   view.setUint16(34, 16, true);
   writeString(36, 'data');
   view.setUint32(40, dataSize, true);
-  for (let i = 0; i < samples.length; i += 1) {
-    const clamped = Math.max(-1, Math.min(1, samples[i] ?? 0));
+  samples.forEach((sample, i) => {
+    const clamped = Math.max(-1, Math.min(1, sample));
     view.setInt16(44 + i * bytesPerSample, clamped < 0 ? clamped * 0x8000 : clamped * 0x7fff, true);
-  }
+  });
   return buffer;
 }
 

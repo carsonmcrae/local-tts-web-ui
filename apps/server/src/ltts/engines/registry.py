@@ -1,7 +1,7 @@
 """Purpose: Wire engines together and resolve any voice id to an engine plus voice specification.
 
 Scope: Holds the engine instances, maps ``engine:key`` and ``custom:<profile>`` voice ids, merges
-built-in and custom voices for the library, and runs engine install jobs.
+built-in and custom voices for the library, and runs engine install and update jobs.
 Does NOT belong: Engine internals, caching or HTTP.
 """
 
@@ -11,7 +11,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 
 from ltts.engines.base import Engine, EngineInfo, VoiceInfo, VoiceSpec
-from ltts.errors import EngineUnavailableError, NotFoundError
+from ltts.errors import ConflictError, EngineUnavailableError, NotFoundError
 from ltts.jobs import JobManager, JobOut, JobStatus
 
 CustomVoiceResolver = Callable[[str], tuple[str, VoiceSpec, str]]
@@ -98,6 +98,15 @@ class EngineRegistry:
             lambda ctx: engine.install(ctx, option),
             key=engine_id,
         )
+
+    def update(self, engine_id: str) -> JobOut:
+        """Runs as an ``install`` job so status, progress, de-duplication and uninstall guards are shared."""
+        engine = self.get(engine_id)
+        if (active := self._jobs.find_active("install", engine_id)) is not None:
+            return active
+        if not (info := engine.info()).update_available:
+            raise ConflictError(f"{info.name} is already up to date.", code="no_update")
+        return self._jobs.submit("install", {"engineId": engine_id, "update": True}, engine.update, key=engine_id)
 
     def uninstall(self, engine_id: str) -> None:
         active = self._jobs.find_active("install", engine_id)

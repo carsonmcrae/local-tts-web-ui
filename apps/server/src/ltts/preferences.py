@@ -56,11 +56,11 @@ class PreferenceStore:
 router = APIRouter(prefix="/api/preferences", tags=["preferences"])
 
 
-@router.get("", response_model=Preferences)
+@router.get("")
 def get_preferences(services: ServicesDep) -> Preferences:
     return services.preferences.get()
 
 
-@router.put("", response_model=Preferences)
+@router.put("")
 def put_preferences(body: Preferences, services: ServicesDep) -> Preferences:
     return services.preferences.put(body)

@@ -18,7 +18,7 @@ const MAX_REDIRECTS = 5;
  * @param {string[]} allowedHosts
  * @returns {URL}
  */
-export function assertAllowedUrl(url, allowedHosts) {
+function assertAllowedUrl(url, allowedHosts) {
   const parsed = new URL(url);
   if (parsed.protocol !== 'https:') {
     throw new BootstrapError(`Refusing non-HTTPS download: ${parsed.origin}`);

@@ -5,25 +5,25 @@
  * Does NOT belong: Extraction rules (server) or library listing.
  */
 import { ClipboardPaste, FileUp, UploadCloud } from 'lucide-react';
-import type { DragEvent, ReactNode } from 'react';
-import { useCallback, useRef, useState } from 'react';
+import type { ReactNode } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { describeError } from '@/api/client';
 import { usePasteText, useUploadDocument } from '@/api/queries';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
-import { Banner } from '@/components/ui/Feedback';
+import { Banner, StatusRegion } from '@/components/ui/Feedback';
 import { Field, Input, Textarea } from '@/components/ui/Field';
 import { IndeterminateBar } from '@/components/ui/Spinner';
 import { cn } from '@/lib/cn';
 
-export const ACCEPTED = '.txt,.md,.markdown,.pdf,.docx,.epub';
-const ACCEPTED_EXTENSIONS = ACCEPTED.split(',');
-export const CLIENT_MAX_BYTES = 25 * 1024 * 1024;
+const ACCEPTED = '.txt,.md,.markdown,.pdf,.docx,.epub';
+const ACCEPTED_EXTENSIONS = new Set(ACCEPTED.split(','));
+const CLIENT_MAX_BYTES = 25 * 1024 * 1024;
 
 export function precheck(file: File, maxBytes = CLIENT_MAX_BYTES): string | null {
   const extension = file.name.slice(file.name.lastIndexOf('.')).toLowerCase();
-  if (!ACCEPTED_EXTENSIONS.includes(extension))
+  if (!ACCEPTED_EXTENSIONS.has(extension))
     return `“${file.name}” isn't a supported format. Use TXT, Markdown, PDF, DOCX or EPUB.`;
   if (file.size === 0) return `“${file.name}” is empty.`;
   if (file.size > maxBytes)
@@ -131,30 +131,58 @@ interface DropTargetProps {
   className?: string;
 }
 
-export function DropTarget({ onFile, children, className }: Readonly<DropTargetProps>) {
+/** The drag's data when it carries files (other drags, such as selected text, are ignored). */
+function fileTransfer(event: DragEvent): DataTransfer | null {
+  const transfer = event.dataTransfer;
+  if (!transfer?.types.includes('Files')) return null;
+  event.preventDefault();
+  return transfer;
+}
+
+/**
+ * Tracks files dragged over `element` and hands a dropped file to `onFile`. Dropping is a pointer
+ * shortcut only (the "Upload document" button is the keyboard path), so the element stays a plain,
+ * non-interactive container and the drag listeners are attached to it directly.
+ */
+function useFileDrop(element: HTMLElement | null, onFile: (file: File) => void): boolean {
   const [dragging, setDragging] = useState(false);
   const depth = useRef(0);
-  const handle = (event: DragEvent, entering: boolean | null) => {
-    if (!event.dataTransfer.types.includes('Files')) return;
-    event.preventDefault();
-    if (entering === true) depth.current += 1;
-    if (entering === false) depth.current -= 1;
-    setDragging(depth.current > 0);
-  };
+  useEffect(() => {
+    if (!element) return undefined;
+    const move = (event: DragEvent, change: number) => {
+      if (!fileTransfer(event)) return;
+      depth.current += change;
+      setDragging(depth.current > 0);
+    };
+    const onEnter = (event: DragEvent) => move(event, 1);
+    const onLeave = (event: DragEvent) => move(event, -1);
+    const onOver = (event: DragEvent) => move(event, 0);
+    const onDrop = (event: DragEvent) => {
+      const transfer = fileTransfer(event);
+      depth.current = 0;
+      setDragging(false);
+      const file = transfer?.files[0];
+      if (file) onFile(file);
+    };
+    element.addEventListener('dragenter', onEnter);
+    element.addEventListener('dragleave', onLeave);
+    element.addEventListener('dragover', onOver);
+    element.addEventListener('drop', onDrop);
+    return () => {
+      element.removeEventListener('dragenter', onEnter);
+      element.removeEventListener('dragleave', onLeave);
+      element.removeEventListener('dragover', onOver);
+      element.removeEventListener('drop', onDrop);
+    };
+  }, [element, onFile]);
+  return dragging;
+}
+
+export function DropTarget({ onFile, children, className }: Readonly<DropTargetProps>) {
+  const [zone, setZone] = useState<HTMLDivElement | null>(null);
+  const dragging = useFileDrop(zone, onFile);
   return (
-    <div
-      className={cn('relative', className)}
-      onDragEnter={(event) => handle(event, true)}
-      onDragLeave={(event) => handle(event, false)}
-      onDragOver={(event) => handle(event, null)}
-      onDrop={(event) => {
-        handle(event, false);
-        depth.current = 0;
-        setDragging(false);
-        const file = event.dataTransfer.files[0];
-        if (file) onFile(file);
-      }}
-    >
+    <div ref={setZone} className={cn('relative', className)}>
       {children}
       {dragging ? (
         <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center rounded-[var(--radius-xl)] border-2 border-dashed border-accent bg-accent-soft/90">
@@ -205,16 +233,13 @@ export function UploadStatus({
 }: Readonly<{ uploading: string | null; error: string | null; onDismiss: () => void }>) {
   if (uploading) {
     return (
-      <div
-        className="mb-6 rounded-[var(--radius-lg)] border border-line bg-surface p-4"
-        role="status"
-      >
+      <StatusRegion className="mb-6 rounded-[var(--radius-lg)] border border-line bg-surface p-4">
         <p className="mb-3 text-sm">
           Reading <span className="font-medium">{uploading}</span>… Large PDFs and books can take a
           few seconds.
         </p>
         <IndeterminateBar />
-      </div>
+      </StatusRegion>
     );
   }
   if (error) {

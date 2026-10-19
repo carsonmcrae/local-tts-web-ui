@@ -19,13 +19,13 @@ import { Badge } from '@/components/ui/Feedback';
 import { Field, Input } from '@/components/ui/Field';
 import { useToast } from '@/components/ui/Toast';
 import { usePlayer } from '@/features/player/PlayerProvider';
+import { useReadingVoice } from '@/features/player/useReadingVoice';
 import { formatRelativeDate } from '@/lib/format';
 
 function useReferencePlayer(src: string) {
   const [playing, setPlaying] = useState(false);
-  const [audio] = useState(() => (typeof Audio === 'undefined' ? null : new Audio()));
+  const [audio] = useState(() => new Audio());
   useEffect(() => {
-    if (!audio) return undefined;
     const stop = () => setPlaying(false);
     audio.addEventListener('ended', stop);
     audio.addEventListener('pause', stop);
@@ -36,7 +36,6 @@ function useReferencePlayer(src: string) {
     };
   }, [audio]);
   const toggle = () => {
-    if (!audio) return;
     if (playing) {
       audio.pause();
       return;
@@ -60,6 +59,7 @@ export function ProfileCard({
   const save = useSavePreferences();
   const toast = useToast();
   const { controller, state } = usePlayer();
+  const reading = useReadingVoice();
   const [confirm, setConfirm] = useState(false);
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(profile.name);
@@ -140,11 +140,7 @@ export function ProfileCard({
           icon={isDefault ? <Check size={14} /> : undefined}
           disabled={isDefault || !engineReady}
           title={engineReady ? undefined : 'Install the cloning engine to use this voice'}
-          onClick={() => {
-            void controller.setVoice(profile.voiceId);
-            if (preferences.data)
-              save.mutate({ ...preferences.data, defaultVoiceId: profile.voiceId });
-          }}
+          onClick={() => reading.choose(profile.voiceId)}
         >
           {isDefault ? 'Used for reading' : 'Use for reading'}
         </Button>

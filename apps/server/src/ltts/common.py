@@ -7,11 +7,13 @@ Does NOT belong: Feature logic. Keep this module tiny; promote helpers only when
 
 from __future__ import annotations
 
+import asyncio
 import hashlib
 import shutil
 import uuid
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import BinaryIO
 
 from fastapi import Request
 from pydantic import BaseModel, ConfigDict
@@ -45,22 +47,35 @@ def ensure_free_space(directory: Path, needed_bytes: int, reserve_mb: int) -> No
         )
 
 
+def _discard(handle: BinaryIO, destination: Path) -> None:
+    """Close and delete a partly written file."""
+    try:
+        handle.close()
+    finally:
+        destination.unlink(missing_ok=True)
+
+
 async def save_request_body(request: Request, destination: Path, max_bytes: int) -> tuple[int, str]:
-    """Stream the raw request body to ``destination``; abort as soon as it exceeds ``max_bytes``."""
+    """Stream the raw request body to ``destination``; abort as soon as it exceeds ``max_bytes``.
+
+    File operations run in worker threads, so a slow disk never stalls the event loop.
+    """
     digest = hashlib.sha256()
     received = 0
+    handle: BinaryIO = await asyncio.to_thread(destination.open, "xb")
     try:
-        with destination.open("xb") as handle:
-            async for chunk in request.stream():
-                received += len(chunk)
-                if received > max_bytes:
-                    raise PayloadTooLargeError(
-                        f"The file is larger than the {max_bytes // MB} MB limit.",
-                        details={"limitBytes": max_bytes},
-                    )
-                digest.update(chunk)
-                handle.write(chunk)
+        async for chunk in request.stream():
+            received += len(chunk)
+            if received > max_bytes:
+                raise PayloadTooLargeError(
+                    f"The file is larger than the {max_bytes // MB} MB limit.",
+                    details={"limitBytes": max_bytes},
+                )
+            digest.update(chunk)
+            await asyncio.to_thread(handle.write, chunk)
+        await asyncio.to_thread(handle.close)
     except BaseException:
-        destination.unlink(missing_ok=True)  # noqa: ASYNC240 - single local unlink on the failure path
+        # Any failure, including a request cancelled mid-upload, leaves no partial file behind.
+        await asyncio.to_thread(_discard, handle, destination)
         raise
     return received, digest.hexdigest()

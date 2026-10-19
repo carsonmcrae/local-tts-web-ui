@@ -1,0 +1,71 @@
+# Purpose: Isolated, locked environment for the optional Chatterbox voice-cloning engine.
+# Scope: chatterbox-tts and PyTorch (CPU or CUDA build, mutually exclusive extras) plus the tiny
+#   stdio worker the main server drives. Installed on demand from Settings into data/engines/.
+# Does NOT belong: The main server environment — chatterbox pins numpy<2 and torch==2.6.0, which
+#   conflict with kokoro-onnx, so the two must never share a virtual environment.
+
+[project]
+name = "ltts-chatterbox-worker"
+version = "2.0.0"
+description = "Stdio worker that runs Resemble AI Chatterbox Turbo for Local TTS voice cloning."
+license = "MIT"
+requires-python = ">=3.11,<3.12"
+dependencies = [
+  "chatterbox-tts==0.1.7",
+  "soundfile>=0.13,<1",
+  # resemble-perth (Chatterbox's watermarker) imports pkg_resources; without it the watermarker
+  # silently resolves to None and model loading fails. setuptools 81 drops pkg_resources.
+  "setuptools>=70,<81",
+]
+
+[project.optional-dependencies]
+cpu = ["torch==2.6.0", "torchaudio==2.6.0"]
+cuda = ["torch==2.6.0", "torchaudio==2.6.0"]
+
+[project.scripts]
+ltts-chatterbox-worker = "ltts_chatterbox_worker.__main__:main"
+
+[build-system]
+requires = ["hatchling>=1.27,<2"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/ltts_chatterbox_worker"]
+
+[tool.uv]
+conflicts = [[{ extra = "cpu" }, { extra = "cuda" }]]
+# chatterbox-tts declares gradio as a hard dependency but never imports it; drop it (and its large
+# dependency tree) from this environment. It also pins diffusers==0.29.0, which has high-severity
+# trust_remote_code advisories (GHSA-98h9-4798-4q5v, GHSA-7wx4-6vff-v64p) fixed in 0.38.0, which in
+# turn needs safetensors>=0.8 (chatterbox pins 0.5.3). Chatterbox only imports diffusers' model layers
+# and safetensors' load_file, both unchanged in these versions (verified by test_inference.py).
+# transformers 5.2.0 has four high-severity advisories (GHSA-29pf-2h5f-8g72, GHSA-fgcw-684q-jj6r,
+# GHSA-xrqw-3rrv-vx5w, GHSA-x9r9-c232-4q39), all fixed by 5.10.1. 5.10.x still crashes on chatterbox's
+# torch 2.6 (unguarded torch.float8_e8m0fnu, a torch 2.7 dtype); 5.11.0 guards it. Clone quality is
+# checked with an A/B speaker-similarity run whenever these overrides move.
+override-dependencies = [
+  "gradio; sys_platform == 'never'",
+  "diffusers>=0.38.0,<0.39",
+  "safetensors>=0.8.0,<0.9",
+  "transformers>=5.11.0,<5.12",
+]
+
+[tool.uv.sources]
+torch = [
+  { index = "pytorch-cpu", extra = "cpu" },
+  { index = "pytorch-cu124", extra = "cuda" },
+]
+torchaudio = [
+  { index = "pytorch-cpu", extra = "cpu" },
+  { index = "pytorch-cu124", extra = "cuda" },
+]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[[tool.uv.index]]
+name = "pytorch-cu124"
+url = "https://download.pytorch.org/whl/cu124"
+explicit = true

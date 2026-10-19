@@ -1,0 +1,108 @@
+# Purpose: Fast quality gate for every pull request and push to main.
+# Scope: Web format/lint/types/tests/build; server lint/types/tests on Linux, Windows and macOS via the
+#   real bootstrap (pinned uv download + locked Python env, no models); API contract; security audits;
+#   one aggregate "validate" job for branch protection.
+# Does NOT belong: Real-model inference and Playwright journeys (inference.yml — too heavy for every PR).
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  LTTS_SKIP_MODEL_DOWNLOAD: '1'
+  LTTS_UV_PINNED_ONLY: '1'
+  LTTS_NO_OPEN: '1'
+
+jobs:
+  web:
+    name: Web (lint, types, tests, build)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run format:check
+      - run: npm run lint:web
+      - run: npm run lint:repo
+      - run: npm run typecheck --workspace @ltts/web && npx tsc -p scripts/tsconfig.json && npx tsc -p tests/e2e/tsconfig.json
+      - run: npm run test:coverage --workspace @ltts/web
+      - run: npm run build
+
+  server:
+    name: Server (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2025, macos-15]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+      - name: Bootstrap (verified uv download, Python 3.12, locked deps)
+        run: node scripts/setup.mjs
+      - run: npm run lint:server
+      - run: node scripts/uv-run.mjs --cwd apps/server run --frozen mypy
+      - run: node scripts/uv-run.mjs --cwd apps/server run --frozen pytest --cov --cov-report=term-missing
+
+  contract:
+    name: API contract and licences
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: node scripts/setup.mjs
+      - run: npm run api:check
+      - run: npm run licenses
+      - run: git diff --exit-code docs/security/license-inventory.generated.md
+
+  security:
+    name: Security audits
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: node scripts/setup.mjs
+      - name: npm audit + pip-audit
+        run: npm run security
+      - name: Gitleaks (checksum-verified download)
+        run: |
+          curl -sSfL -o gitleaks.tgz https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_x64.tar.gz
+          echo "551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb  gitleaks.tgz" | sha256sum --check
+          tar -xzf gitleaks.tgz gitleaks
+          ./gitleaks git --redact --no-banner --config .gitleaks.toml .
+
+  validate:
+    name: Validate
+    if: always()
+    needs: [web, server, contract, security]
+    runs-on: ubuntu-24.04
+    steps:
+      - name: All required jobs passed
+        run: |
+          [ "${{ needs.web.result }}" = success ] && [ "${{ needs.server.result }}" = success ] \
+            && [ "${{ needs.contract.result }}" = success ] && [ "${{ needs.security.result }}" = success ]

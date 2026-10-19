@@ -1,0 +1,39 @@
+# Purpose: Automated dependency update proposals with a supply-chain cool-down.
+# Scope: npm (root workspace), the server and worker uv projects, and GitHub Actions.
+# Does NOT belong: Auto-merging — every update is reviewed and tested (docs/security/supply-chain.md).
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 14
+      semver-major-days: 30
+    groups:
+      npm-minor-patch:
+        update-types: [minor, patch]
+  - package-ecosystem: uv
+    directory: /apps/server
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 14
+    groups:
+      python-minor-patch:
+        update-types: [minor, patch]
+  - package-ecosystem: uv
+    directory: /apps/chatterbox-worker
+    schedule:
+      interval: monthly
+    cooldown:
+      default-days: 30
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    groups:
+      actions:
+        patterns: ['*']

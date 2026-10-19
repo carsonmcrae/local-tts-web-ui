@@ -1,0 +1,9 @@
+{
+  "//": "Purpose: Type-check the Playwright specs and config. Scope: tests/e2e/** and playwright.config.ts. Does NOT belong: App sources.",
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2023", "DOM"],
+    "types": ["node"]
+  },
+  "include": ["./**/*.ts", "../../playwright.config.ts"]
+}

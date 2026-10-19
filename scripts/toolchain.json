@@ -1,0 +1,45 @@
+{
+  "//": "Purpose: Pinned, checksum-verified toolchain downloads used by scripts/lib/uv.mjs. Scope: The uv binary only (uv then provisions Python 3.12 with its own verified downloads). Does NOT belong: Model artifacts (apps/server/src/ltts/models/manifest.json) or npm/Python dependency pins (lockfiles).",
+  "uv": {
+    "version": "0.12.21",
+    "minimumSystemVersion": "0.9.0",
+    "releaseBaseUrl": "https://github.com/astral-sh/uv/releases/download/0.12.21",
+    "artifacts": {
+      "win32-x64": {
+        "file": "uv-x86_64-pc-windows-msvc.zip",
+        "size": 17992232,
+        "sha256": "5d223efa0bf00208c3853246af09420419dfbd352536aa6bb8163d6170e23890"
+      },
+      "win32-arm64": {
+        "file": "uv-aarch64-pc-windows-msvc.zip",
+        "size": 19274675,
+        "sha256": "93ed53b94e9cec000cacdfd18ca67bc4cb2b6a5f5ec041edd7f2a3dae365ce79"
+      },
+      "darwin-x64": {
+        "file": "uv-x86_64-apple-darwin.tar.gz",
+        "size": 20741769,
+        "sha256": "2b336763b396ec6afa20c5a8b083538ca7402445b868311979d740a4344c17d8"
+      },
+      "darwin-arm64": {
+        "file": "uv-aarch64-apple-darwin.tar.gz",
+        "size": 17001427,
+        "sha256": "b88bda573e566ef9bced66b155fe0408626fbbc053aee1c30ba686f0728c9447"
+      },
+      "linux-x64": {
+        "file": "uv-x86_64-unknown-linux-gnu.tar.gz",
+        "size": 19782662,
+        "sha256": "23f02075b652bb1df64178cfae41b5caf160822e720e2663568f3f5d63bc52c0"
+      },
+      "linux-arm64": {
+        "file": "uv-aarch64-unknown-linux-gnu.tar.gz",
+        "size": 18943621,
+        "sha256": "030b69227b40af8c1981b7301793dc66e71ed3c796ea8688209dd268bd91ec51"
+      }
+    }
+  },
+  "allowedDownloadHosts": [
+    "github.com",
+    "objects.githubusercontent.com",
+    "release-assets.githubusercontent.com"
+  ]
+}

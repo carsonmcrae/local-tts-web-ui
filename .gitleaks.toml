@@ -1,0 +1,16 @@
+# Purpose: Secret-scanning configuration for gitleaks.
+# Scope: Default rules plus a narrow allow-list for known non-secrets (pinned checksums are 64-hex
+#   strings that can look like keys).
+# Does NOT belong: Broad path ignores — add exact patterns with a reason instead.
+title = "local-tts-web-ui gitleaks config"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Pinned SHA-256 digests and lockfile hashes are public integrity data, not secrets."
+paths = [
+  '''(^|/)(package-lock\.json|uv\.lock)$''',
+  '''^scripts/toolchain\.json$''',
+  '''^apps/server/src/ltts/modelstore/manifest\.json$''',
+]

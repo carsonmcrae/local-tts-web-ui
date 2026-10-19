@@ -1,0 +1,65 @@
+{
+  "//": "Purpose: Root workspace manifest and the single entry point for every developer command. Scope: npm workspaces, pinned tooling, and scripts that orchestrate both the web app and the Python server through scripts/*.mjs. Does NOT belong: App runtime dependencies (apps/web/package.json, apps/server/pyproject.toml).",
+  "name": "local-tts-web-ui",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Local-first document reader and voice studio with natural-sounding offline text-to-speech.",
+  "license": "MIT",
+  "type": "module",
+  "workspaces": [
+    "apps/web"
+  ],
+  "engines": {
+    "node": ">=22.12",
+    "npm": ">=10"
+  },
+  "packageManager": "npm@11.11.0",
+  "scripts": {
+    "setup": "node scripts/setup.mjs",
+    "dev": "node scripts/dev.mjs",
+    "start": "node scripts/start.mjs",
+    "doctor": "node scripts/doctor.mjs",
+    "build": "npm run build --workspace @ltts/web",
+    "test": "npm run test:web && npm run test:server",
+    "test:web": "npm run test --workspace @ltts/web",
+    "test:server": "node scripts/uv-run.mjs --cwd apps/server run --frozen pytest",
+    "test:inference": "node scripts/uv-run.mjs --cwd apps/server run --frozen pytest -m inference",
+    "test:coverage": "npm run test:coverage --workspace @ltts/web && node scripts/uv-run.mjs --cwd apps/server run --frozen pytest --cov --cov-report=term-missing",
+    "test:e2e": "npm run build && playwright test",
+    "lint": "npm run lint:web && npm run lint:server && npm run lint:repo",
+    "lint:web": "eslint . --max-warnings 0",
+    "lint:server": "node scripts/uv-run.mjs --cwd apps/server run --frozen ruff check src tests && node scripts/uv-run.mjs --cwd apps/server run --frozen ruff format --check src tests",
+    "lint:repo": "node scripts/check-file-size.mjs && node scripts/check-headers.mjs && node scripts/check-version.mjs",
+    "format": "prettier --write . && node scripts/uv-run.mjs --cwd apps/server run --frozen ruff format src tests",
+    "format:check": "prettier --check .",
+    "typecheck": "npm run typecheck --workspace @ltts/web && tsc -p scripts/tsconfig.json && node scripts/uv-run.mjs --cwd apps/server run --frozen mypy",
+    "api:types": "node scripts/gen-api-types.mjs",
+    "api:check": "node scripts/gen-api-types.mjs --check",
+    "deps:check": "knip && node scripts/uv-run.mjs --cwd apps/server run --frozen deptry src",
+    "security": "npm audit --omit=dev --audit-level=high && node scripts/uv-run.mjs --cwd apps/server export --frozen --no-dev --no-emit-project --format requirements-txt -o ../../.tools/server-requirements.txt --quiet && node scripts/uv-run.mjs --cwd apps/server run --frozen pip-audit --strict -r ../../.tools/server-requirements.txt",
+    "licenses": "node scripts/license-inventory.mjs",
+    "check": "npm run format:check && npm run lint && npm run typecheck && npm run api:check && npm run test && npm run build"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "4.13.0",
+    "@eslint/js": "9.39.5",
+    "@playwright/test": "1.63.0",
+    "@types/node": "24.19.2",
+    "eslint": "9.39.5",
+    "eslint-plugin-jsx-a11y": "6.10.2",
+    "eslint-plugin-react-hooks": "7.1.1",
+    "eslint-plugin-react-refresh": "0.5.7",
+    "globals": "17.13.0",
+    "knip": "6.39.0",
+    "openapi-typescript": "7.13.0",
+    "prettier": "3.9.9",
+    "prettier-plugin-tailwindcss": "0.8.1",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.71.0"
+  },
+  "overrides": {
+    "openapi-typescript": {
+      "typescript": "$typescript"
+    }
+  }
+}

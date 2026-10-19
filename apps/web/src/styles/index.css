@@ -1,0 +1,185 @@
+/*
+ * Purpose: Design-system foundation: semantic colour tokens (light + dark), typography, radii,
+ *   shadows, focus rings, motion preferences and the reader's text styles.
+ * Scope: Tailwind v4 entry point. Components use semantic utilities (bg-surface, text-muted,
+ *   border-line, bg-accent…) rather than raw palette colours, so themes stay consistent.
+ * Does NOT belong: Component-specific styling (kept in components via utilities).
+ */
+@import 'tailwindcss';
+@import '@fontsource-variable/inter';
+@import '@fontsource-variable/literata';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  /* Contrast targets: text ≥ 7:1, muted ≥ 4.5:1, subtle ≥ 4.5:1 against --bg and --surface. */
+  --bg: #f7f6f3;
+  --surface: #ffffff;
+  --surface-2: #f1efeb;
+  --surface-3: #e8e5df;
+  --line: #e2dfd8;
+  --line-strong: #cbc7be;
+  --text: #1c1b19;
+  --muted: #57534c;
+  --subtle: #6b665e;
+  --accent: #4f46e5;
+  --accent-hover: #4338ca;
+  --accent-fg: #ffffff;
+  --accent-soft: #eef0ff;
+  --accent-text: #4338ca;
+  --highlight: rgb(79 70 229 / 0.13);
+  --highlight-line: rgb(79 70 229 / 0.55);
+  --success: #15803d;
+  --success-soft: #e9f7ee;
+  --warning: #a14a07;
+  --warning-soft: #fdf3e5;
+  --danger: #b91c1c;
+  --danger-soft: #fdecec;
+  --overlay: rgb(20 18 15 / 0.45);
+  --shadow-color: 30 25 15;
+}
+
+.dark {
+  --bg: #121316;
+  --surface: #1a1b1f;
+  --surface-2: #222328;
+  --surface-3: #2c2d33;
+  --line: #2e2f35;
+  --line-strong: #43444c;
+  --text: #ecebe8;
+  --muted: #b3b1ab;
+  --subtle: #9a9892;
+  --accent: #5b54e8;
+  --accent-hover: #6d67f0;
+  --accent-fg: #ffffff;
+  --accent-soft: #24233d;
+  --accent-text: #aaa6ff;
+  --highlight: rgb(139 133 255 / 0.18);
+  --highlight-line: rgb(170 166 255 / 0.7);
+  --success: #4ade80;
+  --success-soft: #16261c;
+  --warning: #fbbf24;
+  --warning-soft: #2a2213;
+  --danger: #f87171;
+  --danger-soft: #2c1717;
+  --overlay: rgb(0 0 0 / 0.6);
+  --shadow-color: 0 0 0;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-text: var(--text);
+  --color-muted: var(--muted);
+  --color-subtle: var(--subtle);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-fg: var(--accent-fg);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-text: var(--accent-text);
+  --color-highlight: var(--highlight);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-overlay: var(--overlay);
+  --font-sans: 'Inter Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-serif: 'Literata Variable', ui-serif, Georgia, 'Times New Roman', serif;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+  --shadow-soft: 0 1px 2px rgb(var(--shadow-color) / 0.06), 0 1px 1px rgb(var(--shadow-color) / 0.04);
+  --shadow-raised: 0 8px 24px -6px rgb(var(--shadow-color) / 0.14), 0 2px 6px rgb(var(--shadow-color) / 0.06);
+  --shadow-overlay: 0 24px 60px -12px rgb(var(--shadow-color) / 0.3), 0 4px 16px rgb(var(--shadow-color) / 0.1);
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    @apply bg-bg font-sans text-text antialiased;
+    font-feature-settings: 'cv11', 'ss01';
+  }
+
+  ::selection {
+    background: var(--highlight-line);
+    color: var(--accent-fg);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer components {
+  .reader-text {
+    @apply font-serif text-text;
+    font-size: clamp(1.0625rem, 0.98rem + 0.35vw, 1.25rem);
+    line-height: 1.8;
+    max-width: 68ch;
+    font-optical-sizing: auto;
+  }
+
+  .reader-seg {
+    @apply cursor-pointer rounded-[4px] transition-colors duration-150;
+    box-decoration-break: clone;
+    -webkit-box-decoration-break: clone;
+    padding: 0.08em 0.06em;
+  }
+
+  .reader-seg:hover {
+    background: color-mix(in srgb, var(--highlight) 55%, transparent);
+  }
+
+  .reader-seg[data-active='true'] {
+    background: var(--highlight);
+    box-shadow: inset 0 -2px 0 var(--highlight-line);
+  }
+
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: var(--line-strong) transparent;
+  }
+}
+
+@keyframes ltts-indeterminate {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(250%);
+  }
+}
+
+@keyframes ltts-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}

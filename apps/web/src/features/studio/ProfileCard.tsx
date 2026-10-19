@@ -153,7 +153,7 @@ export function ProfileCard({
         open={confirm}
         onOpenChange={setConfirm}
         title={`Permanently delete “${profile.name}”?`}
-        description="This deletes the reference recording, the profile and every piece of audio generated with this voice from this computer. It can't be undone."
+        description="This deletes the reference recording, the profile and all cached audio generated with this voice from this computer. Files you exported are kept. It can't be undone."
         confirmLabel="Delete voice"
         busy={remove.isPending}
         onConfirm={deleteProfile}

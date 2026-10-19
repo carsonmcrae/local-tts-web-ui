@@ -1,5 +1,5 @@
 {
-  "//": "Purpose: Pinned, checksum-verified toolchain downloads used by scripts/lib/uv.mjs. Scope: The uv binary only (uv then provisions Python 3.12 with its own verified downloads). Does NOT belong: Model artifacts (apps/server/src/ltts/models/manifest.json) or npm/Python dependency pins (lockfiles).",
+  "//": "Purpose: Pinned, checksum-verified toolchain downloads used by scripts/lib/uv.mjs. Scope: The uv binary only (uv then provisions Python 3.12 with its own verified downloads). Does NOT belong: Model artifacts (apps/server/src/ltts/modelstore/manifest.json) or npm/Python dependency pins (lockfiles).",
   "uv": {
     "version": "0.12.21",
     "minimumSystemVersion": "0.9.0",

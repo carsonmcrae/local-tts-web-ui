@@ -46,7 +46,7 @@ class KokoroEngine:
             return self._model
         if not self.is_ready():
             raise EngineUnavailableError(
-                "The Kokoro voice model isn't installed yet. Install it from Settings → Engines.",
+                "The Kokoro voice model isn't installed yet. Install it from Settings → Engines & models.",
                 code="engine_not_installed",
             )
         with self._lock:

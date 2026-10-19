@@ -7,7 +7,16 @@ is highlighted. Everything runs locally: no accounts, no cloud, no telemetry. Op
 narration voice from a short recording of yourself.
 
 [![CI](https://github.com/carsonmcrae/local-tts-web-ui/actions/workflows/ci.yml/badge.svg)](https://github.com/carsonmcrae/local-tts-web-ui/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/carsonmcrae/local-tts-web-ui/actions/workflows/codeql.yml/badge.svg)](https://github.com/carsonmcrae/local-tts-web-ui/actions/workflows/codeql.yml)
+[![Latest release](https://img.shields.io/github/v/release/carsonmcrae/local-tts-web-ui)](https://github.com/carsonmcrae/local-tts-web-ui/releases/latest)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
+<p align="center">
+  <a href="https://carsonmcrae.github.io/local-tts-web-ui/#overview"><img src="docs/media/local-tts-promo-poster.webp" alt="Local TTS showcase video: any document, read aloud" width="860" /></a>
+  <br />
+  <a href="https://carsonmcrae.github.io/local-tts-web-ui/#overview"><strong>▶ Watch the overview (0:45)</strong></a> (the voice-over is spoken by Local TTS)
+  · <a href="https://carsonmcrae.github.io/local-tts-web-ui/#demo"><strong>▶ Watch the demo (2:17)</strong></a> (recorded from the running app, with its real narration)
+</p>
 
 ![The reader narrating a document with the current sentence highlighted](docs/images/reader-light.png)
 
@@ -39,8 +48,8 @@ npm install
 npm run dev
 ```
 
-The first `npm run dev` downloads a checksum-verified copy of [uv](https://docs.astral.sh/uv/), which
-installs Python 3.12 and the locked dependencies into `.tools/` and `apps/server/.venv`, then downloads the
+The first `npm run dev` uses your own [uv](https://docs.astral.sh/uv/) if it is version 0.9 or newer, and
+otherwise downloads a checksum-verified copy. uv installs Python 3.12 and the locked dependencies into `.tools/` and `apps/server/.venv`, then downloads the
 Kokoro voice model (~340 MB, SHA-256 verified). Later starts take a few seconds. Your browser opens at
 `http://127.0.0.1:5173`. Press **Ctrl+C** to stop.
 
@@ -68,20 +77,20 @@ Limits (configurable): 25 MB per file, 2 million characters, 2,000 PDF pages.
 
 ## Platforms
 
-| Platform               | Status                                                                                                                                 |
-| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| Windows 11             | ✅ Fully tested: setup, unit/integration tests, real inference, Playwright (Chromium, Firefox, WebKit, mobile emulation)               |
-| macOS, Linux           | Unit and API tests run in CI on macOS 15 and Ubuntu 24.04. The full app was not manually tested on them.                               |
-| Chrome / Edge, Firefox | ✅ End-to-end tested                                                                                                                   |
-| Safari                 | Tested with Playwright's WebKit build (Windows); not verified on real Apple hardware                                                   |
-| Phones                 | Layout and playback tested with Pixel 7 and iPhone 13 emulation; see [LAN access](docs/guides/lan-access.md) to try it on a real phone |
+| Platform               | Status                                                                                                                                                        |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Windows 11             | ✅ Fully tested: setup, unit/integration tests, real inference, Playwright (Chromium, Firefox, WebKit, mobile emulation)                                      |
+| macOS, Linux           | Server unit and API tests run in CI on Ubuntu 24.04, Windows 2025 and macOS 15 (web tests on Ubuntu). The full app was not manually tested on macOS or Linux. |
+| Chrome / Edge, Firefox | ✅ End-to-end tested                                                                                                                                          |
+| Safari                 | Tested with Playwright's WebKit build (Windows); not verified on real Apple hardware                                                                          |
+| Phones                 | Layout and playback tested with Pixel 7 and iPhone 13 emulation; see [LAN access](docs/guides/lan-access.md) to try it on a real phone                        |
 
 ## Voices and models
 
-| Engine                                                                                                                 | What it does                                                                                                                                 | Licences                     |
-| ---------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------- |
-| [Kokoro-82M](https://huggingface.co/hexgrad/Kokoro-82M) via [kokoro-onnx](https://github.com/thewh1teagle/kokoro-onnx) | Default. 54 built-in voices, adjustable pace, fast on any modern CPU.                                                                        | Weights Apache-2.0, code MIT |
-| [Chatterbox Turbo](https://github.com/resemble-ai/chatterbox)                                                          | Optional. Zero-shot voice cloning from a short reference recording. Installed from **Settings → Engines** into its own isolated environment. | Code and weights MIT         |
+| Engine                                                                                                                 | What it does                                                                                                                                          | Licences                     |
+| ---------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------- |
+| [Kokoro-82M](https://huggingface.co/hexgrad/Kokoro-82M) via [kokoro-onnx](https://github.com/thewh1teagle/kokoro-onnx) | Default. 54 built-in voices, adjustable pace, fast on any modern CPU.                                                                                 | Weights Apache-2.0, code MIT |
+| [Chatterbox Turbo](https://github.com/resemble-ai/chatterbox)                                                          | Optional. Zero-shot voice cloning from a short reference recording. Installed from **Settings → Engines & models** into its own isolated environment. | Code and weights MIT         |
 
 ### How custom voices work
 
@@ -90,6 +99,16 @@ engine only uses roughly the first 10–15 seconds, so longer recordings don't h
 **fine-tuning** a model on 30+ minutes of audio can sound closer, but it needs hours of GPU time and isn't
 offered here. Only the trimmed reference recording is stored, locally. You must confirm the voice is yours
 or that the speaker gave permission; generated audio carries Resemble AI's inaudible Perth watermark.
+
+## Documentation
+
+- **[User guide (wiki)](https://github.com/carsonmcrae/local-tts-web-ui/wiki)**: installation, reading documents, voices, Voice Studio, exporting,
+  settings, keyboard shortcuts, troubleshooting and FAQ.
+- **Reference ([docs/](docs/))**: [architecture](docs/architecture/overview.md),
+  [configuration](docs/guides/configuration.md), [security](docs/security/threat-model.md),
+  [testing](docs/guides/testing.md) and [releases](docs/guides/release-process.md).
+- **[Changelog](CHANGELOG.md)** and **[releases](https://github.com/carsonmcrae/local-tts-web-ui/releases)**: every release lists its changes and
+  ships checksums, SBOMs and signed build provenance.
 
 ## Privacy
 
@@ -126,10 +145,18 @@ streamed to the browser, which plays it and highlights the matching text. Detail
 | `npm run test` · `test:inference` · `test:e2e` | Unit tests · real-model tests · Playwright journeys       |
 | `npm run doctor`                               | Diagnose the environment                                  |
 | `npm run security` · `npm run licenses`        | Dependency audits · licence inventory                     |
+| `npm run media:demo` · `media:promo`           | Re-record the demo video · re-render the showcase video   |
 
 See [CONTRIBUTING.md](CONTRIBUTING.md), [testing](docs/guides/testing.md),
 [configuration](docs/guides/configuration.md), [performance](docs/guides/performance.md) and
 [troubleshooting](docs/guides/troubleshooting.md).
+
+## Community
+
+- [Contributing](CONTRIBUTING.md): how to set up, test and propose changes.
+- [Code of conduct](CODE_OF_CONDUCT.md) and [getting help](SUPPORT.md): questions go to
+  [Discussions](https://github.com/carsonmcrae/local-tts-web-ui/discussions), bugs to [Issues](https://github.com/carsonmcrae/local-tts-web-ui/issues/new/choose).
+- [Security policy](SECURITY.md): report vulnerabilities privately, never in a public issue.
 
 ## Roadmap
 
@@ -153,3 +180,4 @@ MIT — see [LICENSE](LICENSE). Model weights and dependencies have their own li
   [FastAPI](https://fastapi.tiangolo.com), [React](https://react.dev), [Radix UI](https://www.radix-ui.com),
   [Tailwind CSS](https://tailwindcss.com), [Lucide](https://lucide.dev), and the Inter and Literata typefaces (OFL).
 - Sample text: "A Scandal in Bohemia" by Arthur Conan Doyle (public domain).
+- Videos: see [docs/media/README.md](docs/media/README.md) for how they were made and what is in them.

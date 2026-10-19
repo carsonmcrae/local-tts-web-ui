@@ -1,0 +1,106 @@
+# Reading documents
+
+## Supported formats
+
+| Format       | Extensions         | How it's read                                                                                                 |
+| ------------ | ------------------ | ------------------------------------------------------------------------------------------------------------- |
+| PDF          | `.pdf`             | Text PDFs. Running headers, footers and page numbers are removed, and lines are joined back into paragraphs.  |
+| Word         | `.docx`            | Paragraphs and tables in document order; tables are read row by row. Macros and embedded objects are ignored. |
+| EPUB 2 and 3 | `.epub`            | The book's files in reading order. Scripts and styles are ignored.                                            |
+| Markdown     | `.md`, `.markdown` | Links are read as their text and images as their alt text. Code blocks are skipped with a short spoken note.  |
+| Plain text   | `.txt`             | UTF-8, UTF-16 and Windows-1252 text.                                                                          |
+| Pasted text  | none               | Treated like plain text.                                                                                      |
+
+A file's contents must match its extension: a text file renamed to `.pdf`, for example, is refused.
+Password-protected PDFs are refused too; remove the password and upload the file again.
+
+Local TTS doesn't keep the uploaded file. It extracts the text on your computer, stores that in its
+library, and deletes the upload.
+
+## Limits
+
+| Limit                    | Default                                    | Environment variable        |
+| ------------------------ | ------------------------------------------ | --------------------------- |
+| File size                | 25 MB                                      | `LTTS_MAX_UPLOAD_MB`        |
+| Extracted text           | 2,000,000 characters (about 330,000 words) | `LTTS_MAX_TEXT_CHARS`       |
+| PDF pages                | 2,000                                      | `LTTS_MAX_PDF_PAGES`        |
+| Documents in the library | 500                                        | `LTTS_MAX_DOCUMENTS`        |
+| Time to process a file   | 90 seconds                                 | `LTTS_EXTRACTION_TIMEOUT_S` |
+
+The server enforces these limits; see [Settings and Models](Settings-and-Models#configuration) for how
+to change them. The web app also checks for 25 MB itself before uploading, so a higher
+`LTTS_MAX_UPLOAD_MB` doesn't currently let larger files through the upload button.
+
+Text-based books are small: a 400-page novel PDF is typically 1–5 MB. Files over 25 MB are almost
+always scanned images or image-heavy layouts.
+
+## Chapters, sections and pages
+
+Each document is split into sections, which appear in the **Contents** list.
+
+| Format            | Where sections come from                                                                                                                                                                                   |
+| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| PDF               | The PDF's outline (bookmarks), when it has at least two top-level entries. Pages before the first entry become "Opening pages". Without an outline, each page is a section ("Page 1", "Page 2" and so on). |
+| DOCX              | Paragraphs styled Title, Heading 1 or Heading 2. Deeper headings are read as headings inside a section.                                                                                                    |
+| EPUB              | Each file in the book's reading order, named from the table of contents (or its first heading).                                                                                                            |
+| Markdown          | `#` and `##` headings. Deeper headings are read as headings inside a section.                                                                                                                              |
+| Text, pasted text | Short lines on their own that start with Chapter, Part, Book, Section, Prologue or Epilogue (such as "Chapter 3" or "Part Two"), or a Roman numeral on its own, such as "IV".                              |
+
+Within each section, the text is split into sentences (very long sentences are split into shorter
+parts). Each one is generated, played and highlighted on its own, which is why the highlight always
+matches what you hear.
+
+## Scanned PDFs
+
+Local TTS reads the text layer of a PDF. It doesn't support OCR (reading text from images) yet.
+
+- If no page has text, the PDF is refused with a message that it has no text layer and looks like
+  scanned images.
+- If only some pages have no text, the rest is added and a warning at the top of the reader says how
+  many pages were skipped.
+
+To listen to a scanned PDF, export the text from the original document, or run OCR on it with another
+tool first.
+
+## Pasting text
+
+**Paste text** in the Library opens a dialog with an optional **Title** and a **Text** box that counts
+characters. **Add to library** saves it like any other document. Blank lines separate paragraphs; text
+without blank lines is read one paragraph per line. Pasted text is stored only on your computer.
+
+## Getting around
+
+- **Contents.** On wide screens, the list of sections sits beside the text. On narrower screens, use
+  the **Contents** button next to Play. A speaker icon marks the section being read. Choosing a
+  section shows it and moves the playback position to its start.
+- **Section pager.** The line above the text shows "Section N of M"; the buttons below the text go to
+  the previous and next section.
+- **Click a sentence** to play from there.
+- **Player bar.** Previous and next sentence, previous and next section, and the position slider.
+- **Keyboard.** See [Keyboard Shortcuts](Keyboard-Shortcuts).
+
+While narration plays, the reader follows it into the next section.
+
+## Resume
+
+Your position in each document is saved automatically as you listen. Library cards show how much
+you've heard ("New" if you haven't started), and the **Continue listening** card offers **Resume** for
+your most recent unfinished document. Opening a document puts you back where you stopped; press
+**Resume** to carry on.
+
+## Playback speed and speaking pace
+
+Local TTS has two ways to change how fast you hear the text:
+
+|                 | Playback speed                                                   | Speaking pace                          |
+| --------------- | ---------------------------------------------------------------- | -------------------------------------- |
+| What it changes | How fast the audio plays; pitch is preserved                     | How quickly the voice itself speaks    |
+| Range           | 0.75×, 0.9×, 1×, 1.1×, 1.25×, 1.5×, 1.75×, 2×                    | 0.70× to 1.40×, in steps of 0.05       |
+| Where           | Speed button in the player bar, `[` and `]`, Settings → Playback | Settings → Playback                    |
+| Applies to      | Every voice                                                      | Kokoro voices                          |
+| When it applies | Immediately                                                      | New audio is generated at the new pace |
+
+## Deleting a document
+
+Use the bin icon on a document's card in the Library and confirm. The document and its reading
+progress are permanently removed from your computer.

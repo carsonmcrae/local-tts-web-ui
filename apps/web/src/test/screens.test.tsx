@@ -5,7 +5,7 @@
  *   wizard gating, settings (theme, engines) and the not-found route.
  * Does NOT belong: Real browser/audio behaviour (Playwright e2e).
  */
-import { screen, waitFor, within } from '@testing-library/react';
+import { act, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import LibraryPage from '@/features/library/LibraryPage';
@@ -142,6 +142,53 @@ describe('Reader', () => {
       expect(screen.getByText('The keeper climbed.')).toHaveAttribute('data-active', 'true'),
     );
     expect(screen.getByRole('navigation', { name: 'Contents' })).toBeInTheDocument();
+  });
+
+  it('follows the narration into the next section', async () => {
+    mockApi({
+      ...base,
+      ...sections,
+      'GET /api/documents/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/sections/1': {
+        sectionIndex: 1,
+        segments: [
+          {
+            index: 2,
+            sectionIndex: 1,
+            paragraphIndex: 0,
+            kind: 'heading',
+            boundary: 'paragraph',
+            text: 'Chapter Two',
+          },
+          {
+            index: 3,
+            sectionIndex: 1,
+            paragraphIndex: 1,
+            kind: 'paragraph',
+            boundary: 'section',
+            text: 'Dawn came.',
+          },
+        ],
+      },
+      [`GET /api/documents/${doc.id}`]: doc,
+      'GET /api/documents/': doc,
+      [`GET /api/documents/${doc.id}/segments`]: new Response(new Blob(['wav']), {
+        headers: { 'X-Audio-Duration': '1' },
+      }),
+    });
+    const user = userEvent.setup();
+    const { media } = renderWithApp(<ReaderPage />, {
+      path: '/read/:documentId',
+      route: `/read/${doc.id}`,
+    });
+    await user.click(await screen.findByText('The keeper climbed.'));
+    await waitFor(() =>
+      expect(screen.getByText('The keeper climbed.')).toHaveAttribute('data-active', 'true'),
+    );
+    act(() => media.emit('ended'));
+    expect(
+      await screen.findByRole('heading', { level: 2, name: 'Chapter Two' }),
+    ).toBeInTheDocument();
+    expect(screen.queryByText('The keeper climbed.')).not.toBeInTheDocument();
   });
 
   it('groups segments into blocks by paragraph', () => {

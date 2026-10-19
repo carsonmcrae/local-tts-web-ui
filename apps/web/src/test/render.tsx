@@ -54,8 +54,13 @@ export class SilentMedia implements MediaLike {
   playbackRate = 1;
   play = vi.fn(async () => undefined);
   pause = vi.fn();
-  addEventListener() {
-    return undefined;
+  private listeners = new Map<string, (() => void)[]>();
+  addEventListener(type: string, listener: () => void) {
+    this.listeners.set(type, [...(this.listeners.get(type) ?? []), listener]);
+  }
+  /** Simulates a media event, e.g. `ended` when a sentence finishes. */
+  emit(type: string) {
+    for (const listener of this.listeners.get(type) ?? []) listener();
   }
 }
 

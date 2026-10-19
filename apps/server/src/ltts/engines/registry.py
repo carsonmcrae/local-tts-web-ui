@@ -84,7 +84,7 @@ class EngineRegistry:
             spec, revision = VoiceSpec(key=key, language_code=language), "builtin"
         if not engine.is_ready():
             raise EngineUnavailableError(
-                f"The {engine.info().name} engine isn't installed. Install it from Settings → Engines.",
+                f"The {engine.info().name} engine isn't installed. Install it from Settings → Engines & models.",
                 code="engine_not_installed",
                 details={"engineId": engine.id},
             )

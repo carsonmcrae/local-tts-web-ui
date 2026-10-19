@@ -30,6 +30,7 @@ class FakeEngine:
         self.id = engine_id
         self.ready = ready
         self.cloning = cloning
+        self.update_available = False
         self.calls: list[tuple[str, str, float, Path | None]] = []
 
     def info(self) -> EngineInfo:
@@ -49,6 +50,7 @@ class FakeEngine:
             hardware_note="",
             install_options=[],
             installed_bytes=0,
+            update_available=self.update_available,
         )
 
     def voices(self) -> list[VoiceInfo]:
@@ -80,6 +82,10 @@ class FakeEngine:
     def install(self, context: JobContext, option: str | None) -> dict[str, Any]:
         self.ready = True
         return {"option": option}
+
+    def update(self, context: JobContext) -> dict[str, Any]:
+        self.update_available = False
+        return {"updated": True}
 
     def uninstall(self) -> None:
         self.ready = False

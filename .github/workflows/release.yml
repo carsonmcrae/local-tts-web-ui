@@ -1,0 +1,81 @@
+# Purpose: Publish a verified GitHub Release when a version tag (vX.Y.Z) is pushed.
+# Scope: Refuses tags that don't match package.json and a dated CHANGELOG entry; runs the full check suite
+#   through the real bootstrap; packages the source archive, the prebuilt web UI, CycloneDX SBOMs (web,
+#   server, Chatterbox worker), the demo and showcase videos and SHA256SUMS.txt; signs build provenance
+#   for every file; then creates (or refreshes) the release with the changelog entry as notes.
+# Does NOT belong: Everyday CI (ci.yml) or real-model tests (inference.yml).
+name: Release
+
+on:
+  push:
+    tags: ['v*.*.*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing tag to publish again, for example v2.0.0
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  LTTS_SKIP_MODEL_DOWNLOAD: '1'
+  LTTS_UV_PINNED_ONLY: '1'
+  LTTS_NO_OPEN: '1'
+  TAG: ${{ inputs.tag || github.ref_name }}
+
+jobs:
+  release:
+    name: Build, attest and publish
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.TAG }}
+          fetch-depth: 0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - name: Check the tag, version and changelog agree
+        run: node scripts/release-notes.mjs "$TAG" > "$RUNNER_TEMP/release-notes.md"
+      - run: npm ci
+      - name: Bootstrap (verified uv download, Python 3.12, locked deps)
+        run: node scripts/setup.mjs
+      - run: npm run check
+      - name: Package release files
+        run: |
+          version="${TAG#v}"
+          out=release-files
+          mkdir -p "$out"
+          git archive --format=tar.gz --prefix="local-tts-web-ui-$version/" -o "$out/local-tts-web-ui-$version-source.tar.gz" "$TAG"
+          tar -czf "$out/local-tts-web-ui-$version-web-ui.tar.gz" -C apps/web dist
+          npm sbom --omit dev --sbom-format cyclonedx > "$out/sbom-web.cdx.json"
+          node scripts/uv-run.mjs --cwd apps/server export --frozen --no-dev --format cyclonedx1.5 -o "../../$out/sbom-server.cdx.json" --quiet
+          node scripts/uv-run.mjs --cwd apps/chatterbox-worker export --frozen --no-dev --extra cpu --format cyclonedx1.5 -o "../../$out/sbom-chatterbox-worker.cdx.json" --quiet
+          cp docs/media/local-tts-demo.mp4 docs/media/local-tts-promo.mp4 "$out/"
+          (cd "$out" && sha256sum -- * > SHA256SUMS.txt && cat SHA256SUMS.txt)
+      - name: Sign build provenance
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: release-files/*
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version="${TAG#v}"
+          if gh release view "$TAG" > /dev/null 2>&1; then
+            gh release edit "$TAG" --title "Local TTS $version" --notes-file "$RUNNER_TEMP/release-notes.md"
+            gh release upload "$TAG" release-files/* --clobber
+          else
+            gh release create "$TAG" release-files/* --verify-tag --latest \
+              --title "Local TTS $version" --notes-file "$RUNNER_TEMP/release-notes.md"
+          fi

@@ -38,7 +38,9 @@ async function main() {
   if (process.argv.includes('--check')) {
     const current = readFileSync(target, 'utf8');
     if (current !== output) {
-      throw new BootstrapError('apps/web/src/api/schema.gen.ts is out of date.', ['Run `npm run api:types`.']);
+      throw new BootstrapError('apps/web/src/api/schema.gen.ts is out of date.', [
+        'Run `npm run api:types`.',
+      ]);
     }
     ok('API types are up to date');
     return;

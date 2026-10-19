@@ -36,7 +36,10 @@ export default function VoiceStudioPage() {
       />
       {cloning && !ready ? (
         <div className="mb-8">
-          <Section title="Voice-cloning engine" description="Optional. Recording works now; you need the engine to hear custom voices.">
+          <Section
+            title="Voice-cloning engine"
+            description="Optional. Recording works now; you need the engine to hear custom voices."
+          >
             <EnginePanel engine={cloning} />
           </Section>
         </div>
@@ -58,12 +61,17 @@ export default function VoiceStudioPage() {
             icon={<Mic size={26} />}
             title="No custom voices yet"
             actions={
-              <Button variant="primary" icon={<Plus size={16} />} onClick={() => setWizardOpen(true)}>
+              <Button
+                variant="primary"
+                icon={<Plus size={16} />}
+                onClick={() => setWizardOpen(true)}
+              >
                 Create your first voice
               </Button>
             }
           >
-            Read a 20-second passage, check the quality, confirm permission and name it. Your recording never leaves this computer.
+            Read a 20-second passage, check the quality, confirm permission and name it. Your
+            recording never leaves this computer.
           </EmptyState>
         </div>
       ) : (

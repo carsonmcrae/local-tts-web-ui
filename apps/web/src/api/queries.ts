@@ -37,7 +37,10 @@ const ACTIVE_JOB = new Set(['queued', 'running']);
 const POLL_MS = 1000;
 
 export function useDocuments() {
-  return useQuery({ queryKey: keys.documents, queryFn: () => api<DocumentSummary[]>('/api/documents') });
+  return useQuery({
+    queryKey: keys.documents,
+    queryFn: () => api<DocumentSummary[]>('/api/documents'),
+  });
 }
 
 export function useDocument(id: string | undefined) {
@@ -75,7 +78,8 @@ export function useJob(id: string | null | undefined) {
     queryKey: keys.job(id ?? ''),
     queryFn: () => api<JobOut>(`/api/jobs/${id}`),
     enabled: Boolean(id),
-    refetchInterval: (query) => (query.state.data && !ACTIVE_JOB.has(query.state.data.status) ? false : POLL_MS),
+    refetchInterval: (query) =>
+      query.state.data && !ACTIVE_JOB.has(query.state.data.status) ? false : POLL_MS,
   });
 }
 
@@ -88,7 +92,10 @@ export function useJobs() {
 }
 
 export function usePreferences() {
-  return useQuery({ queryKey: keys.preferences, queryFn: () => api<Preferences>('/api/preferences') });
+  return useQuery({
+    queryKey: keys.preferences,
+    queryFn: () => api<Preferences>('/api/preferences'),
+  });
 }
 
 export function useSystem() {
@@ -96,7 +103,10 @@ export function useSystem() {
 }
 
 export function useProfiles() {
-  return useQuery({ queryKey: keys.profiles, queryFn: () => api<VoiceProfile[]>('/api/voice-profiles') });
+  return useQuery({
+    queryKey: keys.profiles,
+    queryFn: () => api<VoiceProfile[]>('/api/voice-profiles'),
+  });
 }
 
 // -- mutations ---------------------------------------------------------------
@@ -134,7 +144,8 @@ export function useDeleteDocument() {
 export function useSavePreferences() {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: (prefs: Preferences) => api<Preferences>('/api/preferences', { method: 'PUT', json: prefs }),
+    mutationFn: (prefs: Preferences) =>
+      api<Preferences>('/api/preferences', { method: 'PUT', json: prefs }),
     onSuccess: (prefs) => client.setQueryData(keys.preferences, prefs),
   });
 }
@@ -173,14 +184,16 @@ export function useCancelJob() {
 
 export function useStartExport() {
   return useMutation({
-    mutationFn: (request: ExportRequest) => api<JobOut>('/api/exports', { method: 'POST', json: request }),
+    mutationFn: (request: ExportRequest) =>
+      api<JobOut>('/api/exports', { method: 'POST', json: request }),
   });
 }
 
 export function useClearCache() {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: () => api<{ removedEntries: number }>('/api/system/cache/clear', { method: 'POST' }),
+    mutationFn: () =>
+      api<{ removedEntries: number }>('/api/system/cache/clear', { method: 'POST' }),
     onSuccess: () => client.invalidateQueries({ queryKey: keys.system }),
   });
 }
@@ -220,7 +233,10 @@ export function useRenameProfile() {
   const client = useQueryClient();
   return useMutation({
     mutationFn: (input: { id: string; name: string }) =>
-      api<VoiceProfile>(`/api/voice-profiles/${input.id}`, { method: 'PATCH', json: { name: input.name } }),
+      api<VoiceProfile>(`/api/voice-profiles/${input.id}`, {
+        method: 'PATCH',
+        json: { name: input.name },
+      }),
     onSuccess: () => {
       void client.invalidateQueries({ queryKey: keys.profiles });
       void client.invalidateQueries({ queryKey: keys.voices });

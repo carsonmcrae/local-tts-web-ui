@@ -29,11 +29,17 @@ export default function SettingsPage() {
 
   return (
     <div className="mx-auto flex max-w-5xl gap-10 px-4 py-6 sm:px-8 sm:py-10">
-      <nav aria-label="Settings sections" className="sticky top-10 hidden w-44 shrink-0 self-start lg:block">
+      <nav
+        aria-label="Settings sections"
+        className="sticky top-10 hidden w-44 shrink-0 self-start lg:block"
+      >
         <ul className="flex flex-col gap-0.5 text-sm">
           {INDEX.map(([id, label]) => (
             <li key={id}>
-              <a href={`#${id}`} className="block rounded-[var(--radius-md)] px-3 py-1.5 text-muted hover:bg-surface-2 hover:text-text">
+              <a
+                href={`#${id}`}
+                className="block rounded-[var(--radius-md)] px-3 py-1.5 text-muted hover:bg-surface-2 hover:text-text"
+              >
                 {label}
               </a>
             </li>

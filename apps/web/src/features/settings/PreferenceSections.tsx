@@ -37,7 +37,9 @@ export function AppearanceSection() {
             onClick={() => setTheme(option.value)}
             className={cn(
               'flex h-11 items-center justify-center gap-2 rounded-[var(--radius-md)] border text-sm font-medium transition-colors',
-              theme === option.value ? 'border-accent bg-accent-soft text-accent-text' : 'border-line hover:bg-surface-2',
+              theme === option.value
+                ? 'border-accent bg-accent-soft text-accent-text'
+                : 'border-line hover:bg-surface-2',
             )}
           >
             {option.icon}
@@ -59,7 +61,11 @@ export function PlaybackSection() {
   const update = (patch: Partial<Preferences>) => save.mutate({ ...prefs, ...patch });
 
   return (
-    <Section id="playback" title="Playback" description="Shared by every browser that opens this app.">
+    <Section
+      id="playback"
+      title="Playback"
+      description="Shared by every browser that opens this app."
+    >
       <div className="grid gap-5 sm:grid-cols-2">
         <Field label="Default voice">
           {({ id }) => (
@@ -117,11 +123,18 @@ export function PlaybackSection() {
             onChange={(pace) => update({ pace })}
             onCommit={(pace) => void controller.setPace(pace)}
           />
-          <p className="text-[13px] text-muted">How quickly the voice itself speaks (Kokoro voices). New audio is generated when it changes.</p>
+          <p className="text-[13px] text-muted">
+            How quickly the voice itself speaks (Kokoro voices). New audio is generated when it
+            changes.
+          </p>
         </div>
         <Field label="Export format">
           {({ id }) => (
-            <Select id={id} value={prefs.exportFormat} onChange={(event) => update({ exportFormat: event.target.value as 'mp3' | 'wav' })}>
+            <Select
+              id={id}
+              value={prefs.exportFormat}
+              onChange={(event) => update({ exportFormat: event.target.value as 'mp3' | 'wav' })}
+            >
               <option value="mp3">MP3 (smaller)</option>
               <option value="wav">WAV (lossless)</option>
             </Select>
@@ -129,7 +142,12 @@ export function PlaybackSection() {
         </Field>
       </div>
       <div className="mt-5 border-t border-line pt-5">
-        <Switch checked={prefs.autoScroll} onCheckedChange={(autoScroll) => update({ autoScroll })} label="Follow along while listening" description="Keep the sentence being spoken in view." />
+        <Switch
+          checked={prefs.autoScroll}
+          onCheckedChange={(autoScroll) => update({ autoScroll })}
+          label="Follow along while listening"
+          description="Keep the sentence being spoken in view."
+        />
       </div>
     </Section>
   );

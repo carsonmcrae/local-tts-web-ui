@@ -23,7 +23,11 @@ declare const __APP_VERSION__: string;
 export function EnginesSection() {
   const engines = useEngines();
   return (
-    <Section id="engines" title="Engines & models" description="Model files are downloaded from pinned sources and verified with SHA-256 before use.">
+    <Section
+      id="engines"
+      title="Engines & models"
+      description="Model files are downloaded from pinned sources and verified with SHA-256 before use."
+    >
       {engines.isPending ? <Skeleton className="h-32" /> : null}
       {engines.isError ? <Banner tone="error">{describeError(engines.error)}</Banner> : null}
       <div className="flex flex-col divide-y divide-line">
@@ -53,7 +57,11 @@ export function StorageSection() {
       ]
     : [];
   return (
-    <Section id="storage" title="Storage" description={storage ? `Data folder: ${storage.dataDir}` : undefined}>
+    <Section
+      id="storage"
+      title="Storage"
+      description={storage ? `Data folder: ${storage.dataDir}` : undefined}
+    >
       {!storage ? <Skeleton className="h-28" /> : null}
       {storage ? (
         <div className="flex flex-col gap-4">
@@ -69,11 +77,18 @@ export function StorageSection() {
             <div className="mb-1.5 flex justify-between text-[13px] text-muted">
               <span>Audio cache</span>
               <span>
-                {formatBytes(storage.audioCacheBytes)} of {formatBytes(storage.audioCacheLimitBytes)} limit
+                {formatBytes(storage.audioCacheBytes)} of{' '}
+                {formatBytes(storage.audioCacheLimitBytes)} limit
               </span>
             </div>
-            <ProgressBar value={storage.audioCacheBytes / Math.max(storage.audioCacheLimitBytes, 1)} label="Audio cache usage" />
-            <p className="mt-2 text-[13px] text-muted">Older audio is removed automatically when the cache is full. {formatBytes(storage.freeBytes)} free on this disk.</p>
+            <ProgressBar
+              value={storage.audioCacheBytes / Math.max(storage.audioCacheLimitBytes, 1)}
+              label="Audio cache usage"
+            />
+            <p className="mt-2 text-[13px] text-muted">
+              Older audio is removed automatically when the cache is full.{' '}
+              {formatBytes(storage.freeBytes)} free on this disk.
+            </p>
           </div>
           <div>
             <Button icon={<Trash2 size={15} />} onClick={() => setConfirm(true)}>
@@ -93,7 +108,11 @@ export function StorageSection() {
           clear.mutate(undefined, {
             onSuccess: (result) => {
               setConfirm(false);
-              toast.notify('success', 'Audio cache cleared', `${result.removedEntries} clips removed.`);
+              toast.notify(
+                'success',
+                'Audio cache cleared',
+                `${result.removedEntries} clips removed.`,
+              );
             },
           })
         }
@@ -121,7 +140,8 @@ export function PrivacySection() {
       </ul>
       {system.data?.networkExposed ? (
         <Banner tone="warning" className="mt-4" title="Network access is on">
-          This server accepts connections from other devices on your network (access token required). Restart without --allow-network to turn it off.
+          This server accepts connections from other devices on your network (access token
+          required). Restart without --allow-network to turn it off.
         </Banner>
       ) : null}
     </Section>
@@ -153,8 +173,18 @@ export function AboutSection() {
             ['App version', version],
             ['Server version', info?.version ?? '…'],
             ['Runtime', info ? `Python ${info.python}` : '…'],
-            ['System', info ? `${info.platform} · ${info.cpuCores} CPUs · ${formatBytes(info.memoryTotalBytes)} RAM` : '…'],
-            ['GPU', info ? info.gpus.map((gpu) => gpu.name).join(', ') || 'None detected (CPU mode)' : '…'],
+            [
+              'System',
+              info
+                ? `${info.platform} · ${info.cpuCores} CPUs · ${formatBytes(info.memoryTotalBytes)} RAM`
+                : '…',
+            ],
+            [
+              'GPU',
+              info
+                ? info.gpus.map((gpu) => gpu.name).join(', ') || 'None detected (CPU mode)'
+                : '…',
+            ],
             ['License', 'MIT (app). Model licenses are listed with each engine.'],
           ] as const
         ).map(([label, value]) => (
@@ -171,7 +201,13 @@ export function AboutSection() {
           onClick={() =>
             void navigator.clipboard
               ?.writeText(diagnosticsReport(info, version))
-              .then(() => toast.notify('success', 'Diagnostics copied', 'Contains no documents or personal data.'))
+              .then(() =>
+                toast.notify(
+                  'success',
+                  'Diagnostics copied',
+                  'Contains no documents or personal data.',
+                ),
+              )
               .catch(() => toast.notify('error', 'Copy failed'))
           }
         >

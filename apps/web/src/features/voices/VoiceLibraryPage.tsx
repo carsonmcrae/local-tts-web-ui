@@ -32,7 +32,8 @@ export function filterVoices(voices: readonly VoiceInfo[], filters: VoiceFilters
   const needle = filters.query.trim().toLowerCase();
   return voices.filter(
     (voice) =>
-      (!needle || `${voice.name} ${voice.language} ${voice.engineId}`.toLowerCase().includes(needle)) &&
+      (!needle ||
+        `${voice.name} ${voice.language} ${voice.engineId}`.toLowerCase().includes(needle)) &&
       (filters.language === 'all' || voice.language === filters.language) &&
       (filters.gender === 'all' || voice.gender === filters.gender) &&
       (filters.source === 'all' || voice.category === filters.source),
@@ -46,7 +47,12 @@ export default function VoiceLibraryPage() {
   const { controller } = usePlayer();
   const preview = useVoicePreview();
   const toast = useToast();
-  const [filters, setFilters] = useState<VoiceFilters>({ query: '', language: 'all', gender: 'all', source: 'all' });
+  const [filters, setFilters] = useState<VoiceFilters>({
+    query: '',
+    language: 'all',
+    gender: 'all',
+    source: 'all',
+  });
   const [passage, setPassage] = useState('');
   const all = useMemo(() => voices.data ?? [], [voices.data]);
   const languages = useMemo(() => [...new Set(all.map((voice) => voice.language))].sort(), [all]);
@@ -74,12 +80,25 @@ export default function VoiceLibraryPage() {
       <div className="mb-6 grid gap-4 lg:grid-cols-[1fr_minmax(0,22rem)]">
         <div className="grid gap-3 sm:grid-cols-4">
           <div className="relative sm:col-span-4">
-            <Search size={16} className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-subtle" />
-            <Input aria-label="Search voices" placeholder="Search by name or language" className="pl-9" value={filters.query} onChange={(event) => setFilters({ ...filters, query: event.target.value })} />
+            <Search
+              size={16}
+              className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-subtle"
+            />
+            <Input
+              aria-label="Search voices"
+              placeholder="Search by name or language"
+              className="pl-9"
+              value={filters.query}
+              onChange={(event) => setFilters({ ...filters, query: event.target.value })}
+            />
           </div>
           <Field label="Language" className="sm:col-span-2">
             {({ id }) => (
-              <Select id={id} value={filters.language} onChange={(event) => setFilters({ ...filters, language: event.target.value })}>
+              <Select
+                id={id}
+                value={filters.language}
+                onChange={(event) => setFilters({ ...filters, language: event.target.value })}
+              >
                 <option value="all">All languages</option>
                 {languages.map((language) => (
                   <option key={language}>{language}</option>
@@ -89,7 +108,11 @@ export default function VoiceLibraryPage() {
           </Field>
           <Field label="Gender">
             {({ id }) => (
-              <Select id={id} value={filters.gender} onChange={(event) => setFilters({ ...filters, gender: event.target.value })}>
+              <Select
+                id={id}
+                value={filters.gender}
+                onChange={(event) => setFilters({ ...filters, gender: event.target.value })}
+              >
                 <option value="all">Any</option>
                 <option value="female">Female</option>
                 <option value="male">Male</option>
@@ -98,7 +121,13 @@ export default function VoiceLibraryPage() {
           </Field>
           <Field label="Source">
             {({ id }) => (
-              <Select id={id} value={filters.source} onChange={(event) => setFilters({ ...filters, source: event.target.value as VoiceFilters['source'] })}>
+              <Select
+                id={id}
+                value={filters.source}
+                onChange={(event) =>
+                  setFilters({ ...filters, source: event.target.value as VoiceFilters['source'] })
+                }
+              >
                 <option value="all">All voices</option>
                 <option value="built-in">Built-in</option>
                 <option value="custom">Your voices</option>
@@ -106,15 +135,30 @@ export default function VoiceLibraryPage() {
             )}
           </Field>
         </div>
-        <Field label="Comparison passage" hint="Leave empty to use the standard sample. Up to 400 characters.">
+        <Field
+          label="Comparison passage"
+          hint="Leave empty to use the standard sample. Up to 400 characters."
+        >
           {({ id, describedBy }) => (
-            <Textarea id={id} aria-describedby={describedBy} maxLength={400} value={passage} onChange={(event) => setPassage(event.target.value)} placeholder="The lighthouse keeper climbed the spiral stairs…" className="min-h-[7.5rem] font-serif" />
+            <Textarea
+              id={id}
+              aria-describedby={describedBy}
+              maxLength={400}
+              value={passage}
+              onChange={(event) => setPassage(event.target.value)}
+              placeholder="The lighthouse keeper climbed the spiral stairs…"
+              className="min-h-[7.5rem] font-serif"
+            />
           )}
         </Field>
       </div>
 
       {voices.isPending ? (
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3" role="status" aria-label="Loading voices">
+        <div
+          className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3"
+          role="status"
+          aria-label="Loading voices"
+        >
           {[0, 1, 2, 3, 4, 5].map((key) => (
             <Skeleton key={key} className="h-40" />
           ))}
@@ -130,7 +174,8 @@ export default function VoiceLibraryPage() {
       ) : (
         <>
           <p className="mb-3 text-[13px] text-muted" aria-live="polite">
-            Showing {shown.length} of {all.length} voices. Grades are the upstream model's own quality ratings (A is best).
+            Showing {shown.length} of {all.length} voices. Grades are the upstream model's own
+            quality ratings (A is best).
           </p>
           <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
             {shown.map((voice) => (
@@ -139,7 +184,11 @@ export default function VoiceLibraryPage() {
                 voice={voice}
                 isDefault={voice.id === defaultVoice}
                 previewStatus={preview.state.voiceId === voice.id ? preview.state.status : 'idle'}
-                previewError={preview.state.error?.voiceId === voice.id ? preview.state.error.message : undefined}
+                previewError={
+                  preview.state.error?.voiceId === voice.id
+                    ? preview.state.error.message
+                    : undefined
+                }
                 onPreview={() => void preview.play(voice.id, passage, preferences.data?.pace ?? 1)}
                 onStop={preview.stop}
                 onUse={() => use(voice)}

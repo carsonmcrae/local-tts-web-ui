@@ -5,8 +5,13 @@
  * Does NOT belong: Creation (CreateVoiceWizard).
  */
 import { Check, Pencil, Play, Square, Trash2 } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
-import { useDeleteProfile, usePreferences, useRenameProfile, useSavePreferences } from '@/api/queries';
+import { useEffect, useState } from 'react';
+import {
+  useDeleteProfile,
+  usePreferences,
+  useRenameProfile,
+  useSavePreferences,
+} from '@/api/queries';
 import type { VoiceProfile } from '@/api/types';
 import { Button, IconButton } from '@/components/ui/Button';
 import { ConfirmDialog, Dialog } from '@/components/ui/Dialog';
@@ -16,7 +21,39 @@ import { useToast } from '@/components/ui/Toast';
 import { usePlayer } from '@/features/player/PlayerProvider';
 import { formatRelativeDate } from '@/lib/format';
 
-export function ProfileCard({ profile, engineReady }: Readonly<{ profile: VoiceProfile; engineReady: boolean }>) {
+function useReferencePlayer(src: string) {
+  const [playing, setPlaying] = useState(false);
+  const [audio] = useState(() => (typeof Audio === 'undefined' ? null : new Audio()));
+  useEffect(() => {
+    if (!audio) return undefined;
+    const stop = () => setPlaying(false);
+    audio.addEventListener('ended', stop);
+    audio.addEventListener('pause', stop);
+    return () => {
+      audio.pause();
+      audio.removeEventListener('ended', stop);
+      audio.removeEventListener('pause', stop);
+    };
+  }, [audio]);
+  const toggle = () => {
+    if (!audio) return;
+    if (playing) {
+      audio.pause();
+      return;
+    }
+    audio.setAttribute('src', src);
+    void audio.play().then(
+      () => setPlaying(true),
+      () => setPlaying(false),
+    );
+  };
+  return { playing, toggle };
+}
+
+export function ProfileCard({
+  profile,
+  engineReady,
+}: Readonly<{ profile: VoiceProfile; engineReady: boolean }>) {
   const remove = useDeleteProfile();
   const rename = useRenameProfile();
   const preferences = usePreferences();
@@ -26,39 +63,33 @@ export function ProfileCard({ profile, engineReady }: Readonly<{ profile: VoiceP
   const [confirm, setConfirm] = useState(false);
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(profile.name);
-  const [playing, setPlaying] = useState(false);
-  const audio = useRef<HTMLAudioElement | null>(null);
+  const reference = useReferencePlayer(`/api/voice-profiles/${profile.id}/reference`);
+  const playing = reference.playing;
+  const toggleReference = reference.toggle;
   const isDefault = preferences.data?.defaultVoiceId === profile.voiceId;
-
-  useEffect(() => () => audio.current?.pause(), []);
-
-  const toggleReference = () => {
-    if (playing) {
-      audio.current?.pause();
-      setPlaying(false);
-      return;
-    }
-    const element = audio.current ?? new Audio();
-    audio.current = element;
-    element.src = `/api/voice-profiles/${profile.id}/reference`;
-    element.onended = () => setPlaying(false);
-    void element.play().then(() => setPlaying(true), () => setPlaying(false));
-  };
 
   const deleteProfile = () =>
     remove.mutate(profile.id, {
       onSuccess: () => {
-        if (isDefault && preferences.data) save.mutate({ ...preferences.data, defaultVoiceId: 'kokoro:af_heart' });
+        if (isDefault && preferences.data)
+          save.mutate({ ...preferences.data, defaultVoiceId: 'kokoro:af_heart' });
         if (state.voiceId === profile.voiceId) void controller.setVoice('kokoro:af_heart');
         setConfirm(false);
-        toast.notify('success', `Deleted “${profile.name}”`, 'The recording and its generated audio were removed.');
+        toast.notify(
+          'success',
+          `Deleted “${profile.name}”`,
+          'The recording and its generated audio were removed.',
+        );
       },
     });
 
   return (
     <li className="flex flex-col gap-3 rounded-[var(--radius-lg)] border border-line bg-surface p-4 shadow-soft">
       <div className="flex items-start gap-3">
-        <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-success-soft text-sm font-semibold text-success" aria-hidden="true">
+        <div
+          className="flex size-10 shrink-0 items-center justify-center rounded-full bg-success-soft text-sm font-semibold text-success"
+          aria-hidden="true"
+        >
           {profile.name.slice(0, 2).toUpperCase()}
         </div>
         <div className="min-w-0 flex-1">
@@ -67,15 +98,40 @@ export function ProfileCard({ profile, engineReady }: Readonly<{ profile: VoiceP
             {isDefault ? <Badge tone="accent">Reading voice</Badge> : null}
           </h3>
           <p className="text-[13px] text-muted">
-            {profile.durationS.toFixed(0)} s {profile.source === 'import' ? 'imported clip' : 'recording'} · created {formatRelativeDate(profile.createdAt).toLowerCase()}
+            {profile.durationS.toFixed(0)} s{' '}
+            {profile.source === 'import' ? 'imported clip' : 'recording'} · created{' '}
+            {formatRelativeDate(profile.createdAt).toLowerCase()}
           </p>
         </div>
-        <IconButton label={`Rename ${profile.name}`} icon={<Pencil size={15} />} size="sm" onClick={() => setEditing(true)} />
-        <IconButton label={`Delete ${profile.name}`} icon={<Trash2 size={15} />} size="sm" onClick={() => setConfirm(true)} />
+        <IconButton
+          label={`Rename ${profile.name}`}
+          icon={<Pencil size={15} />}
+          size="sm"
+          onClick={() => setEditing(true)}
+        />
+        <IconButton
+          label={`Delete ${profile.name}`}
+          icon={<Trash2 size={15} />}
+          size="sm"
+          onClick={() => setConfirm(true)}
+        />
       </div>
-      <p className="text-xs leading-relaxed text-subtle">Stores: {profile.stores} Consent confirmed {new Date(profile.consentedAt).toLocaleDateString()}.</p>
+      <p className="text-xs leading-relaxed text-subtle">
+        Stores: {profile.stores} Consent confirmed{' '}
+        {new Date(profile.consentedAt).toLocaleDateString()}.
+      </p>
       <div className="flex flex-wrap gap-2">
-        <Button size="sm" icon={playing ? <Square size={13} fill="currentColor" /> : <Play size={13} fill="currentColor" />} onClick={toggleReference}>
+        <Button
+          size="sm"
+          icon={
+            playing ? (
+              <Square size={13} fill="currentColor" />
+            ) : (
+              <Play size={13} fill="currentColor" />
+            )
+          }
+          onClick={toggleReference}
+        >
           {playing ? 'Stop' : 'Play recording'}
         </Button>
         <Button
@@ -86,7 +142,8 @@ export function ProfileCard({ profile, engineReady }: Readonly<{ profile: VoiceP
           title={engineReady ? undefined : 'Install the cloning engine to use this voice'}
           onClick={() => {
             void controller.setVoice(profile.voiceId);
-            if (preferences.data) save.mutate({ ...preferences.data, defaultVoiceId: profile.voiceId });
+            if (preferences.data)
+              save.mutate({ ...preferences.data, defaultVoiceId: profile.voiceId });
           }}
         >
           {isDefault ? 'Used for reading' : 'Use for reading'}
@@ -109,13 +166,32 @@ export function ProfileCard({ profile, engineReady }: Readonly<{ profile: VoiceP
         footer={
           <>
             <Button onClick={() => setEditing(false)}>Cancel</Button>
-            <Button variant="primary" disabled={!name.trim()} loading={rename.isPending} onClick={() => rename.mutate({ id: profile.id, name: name.trim() }, { onSuccess: () => setEditing(false) })}>
+            <Button
+              variant="primary"
+              disabled={!name.trim()}
+              loading={rename.isPending}
+              onClick={() =>
+                rename.mutate(
+                  { id: profile.id, name: name.trim() },
+                  { onSuccess: () => setEditing(false) },
+                )
+              }
+            >
               Save
             </Button>
           </>
         }
       >
-        <Field label="Voice name">{({ id }) => <Input id={id} value={name} maxLength={60} onChange={(event) => setName(event.target.value)} />}</Field>
+        <Field label="Voice name">
+          {({ id }) => (
+            <Input
+              id={id}
+              value={name}
+              maxLength={60}
+              onChange={(event) => setName(event.target.value)}
+            />
+          )}
+        </Field>
       </Dialog>
     </li>
   );

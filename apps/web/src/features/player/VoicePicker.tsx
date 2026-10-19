@@ -22,7 +22,11 @@ interface VoicePickerProps {
 export function groupVoices(voices: VoiceInfo[], query: string): [string, VoiceInfo[]][] {
   const needle = query.trim().toLowerCase();
   const matches = voices.filter((voice) =>
-    !needle ? true : `${voice.name} ${voice.language} ${voice.engineId} ${voice.gender}`.toLowerCase().includes(needle),
+    !needle
+      ? true
+      : `${voice.name} ${voice.language} ${voice.engineId} ${voice.gender}`
+          .toLowerCase()
+          .includes(needle),
   );
   const groups = new Map<string, VoiceInfo[]>();
   for (const voice of matches) {
@@ -38,7 +42,12 @@ export function groupVoices(voices: VoiceInfo[], query: string): [string, VoiceI
   });
 }
 
-export function VoicePicker({ voices, value, onChange, compact = false }: Readonly<VoicePickerProps>) {
+export function VoicePicker({
+  voices,
+  value,
+  onChange,
+  compact = false,
+}: Readonly<VoicePickerProps>) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const current = voices.find((voice) => voice.id === value);
@@ -61,28 +70,40 @@ export function VoicePicker({ voices, value, onChange, compact = false }: Readon
           aria-label={`Voice: ${current?.name ?? 'none selected'}. Change voice`}
         >
           <AudioLines size={17} className="shrink-0" />
-          {!compact ? <span className="max-w-32 truncate">{current?.name ?? 'Choose voice'}</span> : null}
+          {!compact ? (
+            <span className="max-w-32 truncate">{current?.name ?? 'Choose voice'}</span>
+          ) : null}
         </button>
       }
     >
       <div className="border-b border-line p-2">
         <div className="relative">
-          <Search size={15} className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-subtle" />
+          <Search
+            size={15}
+            className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-subtle"
+          />
           <Input
             aria-label="Search voices"
             placeholder="Search voices"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             className="h-9 pl-8"
-            autoFocus
           />
         </div>
       </div>
-      <div className="scrollbar-thin max-h-80 overflow-y-auto p-1.5" role="listbox" aria-label="Voices">
-        {groups.length === 0 ? <p className="p-3 text-sm text-muted">No voices match “{query}”.</p> : null}
+      <div
+        className="max-h-80 scrollbar-thin overflow-y-auto p-1.5"
+        role="listbox"
+        aria-label="Voices"
+      >
+        {groups.length === 0 ? (
+          <p className="p-3 text-sm text-muted">No voices match “{query}”.</p>
+        ) : null}
         {groups.map(([group, items]) => (
           <div key={group} role="group" aria-label={group} className="mb-1">
-            <p className="px-2.5 pt-2 pb-1 text-[11px] font-semibold tracking-wide text-subtle uppercase">{group}</p>
+            <p className="px-2.5 pt-2 pb-1 text-[11px] font-semibold tracking-wide text-subtle uppercase">
+              {group}
+            </p>
             {items.map((voice) => (
               <button
                 key={voice.id}
@@ -100,9 +121,13 @@ export function VoicePicker({ voices, value, onChange, compact = false }: Readon
                 )}
               >
                 <span className="min-w-0 flex-1 truncate font-medium">{voice.name}</span>
-                <span className="text-xs text-subtle capitalize">{voice.gender === 'unspecified' ? '' : voice.gender}</span>
+                <span className="text-xs text-subtle capitalize">
+                  {voice.gender === 'unspecified' ? '' : voice.gender}
+                </span>
                 {voice.qualityGrade ? <Badge>{voice.qualityGrade}</Badge> : null}
-                {!voice.available ? <span className="text-xs text-subtle">Not installed</span> : null}
+                {!voice.available ? (
+                  <span className="text-xs text-subtle">Not installed</span>
+                ) : null}
               </button>
             ))}
           </div>

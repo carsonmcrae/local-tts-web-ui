@@ -28,7 +28,11 @@ function Page({ children }: Readonly<{ children: ReactNode }>) {
   return (
     <Suspense
       fallback={
-        <div className="flex h-full items-center justify-center text-muted" role="status" aria-label="Loading page">
+        <div
+          className="flex h-full items-center justify-center text-muted"
+          role="status"
+          aria-label="Loading page"
+        >
           <Spinner size={24} />
         </div>
       }
@@ -60,11 +64,46 @@ export function createRouter() {
       element: <AppShell />,
       children: [
         { index: true, element: <Navigate to="/library" replace /> },
-        { path: 'library', element: <Page><LibraryPage /></Page> },
-        { path: 'read/:documentId', element: <Page><ReaderPage /></Page> },
-        { path: 'voices', element: <Page><VoiceLibraryPage /></Page> },
-        { path: 'studio', element: <Page><VoiceStudioPage /></Page> },
-        { path: 'settings', element: <Page><SettingsPage /></Page> },
+        {
+          path: 'library',
+          element: (
+            <Page>
+              <LibraryPage />
+            </Page>
+          ),
+        },
+        {
+          path: 'read/:documentId',
+          element: (
+            <Page>
+              <ReaderPage />
+            </Page>
+          ),
+        },
+        {
+          path: 'voices',
+          element: (
+            <Page>
+              <VoiceLibraryPage />
+            </Page>
+          ),
+        },
+        {
+          path: 'studio',
+          element: (
+            <Page>
+              <VoiceStudioPage />
+            </Page>
+          ),
+        },
+        {
+          path: 'settings',
+          element: (
+            <Page>
+              <SettingsPage />
+            </Page>
+          ),
+        },
         { path: '*', element: <NotFound /> },
       ],
     },
@@ -75,14 +114,18 @@ export function createQueryClient(): QueryClient {
   return new QueryClient({
     defaultOptions: {
       queries: {
-        retry: (count, error) => count < 2 && !(error instanceof ApiError && error.status >= 400 && error.status < 500),
+        retry: (count, error) =>
+          count < 2 && !(error instanceof ApiError && error.status >= 400 && error.status < 500),
         refetchOnWindowFocus: false,
       },
     },
   });
 }
 
-export function Providers({ client, children }: Readonly<{ client: QueryClient; children: ReactNode }>) {
+export function Providers({
+  client,
+  children,
+}: Readonly<{ client: QueryClient; children: ReactNode }>) {
   useTheme();
   return (
     <QueryClientProvider client={client}>

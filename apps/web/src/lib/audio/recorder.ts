@@ -20,10 +20,20 @@ export function explainMicrophoneError(error: unknown): MicrophoneError {
   if (error instanceof MicrophoneError) return error;
   const name = error instanceof DOMException ? error.name : '';
   if (name === 'NotAllowedError' || name === 'SecurityError')
-    return new MicrophoneError('denied', 'Microphone access was blocked. Allow it in your browser’s site settings, then try again.');
+    return new MicrophoneError(
+      'denied',
+      'Microphone access was blocked. Allow it in your browser’s site settings, then try again.',
+    );
   if (name === 'NotFoundError' || name === 'OverconstrainedError')
-    return new MicrophoneError('no-device', 'No microphone was found. Connect one, or import an existing recording instead.');
-  if (name === 'NotReadableError') return new MicrophoneError('busy', 'The microphone is in use by another app. Close it and try again.');
+    return new MicrophoneError(
+      'no-device',
+      'No microphone was found. Connect one, or import an existing recording instead.',
+    );
+  if (name === 'NotReadableError')
+    return new MicrophoneError(
+      'busy',
+      'The microphone is in use by another app. Close it and try again.',
+    );
   return new MicrophoneError('unknown', 'The microphone could not be started.');
 }
 
@@ -37,16 +47,27 @@ export class MicRecorder {
 
   static check(): void {
     if (!window.isSecureContext)
-      throw new MicrophoneError('insecure', 'Recording needs a secure page (localhost or HTTPS). Import a recording instead, or open the app on this computer.');
+      throw new MicrophoneError(
+        'insecure',
+        'Recording needs a secure page (localhost or HTTPS). Import a recording instead, or open the app on this computer.',
+      );
     if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined')
-      throw new MicrophoneError('unsupported', 'This browser can’t record audio. Import a recording instead.');
+      throw new MicrophoneError(
+        'unsupported',
+        'This browser can’t record audio. Import a recording instead.',
+      );
   }
 
   async start(): Promise<void> {
     MicRecorder.check();
     try {
       this.stream = await navigator.mediaDevices.getUserMedia({
-        audio: { channelCount: 1, echoCancellation: false, noiseSuppression: false, autoGainControl: true },
+        audio: {
+          channelCount: 1,
+          echoCancellation: false,
+          noiseSuppression: false,
+          autoGainControl: true,
+        },
       });
     } catch (error) {
       throw explainMicrophoneError(error);

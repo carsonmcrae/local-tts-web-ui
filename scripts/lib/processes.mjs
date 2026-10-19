@@ -53,7 +53,10 @@ export function stopManaged({ child }) {
   if (process.platform === 'win32') {
     // Absolute path so a planted taskkill.exe earlier on PATH can never be picked up.
     const taskkill = path.join(process.env.SystemRoot ?? 'C:\\Windows', 'System32', 'taskkill.exe');
-    spawnSync(taskkill, ['/PID', String(child.pid), '/T', '/F'], { stdio: 'ignore', windowsHide: true });
+    spawnSync(taskkill, ['/PID', String(child.pid), '/T', '/F'], {
+      stdio: 'ignore',
+      windowsHide: true,
+    });
     return;
   }
   try {

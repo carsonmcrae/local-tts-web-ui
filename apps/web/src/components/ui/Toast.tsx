@@ -35,7 +35,10 @@ export function ToastProvider({ children }: Readonly<{ children: ReactNode }>) {
   const [items, setItems] = useState<ToastItem[]>([]);
   const nextId = useRef(1);
 
-  const dismiss = useCallback((id: number) => setItems((current) => current.filter((item) => item.id !== id)), []);
+  const dismiss = useCallback(
+    (id: number) => setItems((current) => current.filter((item) => item.id !== id)),
+    [],
+  );
 
   const notify = useCallback<ToastApi['notify']>(
     (tone, title, description) => {
@@ -68,7 +71,12 @@ export function ToastProvider({ children }: Readonly<{ children: ReactNode }>) {
               <p className="font-medium">{item.title}</p>
               {item.description ? <p className="mt-0.5 text-muted">{item.description}</p> : null}
             </div>
-            <IconButton label="Dismiss notification" icon={<X size={16} />} size="sm" onClick={() => dismiss(item.id)} />
+            <IconButton
+              label="Dismiss notification"
+              icon={<X size={16} />}
+              size="sm"
+              onClick={() => dismiss(item.id)}
+            />
           </div>
         ))}
       </div>

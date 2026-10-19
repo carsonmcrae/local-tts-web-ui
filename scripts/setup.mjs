@@ -22,9 +22,13 @@ export async function setup({ skipModels = process.env.LTTS_SKIP_MODEL_DOWNLOAD 
     return { uv, modelReady: false };
   }
   step('Checking the default Kokoro voice model…');
-  const result = runUv(uv, ['run', '--frozen', '--project', 'apps/server', 'ltts', 'models', 'ensure', 'kokoro'], {
-    cwd: process.cwd(),
-  });
+  const result = runUv(
+    uv,
+    ['run', '--frozen', '--project', 'apps/server', 'ltts', 'models', 'ensure', 'kokoro'],
+    {
+      cwd: process.cwd(),
+    },
+  );
   if (result.status !== 0) {
     warn('The default Kokoro model is not installed yet (see the message above).');
     warn('The app still starts; retry from Settings → Engines & models.');

@@ -34,7 +34,8 @@ export function extractFromZip(zip, wanted) {
   const entries = zip.readUInt16LE(eocd + 10);
   let offset = zip.readUInt32LE(eocd + 16);
   for (let n = 0; n < entries; n += 1) {
-    if (zip.readUInt32LE(offset) !== ZIP_CENTRAL) throw new BootstrapError('Corrupt zip directory.');
+    if (zip.readUInt32LE(offset) !== ZIP_CENTRAL)
+      throw new BootstrapError('Corrupt zip directory.');
     const method = zip.readUInt16LE(offset + 10);
     const compressedSize = zip.readUInt32LE(offset + 20);
     const size = zip.readUInt32LE(offset + 24);
@@ -71,7 +72,10 @@ export function extractFromTarGz(tgz, wanted) {
     if (header.every((byte) => byte === 0)) break;
     const name = header.toString('utf8', 0, 100).replace(/\0.*$/s, '');
     const prefix = header.toString('utf8', 345, 500).replace(/\0.*$/s, '');
-    const size = Number.parseInt(header.toString('utf8', 124, 136).replace(/\0.*$/s, '').trim() || '0', 8);
+    const size = Number.parseInt(
+      header.toString('utf8', 124, 136).replace(/\0.*$/s, '').trim() || '0',
+      8,
+    );
     const type = header.toString('utf8', 156, 157);
     const fullName = prefix ? `${prefix}/${name}` : name;
     const dataStart = offset + 512;

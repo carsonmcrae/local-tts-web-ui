@@ -20,10 +20,14 @@ async function main() {
     // npm sets npm_execpath to its own CLI script; running it with this Node avoids a shell.
     const npmCli = process.env.npm_execpath;
     if (!npmCli) throw new BootstrapError('Run this through npm: `npm run start`.');
-    const build = spawnSync(process.execPath, [npmCli, 'run', 'build', '--workspace', '@ltts/web'], {
-      cwd: repoRoot,
-      stdio: 'inherit',
-    });
+    const build = spawnSync(
+      process.execPath,
+      [npmCli, 'run', 'build', '--workspace', '@ltts/web'],
+      {
+        cwd: repoRoot,
+        stdio: 'inherit',
+      },
+    );
     if (build.status !== 0) throw new BootstrapError('The web build failed; see the output above.');
   }
   const port = await findFreePort(Number(process.env.LTTS_PORT ?? 8765));
@@ -32,8 +36,21 @@ async function main() {
     name: 'server',
     label: color.magenta('[app]'),
     command: uv,
-    args: ['run', '--frozen', '--project', serverDir, 'ltts', 'serve', '--host', '127.0.0.1', '--port', String(port),
-      '--static', path.join(webDir, 'dist'), ...(process.env.LTTS_NO_OPEN === '1' ? [] : ['--open'])],
+    args: [
+      'run',
+      '--frozen',
+      '--project',
+      serverDir,
+      'ltts',
+      'serve',
+      '--host',
+      '127.0.0.1',
+      '--port',
+      String(port),
+      '--static',
+      path.join(webDir, 'dist'),
+      ...(process.env.LTTS_NO_OPEN === '1' ? [] : ['--open']),
+    ],
     cwd: repoRoot,
     env: { ...uvEnv(), LTTS_ENV: 'production', LTTS_UV_BIN: uv },
   });

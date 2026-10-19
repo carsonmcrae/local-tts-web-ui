@@ -38,7 +38,10 @@ export function compareVersions(a, b) {
  */
 function probeVersion(binary) {
   try {
-    const out = execFileSync(binary, ['--version'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
+    const out = execFileSync(binary, ['--version'], {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+    });
     return /uv (\d+\.\d+\.\d+)/.exec(out)?.[1] ?? null;
   } catch {
     return null;
@@ -71,7 +74,9 @@ async function downloadUv(pin) {
     allowedHosts: readToolchain().allowedDownloadHosts,
   });
   const archive = readFileSync(archivePath);
-  const binary = artifact.file.endsWith('.zip') ? extractFromZip(archive, exe) : extractFromTarGz(archive, exe);
+  const binary = artifact.file.endsWith('.zip')
+    ? extractFromZip(archive, exe)
+    : extractFromTarGz(archive, exe);
   const binaryPath = path.join(targetDir, exe);
   writeFileSync(binaryPath, binary, { mode: 0o755 });
   chmodSync(binaryPath, 0o755);

@@ -20,10 +20,24 @@ interface SliderProps {
   className?: string;
 }
 
-export function Slider({ value, min, max, step = 1, label, valueText, onChange, onCommit, disabled, className }: Readonly<SliderProps>) {
+export function Slider({
+  value,
+  min,
+  max,
+  step = 1,
+  label,
+  valueText,
+  onChange,
+  onCommit,
+  disabled,
+  className,
+}: Readonly<SliderProps>) {
   return (
     <RadixSlider.Root
-      className={cn('relative flex h-6 w-full touch-none items-center select-none data-[disabled]:opacity-50', className)}
+      className={cn(
+        'relative flex h-6 w-full touch-none items-center select-none data-[disabled]:opacity-50',
+        className,
+      )}
       value={[value]}
       min={min}
       max={max}

@@ -106,13 +106,12 @@ filterwarnings = ["error::pytest.PytestUnraisableExceptionWarning"]
 [tool.coverage.run]
 source = ["ltts"]
 branch = true
-relative_files = true
 
 [tool.coverage.report]
 show_missing = true
 skip_covered = true
-fail_under = 85
-exclude_also = ["if TYPE_CHECKING:", "raise NotImplementedError", "@overload"]
+fail_under = 100
+exclude_also = ["if TYPE_CHECKING:", "raise NotImplementedError", "@overload", "if __name__ == .__main__.:"]
 
 [tool.deptry.per_rule_ignores]
 DEP002 = ["uvicorn", "onnxruntime"]

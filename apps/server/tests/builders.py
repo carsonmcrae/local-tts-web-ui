@@ -1,7 +1,8 @@
 """Purpose: Build realistic (and deliberately malicious) test documents in memory.
 
 Scope: Minimal hand-written PDFs (text pages, outline, image-only pages), DOCX via python-docx,
-EPUBs via zipfile, and hostile archives (zip bombs, XML entity expansion, path traversal names).
+EPUB 3 (nav) and EPUB 2 (NCX) packages and plain archives via zipfile, and hostile archives (zip
+bombs, XML entity expansion, path traversal names).
 Generating fixtures in code keeps binary blobs out of the repository and documents exactly what
 each case contains.
 Does NOT belong: Assertions (tests) or app code.
@@ -151,6 +152,48 @@ def make_epub(
         for name, data in (extra or {}).items():
             book.writestr(name, data)
     return buffer.getvalue()
+
+
+def make_zip(files: dict[str, str | bytes], *, compression: int = zipfile.ZIP_STORED) -> bytes:
+    """An archive holding exactly ``files`` (name to content), for hand-assembled containers."""
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w", compression=compression) as archive:
+        for name, data in files.items():
+            archive.writestr(name, data)
+    return buffer.getvalue()
+
+
+def make_epub2(spine: list[tuple[str, str, str]], ncx_points: str, *, manifest_extra: str = "") -> bytes:
+    """An EPUB 2 package with an NCX table of contents and no EPUB 3 nav document.
+
+    ``spine`` items are ``(id, href, media_type)``; every XHTML item gets a file whose body is its id.
+    ``ncx_points`` is the raw ``navPoint`` markup placed inside the NCX ``navMap``.
+    """
+    manifest = "".join(f'<item id="{i}" href="{href}" media-type="{media}"/>' for i, href, media in spine)
+    itemrefs = "".join(f'<itemref idref="{i}"/>' for i, _, _ in spine)
+    files: dict[str, str | bytes] = {
+        "mimetype": "application/epub+zip",
+        "META-INF/container.xml": CONTAINER,
+        "OEBPS/content.opf": (
+            '<?xml version="1.0"?><package xmlns="http://www.idpf.org/2007/opf" version="2.0">'
+            '<metadata xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:title>Old Book</dc:title></metadata>'
+            f'<manifest>{manifest}<item id="ncx" href="toc.ncx" media-type="application/x-dtbncx+xml"/>'
+            f"{manifest_extra}</manifest>"
+            f'<spine toc="ncx">{itemrefs}</spine>'
+            "</package>"
+        ),
+        "OEBPS/toc.ncx": (
+            '<?xml version="1.0"?><ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1">'
+            f"<navMap>{ncx_points}</navMap></ncx>"
+        ),
+    }
+    for item_id, href, media in spine:
+        if media == "application/xhtml+xml":
+            files[f"OEBPS/{href}"] = (
+                f'<html xmlns="http://www.w3.org/1999/xhtml"><body><h2>Heading {item_id}</h2>'
+                f"<p>Body of {item_id}.</p></body></html>"
+            )
+    return make_zip(files)
 
 
 def make_zip_bomb(kind: str = "docx") -> bytes:

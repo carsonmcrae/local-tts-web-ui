@@ -166,15 +166,17 @@ class ModelStore:
     def _download_with_retry(
         self, file: ArtifactFile, folder: Path, progress: Callable[[int], None], canceled: CancelFn
     ) -> None:
-        for attempt, delay in enumerate((*RETRY_DELAYS_S, None), start=1):
+        """Download ``file``, retrying a failed attempt after each delay in ``RETRY_DELAYS_S``."""
+        for attempt, delay in enumerate(RETRY_DELAYS_S, start=1):
             try:
                 self._download(file, folder, progress, canceled)
                 return
             except DownloadError as exc:
-                if delay is None or canceled():
+                if canceled():
                     raise
                 log.warning("download retry", extra={"file": file.name, "attempt": attempt, "reason": exc.message})
                 time.sleep(delay)
+        self._download(file, folder, progress, canceled)  # the final attempt; its failure reaches the caller
 
     def host_allowed(self, host: str | None) -> bool:
         """Exact entries match one host; entries starting with '.' match that domain's subdomains (CDNs)."""

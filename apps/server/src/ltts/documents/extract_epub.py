@@ -25,6 +25,7 @@ from ltts.documents.structures import ExtractedSection, Extraction, ExtractionLi
 from ltts.errors import DocumentExtractionError
 
 _HTML_TYPES = {"application/xhtml+xml", "text/html"}
+_NCX_TYPE = "application/x-dtbncx+xml"
 
 
 def _local(tag: str) -> str:
@@ -46,28 +47,42 @@ def _resolve(base_dir: str, href: str) -> str:
     return posixpath.normpath(posixpath.join(base_dir, unquote(href.split("#", 1)[0])))
 
 
+def _nav_document_labels(book: SafeZip, path: str) -> dict[str, str]:
+    """EPUB 3: the target and text of every link in the navigation document (first link wins)."""
+    nav_dir = posixpath.dirname(path)
+    labels: dict[str, str] = {}
+    for anchor in _children(_parse(book.read_xml(path)), "a"):
+        target = anchor.get("href")
+        text = "".join(anchor.itertext()).strip()
+        if target and text:
+            labels.setdefault(_resolve(nav_dir, target), text)
+    return labels
+
+
+def _ncx_labels(book: SafeZip, path: str) -> dict[str, str]:
+    """EPUB 2: the content source and label of every NCX navPoint (first one wins)."""
+    ncx_dir = posixpath.dirname(path)
+    labels: dict[str, str] = {}
+    for point in _children(_parse(book.read_xml(path)), "navPoint"):
+        texts = _children(point, "text")
+        contents = _children(point, "content")
+        src = contents[0].get("src") if contents else None
+        if texts and src and texts[0].text:
+            labels.setdefault(_resolve(ncx_dir, src), texts[0].text.strip())
+    return labels
+
+
 def _nav_labels(book: SafeZip, base_dir: str, manifest: dict[str, tuple[str, str, str]]) -> dict[str, str]:
-    """Map spine file paths to human chapter titles from the EPUB 3 nav or EPUB 2 NCX."""
+    """Map spine file paths to human chapter titles from the EPUB 3 nav or, failing that, the EPUB 2 NCX."""
     labels: dict[str, str] = {}
     for href, media_type, props in manifest.values():
         path = _resolve(base_dir, href)
-        if "nav" in props.split() and book.has(path):
-            root = _parse(book.read_xml(path))
-            nav_dir = posixpath.dirname(path)
-            for anchor in _children(root, "a"):
-                target = anchor.get("href")
-                text = "".join(anchor.itertext()).strip()
-                if target and text:
-                    labels.setdefault(_resolve(nav_dir, target), text)
-        elif media_type == "application/x-dtbncx+xml" and book.has(path) and not labels:
-            root = _parse(book.read_xml(path))
-            ncx_dir = posixpath.dirname(path)
-            for point in _children(root, "navPoint"):
-                texts = _children(point, "text")
-                contents = _children(point, "content")
-                src = contents[0].get("src") if contents else None
-                if texts and src and texts[0].text:
-                    labels.setdefault(_resolve(ncx_dir, src), texts[0].text.strip())
+        if not book.has(path):
+            continue
+        if "nav" in props.split():
+            labels = _nav_document_labels(book, path) | labels  # labels found earlier keep priority
+        elif media_type == _NCX_TYPE and not labels:
+            labels = _ncx_labels(book, path)
     return labels
 
 

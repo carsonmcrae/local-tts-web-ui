@@ -41,7 +41,8 @@ def _warm_up(services: Services) -> None:
     for engine in services.engines.all():
         try:
             engine.warm_up()
-        except Exception:  # noqa: BLE001 - warm-up is best effort; errors surface on first use
+        # Warm-up is best effort; any error surfaces again on first use.
+        except Exception:  # noqa: BLE001
             log.warning("engine warm-up failed", extra={"engine": engine.id})
 
 

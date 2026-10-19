@@ -14,7 +14,7 @@ from typing import Any
 
 import numpy as np
 
-from ltts.engines.base import AudioClip, EngineControl, EngineInfo, InstallOption, VoiceInfo, VoiceSpec
+from ltts.engines.base import AudioClip, EngineControl, EngineInfo, EngineStatus, InstallOption, VoiceInfo, VoiceSpec
 from ltts.engines.kokoro_voices import GRADES, describe
 from ltts.errors import ConflictError, EngineUnavailableError, SynthesisError
 from ltts.jobs import JobContext
@@ -86,19 +86,24 @@ class KokoroEngine:
     def revision(self) -> str:
         return f"{ARTIFACT}/{ENGINE_CODE_VERSION}"
 
+    def _status(self, ready: bool) -> tuple[EngineStatus, str]:
+        if not ready:
+            return "not_installed", "Model not installed"
+        if self._load_error:
+            return "error", f"Installed, but failed to load ({self._load_error})"
+        return "ready", "Ready"
+
     def info(self) -> EngineInfo:
         art = self._store.artifact(ARTIFACT)
         ready = self.is_ready()
-        message = "Ready" if ready else "Model not installed"
-        if ready and self._load_error:
-            message = f"Installed, but failed to load ({self._load_error})"
+        status, message = self._status(ready)
         return EngineInfo(
             id=self.id,
             name="Kokoro",
             description="Fast, natural-sounding built-in voices. Runs comfortably on any modern CPU.",
             license=art.license,
             optional=False,
-            status="error" if ready and self._load_error else ("ready" if ready else "not_installed"),
+            status=status,
             status_message=message,
             supports_cloning=False,
             controls=[PACE],
@@ -151,7 +156,8 @@ class KokoroEngine:
         return result
 
     # -- install ---------------------------------------------------------
-    def install(self, context: JobContext, option: str | None) -> dict[str, Any]:  # noqa: ARG002 - one option
+    # Kokoro has a single install option, so ``option`` is not consulted.
+    def install(self, context: JobContext, option: str | None) -> dict[str, Any]:  # noqa: ARG002
         def progress(done: int, total: int, name: str) -> None:
             context.update(done / total, f"Downloading {name} ({done // 1_048_576} / {total // 1_048_576} MB)")
 
@@ -161,7 +167,8 @@ class KokoroEngine:
         self._ensure_loaded()
         return {"artifact": ARTIFACT}
 
-    def update(self, context: JobContext) -> dict[str, Any]:  # noqa: ARG002 - nothing to run
+    # Nothing runs, so the job context is not used.
+    def update(self, context: JobContext) -> dict[str, Any]:  # noqa: ARG002
         """Kokoro runs in-process from checksum-pinned files; there is no separate runtime to update."""
         raise ConflictError("Kokoro is already up to date.", code="no_update")
 

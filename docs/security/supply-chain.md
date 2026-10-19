@@ -5,19 +5,32 @@
 
 ## Controls
 
-| Control                                                                                             | Where                                                   |
-| --------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
-| Exact npm versions, `save-exact`, committed `package-lock.json`                                     | `package.json`, `.npmrc`                                |
-| `ignore-scripts=true` — no package runs install hooks (audited: none of the 519 packages needs one) | `.npmrc`                                                |
-| Locked Python environments, `uv sync --frozen`                                                      | `apps/server/uv.lock`, `apps/chatterbox-worker/uv.lock` |
-| 14-day release cool-down for Python resolution (`exclude-newer`)                                    | `apps/server/pyproject.toml`                            |
-| Pinned uv binary with SHA-256 for six platforms                                                     | `scripts/toolchain.json`                                |
-| Pinned model artifacts with SHA-256 and host allow-list                                             | `apps/server/src/ltts/modelstore/manifest.json`         |
-| `npm audit --audit-level=high` and `pip-audit`                                                      | `npm run security`, CI                                  |
-| Secret scanning (gitleaks), CodeQL (JS/TS + Python), dependency review on PRs                       | `.github/workflows`                                     |
-| Dependabot with a 7-day cool-down and grouped updates                                               | `.github/dependabot.yml`                                |
-| License inventory that fails on unreviewed copyleft or unknown licences                             | `npm run licenses`                                      |
-| GitHub Actions pinned to commit SHAs                                                                | `.github/workflows`                                     |
+| Control                                                                                                                              | Where                                                   |
+| ------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------- |
+| Exact npm versions, `save-exact`, committed `package-lock.json`                                                                      | `package.json`, `.npmrc`                                |
+| `ignore-scripts=true` — no package runs install hooks (audited: none of the 519 packages needs one)                                  | `.npmrc`                                                |
+| Locked Python environments, `uv sync --frozen`                                                                                       | `apps/server/uv.lock`, `apps/chatterbox-worker/uv.lock` |
+| 14-day release cool-down for Python resolution (`exclude-newer`); worker versions are picked by hand under the same rule             | `apps/server/pyproject.toml`                            |
+| Pinned uv binary with SHA-256 for six platforms                                                                                      | `scripts/toolchain.json`                                |
+| Pinned model artifacts with SHA-256 and host allow-list                                                                              | `apps/server/src/ltts/modelstore/manifest.json`         |
+| `npm audit --audit-level=high` and `pip-audit` of the server environment                                                             | `npm run security`, CI                                  |
+| Secret scanning (gitleaks), CodeQL (JS/TS + Python), dependency review on PRs (fails on high severity, covers both Python lockfiles) | `.github/workflows`                                     |
+| Dependabot with a 7-day cool-down and grouped updates                                                                                | `.github/dependabot.yml`                                |
+| License inventory that fails on unreviewed copyleft or unknown licences                                                              | `npm run licenses`                                      |
+| GitHub Actions pinned to commit SHAs                                                                                                 | `.github/workflows`                                     |
+
+## Known advisories in the optional Chatterbox environment
+
+`chatterbox-tts` 0.1.7 pins exact versions of its machine-learning stack. Where a patched version is
+compatible, the worker overrides the pin: `diffusers` 0.29.0 → 0.38.0 (two high-severity
+`trust_remote_code` advisories) and `safetensors` 0.5.3 → 0.8.0 (needed by that diffusers). Clone
+quality was measured before and after (mean speaker similarity 0.915 → 0.917).
+
+As of 2026-10-19, `pip-audit` still reports lower-severity advisories against `torch` 2.6.0 (7),
+`transformers` 5.2.0 (4) and `setuptools` 80.x (1; held below 81 because the Perth watermarker imports
+`pkg_resources`). They only affect people who install voice cloning. The worker is not yet part of
+`npm run security`, because these advisories need triage and the PyTorch local builds (`+cpu`,
+`+cu124`) are not on PyPI.
 
 ## Updating dependencies
 

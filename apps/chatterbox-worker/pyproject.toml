@@ -35,8 +35,15 @@ packages = ["src/ltts_chatterbox_worker"]
 [tool.uv]
 conflicts = [[{ extra = "cpu" }, { extra = "cuda" }]]
 # chatterbox-tts declares gradio as a hard dependency but never imports it; drop it (and its large
-# dependency tree) from this environment.
-override-dependencies = ["gradio; sys_platform == 'never'"]
+# dependency tree) from this environment. It also pins diffusers==0.29.0, which has high-severity
+# trust_remote_code advisories (GHSA-98h9-4798-4q5v, GHSA-7wx4-6vff-v64p) fixed in 0.38.0, which in
+# turn needs safetensors>=0.8 (chatterbox pins 0.5.3). Chatterbox only imports diffusers' model layers
+# and safetensors' load_file, both unchanged in these versions (verified by test_inference.py).
+override-dependencies = [
+  "gradio; sys_platform == 'never'",
+  "diffusers>=0.38.0,<0.39",
+  "safetensors>=0.8.0,<0.9",
+]
 
 [tool.uv.sources]
 torch = [

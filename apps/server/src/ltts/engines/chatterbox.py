@@ -17,12 +17,12 @@ import shutil
 import sys
 import threading
 from pathlib import Path
-from typing import Any
+from typing import Any, override
 
 from ltts.audio import read_audio
 from ltts.common import MB, ensure_free_space, new_id
 from ltts.config import Settings
-from ltts.engines.base import AudioClip, EngineInfo, InstallOption, VoiceInfo, VoiceSpec
+from ltts.engines.base import AudioClip, Engine, EngineInfo, InstallOption, VoiceInfo, VoiceSpec
 from ltts.engines.chatterbox_env import (
     PROJECT_DIR,
     find_uv,
@@ -45,7 +45,7 @@ LOAD_TIMEOUT_S = 600.0
 SYNTH_TIMEOUT_S = 300.0
 
 
-class ChatterboxEngine:
+class ChatterboxEngine(Engine):
     id = "chatterbox"
 
     def __init__(self, settings: Settings, store: ModelStore, project_dir: Path = PROJECT_DIR):
@@ -253,7 +253,8 @@ class ChatterboxEngine:
                 self._worker = None
 
     # Chatterbox has no pace control; ``pace`` is accepted because every engine shares one signature.
-    def synthesize(self, text: str, voice: VoiceSpec, pace: float) -> AudioClip:  # noqa: ARG002
+    @override
+    def synthesize(self, text: str, voice: VoiceSpec, pace: float) -> AudioClip:
         if not self.is_ready():
             raise EngineUnavailableError(
                 "Chatterbox isn't installed. Install it from Settings → Engines & models.", code="engine_not_installed"

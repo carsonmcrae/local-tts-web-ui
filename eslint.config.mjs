@@ -21,6 +21,7 @@ export default tseslint.config(
       'apps/server/**',
       'apps/chatterbox-worker/**',
       '.tools/**',
+      '.claude/**', // Claude Code worktrees: full checkouts of other branches
       'data/**',
       'playwright-report/**',
       'test-results/**',

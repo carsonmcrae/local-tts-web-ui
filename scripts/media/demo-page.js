@@ -1,9 +1,9 @@
-/* global document, window, HTMLMediaElement, setTimeout */
+/* global document, HTMLMediaElement, setTimeout */
 /**
  * Purpose: Browser-side helpers injected into the app while the demo video is recorded.
  * Scope: A visible cursor with click ripples (headless capture has no pointer), on-screen step
  *   captions and an end card, and a log of every audio clip the app plays (start, pause and end
- *   times plus the sentence on screen), sent to the recorder through `window.__demoMedia`.
+ *   times plus the sentence on screen), sent to the recorder through `globalThis.__demoMedia`.
  * Does NOT belong: Driving the app or encoding (record-demo.mjs). Nothing here changes app behaviour.
  */
 (() => {
@@ -36,7 +36,7 @@
 
   /** Send one media event to the recorder (no-op when not recording). */
   const send = (record) => {
-    if (typeof window.__demoMedia === 'function') void window.__demoMedia(record);
+    if (typeof globalThis.__demoMedia === 'function') globalThis.__demoMedia(record);
   };
   const activeText = () =>
     document.querySelector('[data-active="true"]')?.textContent?.trim() ?? '';
@@ -102,7 +102,7 @@
       },
       true,
     );
-    window.__demo = {
+    globalThis.__demo = {
       caption(text, step) {
         caption.innerHTML = (step ? `<span class="step">${step}</span>` : '') + `<span></span>`;
         caption.lastElementChild.textContent = text;

@@ -53,7 +53,9 @@ async function main() {
   ok('Chatterbox environment: no unreviewed advisories.');
 }
 
-main().catch((error) => {
+try {
+  await main();
+} catch (error) {
   printFailure(error);
   process.exit(1);
-});
+}

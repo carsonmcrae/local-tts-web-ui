@@ -82,7 +82,9 @@ async function main() {
   console.log(color.dim('\nIf something is still wrong, see docs/guides/troubleshooting.md.'));
 }
 
-main().catch((error) => {
+try {
+  await main();
+} catch (error) {
   console.error(error);
   process.exit(1);
-});
+}

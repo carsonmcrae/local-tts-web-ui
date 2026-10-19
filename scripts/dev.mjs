@@ -119,12 +119,15 @@ async function main() {
   );
   if (!webReady) throw new BootstrapError('The web dev server did not start within 60 seconds.');
   console.log('');
-  ok(`${color.bold('Local TTS is running:')} ${color.cyan(`http://${HOST}:${webPort}`)}`);
+  const appUrl = `http://${HOST}:${webPort}`;
+  ok(`${color.bold('Local TTS is running:')} ${color.cyan(appUrl)}`);
   console.log(color.dim('  Press Ctrl+C to stop both services.\n'));
 }
 
-main().catch((error) => {
+try {
+  await main();
+} catch (error) {
   printFailure(error);
   for (const proc of managed) stopManaged(proc);
   process.exit(1);
-});
+}

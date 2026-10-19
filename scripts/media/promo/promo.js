@@ -1,8 +1,8 @@
-/* global document, window, location, URLSearchParams */
+/* global document, location, URLSearchParams */
 /**
  * Purpose: The showcase video's timeline: seven scenes drawn deterministically for any time t.
- * Scope: Animation helpers, a persistent background and one builder per scene. window.seek(t)
- *   updates every element for that instant; window.ready resolves once fonts and screenshots load.
+ * Scope: Animation helpers, a persistent background and one builder per scene. Global seek(t)
+ *   updates every element for that instant; global ready resolves once fonts and screenshots load.
  *   Scene windows match SCENES in promo-audio.mjs, where each voice-over line starts.
  * Does NOT belong: Page styles (promo.html), frame capture (render-promo.mjs), sound (promo-audio.mjs).
  */
@@ -166,8 +166,8 @@ scene(0, 5.6, (L) => {
       s: 1 + exit * 0.05,
     });
     set(line2, {
-      y: mix(60, 0, pr(t, 1.0, 1.7)),
-      o: pr(t, 1.0, 1.6) * (1 - exit),
+      y: mix(60, 0, pr(t, 1, 1.7)),
+      o: pr(t, 1, 1.6) * (1 - exit),
       s: 1 + exit * 0.05,
     });
     bars.forEach((bar, i) => {
@@ -182,7 +182,7 @@ scene(0, 5.6, (L) => {
         x: mix(c.from, 0, p),
         y: Math.sin(t * 1.1 + c.i) * 8,
         r: mix(c.from / 40, 0, p),
-        o: pr(t, 1.6 + c.i * 0.12, 2.0 + c.i * 0.12) * (1 - exit),
+        o: pr(t, 1.6 + c.i * 0.12, 2 + c.i * 0.12) * (1 - exit),
       });
     }
   };
@@ -229,7 +229,7 @@ scene(5.4, 12.2, (L) => {
 });
 
 // 3. Read along, sentence by sentence (light and dark themes).
-scene(12.0, 19.8, (L) => {
+scene(12, 19.8, (L) => {
   const block = textBlock(
     L,
     'Read along',
@@ -247,7 +247,7 @@ scene(12.0, 19.8, (L) => {
       o: pr(t, 12.2, 12.8) * (1 - exit),
     });
     images[1].style.opacity = pr(t, 15.8, 16.6, E.inOut).toFixed(3);
-    set(themes, { y: mix(30, 0, pr(t, 16.0, 16.6)), o: pr(t, 16.0, 16.5) * (1 - exit) });
+    set(themes, { y: mix(30, 0, pr(t, 16, 16.6)), o: pr(t, 16, 16.5) * (1 - exit) });
   };
 });
 
@@ -281,7 +281,7 @@ scene(19.6, 25.8, (L) => {
     count.textContent = String(Math.round(54 * pr(t, 19.9, 21.1, E.out)));
     set(count, { y: mix(40, 0, pr(t, 19.8, 20.5)), o: pr(t, 19.8, 20.3) * (1 - exit) });
     set(label, { y: mix(40, 0, pr(t, 20.1, 20.8)), o: pr(t, 20.1, 20.6) * (1 - exit) });
-    set(sub, { y: mix(40, 0, pr(t, 20.3, 21.0)), o: pr(t, 20.3, 20.8) * (1 - exit) });
+    set(sub, { y: mix(40, 0, pr(t, 20.3, 21)), o: pr(t, 20.3, 20.8) * (1 - exit) });
     set(frame, { x: mix(140, 0, pr(t, 19.8, 20.7)), o: pr(t, 19.8, 20.4) * (1 - exit) });
     for (const c of chips)
       set(c.node, {
@@ -323,7 +323,7 @@ scene(25.6, 32.2, (L) => {
 });
 
 // 6. Private by design.
-scene(32.0, 38.4, (L) => {
+scene(32, 38.4, (L) => {
   const badge = el(
     L,
     'abs',
@@ -361,7 +361,7 @@ scene(32.0, 38.4, (L) => {
     chips.forEach((node, i) =>
       set(node, {
         y: mix(40, 0, pr(t, 33.6 + i * 0.3, 34.2 + i * 0.3, E.back)),
-        o: pr(t, 33.6 + i * 0.3, 34.0 + i * 0.3) * (1 - exit),
+        o: pr(t, 33.6 + i * 0.3, 34 + i * 0.3) * (1 - exit),
       }),
     );
   };
@@ -411,9 +411,9 @@ scene(38.2, DURATION + 1, (L) => {
   };
 });
 
-window.DURATION = DURATION;
-window.FPS = FPS;
-window.seek = (t) => {
+globalThis.DURATION = DURATION;
+globalThis.FPS = FPS;
+globalThis.seek = (t) => {
   blobs.forEach(([node, phase]) =>
     set(node, { x: Math.sin(t * 0.21 + phase) * 120, y: Math.cos(t * 0.17 + phase) * 90 }),
   );
@@ -423,8 +423,8 @@ window.seek = (t) => {
     if (live) s.update(t);
   }
 };
-window.ready = Promise.all([
+globalThis.ready = Promise.all([
   document.fonts.ready,
   ...[...document.images].map((image) => image.decode().catch(() => undefined)),
 ]);
-window.seek(Number(new URLSearchParams(location.search).get('t') ?? 0));
+globalThis.seek(Number(new URLSearchParams(location.search).get('t') ?? 0));

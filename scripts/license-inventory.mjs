@@ -108,7 +108,7 @@ async function main() {
   const problems = [];
   const rows = (/** @type {[string, string][]} */ entries) =>
     entries
-      .sort(([a], [b]) => a.localeCompare(b))
+      .toSorted(([a], [b]) => a.localeCompare(b))
       .map(([pkg, license]) => {
         const name = pkg.split(/==|@(?=[^@]*$)/)[0]?.toLowerCase() ?? pkg;
         const allowed = ALLOWED_COPYLEFT[/** @type {keyof typeof ALLOWED_COPYLEFT} */ (name)];
@@ -147,7 +147,9 @@ ${rows(Object.entries(python))}
   ok(`License inventory written (${npm.size} npm, ${Object.keys(python).length} Python packages)`);
 }
 
-main().catch((error) => {
+try {
+  await main();
+} catch (error) {
   console.error(error);
   process.exit(1);
-});
+}

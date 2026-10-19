@@ -45,7 +45,7 @@ flowchart LR
 | -------------- | ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Web UI         | `apps/web`               | Vite, React 19, Tailwind v4 tokens, Radix primitives, TanStack Query, React Router. Types generated from the server's OpenAPI schema (`npm run api:types`).     |
 | API server     | `apps/server/src/ltts`   | FastAPI app factory (`app.py`), manual DI container (`container.py`), feature packages: `documents`, `synthesis`, `engines`, `voices`, `exports`, `modelstore`. |
-| Cloning worker | `apps/chatterbox-worker` | Separate uv project (Python 3.11, torch 2.6) installed on demand into `data/engines/chatterbox/venv`.                                                           |
+| Cloning worker | `apps/chatterbox-worker` | Separate uv project (Python 3.11, torch 2.11) installed on demand into `data/engines/chatterbox/venv`.                                                          |
 | Bootstrap      | `scripts/*.mjs`          | Node scripts: pinned uv download, `uv sync --frozen`, model install, process orchestration.                                                                     |
 | Runtime data   | `data/` (git-ignored)    | `ltts.sqlite3`, `models/`, `engines/`, `cache/audio/`, `voices/`, `exports/`, `tmp/`.                                                                           |
 

@@ -28,6 +28,11 @@ updates:
       interval: monthly
     cooldown:
       default-days: 30
+    ignore:
+      # setuptools 81+ removes pkg_resources, which the Perth watermarker imports; without it model
+      # loading fails. Its one advisory is unreachable here (docs/security/supply-chain.md).
+      - dependency-name: setuptools
+        versions: ['>=81']
   - package-ecosystem: github-actions
     directory: /
     schedule:

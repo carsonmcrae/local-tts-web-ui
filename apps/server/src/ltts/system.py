@@ -66,12 +66,12 @@ def _folder_bytes(path: Path) -> int:
     return sum(p.stat().st_size for p in path.rglob("*") if p.is_file())
 
 
-@router.get("/health", response_model=Health)
+@router.get("/health")
 def health() -> Health:
     return Health(status="ok", version=__version__)
 
 
-@router.get("/system", response_model=SystemInfo)
+@router.get("/system")
 def system_info(services: ServicesDep) -> SystemInfo:
     import onnxruntime
 
@@ -113,6 +113,6 @@ def system_info(services: ServicesDep) -> SystemInfo:
     )
 
 
-@router.post("/system/cache/clear", response_model=CacheCleared)
+@router.post("/system/cache/clear")
 def clear_cache(services: ServicesDep) -> CacheCleared:
     return CacheCleared(removed_entries=services.audio_cache.clear())

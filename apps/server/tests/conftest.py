@@ -2,18 +2,22 @@
 
 Scope: Isolated settings (temporary data dir), a deterministic ``FakeEngine`` (sine tones whose
 length follows the text, so API/caching/export logic is testable without models), the wired service
-container and a TestClient that sends the app's required client header.
+container, a TestClient that sends the app's required client header, and shared helpers for
+speech-like recordings, WAV encoding and waiting for background jobs.
 Does NOT belong: Real-inference fixtures (see test_inference_*.py, marked ``inference``).
 """
 
 from __future__ import annotations
 
+import io
+import time
 from collections.abc import Iterator
 from pathlib import Path
 from typing import Any
 
 import numpy as np
 import pytest
+import soundfile as sf
 from fastapi.testclient import TestClient
 
 from ltts.app import create_app
@@ -134,3 +138,20 @@ def speech_like(
     carrier = np.sin(2 * np.pi * 180 * t) + 0.5 * np.sin(2 * np.pi * 360 * t)
     rng = np.random.default_rng(7)
     return (level * envelope * carrier / 1.5 + noise * rng.standard_normal(len(t))).astype(np.float32)
+
+
+def wav_bytes(samples: np.ndarray, rate: int = SAMPLE_RATE) -> bytes:
+    """16-bit PCM WAV bytes, as the browser uploads a recording."""
+    buffer = io.BytesIO()
+    sf.write(buffer, samples, rate, format="WAV", subtype="PCM_16")
+    return buffer.getvalue()
+
+
+def wait_job(client: TestClient, job_id: str) -> dict[str, Any]:
+    """Poll a background job until it leaves the queued/running states (10 s at most)."""
+    for _ in range(200):
+        job: dict[str, Any] = client.get(f"/api/jobs/{job_id}").json()
+        if job["status"] not in ("queued", "running"):
+            return job
+        time.sleep(0.05)
+    raise AssertionError("job did not finish")

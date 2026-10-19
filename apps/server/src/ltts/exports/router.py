@@ -20,12 +20,12 @@ router = APIRouter(prefix="/api/exports", tags=["exports"])
 JobId = Annotated[str, Path(pattern=r"^[0-9a-f]{32}$")]
 
 
-@router.post("", response_model=JobOut, status_code=202)
+@router.post("", status_code=202)
 def start_export(body: ExportRequest, services: ServicesDep) -> JobOut:
     return services.exports.start(body)
 
 
-@router.post("/{job_id}/resume", response_model=JobOut, status_code=202)
+@router.post("/{job_id}/resume", status_code=202)
 def resume_export(job_id: JobId, services: ServicesDep) -> JobOut:
     return services.exports.resume(job_id)
 

@@ -120,7 +120,7 @@ class ChatterboxEngine:
             license=self._store.artifact(ARTIFACT).license,
             optional=True,
             status="ready" if ready else "not_installed",
-            status_message="Update available" if update else ("Ready" if ready else "Not installed"),
+            status_message=_status_message(ready, update=update),
             supports_cloning=True,
             controls=[],
             languages=["English"],
@@ -252,7 +252,8 @@ class ChatterboxEngine:
                 self._worker.stop()
                 self._worker = None
 
-    def synthesize(self, text: str, voice: VoiceSpec, pace: float) -> AudioClip:  # noqa: ARG002 - no pace control
+    # Chatterbox has no pace control; ``pace`` is accepted because every engine shares one signature.
+    def synthesize(self, text: str, voice: VoiceSpec, pace: float) -> AudioClip:  # noqa: ARG002
         if not self.is_ready():
             raise EngineUnavailableError(
                 "Chatterbox isn't installed. Install it from Settings → Engines & models.", code="engine_not_installed"
@@ -268,6 +269,12 @@ class ChatterboxEngine:
         finally:
             output.unlink(missing_ok=True)
         return AudioClip(samples, rate)
+
+
+def _status_message(ready: bool, *, update: bool) -> str:
+    if update:
+        return "Update available"
+    return "Ready" if ready else "Not installed"
 
 
 def _require_uv() -> str:

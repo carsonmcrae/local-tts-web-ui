@@ -79,8 +79,9 @@ def sync_environment(uv: str, project_dir: Path, venv: Path, extra: str, context
     env = {**os.environ, "UV_PROJECT_ENVIRONMENT": str(venv),
            "UV_PYTHON_INSTALL_DIR": str(REPO_ROOT / ".tools" / "python"), "UV_NO_PROGRESS": "1"}  # fmt: skip
     # Popen's encoding argument needs Python 3.6; the server requires 3.11.
+    # The argv is fixed, and uv verifies every package hash against the committed lockfile.
     # nosemgrep: python.lang.compatibility.python36.python36-compatibility-Popen2
-    proc = subprocess.Popen(  # noqa: S603 - fixed argv; uv verifies hashes from the committed lockfile
+    proc = subprocess.Popen(  # noqa: S603
         [uv, "sync", "--frozen", "--no-dev", "--project", str(project_dir), "--extra", extra],
         cwd=project_dir, env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, encoding="utf-8",
     )  # fmt: skip

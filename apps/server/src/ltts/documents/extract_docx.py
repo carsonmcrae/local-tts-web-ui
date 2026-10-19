@@ -31,18 +31,48 @@ def _heading_level(paragraph: Paragraph) -> int | None:
     return None
 
 
+def _starts_section(level: int | None) -> bool:
+    """Title and Heading 1–2 open a new section; deeper headings stay inside the current one."""
+    return level is not None and level <= 2
+
+
+def _table_rows(table: Table) -> list[tuple[str, int | None]]:
+    """Each row read as its distinct non-empty cells joined with semicolons (merged cells repeat)."""
+    rows: list[tuple[str, int | None]] = []
+    for row in table.rows:
+        cells = [clean_inline(cell.text) for cell in row.cells]
+        unique = list(dict.fromkeys(c for c in cells if c))
+        if unique:
+            rows.append(("; ".join(unique), None))
+    return rows
+
+
 def _iter_blocks(document: DocxDocument) -> list[tuple[str, int | None]]:
     items: list[tuple[str, int | None]] = []
     for element in document.iter_inner_content():
         if isinstance(element, Paragraph):
             items.append((element.text, _heading_level(element)))
-        elif isinstance(element, Table):
-            for row in element.rows:
-                cells = [clean_inline(cell.text) for cell in row.cells]
-                unique = list(dict.fromkeys(c for c in cells if c))
-                if unique:
-                    items.append(("; ".join(unique), None))
+        else:  # iter_inner_content yields only paragraphs and tables
+            items.extend(_table_rows(element))
     return items
+
+
+def _sections(items: list[tuple[str, int | None]], first_title: str) -> list[ExtractedSection]:
+    sections: list[ExtractedSection] = []
+    current = ExtractedSection(title=first_title)
+    for raw_text, level in items:
+        text = clean_inline(raw_text)
+        if not text:
+            continue
+        if _starts_section(level):
+            if current.blocks:
+                sections.append(current)
+            current = ExtractedSection(title=text[:200], blocks=[Block("heading", text)])
+        else:
+            current.blocks.append(Block("heading" if level else "paragraph", text))
+    if current.blocks:
+        sections.append(current)
+    return sections
 
 
 def extract_docx_file(path: Path, title: str | None, limits: ExtractionLimits) -> Extraction:
@@ -54,18 +84,5 @@ def extract_docx_file(path: Path, title: str | None, limits: ExtractionLimits) -
         raise DocumentExtractionError("The DOCX file could not be read.", code="corrupt_document") from exc
 
     core_title = (document.core_properties.title or "").strip() or None
-    sections: list[ExtractedSection] = []
-    current = ExtractedSection(title=core_title or title or "Document")
-    for raw_text, level in _iter_blocks(document):
-        text = clean_inline(raw_text)
-        if not text:
-            continue
-        if level is not None and level <= 2:
-            if current.blocks:
-                sections.append(current)
-            current = ExtractedSection(title=text[:200], blocks=[Block("heading", text)])
-        else:
-            current.blocks.append(Block("heading" if level else "paragraph", text))
-    if current.blocks:
-        sections.append(current)
+    sections = _sections(_iter_blocks(document), core_title or title or "Document")
     return Extraction(title=core_title or title, sections=sections)

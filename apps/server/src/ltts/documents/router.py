@@ -26,12 +26,12 @@ router = APIRouter(prefix="/api/documents", tags=["documents"])
 DocumentId = Annotated[str, Path(pattern=r"^[0-9a-f]{32}$")]
 
 
-@router.get("", response_model=list[DocumentSummary])
+@router.get("")
 def list_documents(services: ServicesDep) -> list[DocumentSummary]:
     return services.document_repo.list_all()
 
 
-@router.post("/upload", response_model=DocumentDetail, status_code=201)
+@router.post("/upload", status_code=201)
 async def upload_document(
     request: Request,
     services: ServicesDep,
@@ -45,17 +45,17 @@ async def upload_document(
     return await run_in_threadpool(services.document_service.ingest_file, target, filename, size, digest)
 
 
-@router.post("/text", response_model=DocumentDetail, status_code=201)
+@router.post("/text", status_code=201)
 def paste_text(body: PasteTextRequest, services: ServicesDep) -> DocumentDetail:
     return services.document_service.ingest_text(body.text, body.title)
 
 
-@router.get("/{document_id}", response_model=DocumentDetail)
+@router.get("/{document_id}")
 def get_document(document_id: DocumentId, services: ServicesDep) -> DocumentDetail:
     return services.document_repo.get(document_id)
 
 
-@router.get("/{document_id}/sections/{section_index}", response_model=SectionContent)
+@router.get("/{document_id}/sections/{section_index}")
 def get_section(
     document_id: DocumentId, section_index: Annotated[int, Path(ge=0)], services: ServicesDep
 ) -> SectionContent:

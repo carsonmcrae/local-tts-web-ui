@@ -83,7 +83,9 @@ class EngineScheduler:
                 continue
             try:
                 task.future.set_result(task.work())
-            except BaseException as exc:  # noqa: BLE001 - delivered to the waiting caller
+            # Every failure is handed to the waiting caller through the future. SystemExit and
+            # KeyboardInterrupt are not caught, so shutdown signals are never swallowed.
+            except Exception as exc:  # noqa: BLE001
                 task.future.set_exception(exc)
             finally:
                 with self._lock:

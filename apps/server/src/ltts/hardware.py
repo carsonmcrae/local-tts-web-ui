@@ -28,7 +28,8 @@ def detect_gpus() -> tuple[GpuInfo, ...]:
     smi = shutil.which("nvidia-smi")
     if smi:
         try:
-            out = subprocess.run(  # noqa: S603 - fixed arguments, resolved binary, no shell
+            # Fixed arguments to the binary resolved above, and no shell.
+            out = subprocess.run(  # noqa: S603
                 [smi, "--query-gpu=name,memory.total", "--format=csv,noheader,nounits"],
                 capture_output=True,
                 text=True,

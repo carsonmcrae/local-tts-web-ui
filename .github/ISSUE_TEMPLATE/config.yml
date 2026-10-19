@@ -3,6 +3,12 @@ contact_links:
   - name: Report a security vulnerability
     url: https://github.com/carsonmcrae/local-tts-web-ui/security/advisories/new
     about: Please report vulnerabilities privately.
+  - name: Ask a question
+    url: https://github.com/carsonmcrae/local-tts-web-ui/discussions/categories/q-a
+    about: Questions about using or setting up Local TTS.
+  - name: User guide (wiki)
+    url: https://github.com/carsonmcrae/local-tts-web-ui/wiki
+    about: How to read documents, choose voices, clone a voice and export audio.
   - name: Troubleshooting guide
     url: https://github.com/carsonmcrae/local-tts-web-ui/blob/main/docs/guides/troubleshooting.md
     about: Common setup and playback problems.

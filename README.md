@@ -7,7 +7,16 @@ is highlighted. Everything runs locally: no accounts, no cloud, no telemetry. Op
 narration voice from a short recording of yourself.
 
 [![CI](https://github.com/carsonmcrae/local-tts-web-ui/actions/workflows/ci.yml/badge.svg)](https://github.com/carsonmcrae/local-tts-web-ui/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/carsonmcrae/local-tts-web-ui/actions/workflows/codeql.yml/badge.svg)](https://github.com/carsonmcrae/local-tts-web-ui/actions/workflows/codeql.yml)
+[![Latest release](https://img.shields.io/github/v/release/carsonmcrae/local-tts-web-ui)](https://github.com/carsonmcrae/local-tts-web-ui/releases/latest)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
+<p align="center">
+  <a href="docs/media/local-tts-promo.mp4"><img src="docs/media/local-tts-promo-poster.webp" alt="Local TTS showcase video: any document, read aloud" width="860" /></a>
+  <br />
+  <a href="docs/media/local-tts-promo.mp4"><strong>▶ Watch the overview (0:45)</strong></a> (the voice-over is spoken by Local TTS)
+  · <a href="docs/media/local-tts-demo.mp4"><strong>▶ Watch the demo (2:17)</strong></a> (recorded from the running app, with its real narration)
+</p>
 
 ![The reader narrating a document with the current sentence highlighted](docs/images/reader-light.png)
 
@@ -91,6 +100,16 @@ engine only uses roughly the first 10–15 seconds, so longer recordings don't h
 offered here. Only the trimmed reference recording is stored, locally. You must confirm the voice is yours
 or that the speaker gave permission; generated audio carries Resemble AI's inaudible Perth watermark.
 
+## Documentation
+
+- **[User guide (wiki)](https://github.com/carsonmcrae/local-tts-web-ui/wiki)**: installation, reading documents, voices, Voice Studio, exporting,
+  settings, keyboard shortcuts, troubleshooting and FAQ.
+- **Reference ([docs/](docs/))**: [architecture](docs/architecture/overview.md),
+  [configuration](docs/guides/configuration.md), [security](docs/security/threat-model.md),
+  [testing](docs/guides/testing.md) and [releases](docs/guides/release-process.md).
+- **[Changelog](CHANGELOG.md)** and **[releases](https://github.com/carsonmcrae/local-tts-web-ui/releases)**: every release lists its changes and
+  ships checksums, SBOMs and signed build provenance.
+
 ## Privacy
 
 No telemetry, analytics or accounts. Documents, recordings and generated audio stay in the `data/` folder.
@@ -126,10 +145,18 @@ streamed to the browser, which plays it and highlights the matching text. Detail
 | `npm run test` · `test:inference` · `test:e2e` | Unit tests · real-model tests · Playwright journeys       |
 | `npm run doctor`                               | Diagnose the environment                                  |
 | `npm run security` · `npm run licenses`        | Dependency audits · licence inventory                     |
+| `npm run media:demo` · `media:promo`           | Re-record the demo video · re-render the showcase video   |
 
 See [CONTRIBUTING.md](CONTRIBUTING.md), [testing](docs/guides/testing.md),
 [configuration](docs/guides/configuration.md), [performance](docs/guides/performance.md) and
 [troubleshooting](docs/guides/troubleshooting.md).
+
+## Community
+
+- [Contributing](CONTRIBUTING.md): how to set up, test and propose changes.
+- [Code of conduct](CODE_OF_CONDUCT.md) and [getting help](SUPPORT.md): questions go to
+  [Discussions](https://github.com/carsonmcrae/local-tts-web-ui/discussions), bugs to [Issues](https://github.com/carsonmcrae/local-tts-web-ui/issues/new/choose).
+- [Security policy](SECURITY.md): report vulnerabilities privately, never in a public issue.
 
 ## Roadmap
 
@@ -153,3 +180,4 @@ MIT — see [LICENSE](LICENSE). Model weights and dependencies have their own li
   [FastAPI](https://fastapi.tiangolo.com), [React](https://react.dev), [Radix UI](https://www.radix-ui.com),
   [Tailwind CSS](https://tailwindcss.com), [Lucide](https://lucide.dev), and the Inter and Literata typefaces (OFL).
 - Sample text: "A Scandal in Bohemia" by Arthur Conan Doyle (public domain).
+- Videos: see [docs/media/README.md](docs/media/README.md) for how they were made and what is in them.

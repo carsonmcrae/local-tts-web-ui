@@ -1,16 +1,19 @@
-# Pointing ttsnative.com at the website
+# The website domain: ttsnative.com
 
-The website is built and deployed by `.github/workflows/pages.yml`. Until the domain is connected it
-is served at `https://carsonmcrae.github.io/ttsnative/`. The build reads the address from GitHub
-Pages (`configure-pages`), so once the custom domain is set, the canonical URL, social-preview links,
-`sitemap.xml` and `robots.txt` switch to `https://ttsnative.com/` on the next deploy. No code change
-is needed.
+The website is built and deployed by `.github/workflows/pages.yml`. The build reads the address from
+GitHub Pages (`configure-pages`), so the canonical URL, social-preview links, `sitemap.xml` and
+`robots.txt` follow the custom domain automatically on every deploy. No code change is needed.
 
-**State on 2026-10-20:** `ttsnative.com` uses GoDaddy's nameservers (`ns73`/`ns74.domaincontrol.com`)
-and still resolves to GoDaddy's parking page (`3.33.130.190`, `15.197.148.33`); `www` is a CNAME to the
-apex. Nothing below has been done yet. The DNS steps need the registrar account, so they are manual.
+**Status (connected on 2026-10-20):** GoDaddy's nameservers are unchanged. The parking record was replaced
+with the A and AAAA records below, `www` points at `carsonmcrae.github.io`, and the GitHub verification TXT
+record is in place; the existing DMARC and domain-connect records were left as they were. The domain is
+verified on the GitHub account (so no one else can publish Pages on it), set as the repository's Pages
+domain, and served over HTTPS only, with a Let's Encrypt certificate for `ttsnative.com` and
+`www.ttsnative.com` that GitHub renews. `www` and the old `carsonmcrae.github.io/ttsnative/` address
+redirect to `https://ttsnative.com/`.
 
-Do the steps in order. Setting the custom domain in GitHub before DNS points at GitHub breaks the
+The steps below are how it was set up, and how to set it up again (for example after a registrar move).
+Do them in order. Setting the custom domain in GitHub before DNS points at GitHub breaks the
 site, because GitHub immediately redirects the `github.io` address to a domain that doesn't serve it
 yet.
 

@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+# Copyright (c) 2026 Carson McRae
 """Purpose: Measure real performance numbers for docs/guides/performance.md.
 
 Scope: Server cold start (process spawn to healthy), Kokoro model load, first/next sentence latency,

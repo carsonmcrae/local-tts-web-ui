@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+# Copyright (c) 2026 Carson McRae
 """Purpose: A real ``ChatterboxEngine`` wired to ``fake_worker.py`` instead of an installed runtime.
 
 Scope: Builds the engine with an installed-looking model store, no GPU, no disk checks, ``find_uv``

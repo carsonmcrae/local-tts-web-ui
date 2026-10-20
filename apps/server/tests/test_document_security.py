@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+# Copyright (c) 2026 Carson McRae
 """Purpose: Adversarial document tests — hostile archives, XML attacks and parser isolation.
 
 Scope: Zip bombs (ratio and total size), entry-count limits, encrypted members, path-traversal

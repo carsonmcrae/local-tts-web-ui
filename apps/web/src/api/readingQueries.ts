@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+// Copyright (c) 2026 Carson McRae
 /**
  * Purpose: TanStack Query hooks for the reading aids: bookmarks, document search and pronunciations.
  * Scope: Query keys, fetching and the mutations that keep these lists in sync with the server.

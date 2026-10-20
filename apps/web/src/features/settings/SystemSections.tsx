@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+// Copyright (c) 2026 Carson McRae
 /**
  * Purpose: Settings sections describing the local system: engines, storage, privacy and diagnostics.
  * Scope: Engine install/remove panels, disk usage by category with cache clearing, the privacy
@@ -19,7 +19,7 @@ import { Section } from '@/components/ui/Layout';
 import { useToast } from '@/components/ui/Toast';
 import { EnginePanel } from '@/features/engines/EngineSetup';
 import { formatBytes } from '@/lib/format';
-import { AUTHOR, COPYRIGHT, FINGERPRINT, HOMEPAGE, LICENSE, PROJECT } from '@/lib/provenance';
+import { AUTHOR, COPYRIGHT, HOMEPAGE, LICENSE, PROJECT } from '@/lib/provenance';
 
 declare const __APP_VERSION__: string;
 
@@ -155,7 +155,7 @@ export function PrivacySection() {
 export function diagnosticsReport(info: SystemInfo, webVersion: string): string {
   const gpus = info.gpus.map((gpu) => `${gpu.vendor} ${gpu.name}`).join(', ') || 'none detected';
   return [
-    `${PROJECT} web ${webVersion} / server ${info.version} (${FINGERPRINT})`,
+    `${PROJECT} web ${webVersion} / server ${info.version}`,
     `Python ${info.python} on ${info.platform} (${info.machine}), ${info.cpuCores} logical CPUs`,
     `Memory: ${formatBytes(info.memoryAvailableBytes)} free of ${formatBytes(info.memoryTotalBytes)}`,
     `GPUs: ${gpus}`,

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+// Copyright (c) 2026 Carson McRae
 /**
  * Purpose: Explain a studio voice session before it starts: what it does and how to set up.
  * Scope: How the voice is built from the session, the microphone and room setup that avoids a thin

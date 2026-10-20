@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+// Copyright (c) 2026 Carson McRae
 /**
  * Purpose: A document's bookmarks: jump back to a sentence, keep notes, export them.
  * Scope: Lists bookmarks in reading order with their section and sentence; choosing one jumps

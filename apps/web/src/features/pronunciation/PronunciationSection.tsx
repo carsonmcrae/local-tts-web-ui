@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+// Copyright (c) 2026 Carson McRae
 /**
  * Purpose: Settings → Pronunciation: teach the voices how to say names and words.
  * Scope: Add a word with how it should be said (optionally matching its exact letter case), hear it

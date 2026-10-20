@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+// Copyright (c) 2026 Carson McRae
 /**
  * Purpose: Turn a document's bookmarks into a Markdown file of notes and save it.
  * Scope: A Markdown outline (document title, then each bookmarked sentence as a quote under its

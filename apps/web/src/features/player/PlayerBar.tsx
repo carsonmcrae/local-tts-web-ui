@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+// Copyright (c) 2026 Carson McRae
 /**
  * Purpose: The persistent audio player docked at the bottom of every screen.
  * Scope: Wires player state to the transport, position, voice, speed, bookmark, sleep-timer and

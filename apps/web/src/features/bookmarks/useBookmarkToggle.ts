@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+// Copyright (c) 2026 Carson McRae
 /**
  * Purpose: Bookmark or un-bookmark the sentence being read, from the player or a shortcut.
  * Scope: Whether the sentence already has a bookmark, and a toggle that adds one (with a short

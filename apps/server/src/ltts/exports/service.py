@@ -1,10 +1,10 @@
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+# Copyright (c) 2026 Carson McRae
 """Purpose: Build downloadable audiobooks from a document as a cancellable background job.
 
 Scope: Synthesises every segment in the chosen chapter range at export priority (so live playback
-stays responsive), streams audio into WAV or MP3 via libsndfile with title/album/track tags and the
-project's credit, optionally writes one file per chapter into a ZIP with an M3U playlist, optionally
+stays responsive), streams audio into WAV or MP3 via libsndfile with title, album and track tags,
+optionally writes one file per chapter into a ZIP with an M3U playlist, optionally
 adds sentence-timed subtitles (SRT) next to each audio file, and reports progress. Because each
 segment is cached, a canceled or interrupted export resumes quickly instead of starting over.
 Does NOT belong: HTTP (``router.py``) or synthesis internals.
@@ -22,14 +22,12 @@ from typing import Any, Literal
 
 import soundfile as sf
 
-from ltts import __version__
 from ltts.audio import PAUSE_SECONDS, Float32Array, read_audio
 from ltts.common import ApiModel
 from ltts.config import Settings
 from ltts.documents.repository import DocumentRepository
 from ltts.errors import ConflictError, NotFoundError
 from ltts.jobs import JobContext, JobManager, JobOut, JobStatus
-from ltts.provenance import CREDIT, PROJECT
 from ltts.synthesis.scheduler import PRIORITY_EXPORT
 from ltts.synthesis.service import SynthesisService
 
@@ -96,8 +94,8 @@ def _naming(layout: str, title: str, chapter: str, section: int) -> tuple[str, d
 def _open_track(path: Path, rate: int, audio_format: str, tags: dict[str, str]) -> _Track:
     fmt, subtype = _SUBTYPES[audio_format]
     handle = sf.SoundFile(str(path), "w", rate, 1, subtype, format=fmt)
-    # Tags are set before any audio: WAV writes them into its header.
-    for name, value in {**tags, "comment": f"Made with {CREDIT}", "software": f"{PROJECT} {__version__}"}.items():
+    # Tags describe the user's document only; set before any audio, as WAV writes them into its header.
+    for name, value in tags.items():
         setattr(handle, name, value)
     return _Track(path, handle)
 

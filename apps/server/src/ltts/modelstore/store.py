@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+# Copyright (c) 2026 Carson McRae
 """Purpose: Download, verify, install and remove model artifacts listed in ``manifest.json``.
 
 Scope: HTTPS-only downloads restricted to approved hosts (checked after every redirect), resumable

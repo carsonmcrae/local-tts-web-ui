@@ -1,6 +1,6 @@
 // @ts-check
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+// Copyright (c) 2026 Carson McRae
 /**
  * Purpose: `npm run dev` — one command that bootstraps and runs the whole app locally.
  * Scope: Runs setup, picks free loopback ports, starts the FastAPI server (auto-reload) and the

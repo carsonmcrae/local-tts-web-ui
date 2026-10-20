@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+# Copyright (c) 2026 Carson McRae
 """Purpose: Tests for scheduler, audio cache and synthesis-service paths beyond the common flow.
 
 Scope: Raising a queued request's priority, releasing shared, unknown or running work, failures

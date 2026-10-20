@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+// Copyright (c) 2026 Carson McRae
 /**
  * Purpose: Choose how to create a voice: quick (one short recording) or studio (a guided session).
  * Scope: Two options with what each takes and gives; the choice opens the matching wizard.

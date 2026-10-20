@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+# Copyright (c) 2026 Carson McRae
 """Purpose: Engine, voice-library and background-job endpoints.
 
 Scope: List engines with capabilities and install state, start/cancel installs and updates, uninstall, list

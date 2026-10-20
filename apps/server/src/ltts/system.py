@@ -1,11 +1,10 @@
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+# Copyright (c) 2026 Carson McRae
 """Purpose: Health, diagnostics, storage usage and cache management endpoints.
 
 Scope: Reports app/runtime versions, OS, CPU/RAM, GPU detection (NVIDIA via nvidia-smi, Apple
 Silicon via platform), ONNX Runtime providers, per-category disk usage, network exposure and the
-privacy posture, and where the software comes from (project, author, licence). Offers cache
-clearing. Never reports document contents or filenames.
+privacy posture. Offers cache clearing. Never reports document contents or filenames.
 Does NOT belong: Engine install logic (``engines``).
 """
 
@@ -17,13 +16,11 @@ from pathlib import Path
 
 import psutil
 from fastapi import APIRouter
-from pydantic import Field
 
 from ltts import __version__
 from ltts.common import ApiModel
 from ltts.container import ServicesDep
 from ltts.hardware import GpuInfo, detect_gpus
-from ltts.provenance import About
 
 router = APIRouter(prefix="/api", tags=["system"])
 
@@ -59,7 +56,6 @@ class SystemInfo(ApiModel):
     storage: StorageInfo
     telemetry: bool = False
     limits: dict[str, int | float]
-    about: About = Field(default_factory=About)
 
 
 class CacheCleared(ApiModel):

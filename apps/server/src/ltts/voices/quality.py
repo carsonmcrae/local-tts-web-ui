@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+# Copyright (c) 2026 Carson McRae
 """Purpose: Objective quality checks for a voice recording, and the tone correction a microphone needs.
 
 Scope: Measures speech duration, loudness, peak/clipping, pause share, an estimated signal-to-noise

@@ -1,6 +1,6 @@
 // @ts-check
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+// Copyright (c) 2026 Carson McRae
 /**
  * Purpose: `npm run security` step that audits the optional Chatterbox voice-cloning environment.
  * Scope: Exports both locked extras (CPU and CUDA) with hashes from apps/chatterbox-worker/uv.lock and

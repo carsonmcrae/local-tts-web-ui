@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+// Copyright (c) 2026 Carson McRae
 /**
  * Purpose: Play a recording held in memory, in every browser.
  * Scope: A stable id per Blob (for query keys) and a cached data: URL for a Blob — WebKit refuses to

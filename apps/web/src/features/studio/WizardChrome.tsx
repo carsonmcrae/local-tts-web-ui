@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+// Copyright (c) 2026 Carson McRae
 /**
  * Purpose: The frame shared by the voice-creation wizards: progress header and footer buttons.
  * Scope: `Stepper` (one bar per step, the current step's label) and `WizardFooter` (Back, then

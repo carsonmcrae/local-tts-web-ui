@@ -1,6 +1,6 @@
 // @ts-check
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+// Copyright (c) 2026 Carson McRae
 /**
  * Purpose: Keep the single product version consistent everywhere it appears.
  * Scope: Root and web package.json, the server's pyproject.toml and `ltts.__version__`, the worker's

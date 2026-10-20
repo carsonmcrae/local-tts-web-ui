@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+# Copyright (c) 2026 Carson McRae
 """Purpose: Tests for engine runtime behaviour with stand-ins for the model libraries and hardware tools.
 
 Scope: Kokoro loading (CPU provider, load once, load failures, the double-checked lock), voices,

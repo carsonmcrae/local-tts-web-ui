@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+# Copyright (c) 2026 Carson McRae
 """Purpose: Text-PDF extraction with PDFium (pypdfium2), tuned for listening rather than layout.
 
 Scope: Reads each page's text layer; removes running headers/footers and page numbers; rebuilds

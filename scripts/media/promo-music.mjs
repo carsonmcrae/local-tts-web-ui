@@ -1,6 +1,6 @@
 // @ts-check
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+// Copyright (c) 2026 Carson McRae
 /**
  * Purpose: Synthesize the showcase video's music bed and sound effects from scratch.
  * Scope: Deterministic DSP in plain JavaScript (sine/triangle oscillators, envelopes, a seeded noise

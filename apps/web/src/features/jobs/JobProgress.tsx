@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+// Copyright (c) 2026 Carson McRae
 /**
  * Purpose: Progress of a running background job, with a Cancel button.
  * Scope: Progress bar, the job's latest message (announced politely) and cancellation; shared by engine

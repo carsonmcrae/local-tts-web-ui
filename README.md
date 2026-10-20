@@ -177,14 +177,14 @@ See [CONTRIBUTING.md](CONTRIBUTING.md), [testing](docs/guides/testing.md),
 
 ## Licence and credits
 
-Local TTS Web UI is created and maintained by **Carson McRae** and released under the MIT License — see
-[LICENSE](LICENSE) and [NOTICE](NOTICE). Model weights and dependencies have their own licences; see the
+Local TTS is created and maintained by **Carson McRae** and released under the MIT License — see
+[LICENSE](LICENSE). Model weights and dependencies have their own licences; see the
 [licence inventory](docs/security/license-inventory.md).
 
-**Using or forking this project?** Keep the copyright notices (in LICENSE, NOTICE and at the top of every
-source file) and credit the project, for example: "Based on
-[Local TTS Web UI](https://github.com/carsonmcrae/local-tts-web-ui) by Carson McRae (MIT)". The rules
-are in [ATTRIBUTION.md](ATTRIBUTION.md), and [CITATION.cff](CITATION.cff) gives the citation.
+**Using or forking this project?** The licence asks one thing: keep the copyright notice in LICENSE. A
+credit line such as "Based on [Local TTS](https://github.com/carsonmcrae/local-tts-web-ui) by Carson
+McRae (MIT)" is appreciated. [ATTRIBUTION.md](ATTRIBUTION.md) explains what is required and what is
+only asked, and [CITATION.cff](CITATION.cff) gives the citation.
 
 Built on the work of:
 

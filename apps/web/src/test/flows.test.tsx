@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+// Copyright (c) 2026 Carson McRae
 /**
  * Purpose: Multi-step user flows rendered against the mocked API.
  * Scope: Creating a custom voice from an imported recording (decode mocked: jsdom has no Web Audio),

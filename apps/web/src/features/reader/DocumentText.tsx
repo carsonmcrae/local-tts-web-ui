@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+// Copyright (c) 2026 Carson McRae
 /**
  * Purpose: Render one section's text for reading along, with the spoken sentence highlighted.
  * Scope: Groups segments into headings and paragraphs in the reader's chosen size, spacing and

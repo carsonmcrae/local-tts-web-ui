@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+# Copyright (c) 2026 Carson McRae
 """Purpose: HTTP endpoints for Voice Studio.
 
 Scope: Analyse a recording without storing it (its quality and the cleanup it needs), preview a

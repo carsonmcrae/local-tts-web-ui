@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+# Copyright (c) 2026 Carson McRae
 """Purpose: Structured, privacy-preserving logging for the server.
 
 Scope: A key=value formatter (``extra`` fields are appended), level selection per environment,

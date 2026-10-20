@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+# Copyright (c) 2026 Carson McRae
 """Purpose: Optional Chatterbox Turbo engine (MIT) for zero-shot voice cloning, run out-of-process.
 
 Scope: Installs an isolated, locked environment (CPU or CUDA PyTorch) with uv plus checksum-pinned

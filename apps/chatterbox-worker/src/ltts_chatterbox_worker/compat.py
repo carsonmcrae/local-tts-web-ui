@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+# Copyright (c) 2026 Carson McRae
 """Purpose: Compatibility shims for third-party packages the worker loads.
 
 Scope: Provides ``pkg_resources.resource_filename`` for the Perth watermarker (imported by Chatterbox),

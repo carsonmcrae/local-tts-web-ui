@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+// Copyright (c) 2026 Carson McRae
 /**
  * Purpose: Add documents to the library by file picker, drag-and-drop or pasting text.
  * Scope: Client-side pre-checks (type and size, for fast feedback only — the server re-validates

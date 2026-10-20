@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+// Copyright (c) 2026 Carson McRae
 /**
  * Purpose: The core acceptance journey with real Kokoro inference in a real browser.
  * Scope: Paste text → play → hear real narration that advances sentence by sentence; upload TXT,

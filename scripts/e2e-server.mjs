@@ -1,6 +1,6 @@
 // @ts-check
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+// Copyright (c) 2026 Carson McRae
 /**
  * Purpose: Start an isolated, production-style server for Playwright end-to-end tests.
  * Scope: Serves the built web UI and API from one process on a given port, with a fresh throwaway

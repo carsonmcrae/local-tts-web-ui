@@ -1,6 +1,6 @@
 // @ts-check
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+// Copyright (c) 2026 Carson McRae
 /**
  * Purpose: Start long-running child processes with prefixed output and stop them cleanly.
  * Scope: Spawning without a shell, line-prefixing stdout/stderr, killing whole process trees

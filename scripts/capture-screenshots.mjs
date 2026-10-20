@@ -1,6 +1,6 @@
 // @ts-check
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+// Copyright (c) 2026 Carson McRae
 /**
  * Purpose: Regenerate the README screenshots from the real running app (no mock-ups).
  * Scope: Starts an isolated production-style server with the installed models, adds sample documents,

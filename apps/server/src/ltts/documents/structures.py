@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+# Copyright (c) 2026 Carson McRae
 """Purpose: Plain data structures passed between extraction, segmentation and storage.
 
 Scope: Extractor output (sections of blocks), segmentation output, and the limits object handed to

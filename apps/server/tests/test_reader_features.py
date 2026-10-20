@@ -1,12 +1,12 @@
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+# Copyright (c) 2026 Carson McRae
 """Purpose: Tests for the reader's study and listening aids: pronunciations, bookmarks, search, subtitles.
 
 Scope: The pronunciation dictionary (whole words, any case or exact case, longest phrase first,
 duplicates and limits refused, rules applied to what the engine is asked to say and to the audio
 cache key); bookmarks with notes (add, re-bookmark updates the note, edit, delete, reading order,
 limits, deleted with their document); searching a document's sentences in any letter case; exports
-with sentence-timed subtitles and tags; and the provenance the API reports.
+with sentence-timed subtitles and tags describing only the document; and the API's licence metadata.
 Does NOT belong: Section corrections (test_document_sections.py) or export basics
 (test_voices_exports_jobs.py).
 """
@@ -27,7 +27,6 @@ from ltts.documents import bookmarks
 from ltts.exports.service import srt_time
 from ltts.pronunciation import store
 from ltts.pronunciation.store import PronunciationIn, PronunciationOut, compile_rules
-from ltts.provenance import CREDIT, FINGERPRINT
 
 TEXT = "\n\n".join(
     [
@@ -183,7 +182,8 @@ def test_exports_carry_subtitles_and_tags(client: TestClient) -> None:
     assert subtitles.count(" --> ") == 5
     with sf.SoundFile(io.BytesIO(archive.read("Wardens.wav"))) as audio:
         tags = audio.copy_metadata()
-    assert tags["title"] == "Wardens" and CREDIT in tags["comment"]
+    assert tags["title"] == "Wardens" and tags["album"] == "Wardens"
+    assert "comment" not in tags and "Local TTS" not in tags.get("software", "")  # no branding in exports
 
     chapters = wait_job(
         client, client.post("/api/exports", json={**request, "format": "mp3", "layout": "chapters"}).json()["id"]
@@ -207,9 +207,6 @@ def test_subtitle_timestamps() -> None:
     assert srt_time(3725.4567) == "01:02:05,457"
 
 
-def test_the_api_says_where_it_comes_from(client: TestClient) -> None:
-    about = client.get("/api/system").json()["about"]
-    assert about["author"] == "Carson McRae" and about["license"] == "MIT"
-    assert about["fingerprint"] == FINGERPRINT and about["homepage"].endswith("/carsonmcrae/local-tts-web-ui")
+def test_the_api_description_names_its_licence(client: TestClient) -> None:
     info = client.get("/api/openapi.json").json()["info"]
     assert info["contact"]["name"] == "Carson McRae" and info["license"]["name"] == "MIT"

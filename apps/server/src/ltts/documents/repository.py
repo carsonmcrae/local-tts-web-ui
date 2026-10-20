@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+# Copyright (c) 2026 Carson McRae
 """Purpose: SQL access for documents, their segments and reading progress.
 
 Scope: Insert a fully segmented document atomically; list/get/delete; fetch a section's or a single

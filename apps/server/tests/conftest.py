@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+# Copyright (c) 2026 Carson McRae
 """Purpose: Shared pytest fixtures for the server test suite.
 
 Scope: Isolated settings (temporary data dir), a deterministic ``FakeEngine`` (sine tones whose

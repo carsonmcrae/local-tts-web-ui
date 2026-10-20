@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+# Copyright (c) 2026 Carson McRae
 """Purpose: Tests for the extraction sandbox's protocol and the ingestion service's limits.
 
 Scope: The sandbox child function run in-process (success, application errors, memory exhaustion,

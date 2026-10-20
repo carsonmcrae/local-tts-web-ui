@@ -6,7 +6,9 @@
 > (Chatterbox).
 
 The full, generated list of runtime packages and licences is in
-[license-inventory.generated.md](license-inventory.generated.md). Regenerate it with
+[license-inventory.generated.md](license-inventory.generated.md). The production web build (and the
+`web-ui` archive attached to each release) includes `THIRD-PARTY-LICENSES.md`, written by Vite, with the
+licence text of every package and font it bundles. Regenerate it with
 `npm run licenses`; the command fails if a dependency has an unknown licence or an unreviewed
 GPL/AGPL/LGPL licence.
 

@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+# Copyright (c) 2026 Carson McRae
 """Purpose: Build and hold the application's service graph (manual dependency injection).
 
 Scope: Constructs every service once per app from ``Settings`` and exposes them to routes through

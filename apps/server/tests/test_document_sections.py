@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+# Copyright (c) 2026 Carson McRae
 """Purpose: Tests for correcting a document's sections: renaming one and moving where it starts.
 
 Scope: Moving a section's start later and back earlier keeps every sentence in exactly one section,

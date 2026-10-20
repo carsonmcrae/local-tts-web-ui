@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+// Copyright (c) 2026 Carson McRae
 /**
  * Purpose: Framework-free playback engine for continuous, progressive document narration.
  * Scope: Plays one segment (sentence) at a time through a single audio element, prefetches the next

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+// Copyright (c) 2026 Carson McRae
 /**
  * Purpose: The app's buttons — text buttons, icon-only buttons and link-styled buttons.
  * Scope: Variants (primary, secondary, ghost, danger), sizes, loading state with an accessible busy

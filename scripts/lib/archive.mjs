@@ -1,6 +1,6 @@
 // @ts-check
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+// Copyright (c) 2026 Carson McRae
 /**
  * Purpose: Extract a single named file from a .zip or .tar.gz archive held in memory.
  * Scope: Just enough of the ZIP and ustar formats to pull the uv binary out of its

@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+# Copyright (c) 2026 Carson McRae
 """Purpose: SQLite persistence primitives: connections and forward-only schema migrations.
 
 Scope: Short-lived connections (safe across request and worker threads) with WAL, foreign keys and

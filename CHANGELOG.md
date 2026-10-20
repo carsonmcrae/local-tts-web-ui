@@ -36,10 +36,12 @@ All notable changes to this project are documented here. The format follows
 - **Reading text settings**: text size, line spacing and typeface, per device.
 - **Export subtitles and tags**: optional sentence-timed SRT subtitles, and title, album and track
   tags in exported audio.
-- **Attribution and provenance**: [NOTICE](NOTICE), [ATTRIBUTION.md](ATTRIBUTION.md) and
-  [CITATION.cff](CITATION.cff); SPDX licence and copyright lines in every source file, checked by
-  `npm run lint:repo`; the author and licence in Settings → About, the API description, package
-  metadata, the web bundle's licence banner and exported audio.
+- **Attribution**: [ATTRIBUTION.md](ATTRIBUTION.md) (what the MIT License requires and what is only
+  asked) and [CITATION.cff](CITATION.cff); SPDX licence and copyright lines in every source file, checked
+  by `npm run lint:repo`; the author and licence in Settings → About, the API description and package
+  metadata. The built web app now ships the licences of the packages and fonts it bundles
+  (`THIRD-PARTY-LICENSES.md`). Exported audio carries only the document's own title, album and track
+  tags.
 
 ### Changed
 
@@ -49,7 +51,7 @@ All notable changes to this project are documented here. The format follows
   `POST /api/voice-sessions/tone-preview` is replaced by `POST /api/voice-profiles/cleanup-preview`;
   a studio session's `tone` is now `cleanup`. New: `PATCH /api/documents/{id}/sections/{index}`,
   `GET /api/documents/{id}/search`, `/api/documents/{id}/bookmarks` and `/api/pronunciations`;
-  `GET /api/system` reports `about`; exports accept `captions`. Database migration 5 adds the
+  exports accept `captions`. Database migration 5 adds the
   `pronunciations` and `bookmarks` tables.
 - **Node.js 22.22 or newer** is now required (React Router 8 and jsdom 30 need it).
 - Dependencies: React Router 8, radix-ui 1.7, Vitest 5, jsdom 30.

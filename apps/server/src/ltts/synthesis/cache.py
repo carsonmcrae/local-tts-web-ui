@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+# Copyright (c) 2026 Carson McRae
 """Purpose: Content-addressed, size-bounded cache of synthesised segment audio.
 
 Scope: Keys are SHA-256 over everything that affects the sound (engine revision, voice + its

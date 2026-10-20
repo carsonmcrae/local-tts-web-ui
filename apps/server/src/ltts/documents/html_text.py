@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+# Copyright (c) 2026 Carson McRae
 """Purpose: Turn (X)HTML chapter files into heading and paragraph blocks.
 
 Scope: A tolerant ``html.parser``-based walker: block elements end paragraphs, h1–h6 become

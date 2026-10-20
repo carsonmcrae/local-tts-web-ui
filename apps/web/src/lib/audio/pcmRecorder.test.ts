@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+// Copyright (c) 2026 Carson McRae
 /**
  * Purpose: Tests for lossless studio capture and 24-bit WAV encoding.
  * Scope: Input listing (labels, permission-less entries, Chrome's default and communications aliases)

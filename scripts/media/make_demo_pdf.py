@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+# Copyright (c) 2026 Carson McRae
 """Purpose: Write the PDF the demo video uploads: an original three-chapter short story.
 
 Scope: Wraps the story into lines and builds a real text-layer PDF with a chapter outline using the

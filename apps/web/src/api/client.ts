@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+// Copyright (c) 2026 Carson McRae
 /**
  * Purpose: The one way the web app talks to the local server.
  * Scope: JSON and binary requests with the required `X-LTTS-Client` header (the server's CSRF

@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+# Copyright (c) 2026 Carson McRae
 """Purpose: Tests for cleaning up a microphone's recordings: noise reduction, the rumble filter and tone.
 
 Scope: Noise reduction lowers steady hiss while speech keeps its level; the rumble filter lowers hum;

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+// Copyright (c) 2026 Carson McRae
 /**
  * Purpose: Export a document (or a range of chapters) as downloadable audio.
  * Scope: Format (MP3/WAV), single file vs one file per chapter (ZIP + playlist), chapter range,

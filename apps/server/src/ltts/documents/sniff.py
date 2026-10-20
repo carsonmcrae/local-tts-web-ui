@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+# Copyright (c) 2026 Carson McRae
 """Purpose: Decide a document's real type from its bytes, not from its name or browser MIME type.
 
 Scope: Magic-byte checks for PDF and ZIP containers (EPUB vs DOCX by their mandatory parts), a

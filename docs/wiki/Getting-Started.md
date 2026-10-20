@@ -79,5 +79,5 @@ Your position is saved automatically as you listen. Next time:
 
 - [Reading Documents](Reading-Documents): chapters, scanned PDFs, navigation, speed and pace.
 - [Voices](Voices): compare voices on your own passage.
-- [Voice Studio](Voice-Studio): create a voice from a short recording.
+- [Voice Studio](Voice-Studio): create a voice from your own recordings.
 - [Exporting Audio](Exporting-Audio): save narration as MP3 or WAV.

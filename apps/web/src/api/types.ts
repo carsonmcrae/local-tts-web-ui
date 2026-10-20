@@ -21,4 +21,7 @@ export type Preferences = Schemas['Preferences'];
 export type SystemInfo = Schemas['SystemInfo'];
 export type VoiceProfile = Schemas['VoiceProfileOut'];
 export type QualityReport = Schemas['QualityReport'];
+export type Delivery = VoiceProfile['delivery'];
+export type VoiceSession = Schemas['VoiceSessionOut'];
+export type SessionTake = Schemas['TakeOut'];
 export type ExportRequest = Schemas['ExportRequest'];

@@ -18,7 +18,16 @@ import { diagnosticsReport } from '@/features/settings/SystemSections';
 import VoiceStudioPage from '@/features/studio/VoiceStudioPage';
 import VoiceLibraryPage, { filterVoices } from '@/features/voices/VoiceLibraryPage';
 import { PlayerBar } from '@/features/player/PlayerBar';
-import { documentDetail, json, kokoro, mockApi, preferences, renderWithApp, voice } from './render';
+import {
+  documentDetail,
+  json,
+  kokoro,
+  mockApi,
+  preferences,
+  renderWithApp,
+  voice,
+  chooseQuickVoice,
+} from './render';
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -333,8 +342,10 @@ describe('Voice Studio', () => {
     expect(await screen.findByText('No custom voices yet')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Install Chatterbox Turbo/ })).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Create your first voice' }));
-    const dialog = await screen.findByRole('dialog', { name: 'Create a voice' });
-    expect(within(dialog).getByText('A short reference is all this app needs')).toBeInTheDocument();
+    const dialog = await chooseQuickVoice(user);
+    expect(
+      within(dialog).getByText('A short reference is all a quick voice needs'),
+    ).toBeInTheDocument();
     await user.click(within(dialog).getByRole('button', { name: /Continue/ }));
     expect(within(dialog).getByRole('button', { name: 'Start recording' })).toBeInTheDocument();
     expect(within(dialog).getByRole('button', { name: /Continue/ })).toBeDisabled();

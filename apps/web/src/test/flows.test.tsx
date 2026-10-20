@@ -26,6 +26,7 @@ import {
   renderWithApp,
   voice,
   voiceProfile,
+  chooseQuickVoice,
 } from './render';
 
 vi.mock('@/lib/audio/wav', async (importOriginal) => {
@@ -72,7 +73,7 @@ describe('Voice creation', () => {
     const user = userEvent.setup();
     renderWithApp(<VoiceStudioPage />);
     await user.click(await screen.findByRole('button', { name: 'Create voice' }));
-    const dialog = await screen.findByRole('dialog', { name: 'Create a voice' });
+    const dialog = await chooseQuickVoice(user);
     await user.click(within(dialog).getByRole('button', { name: /Continue/ }));
     await user.upload(
       within(dialog).getByTestId('voice-file-input'),

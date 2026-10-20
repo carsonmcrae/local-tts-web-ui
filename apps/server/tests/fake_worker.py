@@ -1,18 +1,62 @@
 """Purpose: A stand-in engine worker that speaks the JSON-lines stdio protocol, for WorkerClient tests.
 
 Scope: Echoes requests (``load`` reports the requested device and ``synthesize`` writes a short
-silent WAV to ``output``, like the real worker), and simulates failures: ``fail`` (error reply),
-``slow`` (exceeds timeouts), ``crash`` (process exits) and stray non-protocol output.
+silent WAV to ``output``, like the real worker), fakes the studio ops (``measure`` returns small
+fixed embeddings, ``build`` writes a conditioning file naming its prompt, ``audition`` writes silent
+samples scored by the prompt's take number), reports every request it received (``history``), and
+simulates failures: ``fail`` (error reply), ``slow`` (exceeds timeouts), ``crash`` (process exits)
+and stray non-protocol output.
 Does NOT belong: Any real inference.
 """
 
 import json
+import re
 import sys
 import time
 import wave
+from pathlib import Path
 
+
+def silence(path: str) -> None:
+    with wave.open(path, "wb") as clip:  # 0.1 s of 24 kHz silence
+        clip.setnchannels(1)
+        clip.setsampwidth(2)
+        clip.setframerate(24_000)
+        clip.writeframes(bytes(4_800))
+
+
+def take_number(path: str) -> int:
+    digits = re.findall(r"\d+", Path(path).stem)
+    return int(digits[-1]) if digits else 0
+
+
+def features(path: str) -> dict:
+    number = take_number(path)
+    return {
+        "path": path,
+        "speakerEmb": [1.0, 0.1 * (number % 3), 0.0, 0.0],
+        "xvector": [0.0, 1.0, 0.0],
+        "pitchSpread": 1.0 + number % 4,
+        "voicedRatio": 0.6,
+    }
+
+
+def studio(op: str, request: dict) -> dict:
+    if op == "measure":
+        return {"takes": [features(path) for path in request["paths"]]}
+    if op == "build":
+        Path(request["output"]).write_text(json.dumps({"prompt": request["prompt"]}), encoding="utf-8")
+        return {"output": request["output"]}
+    prompt = json.loads(Path(request["conditioning"]).read_text("utf-8"))["prompt"]
+    for output in request["outputs"]:
+        silence(output)
+    return {"scores": [round(0.8 + take_number(prompt) % 10 / 100, 4)] * len(request["outputs"]), "sampleRate": 24_000}
+
+
+history = []
 for line in sys.stdin:
     request = json.loads(line)
+    history.append(request)
     op = request.get("op")
     if op == "shutdown":
         break
@@ -29,9 +73,9 @@ for line in sys.stdin:
     if op == "load":
         reply["device"] = request.get("device")
     if op == "synthesize" and request.get("output"):
-        with wave.open(request["output"], "wb") as clip:  # 0.1 s of 24 kHz silence
-            clip.setnchannels(1)
-            clip.setsampwidth(2)
-            clip.setframerate(24_000)
-            clip.writeframes(bytes(4_800))
+        silence(request["output"])
+    if op in ("measure", "build", "audition"):
+        reply.update(studio(op, request))
+    if op == "history":
+        reply["requests"] = history[:-1]
     print(json.dumps(reply), flush=True)

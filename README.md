@@ -28,8 +28,9 @@ narration voice from a short recording of yourself.
   playback begins in about a second and long documents never need to be rendered up front.
 - **54 natural voices** (Kokoro-82M) across English (US/UK), Spanish, French, Hindi, Italian, Portuguese,
   Japanese and Mandarin, with quality grades and side-by-side comparison on your own passage.
-- **Voice Studio (optional)** — create a voice from a 10–20 second recording or an existing clip, with live
-  quality checks, explicit consent, a test generation and one-click permanent deletion.
+- **Voice Studio (optional)** — create a voice from a 10–20 second recording or an existing clip, or record a
+  guided studio session (lossless, 48 passages, resumable) that the app builds into your most faithful voice
+  from the best takes. Live quality checks, explicit consent, a delivery setting and one-click permanent deletion.
 - **Export** — WAV or MP3, the whole document or selected chapters, one file or one per chapter.
 - **Private by design** — binds to `127.0.0.1`, works offline after setup, and never sends documents or
   recordings anywhere.
@@ -94,10 +95,12 @@ Limits (configurable): 25 MB per file, 2 million characters, 2,000 PDF pages.
 
 ### How custom voices work
 
-Chatterbox copies a voice at the moment it speaks from a **short reference** (10–20 seconds is ideal; the
-engine only uses roughly the first 10–15 seconds, so longer recordings don't help). No model is trained —
-**fine-tuning** a model on 30+ minutes of audio can sound closer, but it needs hours of GPU time and isn't
-offered here. Only the trimmed reference recording is stored, locally. You must confirm the voice is yours
+Chatterbox copies a voice at the moment it speaks from a **reference**: it takes the voice's sound from
+roughly the first 10 seconds and its speaking style from the first 15, so a clean recording matters more
+than a long one. A **quick voice** uses one 10–20 second clip. A **studio voice** comes from a longer guided
+session: the app averages the speaker across every take and builds the voice from the take you choose by
+ear. No model is trained — **fine-tuning** a model on 30+ minutes of audio can sound closer, but it needs
+hours of GPU time and isn't offered here. Recordings are stored only on this computer. You must confirm the voice is yours
 or that the speaker gave permission; generated audio carries Resemble AI's inaudible Perth watermark.
 
 ## Documentation

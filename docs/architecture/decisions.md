@@ -81,3 +81,27 @@ when a choice changes the stack, a trust boundary, data storage or the setup exp
   usable, and the update stays on offer with the error shown. Only changed packages download. A
   cancel during uv's short install phase can leave a mix of old and new packages; because the old
   hash is kept, the update stays on offer and running it again brings the environment back in line.
+
+## ADR-9: Studio voices average the speaker over a session; no training
+
+- **Context:** A quick voice copies one 10–20 second clip. Chatterbox Turbo takes the voice's sound from
+  the first 10 seconds of that clip and its speaking style from the first 15, so a thin microphone, a
+  flat reading or an unlucky first sentence carries into every generated sentence. People who want a
+  faithful voice are willing to record for longer.
+- **Decision:** A studio voice is built from a recorded session (lossless browser capture with voice
+  processing off, or an imported recording split at pauses). The worker measures every usable take
+  (voice-encoder and S3Gen speaker embeddings, pitch movement); the server averages the speaker's
+  identity over the takes that agree with each other, ranks takes as prompts (speech length, noise,
+  brightness, pauses, pitch movement, typicality) and builds five candidates: each uses one take's first
+  10 and 15 seconds for sound and style, plus the session identity. Each is auditioned on the same
+  sentences with the same seed and scored by speaker similarity; the person picks by ear from the top
+  three. The result is saved as safetensors and loaded instead of preparing a reference at synthesis
+  time. A per-voice delivery (sampling temperature and top-p) adds control over inflection.
+- **Alternatives:** Fine-tuning Chatterbox on the session. Rejected for now: hours of GPU time, a
+  training stack in the worker and a large per-voice download, for a gain that a better reference
+  largely captures. The session's takes are kept so fine-tuning could be added later. Shipping voices
+  in the repository was ruled out: a published voice can be used by anyone to impersonate its speaker.
+- **Consequences:** Building needs the cloning engine and takes a minute or two on a GPU; the worker
+  is busy meanwhile, so other custom voices wait. Sessions and studio voices take more disk (24-bit
+  FLAC takes). A built voice's file name and delivery are part of its audio cache revision, so a
+  rebuild or delivery change never serves old audio; quick voices keep their original revision.

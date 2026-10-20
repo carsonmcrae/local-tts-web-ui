@@ -37,6 +37,19 @@ export function explainMicrophoneError(error: unknown): MicrophoneError {
   return new MicrophoneError('unknown', 'The microphone could not be started.');
 }
 
+/** An analyser's current level 0..1: RMS mapped from -60..0 dBFS (0 without an analyser). */
+export function inputLevel(
+  analyser: AnalyserNode | null,
+  buffer: Float32Array<ArrayBuffer>,
+): number {
+  if (!analyser) return 0;
+  analyser.getFloatTimeDomainData(buffer);
+  let sum = 0;
+  for (const value of buffer) sum += value * value;
+  const db = 20 * Math.log10(Math.sqrt(sum / buffer.length) + 1e-9);
+  return Math.min(Math.max((db + 60) / 60, 0), 1);
+}
+
 export class MicRecorder {
   private stream: MediaStream | null = null;
   private recorder: MediaRecorder | null = null;
@@ -86,12 +99,7 @@ export class MicRecorder {
 
   /** Current input level 0..1 (RMS mapped from -60..0 dBFS). */
   level(): number {
-    if (!this.analyser) return 0;
-    this.analyser.getFloatTimeDomainData(this.levelBuffer);
-    let sum = 0;
-    for (const value of this.levelBuffer) sum += value * value;
-    const db = 20 * Math.log10(Math.sqrt(sum / this.levelBuffer.length) + 1e-9);
-    return Math.min(Math.max((db + 60) / 60, 0), 1);
+    return inputLevel(this.analyser, this.levelBuffer);
   }
 
   stop(): Promise<Blob> {

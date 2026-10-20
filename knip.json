@@ -10,7 +10,8 @@
       "ignoreDependencies": ["vite"]
     },
     "apps/web": {
-      "ignore": ["src/api/schema.gen.ts"]
+      "ignore": ["src/api/schema.gen.ts"],
+      "entry": ["public/audio/capture-worklet.js"]
     }
   },
   "ignoreUnresolved": ["../../.tools/server-requirements.txt"]

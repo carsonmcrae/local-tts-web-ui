@@ -1,16 +1,17 @@
 /**
  * Purpose: One custom voice profile in Voice Studio.
- * Scope: Name, source, length, creation date, consent timestamp, what is stored; play the stored
- *   reference, rename, use for reading, and permanent deletion with an explicit confirmation.
- * Does NOT belong: Creation (CreateVoiceWizard).
+ * Scope: Name, kind (quick or studio), source, length, creation date, consent timestamp, what is
+ *   stored; play the stored reference, choose the delivery, rename, use for reading, and permanent
+ *   deletion with an explicit confirmation.
+ * Does NOT belong: Creation (the wizards).
  */
 import { Check, Pencil, Play, Square, Trash2 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import {
   useDeleteProfile,
   usePreferences,
-  useRenameProfile,
   useSavePreferences,
+  useUpdateProfile,
 } from '@/api/queries';
 import type { VoiceProfile } from '@/api/types';
 import { Button, IconButton } from '@/components/ui/Button';
@@ -21,32 +22,13 @@ import { useToast } from '@/components/ui/Toast';
 import { usePlayer } from '@/features/player/PlayerProvider';
 import { useReadingVoice } from '@/features/player/useReadingVoice';
 import { formatRelativeDate } from '@/lib/format';
+import { DeliveryPicker } from './TestStep';
+import { useClipPlayer } from './useClipPlayer';
 
-function useReferencePlayer(src: string) {
-  const [playing, setPlaying] = useState(false);
-  const [audio] = useState(() => new Audio());
-  useEffect(() => {
-    const stop = () => setPlaying(false);
-    audio.addEventListener('ended', stop);
-    audio.addEventListener('pause', stop);
-    return () => {
-      audio.pause();
-      audio.removeEventListener('ended', stop);
-      audio.removeEventListener('pause', stop);
-    };
-  }, [audio]);
-  const toggle = () => {
-    if (playing) {
-      audio.pause();
-      return;
-    }
-    audio.setAttribute('src', src);
-    void audio.play().then(
-      () => setPlaying(true),
-      () => setPlaying(false),
-    );
-  };
-  return { playing, toggle };
+function describe(profile: VoiceProfile): string {
+  if (profile.kind === 'studio')
+    return `Studio voice · ${Math.max(Math.round(profile.durationS / 60), 1)} min of recordings`;
+  return `${profile.durationS.toFixed(0)} s ${profile.source === 'import' ? 'imported clip' : 'recording'}`;
 }
 
 export function ProfileCard({
@@ -54,7 +36,7 @@ export function ProfileCard({
   engineReady,
 }: Readonly<{ profile: VoiceProfile; engineReady: boolean }>) {
   const remove = useDeleteProfile();
-  const rename = useRenameProfile();
+  const rename = useUpdateProfile();
   const preferences = usePreferences();
   const save = useSavePreferences();
   const toast = useToast();
@@ -63,9 +45,10 @@ export function ProfileCard({
   const [confirm, setConfirm] = useState(false);
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(profile.name);
-  const reference = useReferencePlayer(`/api/voice-profiles/${profile.id}/reference`);
-  const playing = reference.playing;
-  const toggleReference = reference.toggle;
+  const referenceUrl = `/api/voice-profiles/${profile.id}/reference`;
+  const reference = useClipPlayer();
+  const playing = reference.playing === referenceUrl;
+  const toggleReference = () => reference.toggle(referenceUrl);
   const isDefault = preferences.data?.defaultVoiceId === profile.voiceId;
 
   const deleteProfile = () =>
@@ -95,12 +78,11 @@ export function ProfileCard({
         <div className="min-w-0 flex-1">
           <h3 className="flex items-center gap-2 font-medium">
             <span className="truncate">{profile.name}</span>
+            {profile.kind === 'studio' ? <Badge tone="success">Studio</Badge> : null}
             {isDefault ? <Badge tone="accent">Reading voice</Badge> : null}
           </h3>
           <p className="text-[13px] text-muted">
-            {profile.durationS.toFixed(0)} s{' '}
-            {profile.source === 'import' ? 'imported clip' : 'recording'} · created{' '}
-            {formatRelativeDate(profile.createdAt).toLowerCase()}
+            {describe(profile)} · created {formatRelativeDate(profile.createdAt).toLowerCase()}
           </p>
         </div>
         <IconButton
@@ -120,6 +102,7 @@ export function ProfileCard({
         Stores: {profile.stores} Consent confirmed{' '}
         {new Date(profile.consentedAt).toLocaleDateString()}.
       </p>
+      {engineReady ? <DeliveryPicker profile={profile} /> : null}
       <div className="flex flex-wrap gap-2">
         <Button
           size="sm"
@@ -149,7 +132,7 @@ export function ProfileCard({
         open={confirm}
         onOpenChange={setConfirm}
         title={`Permanently delete “${profile.name}”?`}
-        description="This deletes the reference recording, the profile and all cached audio generated with this voice from this computer. Files you exported are kept. It can't be undone."
+        description="This deletes the voice's recordings, the profile and all cached audio generated with this voice from this computer. Files you exported are kept. It can't be undone."
         confirmLabel="Delete voice"
         busy={remove.isPending}
         onConfirm={deleteProfile}

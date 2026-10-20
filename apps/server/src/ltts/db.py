@@ -88,6 +88,28 @@ MIGRATIONS: tuple[str, ...] = (
         value_json TEXT NOT NULL
     );
     """,
+    # 2: studio voices (a built voice file and a delivery per profile) and draft recording sessions
+    """
+    ALTER TABLE voice_profiles ADD COLUMN kind TEXT NOT NULL DEFAULT 'quick';
+    ALTER TABLE voice_profiles ADD COLUMN delivery TEXT NOT NULL DEFAULT 'natural';
+    ALTER TABLE voice_profiles ADD COLUMN voice_file TEXT;
+    CREATE TABLE voice_sessions (
+        id TEXT PRIMARY KEY,
+        candidates_json TEXT,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+    );
+    CREATE TABLE voice_takes (
+        session_id TEXT NOT NULL REFERENCES voice_sessions(id) ON DELETE CASCADE,
+        number INTEGER NOT NULL,
+        prompt_id TEXT,
+        source TEXT NOT NULL,
+        duration_s REAL NOT NULL,
+        quality_json TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        PRIMARY KEY (session_id, number)
+    );
+    """,
 )
 
 

@@ -2,8 +2,8 @@
 
 Local TTS reads documents aloud with natural voices, privately, on your own computer. Add a PDF,
 Word document, EPUB, Markdown or text file (or paste text), press Play and follow along as each
-sentence is highlighted. Optionally, you can create a narration voice from a short recording of
-yourself.
+sentence is highlighted. Optionally, you can create a narration voice from your own recordings: a
+short clip for a quick voice, or a guided session for a studio voice.
 
 Everything runs locally: no accounts, no cloud and no telemetry. The app listens only on
 `127.0.0.1` and works offline once its voice model is installed.
@@ -21,7 +21,7 @@ Everything runs locally: no accounts, no cloud and no telemetry. The app listens
 2. [Getting Started](Getting-Started): from first launch to hearing narration.
 3. [Reading Documents](Reading-Documents): formats, limits, chapters, navigation and resume.
 4. [Voices](Voices): the built-in voices, quality grades and comparing them.
-5. [Voice Studio](Voice-Studio): create a voice from a short recording (optional).
+5. [Voice Studio](Voice-Studio): create a voice from your own recordings (optional).
 6. [Exporting Audio](Exporting-Audio): save narration as MP3 or WAV.
 7. [Settings and Models](Settings-and-Models): preferences, engines, storage and diagnostics.
 8. [Keyboard Shortcuts](Keyboard-Shortcuts): listen without the mouse.

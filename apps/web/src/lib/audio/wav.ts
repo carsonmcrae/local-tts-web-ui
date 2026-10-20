@@ -1,7 +1,8 @@
 /**
- * Purpose: Convert any browser-decodable audio into the 24 kHz mono 16-bit WAV the server accepts.
+ * Purpose: Convert any browser-decodable audio into the mono WAV the server accepts.
  * Scope: Mono down-mix, high-quality resampling via OfflineAudioContext (linear fallback for tests),
- *   trimming to a maximum length, and a dependency-free PCM16 WAV encoder. Decoding happens in the
+ *   trimming to a maximum length, and a dependency-free PCM WAV encoder (16-bit for quick voices,
+ *   24-bit for lossless studio takes at their own sample rate). Decoding happens in the
  *   browser so the server only ever parses plain WAV.
  * Does NOT belong: Microphone capture (recorder.ts) or quality checks (analysis.ts).
  */
@@ -83,9 +84,15 @@ export async function decodeToClip(data: ArrayBuffer, maxSeconds: number): Promi
   }
 }
 
-/** PCM16 mono WAV bytes. */
-export function encodeWavBuffer(samples: Float32Array, sampleRate: number): ArrayBuffer {
-  const bytesPerSample = 2;
+export type BitDepth = 16 | 24;
+
+/** PCM mono WAV bytes at 16 or 24 bits. */
+export function encodeWavBuffer(
+  samples: Float32Array,
+  sampleRate: number,
+  bits: BitDepth = 16,
+): ArrayBuffer {
+  const bytesPerSample = bits / 8;
   const dataSize = samples.length * bytesPerSample;
   const buffer = new ArrayBuffer(44 + dataSize);
   const view = new DataView(buffer);
@@ -102,16 +109,23 @@ export function encodeWavBuffer(samples: Float32Array, sampleRate: number): Arra
   view.setUint32(24, sampleRate, true);
   view.setUint32(28, sampleRate * bytesPerSample, true);
   view.setUint16(32, bytesPerSample, true);
-  view.setUint16(34, 16, true);
+  view.setUint16(34, bits, true);
   writeString(36, 'data');
   view.setUint32(40, dataSize, true);
+  const full = 2 ** (bits - 1);
   samples.forEach((sample, i) => {
     const clamped = Math.max(-1, Math.min(1, sample));
-    view.setInt16(44 + i * bytesPerSample, clamped < 0 ? clamped * 0x8000 : clamped * 0x7fff, true);
+    const value = Math.round(clamped < 0 ? clamped * full : clamped * (full - 1));
+    const offset = 44 + i * bytesPerSample;
+    if (bits === 16) view.setInt16(offset, value, true);
+    else {
+      view.setUint16(offset, value & 0xffff, true);
+      view.setInt8(offset + 2, value >> 16);
+    }
   });
   return buffer;
 }
 
-export function encodeWav(samples: Float32Array, sampleRate: number): Blob {
-  return new Blob([encodeWavBuffer(samples, sampleRate)], { type: 'audio/wav' });
+export function encodeWav(samples: Float32Array, sampleRate: number, bits: BitDepth = 16): Blob {
+  return new Blob([encodeWavBuffer(samples, sampleRate, bits)], { type: 'audio/wav' });
 }

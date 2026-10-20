@@ -1,7 +1,8 @@
 """Purpose: Wire engines together and resolve any voice id to an engine plus voice specification.
 
 Scope: Holds the engine instances, maps ``engine:key`` and ``custom:<profile>`` voice ids, merges
-built-in and custom voices for the library, and runs engine install and update jobs.
+built-in and custom voices for the library, runs engine install and update jobs, and hands out the
+cloning engine for building studio voices.
 Does NOT belong: Engine internals, caching or HTTP.
 """
 
@@ -10,7 +11,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from dataclasses import dataclass
 
-from ltts.engines.base import Engine, EngineInfo, VoiceInfo, VoiceSpec
+from ltts.engines.base import Engine, EngineInfo, VoiceBuilder, VoiceInfo, VoiceSpec
 from ltts.errors import ConflictError, EngineUnavailableError, NotFoundError
 from ltts.jobs import JobManager, JobOut, JobStatus
 
@@ -46,6 +47,15 @@ class EngineRegistry:
     def is_ready(self, engine_id: str) -> bool:
         engine = self._engines.get(engine_id)
         return engine is not None and engine.is_ready()
+
+    def voice_builder(self, engine_id: str) -> VoiceBuilder:
+        """The cloning engine, installed and able to build studio voices."""
+        engine = self._engines.get(engine_id)
+        if engine is None or not engine.is_ready() or not isinstance(engine, VoiceBuilder):
+            raise EngineUnavailableError(
+                "Install the voice-cloning engine to build a studio voice.", code="engine_not_installed"
+            )
+        return engine
 
     def all(self) -> list[Engine]:
         return list(self._engines.values())

@@ -1,7 +1,8 @@
 """Purpose: Small, dependency-light audio utilities shared by synthesis, export and voice profiles.
 
 Scope: Natural pauses after segments (by boundary type), click-free fades, peak normalisation,
-silence trimming, mono conversion, and WAV encode/decode through soundfile (libsndfile).
+silence trimming, splitting a long recording into takes at pauses, mono conversion, and WAV
+encode/decode through soundfile (libsndfile).
 Does NOT belong: Engine inference or recording-quality analysis (``voices/quality.py``).
 """
 
@@ -69,6 +70,48 @@ def trim_silence(samples: Float32Array, sample_rate: int, threshold_db: float = 
     start = max(int(voiced[0]) - 2, 0) * frame
     end = min((int(voiced[-1]) + 3) * frame, len(samples))
     return samples[start:end]
+
+
+def _voiced_runs(voiced: npt.NDArray[np.bool_], gap_frames: int) -> list[tuple[int, int]]:
+    """Frame ranges of speech, ending wherever at least ``gap_frames`` silent frames follow."""
+    runs: list[tuple[int, int]] = []
+    start: int | None = None
+    last = 0
+    for index, is_voiced in enumerate(voiced):
+        if is_voiced:
+            start = index if start is None else start
+            last = index
+        elif start is not None and index - last >= gap_frames:
+            runs.append((start, last + 1))
+            start = None
+    if start is not None:
+        runs.append((start, last + 1))
+    return runs
+
+
+def _join_runs(runs: list[tuple[int, int]], min_frames: int, max_frames: int) -> list[tuple[int, int]]:
+    """Join consecutive runs while the take is shorter than ``min_frames`` and stays within ``max_frames``."""
+    takes: list[list[int]] = []
+    for start, end in runs:
+        if takes and takes[-1][1] - takes[-1][0] < min_frames and end - takes[-1][0] <= max_frames:
+            takes[-1][1] = end
+        else:
+            takes.append([start, end])
+    return [(start, end) for start, end in takes]
+
+
+def split_at_pauses(
+    samples: Float32Array, sample_rate: int, *, min_s: float = 5.0, max_s: float = 20.0, gap_s: float = 0.6
+) -> list[Float32Array]:
+    """Cut a long recording into takes at pauses of at least ``gap_s``, keeping a little room tone around each."""
+    frame_s = 0.03
+    frame = max(int(sample_rate * frame_s), 1)
+    levels = frame_rms_db(samples, sample_rate, frame_s)
+    # Speech is anything clearly above this recording's own quiet floor.
+    voiced = levels > max(float(np.percentile(levels, 10)) + 12, -50.0)
+    runs = _join_runs(_voiced_runs(voiced, round(gap_s / frame_s)), round(min_s / frame_s), round(max_s / frame_s))
+    pad = round(0.15 / frame_s)
+    return [samples[max(0, (start - pad) * frame) : (end + pad) * frame] for start, end in runs]
 
 
 def encode_wav(samples: Float32Array, sample_rate: int) -> bytes:

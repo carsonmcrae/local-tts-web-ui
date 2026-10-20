@@ -1,7 +1,8 @@
 """Purpose: Shared pytest fixtures for the server test suite.
 
 Scope: Isolated settings (temporary data dir), a deterministic ``FakeEngine`` (sine tones whose
-length follows the text, so API/caching/export logic is testable without models), the wired service
+length follows the text, so API/caching/export logic is testable without models; as a cloning engine
+it also fakes studio-voice measuring, building and auditioning), the wired service
 container, a TestClient that sends the app's required client header, and shared helpers for
 speech-like recordings, WAV encoding and waiting for background jobs.
 Does NOT belong: Real-inference fixtures (see test_inference_*.py, marked ``inference``).
@@ -10,8 +11,9 @@ Does NOT belong: Real-inference fixtures (see test_inference_*.py, marked ``infe
 from __future__ import annotations
 
 import io
+import re
 import time
-from collections.abc import Iterator
+from collections.abc import Iterator, Sequence
 from pathlib import Path
 from typing import Any
 
@@ -23,7 +25,7 @@ from fastapi.testclient import TestClient
 from ltts.app import create_app
 from ltts.config import Settings
 from ltts.container import Services, build_services
-from ltts.engines.base import AudioClip, EngineInfo, VoiceInfo, VoiceSpec
+from ltts.engines.base import AudioClip, Audition, EngineInfo, SpeakerIdentity, TakeFeatures, VoiceInfo, VoiceSpec
 from ltts.jobs import JobContext
 
 SAMPLE_RATE = 24_000
@@ -36,6 +38,8 @@ class FakeEngine:
         self.cloning = cloning
         self.update_available = False
         self.calls: list[tuple[str, str, float, Path | None]] = []
+        self.specs: list[VoiceSpec] = []
+        self.built: list[tuple[str, SpeakerIdentity | None]] = []
 
     def info(self) -> EngineInfo:
         return EngineInfo(
@@ -79,6 +83,7 @@ class FakeEngine:
 
     def synthesize(self, text: str, voice: VoiceSpec, pace: float) -> AudioClip:
         self.calls.append((text, voice.key, pace, voice.reference_path))
+        self.specs.append(voice)
         seconds = max(0.2, len(text) / 30) / pace
         t = np.arange(int(SAMPLE_RATE * seconds)) / SAMPLE_RATE
         return AudioClip((0.3 * np.sin(2 * np.pi * 220 * t)).astype(np.float32), SAMPLE_RATE)
@@ -99,6 +104,25 @@ class FakeEngine:
 
     def close(self) -> None:
         return None
+
+    # Studio voices: every take sounds like the same speaker; a voice scores by its prompt take's number.
+    def measure_takes(self, paths: Sequence[Path]) -> list[TakeFeatures]:
+        return [TakeFeatures(path, (1.0, 0.0, 0.0), (0.0, 1.0), 1.0 + take_number(path) % 4, 0.6) for path in paths]
+
+    def build_voice(self, prompt: Path, output: Path, identity: SpeakerIdentity | None) -> None:
+        self.built.append((prompt.name, identity))
+        output.write_text(prompt.name, encoding="utf-8")
+
+    def audition(self, request: Audition) -> list[float]:
+        for output in request.outputs:
+            output.write_bytes(wav_bytes(speech_like(0.5)))
+        score = 0.8 + take_number(Path(request.conditioning.read_text("utf-8"))) % 10 / 100
+        return [round(score, 4)] * len(request.outputs)
+
+
+def take_number(path: Path) -> int:
+    digits = re.findall(r"\d+", path.stem)
+    return int(digits[-1]) if digits else 0
 
 
 @pytest.fixture

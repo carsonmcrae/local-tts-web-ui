@@ -24,6 +24,8 @@ from ltts.modelstore.store import ModelStore
 from ltts.synthesis.cache import AudioCache
 from ltts.synthesis.service import SynthesisService
 from ltts.voices.profiles import CLONING_ENGINE, VoiceProfileService
+from ltts.voices.sessions import VoiceSessionService
+from ltts.voices.studio import StudioService
 
 if TYPE_CHECKING:
     from ltts.config import Settings
@@ -46,6 +48,8 @@ class Services:
     audio_cache: AudioCache
     synthesis: SynthesisService
     voices: VoiceProfileService
+    voice_sessions: VoiceSessionService
+    studio: StudioService
     exports: ExportService
     preferences: PreferenceStore
 
@@ -73,6 +77,8 @@ def build_services(
     synthesis = SynthesisService(registry, cache, documents)
     voices = VoiceProfileService(settings, db, cache.purge_voice)
     registry.attach_custom_voices(voices.resolve, lambda: voices.as_voices(lambda: registry.is_ready(CLONING_ENGINE)))
+    sessions = VoiceSessionService(settings, db, jobs)
+    studio = StudioService(sessions, voices, jobs, lambda: registry.voice_builder(CLONING_ENGINE))
     return Services(
         settings=settings,
         db=db,
@@ -84,6 +90,8 @@ def build_services(
         audio_cache=cache,
         synthesis=synthesis,
         voices=voices,
+        voice_sessions=sessions,
+        studio=studio,
         exports=ExportService(settings, jobs, documents, synthesis),
         preferences=PreferenceStore(db),
     )

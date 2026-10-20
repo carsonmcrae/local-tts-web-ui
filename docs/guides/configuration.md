@@ -24,6 +24,7 @@ in the local database; the theme is stored per browser.
 | `LTTS_AUDIO_CACHE_MAX_MB`                                                                      | 2,048             | Least-recently-used audio is evicted above this                                                                   |
 | `LTTS_MIN_FREE_DISK_MB`                                                                        | 500               | Uploads, recordings and model or engine installs refuse to fill the disk                                          |
 | `LTTS_MAX_VOICE_REFERENCE_S` / `LTTS_MAX_VOICE_PROFILES`                                       | 60 / 50           | Voice Studio limits                                                                                               |
+| `LTTS_MIN_STUDIO_SPEECH_S` / `LTTS_MAX_SESSION_TAKES` / `LTTS_MAX_VOICE_IMPORT_S`              | 300 / 200 / 1,800 | Studio voices: usable speech needed to build, takes per session, and one imported recording's length              |
 | `LTTS_WARM_UP_ENGINES`                                                                         | true              | Load Kokoro at startup for a fast first sentence                                                                  |
 | `LTTS_CLONE_WORKER_IDLE_UNLOAD_S`                                                              | 600               | Free GPU/CPU memory after this much idle time                                                                     |
 

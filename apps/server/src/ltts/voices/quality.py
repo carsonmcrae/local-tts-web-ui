@@ -1,8 +1,10 @@
 """Purpose: Objective quality checks for a voice reference recording.
 
-Scope: Measures speech duration, loudness, peak/clipping, pause share and an estimated
-signal-to-noise ratio, and turns them into blocking errors or advisory warnings with plain-language
-fixes. The browser runs the same checks live, but this server-side result is authoritative.
+Scope: Measures speech duration, loudness, peak/clipping, pause share, an estimated signal-to-noise
+ratio and brightness (a thin, "tinny" microphone), and turns them into blocking errors or advisory
+warnings with plain-language fixes. Three rule sets: a quick voice's single clip, a studio session
+take, and a microphone check. The browser runs the clip checks live, but this server-side result is
+authoritative.
 Does NOT belong: Storing profiles (``profiles.py``).
 """
 
@@ -18,7 +20,11 @@ from ltts.common import ApiModel
 
 MIN_SPEECH_S = 6.0
 RECOMMENDED_SPEECH_S = 10.0
+MIN_TAKE_SPEECH_S = 3.0
+MIN_CHECK_SPEECH_S = 2.0
 SILENCE_DB = -45.0
+BRIGHT_DB = 5.0  # 4-8 kHz vs 2-4 kHz energy; speech sits well below 0 dB, thin/tinny mics push it up
+_SPECTRUM_FRAME = 2048
 
 
 class QualityIssue(ApiModel):
@@ -35,6 +41,7 @@ class QualityReport(ApiModel):
     clipping_ratio: float
     pause_ratio: float
     snr_db: float
+    brightness_db: float
     ok: bool
     issues: list[QualityIssue]
 
@@ -54,11 +61,7 @@ class _Rule:
 
 
 # Ordered so that, per metric, the blocking error is checked before the advisory warning.
-_RULES = (
-    _Rule("speech_s", True, MIN_SPEECH_S, "too_short", "error",
-          f"There's too little speech. Record at least {MIN_SPEECH_S:.0f} seconds of continuous reading."),
-    _Rule("speech_s", True, RECOMMENDED_SPEECH_S, "short", "warning",
-          "This works, but 10–20 seconds of speech gives a more faithful voice."),
+_SOUND_RULES = (
     _Rule("rms_dbfs", True, -40, "too_quiet", "error",
           "The recording is very quiet. Move closer to the microphone and try again."),
     _Rule("rms_dbfs", True, -30, "quiet", "warning",
@@ -71,15 +74,38 @@ _RULES = (
           "There's a lot of background noise. Find a quieter room and try again."),
     _Rule("snr_db", True, 20, "noisy", "warning",
           "Some background noise is audible; a quieter room gives cleaner results."),
-    _Rule("pause_ratio", False, 0.5, "pauses", "warning",
-          "More than half the recording is silence. Read continuously at a natural pace."),
+    _Rule("brightness_db", False, BRIGHT_DB, "bright", "warning",
+          "The microphone sounds thin or tinny, and the voice will copy that. Turn off Windows audio "
+          "enhancements, aim the mic slightly to the side of your mouth, or use a USB or XLR microphone."),
 )  # fmt: skip
+_PAUSES = _Rule("pause_ratio", False, 0.5, "pauses", "warning",
+                "More than half the recording is silence. Read continuously at a natural pace.")  # fmt: skip
+CLIP_RULES = (
+    _Rule("speech_s", True, MIN_SPEECH_S, "too_short", "error",
+          f"There's too little speech. Record at least {MIN_SPEECH_S:.0f} seconds of continuous reading."),
+    _Rule("speech_s", True, RECOMMENDED_SPEECH_S, "short", "warning",
+          "This works, but 10–20 seconds of speech gives a more faithful voice."),
+    *_SOUND_RULES,
+    _PAUSES,
+)  # fmt: skip
+TAKE_RULES = (
+    _Rule("speech_s", True, MIN_TAKE_SPEECH_S, "too_short", "error",
+          "This take is too short. Read the whole passage."),
+    *_SOUND_RULES,
+    _PAUSES,
+)  # fmt: skip
+CHECK_RULES = (
+    _Rule("speech_s", True, MIN_CHECK_SPEECH_S, "no_speech", "error",
+          "We couldn't hear you. Check that the right microphone is selected and read the line aloud."),
+    *_SOUND_RULES,
+)  # fmt: skip
+Rules = tuple[_Rule, ...]
 
 
-def _issues(report: dict[str, float]) -> list[QualityIssue]:
+def _issues(report: dict[str, float], rules: Rules) -> list[QualityIssue]:
     issues: list[QualityIssue] = []
     flagged: set[str] = set()
-    for rule in _RULES:
+    for rule in rules:
         value = report[rule.metric]
         failed = value < rule.threshold if rule.below else value > rule.threshold
         if failed and rule.metric not in flagged:
@@ -88,7 +114,20 @@ def _issues(report: dict[str, float]) -> list[QualityIssue]:
     return issues
 
 
-def analyze(samples: Float32Array, sample_rate: int) -> QualityReport:
+def _brightness_db(speech: Float32Array, sample_rate: int) -> float:
+    """Energy at 4–8 kHz relative to 2–4 kHz over the speech, in dB (0 when there is too little)."""
+    usable = len(speech) - len(speech) % _SPECTRUM_FRAME
+    if usable == 0:
+        return 0.0
+    frames = speech[:usable].reshape(-1, _SPECTRUM_FRAME) * np.hanning(_SPECTRUM_FRAME)
+    power = (np.abs(np.fft.rfft(frames, axis=1)) ** 2).sum(axis=0)
+    freqs = np.fft.rfftfreq(_SPECTRUM_FRAME, 1 / sample_rate)
+    presence = float(power[(freqs >= 2_000) & (freqs < 4_000)].sum())
+    air = float(power[(freqs >= 4_000) & (freqs < 8_000)].sum())
+    return round(10 * float(np.log10(max(air, 1e-12) / max(presence, 1e-12))), 1)
+
+
+def analyze(samples: Float32Array, sample_rate: int, rules: Rules = CLIP_RULES) -> QualityReport:
     levels = frame_rms_db(samples, sample_rate)
     frame_s = 0.03
     speech_frames = levels > SILENCE_DB
@@ -105,6 +144,7 @@ def analyze(samples: Float32Array, sample_rate: int) -> QualityReport:
         "pause_ratio": round(1 - float(speech_frames.mean()), 3),
         # Loud speech frames vs. the quietest frames (gaps between words) approximates SNR.
         "snr_db": round(float(np.percentile(levels, 95) - np.percentile(levels, 5)), 1),
+        "brightness_db": _brightness_db(speech, sample_rate),
     }
-    issues = _issues(values)
+    issues = _issues(values, rules)
     return QualityReport(**values, ok=not any(i.severity == "error" for i in issues), issues=issues)

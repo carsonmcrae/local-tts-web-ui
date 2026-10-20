@@ -16,7 +16,7 @@ import { Button } from '@/components/ui/Button';
 import { Banner } from '@/components/ui/Feedback';
 import { EnginePanel } from '@/features/engines/EngineSetup';
 import { JobProgress } from '@/features/jobs/JobProgress';
-import { describeTone } from './tone';
+import { describeCleanup } from '../cleanup';
 
 export function BuildStep({
   session,
@@ -55,10 +55,10 @@ export function BuildStep({
         tests a few voices from your best takes. This takes a minute or two with a GPU, longer on a
         CPU. Reading with other custom voices pauses while it runs.
       </p>
-      {session.tone ? (
+      {session.cleanup ? (
         <p className="text-sm leading-relaxed text-muted">
-          Tone correction is on: the voice is built from copies of your takes with the{' '}
-          {describeTone(session.tone)}. Your recordings are kept as recorded.
+          Cleanup is on: the voice is built from copies of your takes with{' '}
+          {describeCleanup(session.cleanup)}. Your recordings are kept as recorded.
         </p>
       ) : null}
       {running && job.data ? (

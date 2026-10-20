@@ -13,6 +13,7 @@ from pathlib import Path
 import pytest
 
 from builders import make_docx, make_epub, make_pdf
+from ltts.documents import extract_pdf
 from ltts.documents.extract_markdown import markdown_to_extraction
 from ltts.documents.extract_text import decode_bytes, text_to_extraction
 from ltts.documents.extractors import extract
@@ -139,6 +140,46 @@ def test_pdf_outline_defines_chapters(tmp_path: Path) -> None:
     result = extract(write(tmp_path, "o.pdf", pdf), DocumentType.PDF, "o", LIMITS)
     assert [s.title for s in result.sections] == ["Opening pages", "Chapter One", "Chapter Two"]
     assert result.sections[1].blocks[0].kind == "heading"
+
+
+def test_pdf_chapters_start_at_their_heading_partway_down_a_page(tmp_path: Path) -> None:
+    pages = [
+        ["Chapter One", "It was a dark night and the wind rattled every window in the house."],
+        ["The storm finally passed a little before dawn on the second day.", "Chapter Two",
+         "Morning came slowly over the hills behind the old farmhouse."],
+        ["Still the second chapter, which keeps going onto this page.", "Chapter Three: A Long Title That",
+         "Wraps Onto A Second Line", "Day three began with rain against the glass."],
+        ["Day three went on without a heading for the fourth outline entry."],
+    ]  # fmt: skip
+    outline = [("Chapter One", 0), ("Chapter Two", 1),
+               ("Chapter Three: A Long Title That Wraps Onto A Second Line", 2), ("Epilogue", 3)]  # fmt: skip
+    result = extract(write(tmp_path, "m.pdf", make_pdf(pages, outline=outline)), DocumentType.PDF, "m", LIMITS)
+    one, two, three, epilogue = result.sections
+    assert one.blocks[-1].text.startswith("The storm finally passed")  # the page's first lines stay in chapter one
+    assert (two.blocks[0].kind, two.blocks[0].text) == ("heading", "Chapter Two")
+    assert two.page == 2 and two.blocks[-1].text.startswith("Still the second chapter")
+    assert three.blocks[0].text == "Chapter Three: A Long Title That Wraps Onto A Second Line"
+    assert three.blocks[0].kind == "heading"
+    assert epilogue.blocks[0].kind == "paragraph"  # no heading on the page: the section starts at the page
+
+
+def test_pdf_heading_search_checks_the_next_page_and_keeps_order(tmp_path: Path) -> None:
+    pages = [["Part One", "The first part opens here with a long enough line of text."],
+             ["Still part one on the page the outline points at for part two."],
+             ["Part Two", "The second part really starts here on the following page."]]  # fmt: skip
+    result = extract(
+        write(tmp_path, "n.pdf", make_pdf(pages, outline=[("Part One", 0), ("Part Two", 1)])),
+        DocumentType.PDF,
+        "n",
+        LIMITS,
+    )
+    assert [s.title for s in result.sections] == ["Part One", "Part Two"]
+    assert result.sections[0].blocks[-1].text.startswith("Still part one") and result.sections[1].page == 3
+    lines = [["Alpha", "text"], ["Gamma", "Beta", "more"]]
+    starts, ends = extract_pdf._chapter_starts(lines, [(0, "Alpha"), (1, "Beta"), (1, "Gamma")])
+    assert [s.title for s in starts] == ["Alpha", "Beta"] and ends == {0: 0, 3: 3}  # Gamma would go backwards
+    assert extract_pdf._heading_span(["***"], "***") is None
+    assert extract_pdf._heading_span(["Chapter Three:", "Something else"], "Chapter Three: The Storm") is None
 
 
 def test_scanned_pdf_is_reported_not_silently_accepted(tmp_path: Path) -> None:

@@ -1,7 +1,8 @@
 """Purpose: HTTP endpoints for the document library.
 
 Scope: Raw-body uploads (no multipart parser), pasted text, library listing, document detail,
-section contents, reading progress and deletion. Blocking work runs in the thread pool.
+section contents and corrections (rename, move a section's start), reading progress and deletion.
+Blocking work runs in the thread pool.
 Does NOT belong: Ingestion rules (``service.py``) or audio (``synthesis``).
 """
 
@@ -20,6 +21,7 @@ from ltts.documents.schemas import (
     PasteTextRequest,
     ProgressUpdate,
     SectionContent,
+    SectionUpdate,
 )
 
 router = APIRouter(prefix="/api/documents", tags=["documents"])
@@ -60,6 +62,14 @@ def get_section(
     document_id: DocumentId, section_index: Annotated[int, Path(ge=0)], services: ServicesDep
 ) -> SectionContent:
     return services.document_repo.section(document_id, section_index)
+
+
+@router.patch("/{document_id}/sections/{section_index}")
+def update_section(
+    document_id: DocumentId, section_index: Annotated[int, Path(ge=0)], body: SectionUpdate, services: ServicesDep
+) -> DocumentDetail:
+    title = body.title.strip() if body.title else None
+    return services.document_repo.update_section(document_id, section_index, title or None, body.start_segment)
 
 
 @router.put("/{document_id}/progress", status_code=204)

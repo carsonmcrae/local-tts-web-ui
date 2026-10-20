@@ -144,12 +144,12 @@ def test_microphone_check_reports_silence_and_tone_with_a_correction(client: Tes
     assert [i["code"] for i in weak["report"]["issues"]] == ["thin"] and weak["suggested"]["bassDb"] > 0
 
     params = {"trebleDb": harsh["suggested"]["trebleDb"]}
-    preview = client.post("/api/voice-sessions/tone-preview", params=params, content=wav_bytes(bright()))
+    preview = client.post("/api/voice-profiles/cleanup-preview", params=params, content=wav_bytes(bright()))
     assert preview.status_code == 200 and preview.headers["content-type"] == "audio/wav"
     (tmp_path / "preview.wav").write_bytes(preview.content)
     samples, rate = read_audio(tmp_path / "preview.wav")
     assert analyze(samples, rate, CHECK_RULES).issues == []  # the correction clears the warning
-    refused = client.post("/api/voice-sessions/tone-preview", params={"trebleDb": 3}, content=wav_bytes(bright()))
+    refused = client.post("/api/voice-profiles/cleanup-preview", params={"trebleDb": 3}, content=wav_bytes(bright()))
     assert refused.status_code == 422
 
 

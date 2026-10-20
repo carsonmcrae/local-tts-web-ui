@@ -55,7 +55,9 @@ About two minutes. A wizard guides you through five steps.
    an audio file of up to 20 MB that your browser can decode, such as WAV, MP3, M4A or FLAC. Only
    the first 45 seconds are kept.
 3. **Check.** Listen back and read the quality checks. Errors must be fixed with **Record again**;
-   warnings don't stop you.
+   warnings don't stop you. **Clean up the recording** lets you reduce background noise, filter out
+   low rumble and adjust the tone by ear (see [Cleaning up a recording](#cleaning-up-a-recording));
+   the voice is made from the cleaned-up copy.
 4. **Name & consent.** Enter a **Voice name** (up to 60 characters) and tick the permission statement,
    then press **Create voice**.
 5. **Try it.** Edit the test sentence if you like and press **Generate sample**. The first generation
@@ -72,10 +74,11 @@ covers microphone, Windows and room setup.
 1. **Before you start.** How the voice is built, microphone and room setup, and what is stored.
 2. **Microphone.** Voice Studio picks the input that looks like a USB or XLR microphone (you can choose
    another). Press **Check microphone**, stay quiet for two seconds, then read the line on screen. The
-   check reports level, background noise, clipping and the microphone's tone, and **Play your
-   recording** lets you hear it. If the microphone sounds bright or thin, **Correct the tone
-   automatically** is switched on, and **Play it corrected** lets you compare. Your takes are kept as
-   recorded; the voice is built from corrected copies.
+   check reports level, background noise, clipping and the microphone's tone. **Clean up the
+   recording** starts from the cleanup the app suggests for your microphone and room (see
+   [Cleaning up a recording](#cleaning-up-a-recording)); **Play original** and **Play cleaned up**
+   let you compare. The cleanup you choose applies to every take in the session. Your takes are kept
+   as recorded; the voice is built from cleaned-up copies.
 3. **Record.** Read 48 short passages in six styles (narration, storytelling, conversation, questions,
    numbers and names, calm). Press **Record**, read the passage, then **Stop**. Each take is recorded
    losslessly (browser noise suppression, echo cancellation and auto-gain are off), checked and saved
@@ -88,6 +91,34 @@ covers microphone, Windows and room setup.
 5. **Choose.** Listen to the samples of the three best voices, each with a match score, and pick the
    one that sounds most like the speaker.
 6. **Name & consent** and 7. **Try it**, as for a quick voice.
+
+### Cleaning up a recording
+
+Both kinds of voice offer the same cleanup controls after their check. The voice copies whatever it
+hears in the recording, so a quieter background or a more natural tone carries into every sentence
+it reads.
+
+| Control                    | What it does                                                                                                                             |
+| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| Background noise reduction | Turns down steady noise, such as a fan, a computer or room hiss, wherever your voice isn't louder than it. 0% is off; 100% is strongest. |
+| Filter out low rumble      | Removes sound below about 80 Hz, such as traffic, air conditioning or bumps on the desk.                                                 |
+| Treble                     | Lowers harsh 4 kHz-and-up energy from a bright microphone (down to −9 dB).                                                               |
+| Low end                    | Adds warmth below about 250 Hz to a thin microphone (up to +6 dB).                                                                       |
+
+- **Suggestions.** The app measures the quiet moments of the recording (the two seconds of silence
+  in a microphone check) and suggests noise reduction when the background is audible, the rumble
+  filter when that background is mostly low rumble, and tone changes for a bright or thin
+  microphone. **Use suggested** applies the suggestion.
+- **Listen before you decide.** **Play original** and **Play cleaned up** compare the two. The cleaned
+  version is made on your computer each time you change a setting and press play. Strong noise
+  reduction can make a voice sound slightly watery, so use the lowest setting that sounds clean.
+- **Carried forward.** The cleanup you last used is remembered in this browser and is the starting
+  point for your next recording, since the microphone and room are usually the same.
+  **Use suggested** and **Turn cleanup off** are always available.
+- **Your recordings are never changed.** The cleanup is applied to copies when the voice is made.
+- Noise reduction uses stationary spectral gating, following the approach of
+  [noisereduce](https://github.com/timsainb/noisereduce) by Tim Sainburg (MIT). It is re-implemented
+  in the app, so nothing extra is installed.
 
 ### Delivery
 
@@ -118,7 +149,8 @@ Your browser shows instant checks; the local server then repeats them, and its r
 | Tone: thin       | None                      | Vowels have little low end              |
 
 Tone is measured on vowels only: "s" and "sh" sounds are naturally bright and are left out, so a good
-microphone close to the mouth isn't flagged. Studio takes skip the tone checks, since the microphone
+microphone close to the mouth isn't flagged. A tone or noise warning comes with a suggested
+[cleanup](#cleaning-up-a-recording). Studio takes skip the tone checks, since the microphone
 check covers them. A studio take only needs 3 seconds of speech, and the microphone check 2. Each problem comes with a
 plain-language fix, such as moving closer to the microphone.
 

@@ -139,12 +139,12 @@ def test_quick_voices_keep_their_original_cache_revision(client: TestClient, ser
     assert steady["delivery"] == "steady" and services.voices.resolve(profile["id"])[2].endswith("|steady")
 
 
-def test_a_tone_correction_is_built_from_corrected_copies_of_the_takes(
+def test_a_cleanup_is_built_from_cleaned_copies_of_the_takes(
     client: TestClient, services: Services, engines: dict[str, FakeEngine]
 ) -> None:
-    created = client.post("/api/voice-sessions", json={"tone": {"trebleDb": -4.5, "bassDb": 0}})
+    created = client.post("/api/voice-sessions", json={"cleanup": {"trebleDb": -4.5, "lowCut": True}})
     session_id = created.json()["id"]
-    assert created.json()["tone"] == {"trebleDb": -4.5, "bassDb": 0.0}
+    assert created.json()["cleanup"] == {"noiseReduction": 0.0, "lowCut": True, "trebleDb": -4.5, "bassDb": 0.0}
     for number in (1, 2, 3):
         client.put(f"/api/voice-sessions/{session_id}/takes/{number}", content=wav_bytes(speech_like(12)))
     corrected = services.voice_sessions.corrected_path(session_id, 1)

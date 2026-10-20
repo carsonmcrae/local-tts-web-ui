@@ -8,19 +8,18 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api, apiBlob } from './client';
 import type {
+  Cleanup,
   Delivery,
   DocumentDetail,
   DocumentSummary,
   EngineInfo,
   ExportRequest,
   JobOut,
-  MicCheck,
   Preferences,
-  QualityReport,
   SectionContent,
+  RecordingCheck,
   SystemInfo,
   SessionTake,
-  ToneCorrection,
   VoiceInfo,
   VoiceProfile,
   VoiceSession,
@@ -136,6 +135,30 @@ export function usePasteText() {
   });
 }
 
+export function useUpdateSection() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      documentId,
+      index,
+      ...changes
+    }: {
+      documentId: string;
+      index: number;
+      title?: string;
+      startSegment?: number;
+    }) =>
+      api<DocumentDetail>(`/api/documents/${documentId}/sections/${index}`, {
+        method: 'PATCH',
+        json: changes,
+      }),
+    onSuccess: (doc) => {
+      client.setQueryData(keys.document(doc.id), doc);
+      void client.invalidateQueries({ queryKey: [...keys.document(doc.id), 'sections'] });
+    },
+  });
+}
+
 export function useDeleteDocument() {
   const client = useQueryClient();
   return useMutation({
@@ -212,16 +235,30 @@ export function useClearCache() {
 }
 
 export function analyzeRecording(wav: Blob) {
-  return api<QualityReport>('/api/voice-profiles/analyze', { method: 'POST', body: wav });
+  return api<RecordingCheck>('/api/voice-profiles/analyze', { method: 'POST', body: wav });
+}
+
+/** A recording with a cleanup applied (noise reduction, rumble filter, tone), to compare by ear. */
+export function previewCleanup(wav: Blob, cleanup: Cleanup) {
+  return apiBlob('/api/voice-profiles/cleanup-preview', {
+    method: 'POST',
+    query: { ...cleanup },
+    body: wav,
+  });
 }
 
 export function useCreateProfile() {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: (input: { name: string; wav: Blob; source: 'recording' | 'import' }) =>
+    mutationFn: (input: {
+      name: string;
+      wav: Blob;
+      source: 'recording' | 'import';
+      cleanup: Cleanup | null;
+    }) =>
       api<VoiceProfile>('/api/voice-profiles', {
         method: 'POST',
-        query: { name: input.name, consent: true, source: input.source },
+        query: { name: input.name, consent: true, source: input.source, ...input.cleanup },
         body: input.wav,
       }),
     onSuccess: () => {
@@ -272,16 +309,7 @@ export function useVoiceSession(id: string | null) {
 }
 
 export function checkMicrophone(wav: Blob) {
-  return api<MicCheck>('/api/voice-sessions/microphone-check', { method: 'POST', body: wav });
-}
-
-/** A microphone check recording with a tone correction applied, to compare with the original. */
-export function previewTone(wav: Blob, tone: ToneCorrection) {
-  return apiBlob('/api/voice-sessions/tone-preview', {
-    method: 'POST',
-    query: { trebleDb: tone.trebleDb, bassDb: tone.bassDb },
-    body: wav,
-  });
+  return api<RecordingCheck>('/api/voice-sessions/microphone-check', { method: 'POST', body: wav });
 }
 
 /** A session mutation that refreshes that session and the session list when it succeeds. */
@@ -301,8 +329,8 @@ function useSessionMutation<Input extends { sessionId: string }, Result>(
 export function useCreateSession() {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: (tone: ToneCorrection | null) =>
-      api<VoiceSession>('/api/voice-sessions', { method: 'POST', json: { tone } }),
+    mutationFn: (cleanup: Cleanup | null) =>
+      api<VoiceSession>('/api/voice-sessions', { method: 'POST', json: { cleanup } }),
     onSuccess: () => client.invalidateQueries({ queryKey: keys.sessions, exact: true }),
   });
 }

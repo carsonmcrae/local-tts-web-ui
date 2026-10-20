@@ -48,7 +48,7 @@ function api(overrides: Record<string, unknown> = {}) {
     'GET /api/voices': [voice()],
     'GET /api/voice-profiles': [profile],
     'GET /api/voice-profiles/consent': { statement: 'I have permission to use this voice.' },
-    'POST /api/voice-profiles/analyze': profile.quality,
+    'POST /api/voice-profiles/analyze': { report: profile.quality, suggested: null },
     'POST /api/voice-profiles': profile,
     'PUT /api/preferences': (_url: URL, init: RequestInit) => JSON.parse(String(init.body)),
     'POST /api/voices/': () => new Response(new Blob(['wav'])),

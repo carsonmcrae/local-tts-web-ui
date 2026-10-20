@@ -1,7 +1,8 @@
 """Purpose: SQL access for documents, their segments and reading progress.
 
 Scope: Insert a fully segmented document atomically; list/get/delete; fetch a section's or a single
-segment's text; save and read progress. Rows are mapped to API models here.
+segment's text; rename a section or move where it starts (keeping segments, counts and the longer
+"end of section" pause in step); save and read progress. Rows are mapped to API models here.
 Does NOT belong: Validation or extraction (``service.py``).
 """
 
@@ -23,7 +24,7 @@ from ltts.documents.schemas import (
     SegmentOut,
 )
 from ltts.documents.structures import SectionInfo, Segment
-from ltts.errors import NotFoundError
+from ltts.errors import ConflictError, NotFoundError
 
 _DOCUMENT_GONE = "That document no longer exists."
 # One complete query: every document (most recently read or added first), or only the one whose id
@@ -130,6 +131,24 @@ class DocumentRepository:
             ],
         )
 
+    def update_section(
+        self, document_id: str, section_index: int, title: str | None, start_segment: int | None
+    ) -> DocumentDetail:
+        """Rename a section and/or move its start to another sentence between its neighbours' starts."""
+        with self._db.connect() as conn:
+            row = conn.execute("SELECT sections_json FROM documents WHERE id = ?", (document_id,)).fetchone()
+            if row is None:
+                raise NotFoundError(_DOCUMENT_GONE, code="document_not_found")
+            sections = json.loads(row["sections_json"])
+            if not 0 <= section_index < len(sections):
+                raise NotFoundError("That section does not exist.", code="section_not_found")
+            if title is not None:
+                sections[section_index]["title"] = title
+            if start_segment is not None and start_segment != sections[section_index]["start_segment"]:
+                _move_start(conn, document_id, sections, section_index, start_segment)
+            conn.execute("UPDATE documents SET sections_json = ? WHERE id = ?", (json.dumps(sections), document_id))
+        return self.get(document_id)
+
     def segment(self, document_id: str, index: int) -> tuple[str, str]:
         """Return ``(text, boundary)`` for one segment."""
         with self._db.connect() as conn:
@@ -166,3 +185,32 @@ class DocumentRepository:
                    voice_id = excluded.voice_id, updated_at = excluded.updated_at""",
                 (document_id, index, voice_id, utc_now()),
             )
+
+
+def _move_start(
+    conn: sqlite3.Connection, document_id: str, sections: list[dict[str, int]], index: int, start: int
+) -> None:
+    """Move section ``index`` to start at segment ``start``; the previous section gains or gives up the rest."""
+    if index == 0:
+        raise ConflictError("The first section always starts at the beginning.", code="invalid_section_start")
+    previous, current = sections[index - 1], sections[index]
+    end = current["start_segment"] + current["segment_count"]
+    if not previous["start_segment"] < start < end:
+        raise ConflictError(
+            "A section has to start after the previous one starts and keep at least one sentence.",
+            code="invalid_section_start",
+        )
+    old = current["start_segment"]
+    previous["segment_count"] = start - previous["start_segment"]
+    current["start_segment"], current["segment_count"] = start, end - start
+    conn.execute(
+        """UPDATE segments SET section_idx = CASE WHEN idx < ? THEN ? ELSE ? END
+           WHERE document_id = ? AND idx >= ? AND idx < ?""",
+        (start, index - 1, index, document_id, previous["start_segment"], end),
+    )
+    # The longer pause that ends a section moves with the boundary.
+    conn.execute(
+        "UPDATE segments SET boundary = 'paragraph' WHERE document_id = ? AND idx = ? AND boundary = 'section'",
+        (document_id, old - 1),
+    )
+    conn.execute("UPDATE segments SET boundary = 'section' WHERE document_id = ? AND idx = ?", (document_id, start - 1))

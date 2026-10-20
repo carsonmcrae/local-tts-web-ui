@@ -207,6 +207,24 @@ describe('PlaybackController edge cases', () => {
     expect(requests).toHaveLength(0);
   });
 
+  it('takes corrected sections only for the loaded document', async () => {
+    const { controller } = setup();
+    const moved: PlayerDocument = {
+      ...DOC,
+      sections: [
+        { index: 0, title: 'One', startSegment: 0, segmentCount: 4 },
+        { index: 1, title: 'Two', startSegment: 4, segmentCount: 2 },
+      ],
+    };
+    controller.refresh(moved);
+    expect(controller.getState().document).toBeNull();
+    await controller.load(DOC, 0, false);
+    controller.refresh({ ...moved, id: 'other' });
+    expect(controller.sectionAt(3)?.title).toBe('Two');
+    controller.refresh(moved);
+    expect(controller.sectionAt(3)?.title).toBe('One');
+  });
+
   it('mirrors pause, play and time updates from the media element', async () => {
     const { controller, media } = setup();
     await controller.load(DOC, 0, true);

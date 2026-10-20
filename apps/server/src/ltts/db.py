@@ -114,6 +114,10 @@ MIGRATIONS: tuple[str, ...] = (
     """
     ALTER TABLE voice_sessions ADD COLUMN tone_json TEXT;
     """,
+    # 4: the tone correction grew into a full cleanup (noise reduction, rumble filter and tone)
+    """
+    ALTER TABLE voice_sessions RENAME COLUMN tone_json TO cleanup_json;
+    """,
 )
 
 

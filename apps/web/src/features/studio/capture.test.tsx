@@ -14,6 +14,7 @@ import type * as WavModule from '@/lib/audio/wav';
 import { decodeToClip } from '@/lib/audio/wav';
 import { controlFrames, json, mockApi, preferences, renderWithApp } from '@/test/render';
 import { CaptureStep } from './CaptureStep';
+import { NO_CLEANUP } from './cleanup';
 import { ReviewStep } from './ReviewSteps';
 import { SCRIPTS } from './script';
 
@@ -164,6 +165,8 @@ describe('ReviewStep', () => {
         clip={{ ...clip(), source: 'import', note: 'Only the first 45 seconds were kept.' }}
         onRetake={() => undefined}
         onVerdict={onVerdict}
+        cleanup={NO_CLEANUP}
+        onCleanup={() => undefined}
       />,
     );
     expect(screen.getByText(/· Only the first 45 seconds were kept\./)).toBeInTheDocument();
@@ -173,7 +176,11 @@ describe('ReviewStep', () => {
   }); // prettier-ignore
 
   it('still offers the checks when the recording cannot be read back for playback', async () => {
-    mockApi({ 'GET /api/preferences': preferences, 'POST /api/voice-profiles/analyze': {} });
+    mockApi({
+      'GET /api/preferences': preferences,
+      'POST /api/voice-profiles/analyze': () =>
+        json({ error: { code: 'analysis_failed', message: 'Not now.' } }, 503),
+    });
     const readers: { onerror: (() => void) | null }[] = [];
     vi.stubGlobal(
       'FileReader',
@@ -186,7 +193,7 @@ describe('ReviewStep', () => {
         }
       },
     );
-    renderWithApp(<ReviewStep clip={{ ...clip(), source: 'recording' }} onRetake={() => undefined} onVerdict={() => undefined} />); // prettier-ignore
+    renderWithApp(<ReviewStep clip={{ ...clip(), source: 'recording' }} onRetake={() => undefined} onVerdict={() => undefined} cleanup={NO_CLEANUP} onCleanup={() => undefined} />); // prettier-ignore
     await waitFor(() => expect(readers).toHaveLength(1));
     act(() => readers[0]?.onerror?.());
     expect(screen.getByLabelText('Your recording')).not.toHaveAttribute('src');

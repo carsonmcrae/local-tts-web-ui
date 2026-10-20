@@ -1,6 +1,6 @@
 /**
  * Purpose: Global Vitest setup for DOM tests.
- * Scope: jest-dom matchers, automatic cleanup, and jsdom gaps the app relies on (matchMedia,
+ * Scope: jest-dom matchers, automatic cleanup (including local storage), and jsdom gaps the app relies on (matchMedia,
  *   object URLs, scrollIntoView, HTMLMediaElement play/pause).
  * Does NOT belong: Per-test fixtures (src/test/render.tsx).
  */
@@ -8,7 +8,10 @@ import '@testing-library/jest-dom/vitest';
 import { cleanup } from '@testing-library/react';
 import { afterEach, vi } from 'vitest';
 
-afterEach(() => cleanup());
+afterEach(() => {
+  cleanup();
+  localStorage.clear();
+});
 
 Object.defineProperty(window, 'matchMedia', {
   writable: true,

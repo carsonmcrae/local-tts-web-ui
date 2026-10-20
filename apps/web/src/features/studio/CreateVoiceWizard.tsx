@@ -1,7 +1,8 @@
 /**
  * Purpose: The guided "Quick voice" flow: one short recording.
- * Scope: Five steps — understand, capture, review, name & consent, test — with a progress header,
- *   step gating (errors block, warnings don't), profile creation and the shared test step.
+ * Scope: Five steps — understand, capture, review (with the cleanup controls), name & consent, test —
+ *   with a progress header, step gating (errors block, warnings don't), profile creation with the
+ *   chosen cleanup (remembered for the next recording) and the shared test step.
  * Does NOT belong: Step internals (CaptureStep, ReviewSteps, TestStep), the studio route
  *   (session/StudioVoiceWizard) or the profile list.
  */
@@ -9,11 +10,12 @@ import { Sparkles } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { describeError } from '@/api/client';
 import { useCreateProfile } from '@/api/queries';
-import type { VoiceProfile } from '@/api/types';
+import type { Cleanup, VoiceProfile } from '@/api/types';
 import { Dialog } from '@/components/ui/Dialog';
 import { Banner } from '@/components/ui/Feedback';
 import type { CapturedClip } from './CaptureStep';
 import { CaptureStep } from './CaptureStep';
+import { isActive, NO_CLEANUP, rememberCleanup } from './cleanup';
 import { DetailsStep, ReviewStep } from './ReviewSteps';
 import { ReferenceExplainer } from './ReferenceExplainer';
 import { TestStep } from './TestStep';
@@ -34,6 +36,8 @@ function WizardStepContent({
   onCaptured,
   onRetake,
   onVerdict,
+  cleanup,
+  onCleanup,
 }: Readonly<{
   step: number;
   clip: CapturedClip | null;
@@ -46,13 +50,21 @@ function WizardStepContent({
   onCaptured: (clip: CapturedClip) => void;
   onRetake: () => void;
   onVerdict: (ok: boolean, wav: Blob) => void;
+  cleanup: Cleanup;
+  onCleanup: (cleanup: Cleanup) => void;
 }>) {
   return (
     <>
       {step === 0 ? <ReferenceExplainer /> : null}
       {step === 1 ? <CaptureStep onCaptured={onCaptured} /> : null}
       {step === 2 && clip ? (
-        <ReviewStep clip={clip} onRetake={onRetake} onVerdict={onVerdict} />
+        <ReviewStep
+          clip={clip}
+          onRetake={onRetake}
+          onVerdict={onVerdict}
+          cleanup={cleanup}
+          onCleanup={onCleanup}
+        />
       ) : null}
       {step === 3 ? (
         <>
@@ -78,6 +90,7 @@ export function CreateVoiceWizard({
   const [verdict, setVerdict] = useState<{ ok: boolean; wav: Blob } | null>(null);
   const [name, setName] = useState('');
   const [consent, setConsent] = useState(false);
+  const [cleanup, setCleanup] = useState<Cleanup>(NO_CLEANUP);
   const create = useCreateProfile();
   const onVerdict = useCallback((ok: boolean, wav: Blob) => setVerdict({ ok, wav }), []);
 
@@ -87,6 +100,7 @@ export function CreateVoiceWizard({
     setVerdict(null);
     setName('');
     setConsent(false);
+    setCleanup(NO_CLEANUP);
     create.reset();
   };
   // The wizard is opened from outside (it has no dialog trigger), so the dialog only ever asks to
@@ -98,7 +112,15 @@ export function CreateVoiceWizard({
   // What "Create voice" uploads: the checked recording and where it came from.
   const upload = verdict && clip ? { wav: verdict.wav, source: clip.source } : null;
   const submit = (input: { wav: Blob; source: CapturedClip['source'] }) =>
-    create.mutate({ name: name.trim(), ...input }, { onSuccess: () => setStep(4) });
+    create.mutate(
+      { name: name.trim(), ...input, cleanup: isActive(cleanup) ? cleanup : null },
+      {
+        onSuccess: () => {
+          rememberCleanup(cleanup);
+          setStep(4);
+        },
+      },
+    );
 
   const canContinue = [
     true,
@@ -150,6 +172,8 @@ export function CreateVoiceWizard({
         }}
         onRetake={() => setStep(1)}
         onVerdict={onVerdict}
+        cleanup={cleanup}
+        onCleanup={setCleanup}
       />
     </Dialog>
   );

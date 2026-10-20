@@ -62,11 +62,14 @@ const base = {
 
 describe('Voice creation', () => {
   it('imports a recording, checks it, requires consent, creates and tests the voice', async () => {
-    const { calls } = mockApi({
+    const { calls, fetchMock } = mockApi({
       ...base,
       'GET /api/voice-profiles/consent': { statement: 'I have permission to use this voice.' },
       'GET /api/voice-profiles': [],
-      'POST /api/voice-profiles/analyze': profile.quality,
+      'POST /api/voice-profiles/analyze': {
+        report: profile.quality,
+        suggested: { noiseReduction: 0.5, lowCut: true, trebleDb: 0, bassDb: 0 },
+      },
       'POST /api/voice-profiles': profile,
       'POST /api/voices/': new Response(new Blob(['wav'])),
     });
@@ -81,6 +84,11 @@ describe('Voice creation', () => {
     );
     expect(await within(dialog).findByText('verified by the local server')).toBeInTheDocument();
     expect(within(dialog).getByText(/Clear, well-levelled speech/)).toBeInTheDocument();
+    // The suggested cleanup is on; raising the low end a little is remembered for next time.
+    expect(within(dialog).getByRole('button', { name: 'Using the suggestion' })).toBeDisabled();
+    within(dialog).getByRole('slider', { name: 'Low end' }).focus();
+    await user.keyboard('{ArrowRight}');
+    expect(within(dialog).getByText('+0.5 dB')).toBeInTheDocument();
     await user.click(within(dialog).getByRole('button', { name: /Continue/ }));
     const create = within(dialog).getByRole('button', { name: 'Create voice' });
     await user.type(within(dialog).getByLabelText('Voice name'), 'My voice');
@@ -94,6 +102,16 @@ describe('Voice creation', () => {
     );
     const createCall = calls.find((c) => c.method === 'POST' && c.path === '/api/voice-profiles');
     expect(createCall?.body).toBeInstanceOf(Blob);
+    const createUrl = fetchMock.mock.calls
+      .map(([input]) => new URL(String(input), 'http://127.0.0.1'))
+      .find((url) => url.pathname === '/api/voice-profiles' && url.searchParams.has('name'));
+    expect(Object.fromEntries(createUrl?.searchParams ?? [])).toMatchObject({
+      noiseReduction: '0.5',
+      lowCut: 'true',
+      trebleDb: '0',
+      bassDb: '0.5',
+    });
+    expect(JSON.parse(localStorage.getItem('ltts.cleanup') ?? '{}')).toMatchObject({ bassDb: 0.5 });
   });
 
   it('renames and permanently deletes a profile', async () => {

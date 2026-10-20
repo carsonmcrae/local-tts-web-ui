@@ -33,6 +33,15 @@ This is a practical summary, not legal advice.
 | Icons: Lucide                     | ISC                                                                    |
 | Sample text in the app            | "A Scandal in Bohemia", Arthur Conan Doyle (1891), public domain       |
 
+## Approaches adapted from other projects
+
+No code is copied from these projects; the app re-implements their published approach and credits
+them in the source and the README.
+
+| Project                                                               | Licence | Used for                                                     |
+| --------------------------------------------------------------------- | ------- | ------------------------------------------------------------ |
+| [noisereduce](https://github.com/timsainb/noisereduce) (Tim Sainburg) | MIT     | Stationary spectral gating in Voice Studio's noise reduction |
+
 ## Rejected for licence reasons
 
 PyMuPDF (AGPL-3.0), EbookLib (AGPL-3.0), F5-TTS weights (CC-BY-NC), XTTS-v2 (CPML, non-commercial),

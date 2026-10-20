@@ -2,8 +2,10 @@
 
 Scope: Reads each page's text layer; removes running headers/footers and page numbers; rebuilds
 paragraphs across line and page breaks (de-hyphenating); groups paragraphs into chapters from the
-PDF outline, or into "Page N" sections when there is none; detects scanned/image-only PDFs and
-reports them instead of pretending they were read. Encrypted PDFs are rejected.
+PDF outline, starting each chapter at its heading line when the heading is found on the outline's
+page (outlines only point at pages, and chapters often start partway down one), or into "Page N"
+sections when there is none; detects scanned/image-only PDFs and reports them instead of pretending
+they were read. Encrypted PDFs are rejected.
 Does NOT belong: OCR (not supported) or generic text clean-up (``normalize.py``).
 """
 
@@ -37,7 +39,17 @@ _NEW_BLOCK_START = re.compile(r"^[A-Z0-9\"“‘(•\-–—]")
 @dataclass(slots=True)
 class _Paragraph:
     page: int
+    position: int  # where its first line sits in the document's line stream
     text: str
+
+
+@dataclass(frozen=True, slots=True)
+class _Start:
+    """Where a section starts in the line stream, the page it's on and its title."""
+
+    position: int
+    page: int
+    title: str
 
 
 def _is_page_number(line: str) -> bool:
@@ -82,12 +94,10 @@ def _typical_width(pages: list[list[str]]) -> int:
     return lengths[int(len(lengths) * 0.8)] if lengths else 0
 
 
-def _ends_paragraph(line: str, nxt: tuple[int, str] | None, page: int, width: int, breaks: set[int]) -> bool:
+def _ends_paragraph(line: str, nxt: tuple[int, str] | None, page: int, width: int) -> bool:
     if nxt is None:
         return True
     next_page, next_line = nxt
-    if next_page != page and next_page in breaks:  # a chapter starts on the next page
-        return True
     if not _NEW_BLOCK_START.match(next_line):
         return False
     ends = bool(_SENTENCE_END.search(line))
@@ -96,23 +106,86 @@ def _ends_paragraph(line: str, nxt: tuple[int, str] | None, page: int, width: in
     return len(line) < 0.75 * width and (ends or len(line) < 0.5 * width)
 
 
-def _paragraphs(pages: list[list[str]], breaks: set[int]) -> list[_Paragraph]:
-    """Join lines into paragraphs; a short line before a new-block start, or a chapter page, ends one."""
+def _paragraphs(pages: list[list[str]], starts: set[int], headings: dict[int, int]) -> list[_Paragraph]:
+    """Join lines into paragraphs; a short line before a new-block start, a chapter start or a heading ends one.
+
+    headings maps a chapter heading's first line to its last: a wrapped heading stays one block.
+    """
+    heading_ends = set(headings.values())
+    inside_heading = {line for first, last in headings.items() for line in range(first, last)}
     stream = [(page, line) for page, lines in enumerate(pages) for line in lines]
     width = _typical_width(pages)
     paragraphs: list[_Paragraph] = []
-    buffer, start_page = "", 0
+    buffer, start_page, start_position = "", 0, 0
     for i, (page, line) in enumerate(stream):
         if not buffer:
-            buffer, start_page = line, page
+            buffer, start_page, start_position = line, page, i
         elif buffer.endswith("-") and line[:1].islower():
             buffer = buffer[:-1] + line
         else:
             buffer = f"{buffer} {line}"
-        if _ends_paragraph(line, stream[i + 1] if i + 1 < len(stream) else None, page, width, breaks):
-            paragraphs.append(_Paragraph(start_page, clean_inline(buffer)))
+        nxt = stream[i + 1] if i + 1 < len(stream) else None
+        if i in inside_heading:
+            continue
+        if i + 1 in starts or i in heading_ends or _ends_paragraph(line, nxt, page, width):
+            paragraphs.append(_Paragraph(start_page, start_position, clean_inline(buffer)))
             buffer = ""
     return [p for p in paragraphs if p.text]
+
+
+def _tokens(text: str) -> list[str]:
+    return re.findall(r"[a-z0-9]+", text.lower())
+
+
+def _heading_span(lines: list[str], title: str) -> tuple[int, int] | None:
+    """The first and last line of ``title`` on a page: a line starting with it, or the lines it wraps over."""
+    wanted = _tokens(title)
+    if not wanted:
+        return None
+    for first, line in enumerate(lines):
+        have = _tokens(line)
+        if have[: len(wanted)] == wanted:
+            return first, first
+        if len(have) >= 2 and wanted[: len(have)] == have:  # a long title wrapped onto the next line(s)
+            last, joined = first, have
+            while len(joined) < len(wanted) and last + 1 < len(lines):
+                last += 1
+                joined = joined + _tokens(lines[last])
+            if joined[: len(wanted)] == wanted:
+                return first, last
+    return None
+
+
+def _chapter_start(pages: list[list[str]], offsets: list[int], page: int, title: str) -> tuple[_Start, int | None]:
+    """A chapter's heading line on the outline's page (or the next) and its last line, else the page's top."""
+    for candidate in (page, page + 1)[: len(pages) - page]:
+        span = _heading_span(pages[candidate], title)
+        if span is not None:
+            return _Start(offsets[candidate] + span[0], candidate, title), offsets[candidate] + span[1]
+    return _Start(offsets[page], page, title), None
+
+
+def _chapter_starts(pages: list[list[str]], outline: list[tuple[int, str]]) -> tuple[list[_Start], dict[int, int]]:
+    """Where each outline chapter starts: at its heading on the outline's page (or the next), else at the page.
+
+    Also returns each found heading's first and last line positions.
+    """
+    offsets = [0]
+    for lines in pages:
+        offsets.append(offsets[-1] + len(lines))
+    starts: list[_Start] = []
+    headings: dict[int, int] = {}
+    for page, title in outline:
+        start, heading_end = _chapter_start(pages, offsets, page, title)
+        # Keep the order strict: a chapter that would start before the previous one is ignored, and one
+        # starting where the previous one does replaces it (the previous chapter had no text).
+        if starts and start.position == starts[-1].position:
+            starts.pop()
+        if not starts or start.position > starts[-1].position:
+            starts.append(start)
+            if heading_end is not None:
+                headings[start.position] = heading_end
+    return starts, headings
 
 
 def _outline_starts(pdf: pdfium.PdfDocument, page_count: int) -> list[tuple[int, str]]:
@@ -132,25 +205,30 @@ def _outline_starts(pdf: pdfium.PdfDocument, page_count: int) -> list[tuple[int,
     return sorted(starts.items())
 
 
-def _block(text: str, first: bool) -> Block:
-    looks_heading = first and len(text) < 80 and not _SENTENCE_END.search(text)
-    return Block("heading" if looks_heading else "paragraph", text)
+def _block(text: str, first: bool, title: str) -> Block:
+    """A section's first block is its heading when it reads like one or is the outline's own title."""
+    looks_heading = len(text) < 80 and not _SENTENCE_END.search(text)
+    is_title = bool(_tokens(title)) and _tokens(text) == _tokens(title)
+    return Block("heading" if first and (looks_heading or is_title) else "paragraph", text)
 
 
-def _group(paragraphs: list[_Paragraph], starts: list[tuple[int, str]]) -> list[ExtractedSection]:
+def _group(paragraphs: list[_Paragraph], starts: list[_Start]) -> list[ExtractedSection]:
     if not paragraphs:
         return []
     if len(starts) < 2:
-        starts = sorted({(p.page, f"Page {p.page + 1}") for p in paragraphs})
-    elif starts[0][0] > 0:
-        starts = [(0, "Opening pages"), *starts]
+        first_on_page: dict[int, int] = {}
+        for paragraph in paragraphs:
+            first_on_page.setdefault(paragraph.page, paragraph.position)
+        starts = [_Start(position, page, f"Page {page + 1}") for page, position in sorted(first_on_page.items())]
+    elif starts[0].position > paragraphs[0].position:
+        starts = [_Start(paragraphs[0].position, paragraphs[0].page, "Opening pages"), *starts]
     sections: list[ExtractedSection] = []
-    bounds = [page for page, _ in starts[1:]] + [math.inf]
+    bounds = [start.position for start in starts[1:]] + [math.inf]
     cursor = 0
-    for (page, title), end in zip(starts, bounds, strict=True):
-        section = ExtractedSection(title=title, page=page + 1)
-        while cursor < len(paragraphs) and paragraphs[cursor].page < end:
-            section.blocks.append(_block(paragraphs[cursor].text, first=not section.blocks))
+    for start, end in zip(starts, bounds, strict=True):
+        section = ExtractedSection(title=start.title, page=start.page + 1)
+        while cursor < len(paragraphs) and paragraphs[cursor].position < end:
+            section.blocks.append(_block(paragraphs[cursor].text, not section.blocks, start.title))
             cursor += 1
         if section.blocks:
             sections.append(section)
@@ -216,7 +294,9 @@ def extract_pdf_file(path: Path, title: str | None, limits: ExtractionLimits) ->
     warnings = []
     if blank:
         warnings.append(f"{blank} of {page_count} pages had no readable text (likely scanned images) and were skipped.")
-    breaks = {page for page, _ in starts} if len(starts) >= 2 else set()
-    sections = _group(_paragraphs(_strip_running_lines(pages), breaks), starts)
+    lines = _strip_running_lines(pages)
+    chapters, headings = _chapter_starts(lines, starts) if len(starts) >= 2 else ([], {})
+    paragraphs = _paragraphs(lines, {chapter.position for chapter in chapters}, headings)
+    sections = _group(paragraphs, chapters)
     usable_title = meta_title if meta_title and not meta_title.lower().startswith("microsoft") else None
     return Extraction(title=usable_title or title, sections=sections, page_count=page_count, warnings=warnings)

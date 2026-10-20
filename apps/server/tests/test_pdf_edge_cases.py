@@ -21,7 +21,9 @@ from ltts.documents.extract_pdf import (
     _group,
     _is_page_number,
     _outline_starts,
+    _Paragraph,
     _paragraphs,
+    _Start,
     extract_pdf_file,
 )
 from ltts.documents.structures import ExtractionLimits
@@ -52,7 +54,7 @@ def test_page_number_lines(line: str, is_number: bool) -> None:
 
 def test_lines_join_across_hyphenation_and_lowercase_continuations() -> None:
     pages = [["The keeper climbed the old light-", "house every evening without fail.", "lowercase goes on here"]]
-    paragraphs = _paragraphs(pages, set())
+    paragraphs = _paragraphs(pages, set(), {})
     assert [(p.page, p.text) for p in paragraphs] == [
         (0, "The keeper climbed the old lighthouse every evening without fail. lowercase goes on here")
     ]
@@ -84,8 +86,11 @@ def test_unreadable_or_empty_outline_is_ignored() -> None:
     assert _outline_starts(SimpleNamespace(get_toc=lambda max_depth: iter(())), page_count=3) == []  # type: ignore[arg-type]
 
 
-def test_grouping_nothing_gives_no_sections() -> None:
-    assert _group([], [(0, "One"), (2, "Two")]) == []
+def test_grouping_skips_chapters_without_text() -> None:
+    starts = [_Start(0, 0, "One"), _Start(2, 1, "Empty"), _Start(4, 2, "Two")]
+    assert _group([], starts) == []
+    paragraphs = [_Paragraph(0, 0, "First."), _Paragraph(2, 5, "Second.")]
+    assert [s.title for s in _group(paragraphs, starts)] == ["One", "Two"]
 
 
 def test_outline_from_the_first_page_and_blank_chapters(tmp_path: Path) -> None:

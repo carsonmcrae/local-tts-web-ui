@@ -260,18 +260,21 @@ export async function chooseQuickVoice(user: UserEvent) {
 
 /** Drives animation frames and the clock by hand so elapsed time is deterministic. */
 export function controlFrames() {
-  const frames: { next: FrameRequestCallback | null; now: number } = { next: null, now: 0 };
+  // Callbacks by id, so a component cancelling its own frame never drops another's.
+  const frames = { callbacks: new Map<number, FrameRequestCallback>(), id: 0, now: 0 };
   vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => {
-    frames.next = callback;
-    return 1;
+    frames.id += 1;
+    frames.callbacks.set(frames.id, callback);
+    return frames.id;
   });
-  vi.stubGlobal('cancelAnimationFrame', () => {
-    frames.next = null;
+  vi.stubGlobal('cancelAnimationFrame', (id: number) => {
+    frames.callbacks.delete(id);
   });
   vi.spyOn(performance, 'now').mockImplementation(() => frames.now);
   return (seconds: number) => {
     frames.now = seconds * 1000;
-    const callback = frames.next;
-    act(() => callback?.(frames.now));
+    const due = [...frames.callbacks.values()];
+    frames.callbacks.clear();
+    act(() => due.forEach((callback) => callback(frames.now)));
   };
 }

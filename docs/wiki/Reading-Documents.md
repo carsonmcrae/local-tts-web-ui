@@ -38,17 +38,31 @@ always scanned images or image-heavy layouts.
 
 Each document is split into sections, which appear in the **Contents** list.
 
-| Format            | Where sections come from                                                                                                                                                                                   |
-| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| PDF               | The PDF's outline (bookmarks), when it has at least two top-level entries. Pages before the first entry become "Opening pages". Without an outline, each page is a section ("Page 1", "Page 2" and so on). |
-| DOCX              | Paragraphs styled Title, Heading 1 or Heading 2. Deeper headings are read as headings inside a section.                                                                                                    |
-| EPUB              | Each file in the book's reading order, named from the table of contents (or its first heading).                                                                                                            |
-| Markdown          | `#` and `##` headings. Deeper headings are read as headings inside a section.                                                                                                                              |
-| Text, pasted text | Short lines on their own that start with Chapter, Part, Book, Section, Prologue or Epilogue (such as "Chapter 3" or "Part Two"), or a Roman numeral on its own, such as "IV".                              |
+| Format            | Where sections come from                                                                                                                                                                                                                                                      |
+| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| PDF               | The PDF's outline (bookmarks), when it has at least two top-level entries. Each chapter starts at its heading line, even partway down a page. Pages before the first entry become "Opening pages". Without an outline, each page is a section ("Page 1", "Page 2" and so on). |
+| DOCX              | Paragraphs styled Title, Heading 1 or Heading 2. Deeper headings are read as headings inside a section.                                                                                                                                                                       |
+| EPUB              | Each file in the book's reading order, named from the table of contents (or its first heading).                                                                                                                                                                               |
+| Markdown          | `#` and `##` headings. Deeper headings are read as headings inside a section.                                                                                                                                                                                                 |
+| Text, pasted text | Short lines on their own that start with Chapter, Part, Book, Section, Prologue or Epilogue (such as "Chapter 3" or "Part Two"), or a Roman numeral on its own, such as "IV".                                                                                                 |
 
 Within each section, the text is split into sentences (very long sentences are split into shorter
 parts). Each one is generated, played and highlighted on its own, which is why the highlight always
 matches what you hear.
+
+### Fixing a chapter
+
+If a chapter starts in the wrong place, for example with the last lines of the previous chapter, or
+has the wrong name, press **Adjust this section** above the text.
+
+- **Title** renames the section.
+- **Starts at** lists the end of the previous section and the start of this one. Pick the sentence
+  the section should start with; the previous section then ends just before it. The first section
+  always starts at the beginning of the document.
+
+The change is saved with the document, and the player and the longer pause between chapters follow
+it at once. Documents added before chapter detection improved can be fixed this way without
+uploading them again.
 
 ## Scanned PDFs
 
@@ -73,8 +87,9 @@ without blank lines is read one paragraph per line. Pasted text is stored only o
 - **Contents.** On wide screens, the list of sections sits beside the text. On narrower screens, use
   the **Contents** button next to Play. A speaker icon marks the section being read. Choosing a
   section shows it and moves the playback position to its start.
-- **Section pager.** The line above the text shows "Section N of M"; the buttons below the text go to
-  the previous and next section.
+- **Section pager.** The line above the text shows "Section N of M", with **Adjust this section**
+  beside it (see [Fixing a chapter](#fixing-a-chapter)); the buttons below the text go to the
+  previous and next section.
 - **Click a sentence** to play from there.
 - **Player bar.** Previous and next sentence, previous and next section, and the position slider.
 - **Keyboard.** See [Keyboard Shortcuts](Keyboard-Shortcuts).

@@ -90,7 +90,8 @@ export type paths = {
     delete?: never;
     options?: never;
     head?: never;
-    patch?: never;
+    /** Update Section */
+    patch: operations['update_section_api_documents__document_id__sections__section_index__patch'];
     trace?: never;
   };
   '/api/documents/{document_id}/segments/{index}/audio': {
@@ -470,6 +471,26 @@ export type paths = {
     patch?: never;
     trace?: never;
   };
+  '/api/voice-profiles/cleanup-preview': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Preview Cleanup
+     * @description A recording with a cleanup applied, as WAV, to compare with the original.
+     */
+    post: operations['preview_cleanup_api_voice_profiles_cleanup_preview_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/voice-profiles/consent': {
     parameters: {
       query?: never;
@@ -626,23 +647,6 @@ export type paths = {
     patch?: never;
     trace?: never;
   };
-  '/api/voice-sessions/tone-preview': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get?: never;
-    put?: never;
-    /** Preview Tone */
-    post: operations['preview_tone_api_voice_sessions_tone_preview_post'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
   '/api/voices': {
     parameters: {
       query?: never;
@@ -701,6 +705,32 @@ export type components = {
       similarity: number;
       /** Takenumber */
       takeNumber: number;
+    };
+    /**
+     * Cleanup
+     * @description How a microphone's recordings are cleaned up before a voice is made from them.
+     */
+    Cleanup: {
+      /**
+       * Bassdb
+       * @default 0
+       */
+      bassDb: number;
+      /**
+       * Lowcut
+       * @default false
+       */
+      lowCut: boolean;
+      /**
+       * Noisereduction
+       * @default 0
+       */
+      noiseReduction: number;
+      /**
+       * Trebledb
+       * @default 0
+       */
+      trebleDb: number;
     };
     /** ConsentInfo */
     ConsentInfo: {
@@ -950,11 +980,6 @@ export type components = {
      * @enum {string}
      */
     JobStatus: 'queued' | 'running' | 'succeeded' | 'failed' | 'canceled' | 'interrupted';
-    /** MicCheckOut */
-    MicCheckOut: {
-      report: components['schemas']['QualityReport'];
-      suggested: components['schemas']['ToneCorrection'] | null;
-    };
     /** PasteTextRequest */
     PasteTextRequest: {
       /** Text */
@@ -1068,6 +1093,14 @@ export type components = {
       /** Voiceid */
       voiceId: string | null;
     };
+    /**
+     * RecordingCheck
+     * @description A recording's quality checks and the cleanup suggested for it (None when it needs none).
+     */
+    RecordingCheck: {
+      report: components['schemas']['QualityReport'];
+      suggested: components['schemas']['Cleanup'] | null;
+    };
     /** SectionContent */
     SectionContent: {
       /** Sectionindex */
@@ -1087,6 +1120,16 @@ export type components = {
       startSegment: number;
       /** Title */
       title: string;
+    };
+    /**
+     * SectionUpdate
+     * @description A reader's correction to a section: a new title, and/or the sentence it should start at.
+     */
+    SectionUpdate: {
+      /** Startsegment */
+      startSegment?: number | null;
+      /** Title */
+      title?: string | null;
     };
     /** SegmentOut */
     SegmentOut: {
@@ -1111,7 +1154,7 @@ export type components = {
     };
     /** SessionCreate */
     SessionCreate: {
-      tone?: components['schemas']['ToneCorrection'] | null;
+      cleanup?: components['schemas']['Cleanup'] | null;
     };
     /** StorageInfo */
     StorageInfo: {
@@ -1183,22 +1226,6 @@ export type components = {
        * @enum {string}
        */
       source: 'recording' | 'import';
-    };
-    /**
-     * ToneCorrection
-     * @description A gentle shelving correction: treble (above about 4 kHz) cut, bass (below about 250 Hz) boost.
-     */
-    ToneCorrection: {
-      /**
-       * Bassdb
-       * @default 0
-       */
-      bassDb: number;
-      /**
-       * Trebledb
-       * @default 0
-       */
-      trebleDb: number;
     };
     /** ValidationError */
     ValidationError: {
@@ -1293,6 +1320,7 @@ export type components = {
       buildJobId: string | null;
       /** Candidates */
       candidates: components['schemas']['CandidateOut'][];
+      cleanup: components['schemas']['Cleanup'] | null;
       /** Createdat */
       createdAt: string;
       /** Id */
@@ -1301,7 +1329,6 @@ export type components = {
       requiredSpeechS: number;
       /** Takes */
       takes: components['schemas']['TakeOut'][];
-      tone: components['schemas']['ToneCorrection'] | null;
       /** Updatedat */
       updatedAt: string;
       /** Usablespeechs */
@@ -1477,6 +1504,42 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['SectionContent'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  update_section_api_documents__document_id__sections__section_index__patch: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        document_id: string;
+        section_index: number;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['SectionUpdate'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DocumentDetail'];
         };
       };
       /** @description Validation Error */
@@ -2043,9 +2106,13 @@ export interface operations {
   create_profile_api_voice_profiles_post: {
     parameters: {
       query: {
+        bassDb?: number;
         consent: boolean;
+        lowCut?: boolean;
         name: string;
+        noiseReduction?: number;
         source?: 'recording' | 'import';
+        trebleDb?: number;
       };
       header?: never;
       path?: never;
@@ -2181,7 +2248,41 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          'application/json': components['schemas']['QualityReport'];
+          'application/json': components['schemas']['RecordingCheck'];
+        };
+      };
+    };
+  };
+  preview_cleanup_api_voice_profiles_cleanup_preview_post: {
+    parameters: {
+      query?: {
+        bassDb?: number;
+        lowCut?: boolean;
+        noiseReduction?: number;
+        trebleDb?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'audio/wav': unknown;
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
         };
       };
     };
@@ -2526,39 +2627,7 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          'application/json': components['schemas']['MicCheckOut'];
-        };
-      };
-    };
-  };
-  preview_tone_api_voice_sessions_tone_preview_post: {
-    parameters: {
-      query?: {
-        bassDb?: number;
-        trebleDb?: number;
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'audio/wav': unknown;
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['HTTPValidationError'];
+          'application/json': components['schemas']['RecordingCheck'];
         };
       };
     };

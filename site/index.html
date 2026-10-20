@@ -174,10 +174,6 @@
 
       <section id="watch" class="wrap" aria-labelledby="watch-title">
         <h2 id="watch-title">See it working</h2>
-        <p class="fine">
-          Recorded just before the rename, so the app's header still reads Local TTS. Everything
-          else is the same app.
-        </p>
         <div class="videos">
           <figure id="overview">
             <video
@@ -309,8 +305,8 @@
         <h2 id="try-title">Try speech in your browser</h2>
         <p class="note-box">
           <strong>This demo uses your browser's built-in voices, not TTSNative's.</strong> They vary
-          by device and sound different from the Kokoro voices in the app. It shows the idea in
-          seconds; the installed app is the real thing.
+          by device and sound different from the Kokoro voices in the app. It reads sentence by
+          sentence and highlights each one, as the app does; the installed app is the real thing.
         </p>
         <form id="speech" class="demo" novalidate>
           <label for="speech-text">Text to read</label>
@@ -338,6 +334,7 @@ Open a document, press Play, and follow along as each sentence is read to you.</
             <button class="btn primary" type="submit" id="speech-play" disabled>Speak</button>
             <button class="btn" type="button" id="speech-stop" disabled>Stop</button>
           </div>
+          <p id="speech-readalong" class="readalong" aria-hidden="true" hidden></p>
           <output id="speech-status" class="fine status-line" aria-live="polite"></output>
         </form>
       </section>

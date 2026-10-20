@@ -190,12 +190,15 @@ export function useInstallEngine() {
   });
 }
 
-/** Re-syncs an installed engine's runtime to the app's current lock (offered when `updateAvailable`). */
-export function useUpdateEngine() {
+/**
+ * Engine maintenance as a background job: `update` re-syncs the runtime to the app's current lock
+ * (offered when `updateAvailable`); `repair` downloads damaged model files again (`needs_repair`).
+ */
+export function useEngineJob(action: 'update' | 'repair') {
   const client = useQueryClient();
   return useMutation({
     mutationFn: (engineId: string) =>
-      api<JobOut>(`/api/engines/${engineId}/update`, { method: 'POST' }),
+      api<JobOut>(`/api/engines/${engineId}/${action}`, { method: 'POST' }),
     onSuccess: () => client.invalidateQueries({ queryKey: keys.engines }),
   });
 }

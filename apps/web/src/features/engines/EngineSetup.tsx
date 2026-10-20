@@ -3,12 +3,12 @@
 /**
  * Purpose: Install, monitor and remove speech engines from anywhere in the UI.
  * Scope: `EnginePanel` (status, hardware advice, install options with download/disk sizes, live
- *   progress with cancel, failure recovery, removal, and a one-click update when the installed
- *   runtime was built from an older lock) and `DefaultVoicesBanner` shown when the default Kokoro
- *   model is missing.
+ *   progress with cancel, failure recovery, removal, a one-click update when the installed runtime
+ *   was built from an older lock, and a repair when model files are missing, incomplete or fail
+ *   their checksum) and `DefaultVoicesBanner` shown when the default Kokoro model can't be used.
  * Does NOT belong: Engine logic (server) or voice selection.
  */
-import { Cpu, Download, HardDrive, RefreshCw, Trash2 } from 'lucide-react';
+import { Cpu, Download, HardDrive, RefreshCw, Trash2, Wrench } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { describeError } from '@/api/client';
 import {
@@ -16,8 +16,8 @@ import {
   useEngines,
   useInstallEngine,
   useJob,
+  useEngineJob,
   useUninstallEngine,
-  useUpdateEngine,
 } from '@/api/queries';
 import type { EngineInfo, InstallOption, JobOut } from '@/api/types';
 import { Button } from '@/components/ui/Button';
@@ -28,13 +28,24 @@ import { cn } from '@/lib/cn';
 import { JobProgress } from '@/features/jobs/JobProgress';
 import { formatBytes } from '@/lib/format';
 
-/** Updates run as install jobs (shared progress, cancel and status) flagged in the payload. */
-const isUpdateJob = (job: JobOut | undefined) => job?.payload.update === true;
+type JobKind = 'install' | 'update' | 'repair';
+/** Updates and repairs run as install jobs (shared progress, cancel and status) flagged in the payload. */
+function jobKind(job: JobOut | undefined): JobKind {
+  if (job?.payload.update === true) return 'update';
+  return job?.payload.repair === true ? 'repair' : 'install';
+}
+const VERB: Record<JobKind, { doing: string; done: string; noun: string }> = {
+  install: { doing: 'Installing', done: 'is ready', noun: 'Installation' },
+  update: { doing: 'Updating', done: 'is up to date', noun: 'Update' },
+  repair: { doing: 'Repairing', done: 'is repaired', noun: 'Repair' },
+};
 
 function useEngineInstall(engine: EngineInfo) {
   const install = useInstallEngine();
-  const update = useUpdateEngine();
-  const job = useJob(update.data?.id ?? install.data?.id ?? engine.installJobId);
+  const update = useEngineJob('update');
+  const repair = useEngineJob('repair');
+  const started = repair.data ?? update.data ?? install.data;
+  const job = useJob(started?.id ?? engine.installJobId);
   const engines = useEngines();
   const toast = useToast();
   const notified = useRef<string | null>(null);
@@ -44,17 +55,12 @@ function useEngineInstall(engine: EngineInfo) {
     if (!finished || notified.current === finished.id) return;
     notified.current = finished.id;
     void refetch();
-    const updating = isUpdateJob(finished);
-    if (finished.status === 'succeeded')
-      toast.notify('success', `${engine.name} ${updating ? 'is up to date' : 'is ready'}`);
+    const verb = VERB[jobKind(finished)];
+    if (finished.status === 'succeeded') toast.notify('success', `${engine.name} ${verb.done}`);
     if (finished.status === 'failed')
-      toast.notify(
-        'error',
-        `${engine.name} ${updating ? 'update' : 'install'} failed`,
-        finished.message,
-      );
+      toast.notify('error', `${engine.name} ${jobKind(finished)} failed`, finished.message);
   }, [finished, refetch, toast, engine.name]);
-  return { install, update, job: job.data };
+  return { install, update, repair, job: job.data };
 }
 
 function StatusBadge({ engine, job }: Readonly<{ engine: EngineInfo; job: JobOut | undefined }>) {
@@ -62,7 +68,8 @@ function StatusBadge({ engine, job }: Readonly<{ engine: EngineInfo; job: JobOut
     return <Badge tone="warning">Update available</Badge>;
   if (engine.status === 'ready') return <Badge tone="success">Installed</Badge>;
   if (engine.status === 'installing')
-    return <Badge tone="accent">{isUpdateJob(job) ? 'Updating' : 'Installing'}</Badge>;
+    return <Badge tone="accent">{VERB[jobKind(job)].doing}</Badge>;
+  if (engine.status === 'needs_repair') return <Badge tone="danger">Needs repair</Badge>;
   if (engine.status === 'error') return <Badge tone="danger">Needs attention</Badge>;
   return <Badge>{engine.optional ? 'Optional' : 'Not installed'}</Badge>;
 }
@@ -163,13 +170,10 @@ function JobFeedback({
   return (
     <>
       {active && job ? (
-        <JobProgress
-          job={job}
-          label={(isUpdateJob(job) ? 'Updating ' : 'Installing ') + engineName}
-        />
+        <JobProgress job={job} label={`${VERB[jobKind(job)].doing} ${engineName}`} />
       ) : null}
       {job?.status === 'failed' ? (
-        <Banner tone="error" title={isUpdateJob(job) ? 'Update failed' : 'Installation failed'}>
+        <Banner tone="error" title={`${VERB[jobKind(job)].noun} failed`}>
           {job.message}
         </Banner>
       ) : null}
@@ -178,25 +182,34 @@ function JobFeedback({
   );
 }
 
-function UpdateNotice({
+type EngineJob = ReturnType<typeof useEngineJob>;
+
+/** A repair when model files are damaged, or an update when the runtime was built from an older lock. */
+function MaintenanceNotice({
   engine,
-  onUpdate,
-  busy,
-}: Readonly<{ engine: EngineInfo; onUpdate: () => void; busy: boolean }>) {
+  update,
+  repair,
+}: Readonly<{ engine: EngineInfo; update: EngineJob; repair: EngineJob }>) {
+  const repairing = engine.status === 'needs_repair';
+  if (!repairing && !(engine.status === 'ready' && engine.updateAvailable)) return null;
+  const action = repairing ? repair : update;
   return (
-    <Banner tone="warning" title="Update available">
-      This version of the app ships updated runtime packages for {engine.name}, such as security
-      fixes. Only the changed packages are downloaded. Your voices and model files are kept, and a
-      failed update doesn't remove the current installation.
+    <Banner
+      tone={repairing ? 'error' : 'warning'}
+      title={repairing ? 'Model files need repair' : 'Update available'}
+    >
+      {repairing
+        ? `${engine.statusMessage} Your documents, recordings, voices and other models aren't touched.`
+        : `This version of the app ships updated runtime packages for ${engine.name}, such as security fixes. Only the changed packages are downloaded. Your voices and model files are kept, and a failed update doesn't remove the current installation.`}
       <div className="mt-3">
         <Button
           size="sm"
           variant="primary"
-          icon={<RefreshCw size={15} />}
-          onClick={onUpdate}
-          loading={busy}
+          icon={repairing ? <Wrench size={15} /> : <RefreshCw size={15} />}
+          onClick={() => action.mutate(engine.id)}
+          loading={action.isPending}
         >
-          Update {engine.name}
+          {repairing ? 'Repair' : 'Update'} {engine.name}
         </Button>
       </div>
     </Banner>
@@ -225,13 +238,13 @@ function RemoveEngine({ engine }: Readonly<{ engine: EngineInfo }>) {
 }
 
 export function EnginePanel({ engine }: Readonly<{ engine: EngineInfo }>) {
-  const { install, update, job } = useEngineInstall(engine);
+  const { install, update, repair, job } = useEngineInstall(engine);
   const recommended =
     engine.installOptions.find((option) => option.recommended) ?? engine.installOptions[0];
   const [option, setOption] = useState(recommended?.id);
   const active = isJobActive(job) || engine.status === 'installing';
-  const installable = engine.status !== 'ready' && !active;
-  const updatable = engine.status === 'ready' && engine.updateAvailable && !active;
+  const present = engine.status === 'ready' || engine.status === 'needs_repair';
+  const installable = !present && !active;
   const chosen = engine.installOptions.find((item) => item.id === option);
 
   return (
@@ -247,28 +260,22 @@ export function EnginePanel({ engine }: Readonly<{ engine: EngineInfo }>) {
           </div>
           <p className="mt-1 text-sm text-muted">{engine.description}</p>
         </div>
-        {engine.status === 'ready' ? <RemoveEngine engine={engine} /> : null}
+        {present ? <RemoveEngine engine={engine} /> : null}
       </div>
       <EngineFacts
         engine={engine}
         chosen={chosen}
-        installed={engine.status === 'ready' || (active && isUpdateJob(job))}
+        installed={present || (active && jobKind(job) !== 'install')}
       />
       {installable && engine.installOptions.length > 1 ? (
         <InstallOptions engine={engine} value={option} onChange={setOption} />
       ) : null}
-      {updatable ? (
-        <UpdateNotice
-          engine={engine}
-          onUpdate={() => update.mutate(engine.id)}
-          busy={update.isPending}
-        />
-      ) : null}
+      {active ? null : <MaintenanceNotice engine={engine} update={update} repair={repair} />}
       <JobFeedback
         job={job}
         active={active}
         engineName={engine.name}
-        requestError={install.error ?? update.error}
+        requestError={install.error ?? update.error ?? repair.error}
       />
       {installable ? (
         <div>
@@ -290,8 +297,12 @@ export function DefaultVoicesBanner() {
   const engines = useEngines();
   const kokoro = engines.data?.find((engine) => engine.id === 'kokoro');
   if (!kokoro || kokoro.status === 'ready') return null;
+  const title =
+    kokoro.status === 'needs_repair'
+      ? 'Repair the voice model to keep listening'
+      : 'Install the voice model to start listening';
   return (
-    <Banner tone="warning" title="Install the voice model to start listening" className="mb-6">
+    <Banner tone="warning" title={title} className="mb-6">
       <div className="mt-3">
         <EnginePanel engine={kokoro} />
       </div>

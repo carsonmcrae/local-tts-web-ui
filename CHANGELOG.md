@@ -8,6 +8,12 @@ All notable changes to this project are documented here. The format follows
 
 ### Added
 
+- **Model integrity checks and repair.** Every model file is checked against its published SHA-256
+  checksum before an engine loads it, including files installed long ago. A missing, incomplete or
+  mismatched file puts the engine in a **Needs repair** state that names the file, and **Repair**
+  downloads only the damaged files again. `npm run setup`, `npm run doctor` and `ltts models verify`
+  report and fix damaged files too, and speech that comes back empty or invalid is refused with a
+  clear message instead of a server error.
 - **Project website** rebuilt for TTSNative: features, the overview and demo videos, screenshots,
   privacy, install steps, how it is built and a FAQ, plus a speech demo that uses the browser's own
   voices (clearly labelled as not TTSNative's, with online voices flagged). Built and link-checked by

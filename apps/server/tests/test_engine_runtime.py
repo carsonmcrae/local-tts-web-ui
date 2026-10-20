@@ -3,7 +3,8 @@
 """Purpose: Tests for engine runtime behaviour with stand-ins for the model libraries and hardware tools.
 
 Scope: Kokoro loading (CPU provider, load once, load failures, the double-checked lock), voices,
-pace clamping, synthesis errors, install/uninstall and warm-up; Chatterbox revision, worker argv,
+pace clamping, synthesis errors and unusable audio, damaged files and repair, install/uninstall and
+warm-up; Chatterbox revision, worker argv,
 uninstall and a worker that disappears before synthesis; locating uv and reporting its output;
 and GPU detection through nvidia-smi and on Apple Silicon.
 Does NOT belong: The worker protocol (test_engines_cli.py, test_worker_client_edges.py), environment
@@ -31,7 +32,7 @@ from ltts.engines.chatterbox import ChatterboxEngine
 from ltts.engines.kokoro import ARTIFACT, KokoroEngine
 from ltts.errors import EngineUnavailableError, SynthesisError
 from ltts.hardware import GpuInfo, detect_gpus
-from ltts.modelstore.store import ModelStore
+from ltts.modelstore.store import Damage, ModelDamagedError, ModelStore
 
 
 class FakeKokoro:
@@ -57,6 +58,10 @@ class FakeKokoro:
         if text == "unspeakable":
             raise ValueError("phonemes failed")
         self.created.append((text, voice, speed, lang))
+        if text == "silence":
+            return np.zeros(0, dtype=np.float64), 24_000
+        if text == "nan":
+            return np.full(240, np.nan), 24_000  # what a damaged model file produced
         return np.zeros(240, dtype=np.float64), 24_000
 
 
@@ -107,6 +112,39 @@ def test_kokoro_rejects_unknown_voices_and_reports_failed_passages(kokoro: Kokor
     assert unknown.value.code == "voice_not_found"
     with pytest.raises(SynthesisError, match="couldn't speak"):
         kokoro.synthesize("unspeakable", VoiceSpec("af_heart"), 1.0)
+
+
+def test_kokoro_refuses_empty_or_non_finite_audio(kokoro: KokoroEngine) -> None:
+    for text in ("silence", "nan"):
+        with pytest.raises(SynthesisError) as error:
+            kokoro.synthesize(text, VoiceSpec("af_heart"), 1.0)
+        assert error.value.code == "synthesis_invalid_audio"
+
+
+def test_kokoro_refuses_damaged_files_and_a_repair_reinstalls_them(
+    kokoro: KokoroEngine, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    damage = [Damage("kokoro-v1.0.onnx", "checksum")]
+
+    def require_intact(artifact: str) -> None:
+        if damage:
+            raise ModelDamagedError("damaged")
+
+    monkeypatch.setattr(kokoro._store, "require_intact", require_intact)
+    with pytest.raises(ModelDamagedError):
+        kokoro.warm_up()  # checksums are known only once the files are hashed before loading
+    monkeypatch.setattr(kokoro._store, "damage", lambda _artifact, deep=False: list(damage))
+    info = kokoro.info()
+    assert info.status == "needs_repair" and info.damaged_files == ["kokoro-v1.0.onnx"]
+    assert info.status_message.startswith("The Kokoro model needs repair: kokoro-v1.0.onnx doesn't match")
+    assert not kokoro.is_ready() and FakeKokoro.loads == []
+
+    def install(artifact: str, progress: Any, canceled: Any) -> None:
+        damage.clear()
+
+    monkeypatch.setattr(kokoro._store, "install", install)
+    assert kokoro.repair(Ctx()) == {"artifact": ARTIFACT}  # type: ignore[arg-type]
+    assert kokoro.info().status == "ready" and len(FakeKokoro.loads) == 1
 
 
 def test_kokoro_load_failure_is_reported_until_a_load_succeeds(kokoro: KokoroEngine) -> None:

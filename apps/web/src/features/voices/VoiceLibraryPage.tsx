@@ -115,19 +115,23 @@ export default function VoiceLibraryPage() {
       <DefaultVoicesBanner />
       <div className="mb-6 grid gap-4 lg:grid-cols-[1fr_minmax(0,22rem)]">
         <div className="grid content-start gap-3 sm:grid-cols-4">
-          <div className="relative sm:col-span-4">
-            <Search
-              size={16}
-              className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-subtle"
-            />
-            <Input
-              aria-label="Search voices"
-              placeholder="Search by name or language"
-              className="pl-9"
-              value={filters.query}
-              onChange={(event) => setFilters({ ...filters, query: event.target.value })}
-            />
-          </div>
+          <Field label="Search voices" className="sm:col-span-4">
+            {({ id }) => (
+              <div className="relative">
+                <Search
+                  size={16}
+                  className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-subtle"
+                />
+                <Input
+                  id={id}
+                  placeholder="Search by name or language"
+                  className="pl-9"
+                  value={filters.query}
+                  onChange={(event) => setFilters({ ...filters, query: event.target.value })}
+                />
+              </div>
+            )}
+          </Field>
           <Field label="Language" className="sm:col-span-2">
             {({ id }) => (
               <Select
@@ -183,7 +187,9 @@ export default function VoiceLibraryPage() {
               value={passage}
               onChange={(event) => setPassage(event.target.value)}
               placeholder="The lighthouse keeper climbed the spiral stairs…"
-              className="min-h-[7.5rem] font-serif"
+              // Side by side, the box runs from the top of the search field to the bottom of the
+              // filters: two 2.5rem controls, a 0.75rem gap, a 1.25rem label and its 0.375rem gap.
+              className="min-h-[7.5rem] font-serif lg:h-[7.375rem] lg:min-h-0 lg:resize-none"
             />
           )}
         </Field>

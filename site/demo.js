@@ -3,8 +3,9 @@
 /*
  * Purpose: The website's browser speech demo and its copy buttons.
  * Scope: Lists the browser's voices (on-device voices first; online ones are labelled and warned
- *   about), speaks the text at the chosen speed with the Web Speech API, stops, announces progress
- *   to screen readers, and explains when the browser can't speak. Copy buttons copy a code block.
+ *   about), speaks the text sentence by sentence at the chosen speed with the Web Speech API while
+ *   highlighting the sentence being read (as the app does), stops, announces progress to screen
+ *   readers, and explains when the browser can't speak. Copy buttons copy a code block.
  * Does NOT belong: TTSNative's own speech (the installed app), page layout (styles.css).
  */
 (() => {
@@ -32,10 +33,27 @@
     return [...voices].sort((a, b) => score(a) - score(b) || a.name.localeCompare(b.name));
   }
 
+  /** The text split into sentences; one piece where the browser can't segment text. */
+  function sentences(words, lang) {
+    if (typeof Intl.Segmenter !== 'function') return [words];
+    const parts = [...new Intl.Segmenter(lang, { granularity: 'sentence' }).segment(words)];
+    return parts.map((part) => part.segment.trim()).filter(Boolean);
+  }
+
+  /** Shows the sentences in the read-along box; returns a function that highlights one of them. */
+  function showReadAlong(box, parts) {
+    box.replaceChildren(
+      ...parts.map((part) => Object.assign(document.createElement('span'), { textContent: part })),
+    );
+    box.hidden = false;
+    return (index) =>
+      [...box.children].forEach((span, at) => span.classList.toggle('current', at === index));
+  }
+
   function setupSpeech() {
     const form = $('speech');
     if (!form) return;
-    const [text, select, rate, rateValue, play, stop, status, online] = [
+    const [text, select, rate, rateValue, play, stop, status, online, readAlong] = [
       'speech-text',
       'speech-voice',
       'speech-rate',
@@ -44,7 +62,9 @@
       'speech-stop',
       'speech-status',
       'speech-online',
+      'speech-readalong',
     ].map($);
+    let highlight = () => undefined;
     const synth = globalThis.speechSynthesis;
     if (!synth || typeof globalThis.SpeechSynthesisUtterance !== 'function') {
       select.innerHTML = '<option>Not available</option>';
@@ -84,6 +104,7 @@
     );
     stop.addEventListener('click', () => {
       synth.cancel();
+      highlight(-1);
       stop.disabled = true;
       status.textContent = 'Stopped.';
     });
@@ -96,27 +117,35 @@
         return;
       }
       synth.cancel();
-      const utterance = new SpeechSynthesisUtterance(words);
       const voice = chosen();
-      if (voice) {
-        utterance.voice = voice;
-        utterance.lang = voice.lang;
-      }
-      utterance.rate = Number(rate.value);
-      utterance.onstart = () => {
-        stop.disabled = false;
-        status.textContent = 'Speaking…';
-      };
-      utterance.onend = () => {
-        stop.disabled = true;
-        status.textContent = 'Done.';
-      };
-      utterance.onerror = (e) => {
-        stop.disabled = true;
-        if (e.error !== 'interrupted' && e.error !== 'canceled')
-          status.textContent = 'The browser couldn’t speak this text.';
-      };
-      synth.speak(utterance);
+      // One utterance per sentence: the highlight follows along, and long passages aren't cut off.
+      const parts = sentences(words, voice?.lang || document.documentElement.lang || 'en');
+      highlight = showReadAlong(readAlong, parts);
+      parts.forEach((part, index) => {
+        const utterance = new SpeechSynthesisUtterance(part);
+        if (voice) {
+          utterance.voice = voice;
+          utterance.lang = voice.lang;
+        }
+        utterance.rate = Number(rate.value);
+        utterance.onstart = () => {
+          stop.disabled = false;
+          highlight(index);
+          if (index === 0) status.textContent = 'Speaking…';
+        };
+        if (index === parts.length - 1)
+          utterance.onend = () => {
+            stop.disabled = true;
+            highlight(-1);
+            status.textContent = 'Done.';
+          };
+        utterance.onerror = (e) => {
+          stop.disabled = true;
+          if (e.error !== 'interrupted' && e.error !== 'canceled')
+            status.textContent = 'The browser couldn’t speak this text.';
+        };
+        synth.speak(utterance);
+      });
     });
   }
 

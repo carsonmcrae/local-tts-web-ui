@@ -4,7 +4,7 @@
  * Purpose: Tests for installing, monitoring and removing speech engines.
  * Scope: Status badges for every engine state, live progress with cancel, install options without a
  *   recommendation, failed installs and failed requests, removal with confirmation, and the default
- *   voices banner shown when Kokoro is missing.
+ *   voices banner shown when Kokoro is missing; repairing damaged model files.
  * Does NOT belong: The install/update happy paths (src/test/flows.test.tsx).
  */
 import { screen, waitFor, within } from '@testing-library/react';
@@ -120,6 +120,49 @@ describe('EnginePanel', () => {
     await user.click(within(confirm).getByRole('button', { name: 'Remove' }));
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
     expect(calls.find((call) => call.method === 'DELETE')?.path).toBe('/api/engines/chatterbox');
+  });
+});
+
+describe('Repairing damaged model files', () => {
+  it('says what is wrong, keeps the engine removable and repairs it', async () => {
+    let polls = 0;
+    const repairJob = (overrides: Partial<JobOut>) =>
+      job({ payload: { engineId: 'kokoro', repair: true }, ...overrides });
+    const { calls } = mockApi({
+      ...base,
+      'POST /api/engines/': repairJob({ message: 'Downloading kokoro-v1.0.onnx' }),
+      'GET /api/jobs/': () =>
+        ++polls < 2
+          ? repairJob({ message: 'Downloading kokoro-v1.0.onnx' })
+          : repairJob({ status: 'succeeded', progress: 1 }),
+    });
+    const user = userEvent.setup();
+    const damaged = kokoro({
+      status: 'needs_repair',
+      statusMessage: 'The Kokoro model needs repair: kokoro-v1.0.onnx is missing.',
+      damagedFiles: ['kokoro-v1.0.onnx'],
+    });
+    renderWithApp(<EnginePanel engine={damaged} />);
+    expect(screen.getByText('Needs repair')).toBeInTheDocument();
+    expect(screen.getByText('Model files need repair').parentElement).toHaveTextContent(
+      "kokoro-v1.0.onnx is missing. Your documents, recordings, voices and other models aren't touched.",
+    );
+    expect(screen.getByRole('button', { name: 'Remove' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Install/ })).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Repair Kokoro' }));
+    expect(
+      await screen.findByRole('progressbar', { name: 'Repairing Kokoro' }),
+    ).toBeInTheDocument();
+    expect(calls.find((call) => call.method === 'POST')?.path).toBe('/api/engines/kokoro/repair');
+    expect(
+      await screen.findByText('Kokoro is repaired', {}, { timeout: 4000 }),
+    ).toBeInTheDocument();
+  });
+
+  it('asks for a repair, not an install, when the default voice model is damaged', async () => {
+    mockApi({ ...base, 'GET /api/engines': [kokoro({ status: 'needs_repair' })] });
+    renderWithApp(<DefaultVoicesBanner />);
+    expect(await screen.findByText('Repair the voice model to keep listening')).toBeInTheDocument();
   });
 });
 

@@ -41,6 +41,7 @@ function engineStatus(offline: boolean, engines: readonly EngineInfo[] | undefin
   const status = engines?.find((engine) => engine.id === 'kokoro')?.status;
   if (status === 'ready') return { label: 'Voices ready', dot: 'bg-success' };
   if (status === 'installing') return { label: 'Installing voices…', dot: 'bg-warning' };
+  if (status === 'needs_repair') return { label: 'Voices need repair', dot: 'bg-danger' };
   return { label: 'Voices not installed', dot: 'bg-warning' };
 }
 
@@ -66,7 +67,9 @@ const linkClass = ({ isActive }: { isActive: boolean }) =>
 
 export function AppShell() {
   return (
-    <div className="flex h-dvh overflow-hidden">
+    // overflow-clip, not hidden: a hidden box can still be scrolled by scrollIntoView or focus,
+    // which slid the whole shell up and left the sidebar ending mid-screen.
+    <div className="flex h-dvh overflow-clip">
       <a
         href="#main"
         className="sr-only z-50 rounded-md bg-accent px-3 py-2 text-accent-fg focus:not-sr-only focus:fixed focus:top-3 focus:left-3"
@@ -97,7 +100,9 @@ export function AppShell() {
         <main
           id="main"
           tabIndex={-1}
-          className="min-h-0 flex-1 scrollbar-thin overflow-y-auto focus:outline-none"
+          // relative: visually hidden (absolutely positioned) elements stay inside this scroll area
+          // instead of stretching the page beyond the window.
+          className="relative min-h-0 flex-1 scrollbar-thin overflow-y-auto focus:outline-none"
         >
           <Outlet />
         </main>

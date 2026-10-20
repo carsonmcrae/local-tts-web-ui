@@ -42,6 +42,22 @@ test('main screens have no serious accessibility violations', async ({ page }) =
   }
 });
 
+test('settings section links scroll the page area, never the whole window', async ({ page }) => {
+  await page.goto('/settings');
+  const sections = page.getByRole('navigation', { name: 'Settings sections' });
+  for (const name of ['Privacy', 'About']) {
+    await sections.getByRole('link', { name }).click();
+    await expect(page.locator('#main')).not.toHaveJSProperty('scrollTop', 0);
+    // The app shell fills the window exactly; nothing may scroll it out of line.
+    expect(
+      await page.evaluate(() => ({
+        window: document.documentElement.scrollTop,
+        overflow: document.documentElement.scrollHeight - window.innerHeight,
+      })),
+    ).toEqual({ window: 0, overflow: 0 });
+  }
+});
+
 test.describe('phones @mobile', () => {
   test('layout fits the screen and controls are touch-sized', async ({ page }) => {
     await page.goto('/library');

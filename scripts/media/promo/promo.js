@@ -38,7 +38,8 @@ function el(parent, cls, css = {}, html = '') {
 }
 const at = (x, y, extra = {}) => ({ left: `${x}px`, top: `${y}px`, ...extra });
 const ICON = {
-  logo: '<svg viewBox="0 0 32 32" width="100%" height="100%"><rect width="32" height="32" rx="8" fill="#4f46e5"/><path d="M9 20.5v-9M13.5 23v-14M18 19v-6M22.5 21.5v-11" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/></svg>',
+  // The TTSNative app icon (brand/svg/ttsnative-app-icon.svg).
+  logo: '<svg viewBox="0 0 64 64" width="100%" height="100%"><defs><linearGradient id="promo-tile" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="64" y2="64"><stop offset="0" stop-color="#4F46E5"/><stop offset="1" stop-color="#0891B2"/></linearGradient></defs><rect width="64" height="64" rx="15" fill="url(#promo-tile)"/><g fill="#fff"><rect x="15.08" y="16.16" width="5.04" height="31.68" rx="2.52"/><rect x="22.28" y="17.6" width="5.04" height="14.4" rx="2.52"/><rect x="29.48" y="24.8" width="5.04" height="14.4" rx="2.52"/><rect x="36.68" y="32" width="5.04" height="14.4" rx="2.52"/><rect x="43.88" y="16.16" width="5.04" height="31.68" rx="2.52"/></g></svg>',
   shield:
     '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 4.5-3 8.2-7 10-4-1.8-7-5.5-7-10V6z"/><path d="M9 12l2.2 2.2L15.5 10"/></svg>',
   down: '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10.5l5 5 5-5M5 20h14"/></svg>',
@@ -369,7 +370,9 @@ scene(32, 38.4, (L) => {
 
 // 7. End card.
 scene(38.2, DURATION + 1, (L) => {
-  const logo = el(L, 'abs', at(890, 150, { width: '140px', height: '140px' }), ICON.logo);
+  // A gradient id of its own: the opening scene's copy is hidden by now, and so is its gradient.
+  const endIcon = ICON.logo.replaceAll('promo-tile', 'promo-tile-end');
+  const logo = el(L, 'abs', at(890, 150, { width: '140px', height: '140px' }), endIcon);
   const name = el(
     L,
     'h abs',
@@ -392,7 +395,7 @@ scene(38.2, DURATION + 1, (L) => {
     L,
     'sub abs',
     at(0, 800, { width: `${W}px`, textAlign: 'center', fontSize: '28px' }),
-    'Free and open source · MIT licence · github.com/carsonmcrae/ttsnative',
+    'ttsnative.com · Free and open source · MIT licence · github.com/carsonmcrae/ttsnative',
   );
   const credit = el(
     L,

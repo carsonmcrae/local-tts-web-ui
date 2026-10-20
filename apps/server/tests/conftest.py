@@ -39,6 +39,7 @@ class FakeEngine:
         self.ready = ready
         self.cloning = cloning
         self.update_available = False
+        self.damaged: list[str] = []  # model files a real engine would report as failing verification
         self.calls: list[tuple[str, str, float, Path | None]] = []
         self.specs: list[VoiceSpec] = []
         self.built: list[tuple[str, SpeakerIdentity | None]] = []
@@ -50,8 +51,10 @@ class FakeEngine:
             description="Deterministic test engine",
             license="test",
             optional=self.cloning,
-            status="ready" if self.ready else "not_installed",
-            status_message="",
+            status="needs_repair" if self.damaged else "ready" if self.ready else "not_installed",
+            status_message=f"{self.id.title()} needs repair: {', '.join(self.damaged)} is damaged."
+            if self.damaged
+            else "",
             supports_cloning=self.cloning,
             controls=[],
             languages=["English"],
@@ -61,6 +64,7 @@ class FakeEngine:
             install_options=[],
             installed_bytes=0,
             update_available=self.update_available,
+            damaged_files=list(self.damaged),
         )
 
     def voices(self) -> list[VoiceInfo]:
@@ -78,7 +82,7 @@ class FakeEngine:
         ]
 
     def is_ready(self) -> bool:
-        return self.ready
+        return self.ready and not self.damaged
 
     def revision(self) -> str:
         return f"{self.id}-fake-1"
@@ -97,6 +101,10 @@ class FakeEngine:
     def update(self, context: JobContext) -> dict[str, Any]:
         self.update_available = False
         return {"updated": True}
+
+    def repair(self, context: JobContext) -> dict[str, Any]:
+        repaired, self.damaged = self.damaged, []
+        return {"repaired": repaired}
 
     def uninstall(self) -> None:
         self.ready = False

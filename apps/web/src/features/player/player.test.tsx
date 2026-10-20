@@ -234,4 +234,15 @@ describe('ErrorStrip', () => {
     await userEvent.setup().click(screen.getByRole('button', { name: 'Retry' }));
     expect(onRetry).toHaveBeenCalled();
   });
+
+  it('sends damaged-model errors to Settings instead of offering a retry', async () => {
+    mockApi({ 'GET /api/preferences': preferences, 'GET /api/engines': [kokoro()] });
+    const error = { code: 'model_damaged', message: 'The Kokoro model needs repair.' };
+    renderWithApp(<ErrorStrip error={error} onRetry={vi.fn()} />);
+    expect(await screen.findByRole('link', { name: 'Open Settings' })).toHaveAttribute(
+      'href',
+      '/settings#engines',
+    );
+    expect(screen.queryByRole('button', { name: 'Retry' })).not.toBeInTheDocument();
+  });
 });

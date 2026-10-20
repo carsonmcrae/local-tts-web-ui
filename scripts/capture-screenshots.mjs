@@ -26,6 +26,14 @@ async function upload(page, name) {
   await page.waitForURL(/\/read\//);
 }
 
+/** Wait until the player shows its Pause icon rather than the loading spinner between sentences. */
+async function settled(/** @type {import('@playwright/test').Page} */ page) {
+  await page
+    .getByRole('region', { name: 'Audio player' })
+    .locator('.animate-spin')
+    .waitFor({ state: 'detached', timeout: 30_000 });
+}
+
 async function main() {
   const server = spawn(
     process.execPath,
@@ -58,9 +66,11 @@ async function main() {
       .click();
     await page.locator('[data-index="3"][data-active="true"]').waitFor({ timeout: 60_000 });
     await page.mouse.move(5, 890);
+    await settled(page);
     await page.screenshot({ path: path.join(OUT, 'reader-light.png') });
 
     await page.emulateMedia({ colorScheme: 'dark' });
+    await settled(page);
     await page.screenshot({ path: path.join(OUT, 'reader-dark.png') });
     await page
       .getByRole('region', { name: 'Audio player' })
@@ -79,11 +89,9 @@ async function main() {
       await page.screenshot({ path: path.join(OUT, `${file}.png`) });
     }
     await page.goto(`${BASE}/studio`);
+    // The chooser between a quick voice and a guided studio voice.
     await page.getByRole('button', { name: 'Create voice' }).first().click();
-    await page
-      .getByRole('dialog')
-      .getByRole('button', { name: /Continue/ })
-      .click();
+    await page.getByRole('dialog', { name: 'Create a voice' }).getByText('Studio voice').waitFor();
     await page.waitForTimeout(400);
     await page.screenshot({ path: path.join(OUT, 'studio.png') });
 

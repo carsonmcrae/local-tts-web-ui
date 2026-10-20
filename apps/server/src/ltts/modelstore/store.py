@@ -4,8 +4,10 @@
 
 Scope: HTTPS-only downloads restricted to approved hosts (checked after every redirect), resumable
 ``.part`` files, retries with backoff, exact size + SHA-256 verification before an atomic rename,
-an install marker written only after every file verifies, and a full re-hash on demand. Model
-files are data: nothing downloaded is ever executed.
+an install marker written only after every file verifies, integrity checks of installed files (missing,
+incomplete or failing their checksum) with hashes remembered per file size and modification time,
+and a refusal to hand damaged files to an engine. Model files are data: nothing downloaded is ever
+executed.
 Does NOT belong: Loading models into an inference runtime (engines).
 """
 
@@ -23,13 +25,13 @@ from dataclasses import dataclass
 # nosemgrep: python.lang.compatibility.python37.python37-compatibility-importlib2
 from importlib import resources
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 from urllib.parse import urlparse
 
 import httpx
 
 from ltts.common import ensure_free_space, utc_now
-from ltts.errors import AppError, NotFoundError
+from ltts.errors import AppError, EngineUnavailableError, NotFoundError
 from ltts.jobs import JobCanceledError
 
 log = logging.getLogger("ltts.models")
@@ -49,6 +51,32 @@ class DownloadError(AppError):
 class ChecksumError(AppError):
     status_code = 502
     code = "checksum_mismatch"
+
+
+class ModelDamagedError(EngineUnavailableError):
+    code = "model_damaged"
+
+
+DamageKind = Literal["missing", "incomplete", "checksum"]
+_DAMAGE_TEXT: dict[DamageKind, str] = {
+    "missing": "{} is missing",
+    "incomplete": "{} has the wrong size (an incomplete or damaged download)",
+    "checksum": "{} doesn't match its published SHA-256 checksum",
+}
+
+
+@dataclass(frozen=True, slots=True)
+class Damage:
+    name: str
+    kind: DamageKind
+
+    def describe(self) -> str:
+        return _DAMAGE_TEXT[self.kind].format(self.name)
+
+
+def describe_damage(label: str, damage: list[Damage]) -> str:
+    problems = "; ".join(item.describe() for item in damage)
+    return f"{label} needs repair: {problems}. Repair downloads only the damaged files and checks them before use."
 
 
 @dataclass(frozen=True, slots=True)
@@ -103,6 +131,8 @@ class ModelStore:
         self.artifacts, self.allowed_hosts = load_manifest()
         self._reserve_mb = reserve_mb
         self._client_factory = client_factory or (lambda: httpx.Client(follow_redirects=False, timeout=60.0))
+        # path -> (size, mtime_ns, sha256) from the last time the file was hashed in that state
+        self._hashes: dict[Path, tuple[int, int, str]] = {}
 
     def artifact(self, artifact_id: str) -> Artifact:
         try:
@@ -128,14 +158,56 @@ class ModelStore:
         return sum(p.stat().st_size for p in folder.glob("*") if p.is_file()) if folder.is_dir() else 0
 
     def verify(self, artifact_id: str) -> bool:
+        return self.is_installed(artifact_id) and not self.damage(artifact_id, deep=True)
+
+    def damage(self, artifact_id: str, *, deep: bool = False) -> list[Damage]:
+        """What is wrong with an installed artifact (empty when intact or not installed at all).
+
+        The quick form checks presence and size and reuses checksums of files unchanged since they were
+        last hashed; ``deep`` hashes every file not yet verified in its current state.
+        """
         art = self.artifact(artifact_id)
-        return self.is_installed(artifact_id) and all(
-            _sha256(self.file_path(artifact_id, f.name)) == f.sha256 for f in art.files
-        )
+        folder = self.directory(artifact_id)
+        if not (folder / MARKER).is_file():
+            return []
+        found: list[Damage] = []
+        for file in art.files:
+            path = folder / file.name
+            if not path.is_file():
+                found.append(Damage(file.name, "missing"))
+            elif path.stat().st_size != file.size:
+                found.append(Damage(file.name, "incomplete"))
+            elif (digest := self._digest(path, compute=deep)) is not None and digest != file.sha256:
+                found.append(Damage(file.name, "checksum"))
+        return found
+
+    def require_intact(self, artifact_id: str) -> None:
+        """Check every file against the manifest before a model is loaded; refuse damaged files."""
+        if damage := self.damage(artifact_id, deep=True):
+            log.warning("artifact damaged", extra={"artifact": artifact_id, "files": [d.name for d in damage]})
+            raise ModelDamagedError(
+                describe_damage(self.artifact(artifact_id).label, damage)
+                + " Open Settings → Engines & models to repair it.",
+                details={"artifact": artifact_id, "files": [d.name for d in damage]},
+            )
+
+    def _digest(self, path: Path, *, compute: bool = True) -> str | None:
+        """SHA-256 of ``path``, hashed again only after its size or modification time changes."""
+        stat = path.stat()
+        cached = self._hashes.get(path)
+        if cached is not None and cached[:2] == (stat.st_size, stat.st_mtime_ns):
+            return cached[2]
+        if not compute:
+            return None
+        digest = _sha256(path)
+        self._hashes[path] = (stat.st_size, stat.st_mtime_ns, digest)
+        return digest
 
     def remove(self, artifact_id: str) -> None:
         self.artifact(artifact_id)
-        shutil.rmtree(self.directory(artifact_id), ignore_errors=True)
+        folder = self.directory(artifact_id)
+        shutil.rmtree(folder, ignore_errors=True)
+        self._hashes = {path: entry for path, entry in self._hashes.items() if path.parent != folder}
 
     def install(self, artifact_id: str, progress: ProgressFn, canceled: CancelFn) -> None:
         art = self.artifact(artifact_id)
@@ -143,6 +215,8 @@ class ModelStore:
         folder.mkdir(parents=True, exist_ok=True)
         (folder / MARKER).unlink(missing_ok=True)
         pending = [f for f in art.files if not self._file_ok(folder / f.name, f)]
+        if pending:
+            log.info("downloading model files", extra={"artifact": art.id, "files": [f.name for f in pending]})
         remaining = sum(f.size for f in pending)
         ensure_free_space(folder, remaining, self._reserve_mb)
         done = art.total_bytes - remaining
@@ -161,9 +235,8 @@ class ModelStore:
         (folder / MARKER).write_text(json.dumps(marker, indent=2), encoding="utf-8")
         log.info("artifact installed", extra={"artifact": art.id})
 
-    @staticmethod
-    def _file_ok(path: Path, file: ArtifactFile) -> bool:
-        return path.is_file() and path.stat().st_size == file.size and _sha256(path) == file.sha256
+    def _file_ok(self, path: Path, file: ArtifactFile) -> bool:
+        return path.is_file() and path.stat().st_size == file.size and self._digest(path) == file.sha256
 
     def _download_with_retry(
         self, file: ArtifactFile, folder: Path, progress: Callable[[int], None], canceled: CancelFn
@@ -222,7 +295,10 @@ class ModelStore:
         if _sha256(part) != file.sha256:
             part.unlink()
             raise ChecksumError(f"{file.name} failed its checksum. It was deleted and nothing was installed.")
-        part.replace(folder / file.name)
+        target = folder / file.name
+        part.replace(target)
+        stat = target.stat()
+        self._hashes[target] = (stat.st_size, stat.st_mtime_ns, file.sha256)
 
     def _open(self, client: httpx.Client, url: str, offset: int) -> httpx.Response:
         headers = {"Range": f"bytes={offset}-"} if offset else {}

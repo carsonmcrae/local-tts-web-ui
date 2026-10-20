@@ -3,8 +3,8 @@
 """Purpose: Wire engines together and resolve any voice id to an engine plus voice specification.
 
 Scope: Holds the engine instances, maps ``engine:key`` and ``custom:<profile>`` voice ids, merges
-built-in and custom voices for the library, runs engine install and update jobs, and hands out the
-cloning engine for building studio voices.
+built-in and custom voices for the library, runs engine install, update and repair jobs, explains
+damaged model files when a voice is used, and hands out the cloning engine for building studio voices.
 Does NOT belong: Engine internals, caching or HTTP.
 """
 
@@ -16,6 +16,7 @@ from dataclasses import dataclass
 from ltts.engines.base import Engine, EngineInfo, VoiceBuilder, VoiceInfo, VoiceSpec
 from ltts.errors import ConflictError, EngineUnavailableError, NotFoundError
 from ltts.jobs import JobManager, JobOut, JobStatus
+from ltts.modelstore.store import ModelDamagedError
 
 CustomVoiceResolver = Callable[[str], tuple[str, VoiceSpec, str]]
 CustomVoiceLister = Callable[[], list[VoiceInfo]]
@@ -95,8 +96,14 @@ class EngineRegistry:
             language = next((v.language_code for v in engine.voices() if v.id == voice_id), "en-us")
             spec, revision = VoiceSpec(key=key, language_code=language), "builtin"
         if not engine.is_ready():
+            info = engine.info()
+            if info.status == "needs_repair":
+                raise ModelDamagedError(
+                    f"{info.status_message} Open Settings → Engines & models to repair it.",
+                    details={"engineId": engine.id, "files": info.damaged_files},
+                )
             raise EngineUnavailableError(
-                f"The {engine.info().name} engine isn't installed. Install it from Settings → Engines & models.",
+                f"The {info.name} engine isn't installed. Install it from Settings → Engines & models.",
                 code="engine_not_installed",
                 details={"engineId": engine.id},
             )
@@ -119,6 +126,15 @@ class EngineRegistry:
         if not (info := engine.info()).update_available:
             raise ConflictError(f"{info.name} is already up to date.", code="no_update")
         return self._jobs.submit("install", {"engineId": engine_id, "update": True}, engine.update, key=engine_id)
+
+    def repair(self, engine_id: str) -> JobOut:
+        """Re-download damaged model files as an ``install`` job (shared progress, cancel and guards)."""
+        engine = self.get(engine_id)
+        if (active := self._jobs.find_active("install", engine_id)) is not None:
+            return active
+        if (info := engine.info()).status != "needs_repair":
+            raise ConflictError(f"{info.name}'s model files are intact.", code="no_repair_needed")
+        return self._jobs.submit("install", {"engineId": engine_id, "repair": True}, engine.repair, key=engine_id)
 
     def uninstall(self, engine_id: str) -> None:
         active = self._jobs.find_active("install", engine_id)

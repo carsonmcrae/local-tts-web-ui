@@ -21,6 +21,7 @@ from ltts import __version__
 from ltts.common import ApiModel
 from ltts.container import ServicesDep
 from ltts.hardware import GpuInfo, detect_gpus
+from ltts.onnx import onnxruntime
 
 router = APIRouter(prefix="/api", tags=["system"])
 
@@ -75,8 +76,6 @@ def health() -> Health:
 
 @router.get("/system")
 def system_info(services: ServicesDep) -> SystemInfo:
-    import onnxruntime
-
     settings = services.settings
     data = settings.resolved_data_dir
     disk = shutil.disk_usage(data)
@@ -92,7 +91,7 @@ def system_info(services: ServicesDep) -> SystemInfo:
         memory_total_bytes=memory.total,
         memory_available_bytes=memory.available,
         gpus=list(detect_gpus()),
-        onnx_providers=list(onnxruntime.get_available_providers()),
+        onnx_providers=list(onnxruntime().get_available_providers()),
         network_exposed=not settings.is_loopback_only,
         storage=StorageInfo(
             data_dir=str(data),

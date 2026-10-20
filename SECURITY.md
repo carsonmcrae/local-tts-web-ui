@@ -26,8 +26,10 @@ You can expect an acknowledgement within a week.
 - Documents are size-limited, type-sniffed, and parsed in a separate process with a timeout. ZIP-based
   formats are checked for bombs, encryption and unsafe names; XML entity declarations are refused.
 - Model files are downloaded only from pinned HTTPS URLs on approved hosts and must match the expected
-  size and SHA-256 before they are installed. Nothing downloaded is executed as a script.
-- No telemetry, analytics or accounts. Documents and recordings never leave the machine.
+  size and SHA-256 before they are installed, and again before each load; damaged files are refused
+  and can be repaired. Nothing downloaded is executed as a script.
+- No telemetry, analytics or accounts (ONNX Runtime's default telemetry is switched off). Documents and
+  recordings never leave the machine, and logs carry identifiers rather than document text.
 
 Details: [threat model](docs/security/threat-model.md) ·
 [supply chain](docs/security/supply-chain.md) ·

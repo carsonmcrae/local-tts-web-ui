@@ -159,11 +159,20 @@ plain-language fix, such as moving closer to the microphone.
 Only create voices you have the right to use. Before a voice can be created, you must tick this
 statement:
 
-> I am the person speaking in this recording, or I have the speaker's explicit permission to create
-> and use a synthetic version of their voice. I will not use it to impersonate, deceive or harm anyone.
+> I am the person speaking in this recording, or I have their explicit permission to create and use a
+> synthetic copy of their voice (for a child, a parent's or guardian's; for someone who has died, their
+> estate's). I won't use it to impersonate or deceive anyone, to pass generated speech off as a real
+> recording, or in any way that breaks the law or someone's rights.
 
-The server refuses to create a voice without it and records when you confirmed. Each voice card
-shows "Consent confirmed" with the date.
+The server refuses to create a voice without it (whether you use the app or call its API) and stores
+the statement's wording and when you confirmed with the voice. Each voice card shows "Consent
+confirmed" with the date.
+
+TTSNative runs entirely on your computer, so what you record, generate and share is up to you, and so
+is the responsibility for it: you need the speaker's permission, and you're responsible for how you use
+and publish the audio. Speech made with Chatterbox carries Resemble AI's imperceptible Perth watermark,
+added by Chatterbox itself; TTSNative doesn't remove it, but a watermark can't prevent misuse, and its
+survival through MP3 export hasn't been tested here. Kokoro's built-in voices are not watermarked.
 
 ## What is stored
 

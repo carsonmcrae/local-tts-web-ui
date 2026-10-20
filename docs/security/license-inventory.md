@@ -14,11 +14,12 @@ GPL/AGPL/LGPL licence.
 
 ## Reviewed exceptions
 
-| Component                                              | Licence          | Why it is acceptable here                                                                                   |
-| ------------------------------------------------------ | ---------------- | ----------------------------------------------------------------------------------------------------------- |
-| phonemizer (via kokoro-onnx)                           | GPL-3.0-or-later | Installed from PyPI into the user's environment by uv; not copied into or distributed with this repository. |
-| espeak-ng (bundled in espeakng-loader wheels)          | GPL-3.0          | Same as above.                                                                                              |
-| libsndfile, mpg123, LAME (bundled in soundfile wheels) | LGPL-2.1         | Dynamically loaded shared libraries; unmodified.                                                            |
+| Component                                              | Licence          | Why it is acceptable here                                                                                                    |
+| ------------------------------------------------------ | ---------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| phonemizer (via kokoro-onnx)                           | GPL-3.0-or-later | Installed from PyPI into the user's environment by uv; not copied into or distributed with this repository.                  |
+| espeak-ng (bundled in espeakng-loader wheels)          | GPL-3.0          | Same as above.                                                                                                               |
+| libsndfile, mpg123, LAME (bundled in soundfile wheels) | LGPL-2.1         | Dynamically loaded shared libraries; unmodified.                                                                             |
+| certifi (CA bundle, via httpx)                         | MPL-2.0          | File-level copyleft that applies only to modified files we distribute; installed unmodified from PyPI and not redistributed. |
 
 **If you redistribute a bundled build** (PyInstaller, Docker image, desktop wrapper) that includes these
 components, you must meet the GPL-3.0/LGPL obligations for them (source availability, licence notices).

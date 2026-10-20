@@ -129,7 +129,9 @@ def test_export_resume_readiness_removal_and_empty_ranges(client: TestClient, se
 
 
 def test_voice_studio_consent_listing_and_renaming(client: TestClient) -> None:
-    assert "explicit permission" in client.get("/api/voice-profiles/consent").json()["statement"]
+    statement = client.get("/api/voice-profiles/consent").json()["statement"]
+    assert "explicit permission" in statement and "parent's or guardian's" in statement and "estate's" in statement
+    assert "pass generated speech off as a real recording" in statement
     params = {"name": "Narrator", "consent": "true"}
     profile = client.post("/api/voice-profiles", params=params, content=wav_bytes(speech_like(12))).json()
     renamed = client.patch(f"/api/voice-profiles/{profile['id']}", json={"name": "  Storyteller  "})

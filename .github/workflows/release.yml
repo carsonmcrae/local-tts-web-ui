@@ -53,6 +53,8 @@ jobs:
           out=release-files
           mkdir -p "$out"
           git archive --format=tar.gz --prefix="ttsnative-$version/" -o "$out/ttsnative-$version-source.tar.gz" "$TAG"
+          # The prebuilt UI travels with the project's own licence (third-party notices are already in dist).
+          cp LICENSE apps/web/dist/LICENSE
           tar -czf "$out/ttsnative-$version-web-ui.tar.gz" -C apps/web dist
           npm sbom --omit dev --sbom-format cyclonedx > "$out/sbom-web.cdx.json"
           node scripts/uv-run.mjs --cwd apps/server export --frozen --no-dev --format cyclonedx1.5 -o "../../$out/sbom-server.cdx.json" --quiet

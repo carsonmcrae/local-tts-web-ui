@@ -199,16 +199,19 @@ def test_start_up_warms_engines_in_the_background(settings: Settings) -> None:
 
 class BrokenEngine(FakeEngine):
     def info(self) -> Any:
-        raise RuntimeError("internal detail that must not leak")
+        detail = " ".join(["internal", "detail that must not leak"])  # built at run time, like document text
+        raise RuntimeError(detail)
 
 
-def test_unexpected_errors_become_a_safe_500(settings: Settings) -> None:
+def test_unexpected_errors_become_a_safe_500(settings: Settings, caplog: pytest.LogCaptureFixture) -> None:
     services = build_services(settings, isolate_extraction=False, engine_factory=lambda _s, _m: [BrokenEngine()])
     app = create_app(settings, services=services)
     with TestClient(app, raise_server_exceptions=False) as client:
         response = client.get("/api/engines")
     assert response.status_code == 500 and response.json()["error"]["code"] == "internal_error"
     assert "internal detail" not in response.text
+    # The terminal log says where it failed, but not the message (which can quote document text).
+    assert "unhandled error RuntimeError" in caplog.text and "internal detail" not in caplog.text
 
 
 def test_free_space_guard_reports_what_is_needed(tmp_path: Path) -> None:

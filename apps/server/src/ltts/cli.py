@@ -111,17 +111,17 @@ def _models(args: argparse.Namespace) -> int:
 def _doctor(_: argparse.Namespace) -> int:
     import platform
 
-    import onnxruntime
-
     from ltts.hardware import detect_gpus
     from ltts.modelstore.store import ModelStore
+    from ltts.onnx import onnxruntime
 
     settings = Settings()
     store = ModelStore(settings.resolved_models_dir, reserve_mb=settings.min_free_disk_mb)
     print(f"TTSNative {__version__} — Python {platform.python_version()} on {platform.platform()}")
     print(f"Data directory:   {settings.resolved_data_dir}")
     print(f"Models directory: {settings.resolved_models_dir}")
-    print(f"ONNX Runtime {onnxruntime.__version__}: {', '.join(onnxruntime.get_available_providers())}")
+    ort = onnxruntime()
+    print(f"ONNX Runtime {ort.__version__}: {', '.join(ort.get_available_providers())}")
     gpus = detect_gpus()
     print("GPUs: " + (", ".join(f"{g.vendor} {g.name}" for g in gpus) or "none detected (CPU mode)"))
     for artifact_id, art in store.artifacts.items():

@@ -38,9 +38,13 @@ from ltts.voices.quality import QualityReport, analyze
 log = logging.getLogger("ltts.voices")
 CLONING_ENGINE = "chatterbox"
 MAX_STORED_S = 30.0
+# Stored with each profile, so changing the wording never rewrites what an existing voice was created under.
 CONSENT_STATEMENT = (
-    "I am the person speaking in this recording, or I have the speaker's explicit permission to create and "
-    "use a synthetic version of their voice. I will not use it to impersonate, deceive or harm anyone."
+    "I am the person speaking in this recording, or I have their explicit permission to create and use a "
+    "synthetic copy of their voice (for a child, a parent's or guardian's; for someone who has died, their "
+    "estate's). I won't use it to impersonate or "
+    "deceive anyone, to pass generated speech off as a real recording, or in any way that breaks the law or "
+    "someone's rights."
 )
 _FORMATS = {"WAV", "FLAC", "OGG"}
 VoiceKind = Literal["quick", "studio"]

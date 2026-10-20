@@ -3,13 +3,15 @@
 """Purpose: Typed application errors and their translation into safe JSON responses.
 
 Scope: The ``AppError`` hierarchy (stable machine-readable ``code`` + human message + HTTP status)
-and FastAPI exception handlers that never leak stack traces or internal paths to clients.
+and FastAPI exception handlers that never leak stack traces or internal paths to clients, and log
+unexpected errors without their messages (which can quote document text).
 Does NOT belong: Logging configuration (``logging_setup``) or domain logic.
 """
 
 from __future__ import annotations
 
 import logging
+import traceback
 from typing import Any
 
 from fastapi import FastAPI, Request
@@ -110,7 +112,14 @@ def install_error_handlers(app: FastAPI) -> None:
 
     @app.exception_handler(Exception)
     async def _unexpected(request: Request, exc: Exception) -> JSONResponse:
-        log.exception("unhandled error", extra={"path": request.url.path, "error_type": type(exc).__name__})
+        # Where it failed, without the exception's message, which can quote document text.
+        where = "".join(traceback.format_tb(exc.__traceback__)).rstrip()
+        log.error(
+            "unhandled error %s\n%s",
+            type(exc).__name__,
+            where,
+            extra={"path": request.url.path, "error_type": type(exc).__name__},
+        )
         return JSONResponse(
             _body("internal_error", "Something went wrong on the local server. Check the terminal log."),
             status_code=500,

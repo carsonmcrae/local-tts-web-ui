@@ -226,11 +226,13 @@ test.describe('website @site @cross-browser', () => {
 });
 
 test.describe('website on phones @mobile', () => {
-  test('the page fits the screen', async ({ page }) => {
+  test('the page fits the screen and passes axe', async ({ page }) => {
     await page.goto(`${BASE}/`);
     const overflow = await page.evaluate(
       () => document.documentElement.scrollWidth - window.innerWidth,
     );
     expect(overflow).toBeLessThanOrEqual(0);
+    // On a phone the install commands scroll sideways, so keyboards must be able to reach them.
+    expect(await seriousViolations(page)).toEqual([]);
   });
 });

@@ -41,7 +41,8 @@ class QualityReport(ApiModel):
     clipping_ratio: float
     pause_ratio: float
     snr_db: float
-    brightness_db: float
+    # Reports saved before this metric existed lack it; 0 dB means no brightness warning.
+    brightness_db: float = 0.0
     ok: bool
     issues: list[QualityIssue]
 

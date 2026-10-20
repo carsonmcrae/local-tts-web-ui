@@ -1012,7 +1012,10 @@ export type components = {
     };
     /** QualityReport */
     QualityReport: {
-      /** Brightnessdb */
+      /**
+       * Brightnessdb
+       * @default 0
+       */
       brightnessDb: number;
       /** Clippingratio */
       clippingRatio: number;

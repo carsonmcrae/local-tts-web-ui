@@ -64,7 +64,8 @@ def test_network_mode_requires_token_for_remote_clients(settings: Settings, serv
     remote = TestClient(app, client=("192.168.1.50", 50000), headers={"X-LTTS-Client": "web"})
     assert remote.get("/api/health").status_code == 401
     assert remote.get("/api/health", headers={"Authorization": f"Bearer {token}"}).status_code == 200
-    assert remote.get("/api/health", cookies={"ltts_token": token}).status_code == 200
+    remote.cookies.set("ltts_token", token)
+    assert remote.get("/api/health").status_code == 200
     local = TestClient(app, client=("127.0.0.1", 50000))
     assert local.get("/api/health").status_code == 200
     first_visit = TestClient(app, client=("192.168.1.51", 50000))

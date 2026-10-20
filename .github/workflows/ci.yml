@@ -22,6 +22,9 @@ env:
   LTTS_SKIP_MODEL_DOWNLOAD: '1'
   LTTS_UV_PINNED_ONLY: '1'
   LTTS_NO_OPEN: '1'
+  # Runners keep uv's cache and the checkout on different drives (C: and D: on Windows), where
+  # hardlinks fail; copy instead of warning and falling back on every install.
+  UV_LINK_MODE: copy
 
 jobs:
   web:

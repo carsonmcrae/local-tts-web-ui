@@ -3,8 +3,9 @@
 Scope: Installs an isolated, locked environment (CPU or CUDA PyTorch) with uv plus checksum-pinned
 weights, offers an in-place update when the worker lock has changed since the install, reports
 hardware-aware install options, and synthesises through ``WorkerClient`` using a custom profile's
-reference recording (or the model's built-in voice). Output is 24 kHz and carries Resemble's
-imperceptible Perth watermark.
+built studio voice or reference recording (or the model's built-in voice), with a delivery preset.
+Builds studio voices (``VoiceBuilder``): measures takes, builds a voice from one take plus a session
+identity, and auditions it. Output is 24 kHz and carries Resemble's imperceptible Perth watermark.
 Does NOT belong: Profile storage/consent (``voices``), running uv and the install marker
 (``chatterbox_env.py``) or the worker implementation (``apps/chatterbox-worker``).
 """
@@ -16,13 +17,26 @@ import os
 import shutil
 import sys
 import threading
+from collections.abc import Sequence
 from pathlib import Path
 from typing import Any, override
 
 from ltts.audio import read_audio
 from ltts.common import MB, ensure_free_space, new_id
 from ltts.config import Settings
-from ltts.engines.base import AudioClip, Engine, EngineInfo, InstallOption, VoiceInfo, VoiceSpec
+from ltts.engines.base import (
+    AudioClip,
+    Audition,
+    Delivery,
+    Engine,
+    EngineInfo,
+    InstallOption,
+    SpeakerIdentity,
+    TakeFeatures,
+    VoiceBuilder,
+    VoiceInfo,
+    VoiceSpec,
+)
 from ltts.engines.chatterbox_env import (
     PROJECT_DIR,
     find_uv,
@@ -43,9 +57,17 @@ ENV_BYTES = {"cuda": 5_400 * MB, "cpu": 1_500 * MB}
 UPDATE_FREE_BYTES = 1_000 * MB  # an update only replaces the packages whose locked versions changed
 LOAD_TIMEOUT_S = 600.0
 SYNTH_TIMEOUT_S = 300.0
+STUDIO_TIMEOUT_S = 600.0  # one measure or build call (the server batches takes to stay well inside it)
+# Sampling for each delivery; "natural" is Turbo's default, so existing voices sound exactly as before.
+DELIVERY: dict[Delivery, dict[str, float]] = {
+    "steady": {"temperature": 0.6, "topP": 0.9},
+    "natural": {"temperature": 0.8, "topP": 0.95},
+    "expressive": {"temperature": 0.95, "topP": 0.98},
+}
+NOT_INSTALLED = "Chatterbox isn't installed. Install it from Settings → Engines & models."
 
 
-class ChatterboxEngine(Engine):
+class ChatterboxEngine(Engine, VoiceBuilder):
     id = "chatterbox"
 
     def __init__(self, settings: Settings, store: ModelStore, project_dir: Path = PROJECT_DIR):
@@ -252,24 +274,67 @@ class ChatterboxEngine(Engine):
                 self._worker.stop()
                 self._worker = None
 
-    # Chatterbox has no pace control; ``pace`` is accepted because every engine shares one signature.
-    @override
-    def synthesize(self, text: str, voice: VoiceSpec, pace: float) -> AudioClip:
+    def _call(self, op: str, timeout_s: float, **fields: Any) -> dict[str, Any]:
+        """Run one worker op, starting the worker (and loading the model) first if needed."""
         if not self.is_ready():
-            raise EngineUnavailableError(
-                "Chatterbox isn't installed. Install it from Settings → Engines & models.", code="engine_not_installed"
-            )
+            raise EngineUnavailableError(NOT_INSTALLED, code="engine_not_installed")
         self._ensure_worker()
         if self._worker is None:
             raise EngineUnavailableError("Chatterbox could not start.", code="engine_load_failed")
+        return self._worker.call(op, timeout_s, **fields)
+
+    # Chatterbox has no pace control; ``pace`` is accepted because every engine shares one signature.
+    @override
+    def synthesize(self, text: str, voice: VoiceSpec, pace: float) -> AudioClip:
         output = self._settings.path("tmp") / f"{new_id()}.wav"
         try:
-            reference = str(voice.reference_path) if voice.reference_path else None
-            self._worker.call("synthesize", SYNTH_TIMEOUT_S, text=text, reference=reference, output=str(output))
+            self._call(
+                "synthesize",
+                SYNTH_TIMEOUT_S,
+                text=text,
+                conditioning=str(voice.conditioning_path) if voice.conditioning_path else None,
+                reference=str(voice.reference_path) if voice.reference_path else None,
+                output=str(output),
+                **DELIVERY[voice.delivery],
+            )
             samples, rate = read_audio(output)
         finally:
             output.unlink(missing_ok=True)
         return AudioClip(samples, rate)
+
+    # -- studio voices ----------------------------------------------------
+    @override
+    def measure_takes(self, paths: Sequence[Path]) -> list[TakeFeatures]:
+        reply = self._call("measure", STUDIO_TIMEOUT_S, paths=[str(path) for path in paths])
+        return [
+            TakeFeatures(
+                path=Path(take["path"]),
+                speaker_emb=tuple(float(value) for value in take["speakerEmb"]),
+                xvector=tuple(float(value) for value in take["xvector"]),
+                pitch_spread=float(take["pitchSpread"]),
+                voiced_ratio=float(take["voicedRatio"]),
+            )
+            for take in reply["takes"]
+        ]
+
+    @override
+    def build_voice(self, prompt: Path, output: Path, identity: SpeakerIdentity | None) -> None:
+        session = {"speakerEmb": list(identity.speaker_emb), "xvector": list(identity.xvector)} if identity else {}
+        self._call("build", STUDIO_TIMEOUT_S, prompt=str(prompt), output=str(output), **session)
+
+    @override
+    def audition(self, request: Audition) -> list[float]:
+        reply = self._call(
+            "audition",
+            SYNTH_TIMEOUT_S * max(len(request.texts), 1),
+            conditioning=str(request.conditioning),
+            texts=list(request.texts),
+            outputs=[str(output) for output in request.outputs],
+            speakerEmb=list(request.target),
+            seed=request.seed,
+            **DELIVERY[request.delivery],
+        )
+        return [float(score) for score in reply["scores"]]
 
 
 def _status_message(ready: bool, *, update: bool) -> str:

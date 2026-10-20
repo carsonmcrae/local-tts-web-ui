@@ -4,7 +4,8 @@ Scope: Uses the installed models (``data/models`` and ``data/engines``) with a t
 uploads a PDF, synthesises its first sentences with Kokoro and checks the result is real speech
 (duration, loudness, not silence); synthesises with every English Kokoro voice family; and, when the
 optional Chatterbox engine is installed, clones a synthetic reference voice and checks that the
-clone is closer to the reference speaker than an unrelated voice is.
+clone is closer to the reference speaker than an unrelated voice is, and builds a studio voice from
+several takes: a saved voice reproduces identical audio with the same seed and resembles the speaker.
 Run with ``npm run test:inference``. Skips cleanly when models are not installed.
 Does NOT belong: Fast unit tests (they use FakeEngine).
 """
@@ -14,6 +15,8 @@ from __future__ import annotations
 import io
 import time
 from collections.abc import Iterator
+from pathlib import Path
+from typing import cast
 
 import numpy as np
 import pytest
@@ -23,7 +26,9 @@ from fastapi.testclient import TestClient
 from builders import make_pdf
 from ltts.app import create_app
 from ltts.config import REPO_ROOT, Settings
-from ltts.container import build_services
+from ltts.container import Services, build_services
+from ltts.engines.base import Audition, SpeakerIdentity
+from ltts.engines.chatterbox import ChatterboxEngine
 
 pytestmark = pytest.mark.inference
 
@@ -90,7 +95,7 @@ def test_kokoro_voices_and_pace(real: TestClient, voice: str) -> None:
     assert len(fast) < len(normal) * 0.85  # native pace control really speeds up speech
 
 
-def test_chatterbox_clone_resembles_reference(real: TestClient) -> None:
+def test_chatterbox_clone_resembles_reference(real: TestClient, tmp_path: Path) -> None:
     if not (ENGINES / "chatterbox" / "installed.json").is_file():
         pytest.skip("Optional Chatterbox engine not installed")
     passage = (
@@ -112,4 +117,63 @@ def test_chatterbox_clone_resembles_reference(real: TestClient) -> None:
     )
     print(f"\nchatterbox: first clone {time.perf_counter() - started:.1f}s (includes model load)")
     assert_speech(clone, rate)
+    unrelated = real.post("/api/voices/kokoro:af_heart/preview", json={"text": passage})
+    paths = [
+        save(tmp_path / "reference.wav", reference),
+        tmp_path / "clone.wav",
+        save(tmp_path / "other.wav", unrelated),
+    ]
+    sf.write(paths[1], clone, rate)
+    ref, cloned, other = (unit(take.speaker_emb) for take in chatterbox(real).measure_takes(paths))
+    print(f"chatterbox: clone similarity {ref @ cloned:.3f}, unrelated voice {ref @ other:.3f}")
+    assert ref @ cloned > ref @ other + 0.05
     assert real.delete(f"/api/voice-profiles/{profile.json()['id']}").status_code == 204
+
+
+def test_chatterbox_studio_voice_is_reproducible_and_resembles_the_speaker(real: TestClient, tmp_path: Path) -> None:
+    if not (ENGINES / "chatterbox" / "installed.json").is_file():
+        pytest.skip("Optional Chatterbox engine not installed")
+    passages = [
+        "The library opens at nine, but most mornings the first visitors arrive a little early, coffee in hand.",
+        "Wait, you're telling me the whole thing was planned from the start? I can't believe nobody said a thing!",
+        "Take a slow breath in, and let it out gently. Notice the steady rhythm of your own breathing.",
+    ]
+    takes = [
+        save(tmp_path / f"take-{i}.wav", real.post("/api/voices/kokoro:bm_george/preview", json={"text": text}))
+        for i, text in enumerate(passages)
+    ]
+    engine = chatterbox(real)
+    features = engine.measure_takes(takes)
+    assert all(len(f.speaker_emb) == 256 and len(f.xvector) == 192 and f.pitch_spread > 0 for f in features)
+    identity = SpeakerIdentity(
+        tuple(unit(np.mean([f.speaker_emb for f in features], axis=0)).tolist()),
+        tuple(unit(np.mean([f.xvector for f in features], axis=0)).tolist()),
+    )
+    voice = tmp_path / "voice.safetensors"
+    engine.build_voice(takes[0], voice, identity)
+    text = ["This sentence never appeared in any of the takes."]
+    first, second = tmp_path / "first.wav", tmp_path / "second.wav"
+    scores = engine.audition(Audition(voice, text, [first], identity.speaker_emb, seed=7))
+    engine.audition(Audition(voice, text, [second], identity.speaker_emb, seed=7))
+    a, rate = sf.read(first, dtype="float32")
+    b, _ = sf.read(second, dtype="float32")
+    assert_speech(a, rate)
+    assert a.shape == b.shape and float(np.max(np.abs(a - b))) < 1e-3  # saved voice + seed = same audio
+    print(f"\nchatterbox: studio voice similarity {scores[0]:.3f}")
+    assert scores[0] > 0.8
+
+
+def chatterbox(client: TestClient) -> ChatterboxEngine:
+    services = cast(Services, client.app.state.services)  # type: ignore[attr-defined]
+    return cast(ChatterboxEngine, services.engines.get("chatterbox"))
+
+
+def save(path: Path, response) -> Path:  # type: ignore[no-untyped-def]
+    assert response.status_code == 200, response.text
+    path.write_bytes(response.content)
+    return path
+
+
+def unit(vector: tuple[float, ...]) -> np.ndarray:
+    array = np.asarray(vector, dtype=np.float64)
+    return array / np.linalg.norm(array)

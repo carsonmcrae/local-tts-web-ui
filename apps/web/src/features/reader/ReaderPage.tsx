@@ -1,9 +1,11 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 /**
  * Purpose: The reading view for one document.
  * Scope: Loads the document into the player at the saved position (without auto-playing), follows
- *   the spoken section while playing, offers the contents panel (sidebar on desktop, dialog on
- *   phones) and the "adjust this section" correction, and composes the header, warnings, section
- *   text and section pager.
+ *   the spoken section while playing, offers the contents and bookmarks panel (sidebar on desktop,
+ *   dialog on phones), search, and the "adjust this section" correction, jumps to any sentence
+ *   from them, and composes the header, warnings, section text and section pager.
  * Does NOT belong: Player controls (PlayerBar) or text rendering details (DocumentText).
  */
 import { ListTree, PenLine } from 'lucide-react';
@@ -11,6 +13,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router';
 import { ApiError, describeError } from '@/api/client';
 import { useDocument, usePreferences } from '@/api/queries';
+import { useBookmarks } from '@/api/readingQueries';
 import type { DocumentDetail, SectionOut } from '@/api/types';
 import { Button, buttonClasses } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
@@ -20,7 +23,9 @@ import { DefaultVoicesBanner } from '@/features/engines/EngineSetup';
 import type { PlayerDocument } from '@/features/player/controller';
 import { usePlayer } from '@/features/player/PlayerProvider';
 import { AdjustSectionDialog } from './AdjustSectionDialog';
+import { ReaderPanels } from './ReaderPanels';
 import { ReaderHeader, SectionBody, SectionPager } from './ReaderParts';
+import { SearchDialog } from './SearchDialog';
 import { SectionNav } from './SectionNav';
 
 function toPlayerDocument(doc: DocumentDetail): PlayerDocument {
@@ -52,6 +57,12 @@ function Reader({ doc }: Readonly<{ doc: DocumentDetail }>) {
   const [viewed, setViewed] = useState(() => sectionOf(doc, doc.progress?.segmentIndex ?? 0));
   const [followed, setFollowed] = useState(speaking);
   const [tocOpen, setTocOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const bookmarks = useBookmarks(doc.id);
+  const bookmarked = useMemo(
+    () => new Set((bookmarks.data ?? []).map((bookmark) => bookmark.segmentIndex)),
+    [bookmarks.data],
+  );
   const [adjusting, setAdjusting] = useState<SectionOut | undefined>();
   const playerDoc = useMemo(() => toPlayerDocument(doc), [doc]);
 
@@ -73,12 +84,15 @@ function Reader({ doc }: Readonly<{ doc: DocumentDetail }>) {
   // A corrected section changes the document; the player keeps following the new boundaries.
   useEffect(() => controller.refresh(playerDoc), [controller, playerDoc]);
 
-  const jump = (target: SectionOut) => {
-    setViewed(target.index);
+  /** Show a sentence and move the playback position to it (from contents, bookmarks or search). */
+  const jumpTo = (segmentIndex: number, sectionIndex: number) => {
+    setViewed(sectionIndex);
     setTocOpen(false);
-    if (isLoaded) void controller.seek(target.startSegment);
-    else void controller.load(playerDoc, target.startSegment, false);
+    setSearchOpen(false);
+    if (isLoaded) void controller.seek(segmentIndex);
+    else void controller.load(playerDoc, segmentIndex, false);
   };
+  const jump = (target: SectionOut) => jumpTo(target.startSegment, target.index);
   const playFrom = (index: number) => {
     if (isLoaded && index === state.segmentIndex && state.status !== 'playing')
       void controller.play();
@@ -86,28 +100,30 @@ function Reader({ doc }: Readonly<{ doc: DocumentDetail }>) {
   };
   const resumeAt = isLoaded ? state.segmentIndex : (doc.progress?.segmentIndex ?? 0);
   const playingThis = isLoaded && isNarrating(state.status);
-  const nav = (
-    <SectionNav sections={doc.sections} viewed={viewed} speaking={speaking} onSelect={jump} />
+  const panels = (
+    <ReaderPanels
+      doc={doc}
+      contents={
+        <SectionNav sections={doc.sections} viewed={viewed} speaking={speaking} onSelect={jump} />
+      }
+      onBookmark={(bookmark) => jumpTo(bookmark.segmentIndex, bookmark.sectionIndex)}
+    />
   );
   const multiSection = doc.sections.length > 1;
 
   return (
     <div className="mx-auto flex max-w-6xl gap-8 px-4 py-6 sm:px-8 sm:py-8">
-      {multiSection ? (
-        <aside
-          className="sticky top-6 hidden max-h-[calc(100dvh-12rem)] w-64 shrink-0 scrollbar-thin self-start overflow-y-auto lg:block"
-          aria-label="Document contents"
-        >
-          <p className="mb-2 px-2.5 text-xs font-semibold tracking-wide text-subtle uppercase">
-            Contents
-          </p>
-          {nav}
-        </aside>
-      ) : null}
+      <aside
+        className="sticky top-6 hidden max-h-[calc(100dvh-12rem)] w-64 shrink-0 scrollbar-thin self-start overflow-y-auto lg:block"
+        aria-label="Document contents"
+      >
+        {panels}
+      </aside>
       <article className="min-w-0 flex-1">
         <ReaderHeader
           doc={doc}
-          onContents={multiSection ? () => setTocOpen(true) : undefined}
+          onContents={() => setTocOpen(true)}
+          onSearch={() => setSearchOpen(true)}
           onPlay={() => (playingThis ? controller.pause() : playFrom(resumeAt))}
           playing={playingThis}
         />
@@ -136,6 +152,7 @@ function Reader({ doc }: Readonly<{ doc: DocumentDetail }>) {
           documentId={doc.id}
           sectionIndex={viewed}
           activeIndex={isLoaded ? state.segmentIndex : null}
+          bookmarked={bookmarked}
           autoScroll={preferences.data?.autoScroll ?? true}
           onSelect={playFrom}
         />
@@ -146,8 +163,15 @@ function Reader({ doc }: Readonly<{ doc: DocumentDetail }>) {
         />
       </article>
       <Dialog open={tocOpen} onOpenChange={setTocOpen} title="Contents">
-        {nav}
+        {panels}
       </Dialog>
+      <SearchDialog
+        documentId={doc.id}
+        sections={doc.sections}
+        open={searchOpen}
+        onOpenChange={setSearchOpen}
+        onJump={jumpTo}
+      />
       {adjusting ? (
         <AdjustSectionDialog
           key={adjusting.index}

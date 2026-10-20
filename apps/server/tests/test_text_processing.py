@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 """Purpose: Unit tests for text normalisation and sentence segmentation.
 
 Scope: Display clean-up, speech rewriting, sentence splitting edge cases (abbreviations, initials,

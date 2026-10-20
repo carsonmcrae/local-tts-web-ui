@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 """Purpose: Tests for verified model downloads (no real network: httpx MockTransport).
 
 Scope: Successful install with marker, checksum mismatch (nothing installed, partial removed), size

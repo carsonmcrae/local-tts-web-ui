@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 """Purpose: Clean up a microphone's recordings: background noise, low rumble and tone.
 
 Scope: The ``Cleanup`` a speaker chooses (or accepts as suggested) and applying it to a recording;

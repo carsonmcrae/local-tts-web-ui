@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 /**
  * Purpose: Accessible range slider (playback position, speed, pace).
  * Scope: Radix Slider with keyboard support, a visible focus ring on the thumb, an aria-valuetext

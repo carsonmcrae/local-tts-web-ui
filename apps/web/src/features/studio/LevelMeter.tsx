@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 /**
  * Purpose: Live microphone input level as a row of bars.
  * Scope: Purely visual (hidden from assistive tech); the top bars turn red as a clipping warning.

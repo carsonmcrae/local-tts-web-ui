@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 /**
  * Purpose: Lossless microphone capture for studio voice sessions.
  * Scope: Lists audio inputs (without Chrome's "Default" and "Communications" aliases) and picks the

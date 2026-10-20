@@ -1,8 +1,10 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 /**
  * Purpose: Settings sections describing the local system: engines, storage, privacy and diagnostics.
  * Scope: Engine install/remove panels, disk usage by category with cache clearing, the privacy
- *   posture (and whether the server is exposed to the network), version information and a
- *   copyable diagnostics report.
+ *   posture (and whether the server is exposed to the network), version information, who made the
+ *   app (project, author, licence and a link to its source) and a copyable diagnostics report.
  * Does NOT belong: User preferences (PreferenceSections).
  */
 import { ClipboardCopy, Lock, Trash2 } from 'lucide-react';
@@ -17,6 +19,7 @@ import { Section } from '@/components/ui/Layout';
 import { useToast } from '@/components/ui/Toast';
 import { EnginePanel } from '@/features/engines/EngineSetup';
 import { formatBytes } from '@/lib/format';
+import { AUTHOR, COPYRIGHT, FINGERPRINT, HOMEPAGE, LICENSE, PROJECT } from '@/lib/provenance';
 
 declare const __APP_VERSION__: string;
 
@@ -152,7 +155,7 @@ export function PrivacySection() {
 export function diagnosticsReport(info: SystemInfo, webVersion: string): string {
   const gpus = info.gpus.map((gpu) => `${gpu.vendor} ${gpu.name}`).join(', ') || 'none detected';
   return [
-    `Local TTS web ${webVersion} / server ${info.version}`,
+    `${PROJECT} web ${webVersion} / server ${info.version} (${FINGERPRINT})`,
     `Python ${info.python} on ${info.platform} (${info.machine}), ${info.cpuCores} logical CPUs`,
     `Memory: ${formatBytes(info.memoryAvailableBytes)} free of ${formatBytes(info.memoryTotalBytes)}`,
     `GPUs: ${gpus}`,
@@ -187,7 +190,8 @@ export function AboutSection() {
                 ? info.gpus.map((gpu) => gpu.name).join(', ') || 'None detected (CPU mode)'
                 : '…',
             ],
-            ['License', 'MIT (app). Model licenses are listed with each engine.'],
+            ['Made by', `${PROJECT} by ${AUTHOR}`],
+            ['License', `${LICENSE}, ${COPYRIGHT}. Model licenses are listed with each engine.`],
           ] as const
         ).map(([label, value]) => (
           <div key={label} className="flex flex-col border-b border-line py-1.5">
@@ -216,6 +220,17 @@ export function AboutSection() {
           Copy diagnostics
         </Button>
       ) : null}
+      <p className="mt-4 text-[13px] text-muted">
+        Source code, credits and how to attribute this project:{' '}
+        <a
+          href={HOMEPAGE}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="font-medium text-accent-text underline-offset-2 hover:underline"
+        >
+          {HOMEPAGE.replace('https://', '')}
+        </a>
+      </p>
     </Section>
   );
 }

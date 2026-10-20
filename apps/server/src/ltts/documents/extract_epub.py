@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 """Purpose: EPUB 2/3 extraction without third-party EPUB libraries (EbookLib is AGPL).
 
 Scope: Locates the package document via META-INF/container.xml, reads the OPF manifest and spine

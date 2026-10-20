@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 /**
  * Purpose: Application chrome shared by every route.
  * Scope: Skip link, desktop sidebar (with privacy note and engine status), phone tab bar, the routed

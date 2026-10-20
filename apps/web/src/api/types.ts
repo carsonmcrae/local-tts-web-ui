@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 /**
  * Purpose: Friendly names for the generated API schema types.
  * Scope: Type aliases only, so feature code never spells out `components['schemas'][...]`.
@@ -27,3 +29,7 @@ export type RecordingCheck = Schemas['RecordingCheck'];
 export type Cleanup = Schemas['Cleanup'];
 export type SessionTake = Schemas['TakeOut'];
 export type ExportRequest = Schemas['ExportRequest'];
+export type Pronunciation = Schemas['PronunciationOut'];
+export type PronunciationInput = Schemas['PronunciationIn'];
+export type Bookmark = Schemas['BookmarkOut'];
+export type SearchResults = Schemas['SearchResults'];

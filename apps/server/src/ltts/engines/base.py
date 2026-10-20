@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 """Purpose: The engine contract that lets the UI support many TTS engines without special cases.
 
 Scope: Capability/description models returned to the UI (only supported controls are listed), the

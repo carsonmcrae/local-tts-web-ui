@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 /**
  * Purpose: Tests for the reading view: contents, paging, play/resume, read-along and its keyboard
  *   model, auto-scroll, correcting a section, and loading/error states.

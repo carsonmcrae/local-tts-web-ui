@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 /**
  * Purpose: Small loading indicators.
  * Scope: An inline spinner and an indeterminate bar; both respect reduced-motion via global CSS.

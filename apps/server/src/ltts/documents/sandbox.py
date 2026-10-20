@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 """Purpose: Run untrusted-document parsers in a separate, killable process.
 
 Scope: Spawns a fresh interpreter per extraction (no shared state with the server), applies an

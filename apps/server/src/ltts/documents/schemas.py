@@ -1,7 +1,9 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 """Purpose: Wire-format models for the documents API.
 
 Scope: Library summaries, document detail with sections, section contents, paste requests,
-section corrections (title and where it starts) and reading-progress updates. ``estimated_seconds``
+section corrections (title and where it starts), search results and reading-progress updates. ``estimated_seconds``
 is a character-rate estimate until real audio exists.
 Does NOT belong: Internal extraction structures (``types.py``).
 """
@@ -72,6 +74,18 @@ class SectionContent(ApiModel):
 class PasteTextRequest(ApiModel):
     text: str = Field(min_length=1, max_length=2_000_000)
     title: str | None = Field(default=None, max_length=MAX_TITLE_CHARS)
+
+
+class SearchHit(ApiModel):
+    segment_index: int
+    section_index: int
+    text: str  # the whole sentence; the client marks the match
+
+
+class SearchResults(ApiModel):
+    query: str
+    total: int  # every matching sentence, even beyond the hits returned
+    hits: list[SearchHit]
 
 
 class SectionUpdate(ApiModel):

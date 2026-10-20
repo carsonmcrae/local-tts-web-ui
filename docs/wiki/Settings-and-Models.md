@@ -1,12 +1,13 @@
 # Settings and models
 
-**Settings** has six sections: **Appearance**, **Playback**, **Engines & models**, **Storage**,
-**Privacy** and **About**. On wide screens, an index on the left jumps between them.
+**Settings** has seven sections: **Appearance**, **Playback**, **Pronunciation**, **Engines &
+models**, **Storage**, **Privacy** and **About**. On wide screens, an index on the left jumps between them.
 
 ## Appearance
 
-Choose the **System**, **Light** or **Dark** theme. The theme is saved on this device only, so each
-browser can have its own.
+Choose the **System**, **Light** or **Dark** theme, and the reading text's **Text size**, **Line
+spacing** and **Typeface** (with a preview). These are saved on this device only, so each browser can
+have its own.
 
 ## Playback
 
@@ -22,6 +23,15 @@ These preferences are saved by the local server and shared by every browser that
 
 [Reading Documents](Reading-Documents#playback-speed-and-speaking-pace) explains speed and pace in
 more detail.
+
+## Pronunciation
+
+Teach every voice how to say a word: enter the **Word or name** as it is written and how to **Say it
+as**, spelled the way it sounds (for example "Kael" → "Kale", "Dr." → "Doctor"). **Hear it** plays it
+in the current reading voice. Words match whole words in any letter case; tick **Only when the letter
+case matches** for words such as "US". Rules apply to reading, previews and exports, and only the
+sentences that contain a changed word are generated again. Up to 500 words; rules are plain text,
+never patterns.
 
 ## Engines & models
 
@@ -70,7 +80,8 @@ mode, a **Network access is on** warning appears here (see [Other Devices](Other
 ## About
 
 **About & diagnostics** lists the app and server versions, the Python runtime, your system (platform,
-CPU count and RAM), the GPU (or "None detected (CPU mode)") and the licence.
+CPU count and RAM), the GPU (or "None detected (CPU mode)"), who made the app and its licence, with a
+link to the source code and how to credit the project.
 
 **Copy diagnostics** copies a short report to the clipboard: versions, platform, memory, GPUs, ONNX
 Runtime providers, disk use and whether network access is on. It contains no documents or personal

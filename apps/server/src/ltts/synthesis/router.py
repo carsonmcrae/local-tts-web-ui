@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 """Purpose: Audio endpoints: per-segment narration audio and short voice previews.
 
 Scope: Streams cached WAV files (with byte-range support) and their duration in a response header;

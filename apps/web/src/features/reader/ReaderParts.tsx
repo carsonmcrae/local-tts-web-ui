@@ -1,10 +1,13 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 /**
  * Purpose: Presentational building blocks of the reading view.
- * Scope: `ReaderHeader` (back link, title, document facts, contents and play buttons),
- *   `SectionBody` (loads one section; loading/error/text states) and `SectionPager`.
+ * Scope: `ReaderHeader` (back link, title, document facts, search, contents and play buttons),
+ *   `SectionBody` (loads one section; loading/error/text states, bookmarked sentences marked) and
+ *   `SectionPager`.
  * Does NOT belong: Player coordination (ReaderPage) or sentence rendering (DocumentText).
  */
-import { ArrowLeft, ChevronLeft, ChevronRight, ListTree, Pause, Play } from 'lucide-react';
+import { ArrowLeft, ChevronLeft, ChevronRight, ListTree, Pause, Play, Search } from 'lucide-react';
 import { Link } from 'react-router';
 import { describeError } from '@/api/client';
 import { useSection } from '@/api/queries';
@@ -16,7 +19,8 @@ import { DocumentText } from './DocumentText';
 
 interface HeaderProps {
   doc: DocumentDetail;
-  onContents: (() => void) | undefined;
+  onContents: () => void;
+  onSearch: () => void;
   onPlay: () => void;
   playing: boolean;
 }
@@ -27,7 +31,13 @@ function playLabel(playing: boolean, resuming: boolean): string {
   return resuming ? 'Resume' : 'Play';
 }
 
-export function ReaderHeader({ doc, onContents, onPlay, playing }: Readonly<HeaderProps>) {
+export function ReaderHeader({
+  doc,
+  onContents,
+  onSearch,
+  onPlay,
+  playing,
+}: Readonly<HeaderProps>) {
   const resuming = Boolean(doc.progress && doc.progress.segmentIndex > 0);
   return (
     <header className="mb-8 border-b border-line pb-6">
@@ -55,15 +65,19 @@ export function ReaderHeader({ doc, onContents, onPlay, playing }: Readonly<Head
           ) : null}
         </div>
         <div className="flex shrink-0 gap-2">
-          {onContents ? (
-            <IconButton
-              label="Contents"
-              icon={<ListTree size={18} />}
-              variant="secondary"
-              className="lg:hidden"
-              onClick={onContents}
-            />
-          ) : null}
+          <IconButton
+            label="Search this document"
+            icon={<Search size={18} />}
+            variant="secondary"
+            onClick={onSearch}
+          />
+          <IconButton
+            label="Contents"
+            icon={<ListTree size={18} />}
+            variant="secondary"
+            className="lg:hidden"
+            onClick={onContents}
+          />
           <Button
             variant="primary"
             icon={
@@ -87,6 +101,7 @@ interface BodyProps {
   documentId: string;
   sectionIndex: number;
   activeIndex: number | null;
+  bookmarked: ReadonlySet<number>;
   autoScroll: boolean;
   onSelect: (index: number) => void;
 }
@@ -95,6 +110,7 @@ export function SectionBody({
   documentId,
   sectionIndex,
   activeIndex,
+  bookmarked,
   autoScroll,
   onSelect,
 }: Readonly<BodyProps>) {
@@ -119,6 +135,7 @@ export function SectionBody({
     <DocumentText
       segments={section.data.segments}
       activeIndex={activeIndex}
+      bookmarked={bookmarked}
       autoScroll={autoScroll}
       onSelect={onSelect}
     />

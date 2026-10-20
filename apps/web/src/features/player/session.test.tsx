@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 /**
  * Purpose: Tests for the player provider's integrations and the voice grouping helper.
  * Scope: Media Session metadata and lock-screen actions (including browsers that reject some

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 /**
  * Purpose: Convert any browser-decodable audio into the mono WAV the server accepts.
  * Scope: Mono down-mix, high-quality resampling via OfflineAudioContext (linear fallback for tests),

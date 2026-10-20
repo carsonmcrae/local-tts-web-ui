@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 /**
  * Purpose: Lightweight toast notifications for completed or failed background actions.
  * Scope: A provider with an `aria-live` region, auto-dismiss (8 s success/info, persistent errors

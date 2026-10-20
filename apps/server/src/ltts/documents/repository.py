@@ -1,8 +1,11 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 """Purpose: SQL access for documents, their segments and reading progress.
 
 Scope: Insert a fully segmented document atomically; list/get/delete; fetch a section's or a single
-segment's text; rename a section or move where it starts (keeping segments, counts and the longer
-"end of section" pause in step); save and read progress. Rows are mapped to API models here.
+segment's text; search a document's sentences; rename a section or move where it starts (keeping
+segments, counts and the longer "end of section" pause in step); save and read progress. Rows are
+mapped to API models here.
 Does NOT belong: Validation or extraction (``service.py``).
 """
 
@@ -19,6 +22,8 @@ from ltts.documents.schemas import (
     DocumentDetail,
     DocumentSummary,
     ReadingProgress,
+    SearchHit,
+    SearchResults,
     SectionContent,
     SectionOut,
     SegmentOut,
@@ -148,6 +153,20 @@ class DocumentRepository:
                 _move_start(conn, document_id, sections, section_index, start_segment)
             conn.execute("UPDATE documents SET sections_json = ? WHERE id = ?", (json.dumps(sections), document_id))
         return self.get(document_id)
+
+    def search(self, document_id: str, query: str, limit: int) -> SearchResults:
+        """Sentences containing ``query`` in any letter case, in reading order (the first ``limit``)."""
+        wanted = " ".join(query.split()).casefold()
+        with self._db.connect() as conn:
+            if conn.execute("SELECT 1 FROM documents WHERE id = ?", (document_id,)).fetchone() is None:
+                raise NotFoundError(_DOCUMENT_GONE, code="document_not_found")
+            rows = conn.execute(
+                "SELECT idx, section_idx, text FROM segments WHERE document_id = ? ORDER BY idx", (document_id,)
+            ).fetchall()
+        # Matched in Python: SQLite only folds the case of ASCII letters.
+        matches = [row for row in rows if wanted in " ".join(row["text"].split()).casefold()]
+        hits = [SearchHit(segment_index=r["idx"], section_index=r["section_idx"], text=r["text"]) for r in matches]
+        return SearchResults(query=query, total=len(hits), hits=hits[:limit])
 
     def segment(self, document_id: str, index: int) -> tuple[str, str]:
         """Return ``(text, boundary)`` for one segment."""

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 /**
  * Purpose: A short public-domain passage for trying the app without your own document.
  * Scope: Opening of "A Scandal in Bohemia" by Arthur Conan Doyle (1891; public domain).

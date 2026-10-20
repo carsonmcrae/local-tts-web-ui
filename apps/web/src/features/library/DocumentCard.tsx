@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 /**
  * Purpose: One document in the library with its metadata, progress and actions.
  * Scope: Type icon, title, file type/size/sections/estimated listening time, reading progress,

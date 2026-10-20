@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 """Purpose: Build and track the Chatterbox worker's isolated, locked Python environment.
 
 Scope: Locates the pinned uv, runs ``uv sync --frozen`` for one extra (``cpu``/``cuda``) of the

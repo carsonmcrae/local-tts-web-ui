@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 """Purpose: Edge-case tests for speech rewriting and sentence segmentation, including hostile input.
 
 Scope: Dash pauses and number ranges, whitespace before punctuation, the word before a full stop,

@@ -1,4 +1,6 @@
 // @ts-check
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 /**
  * Purpose: `npm run doctor` — explain the local environment when something doesn't work.
  * Scope: Node/npm versions, uv availability, the Python environment, installed models, GPU/ONNX

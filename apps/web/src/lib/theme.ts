@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 /**
  * Purpose: Light/dark/system theme preference for this device.
  * Scope: Persists the choice in localStorage (per-device by design), applies the `dark` class and

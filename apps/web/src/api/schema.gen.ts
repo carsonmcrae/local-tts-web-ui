@@ -59,6 +59,45 @@ export type paths = {
     patch?: never;
     trace?: never;
   };
+  '/api/documents/{document_id}/bookmarks': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List Bookmarks */
+    get: operations['list_bookmarks_api_documents__document_id__bookmarks_get'];
+    put?: never;
+    /**
+     * Add Bookmark
+     * @description Bookmark a sentence; bookmarking it again replaces its note.
+     */
+    post: operations['add_bookmark_api_documents__document_id__bookmarks_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/documents/{document_id}/bookmarks/{bookmark_id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /** Delete Bookmark */
+    delete: operations['delete_bookmark_api_documents__document_id__bookmarks__bookmark_id__delete'];
+    options?: never;
+    head?: never;
+    /** Update Bookmark */
+    patch: operations['update_bookmark_api_documents__document_id__bookmarks__bookmark_id__patch'];
+    trace?: never;
+  };
   '/api/documents/{document_id}/progress': {
     parameters: {
       query?: never;
@@ -69,6 +108,23 @@ export type paths = {
     get?: never;
     /** Save Progress */
     put: operations['save_progress_api_documents__document_id__progress_put'];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/documents/{document_id}/search': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Search Document */
+    get: operations['search_document_api_documents__document_id__search_get'];
+    put?: never;
     post?: never;
     delete?: never;
     options?: never;
@@ -362,6 +418,42 @@ export type paths = {
     put: operations['put_preferences_api_preferences_put'];
     post?: never;
     delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/pronunciations': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List Pronunciations */
+    get: operations['list_pronunciations_api_pronunciations_get'];
+    put?: never;
+    /** Create Pronunciation */
+    post: operations['create_pronunciation_api_pronunciations_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/pronunciations/{rule_id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Update Pronunciation */
+    put: operations['update_pronunciation_api_pronunciations__rule_id__put'];
+    post?: never;
+    /** Delete Pronunciation */
+    delete: operations['delete_pronunciation_api_pronunciations__rule_id__delete'];
     options?: never;
     head?: never;
     patch?: never;
@@ -685,6 +777,64 @@ export type paths = {
 export type webhooks = Record<string, never>;
 export type components = {
   schemas: {
+    /** About */
+    About: {
+      /**
+       * Author
+       * @default Carson McRae
+       */
+      author: string;
+      /**
+       * Copyright
+       * @default Copyright (c) 2026 Carson McRae
+       */
+      copyright: string;
+      /**
+       * Fingerprint
+       * @default ltts-origin-c44dbf7e-6172-4e3a-a46a-636998263e03
+       */
+      fingerprint: string;
+      /**
+       * Homepage
+       * @default https://github.com/carsonmcrae/local-tts-web-ui
+       */
+      homepage: string;
+      /**
+       * License
+       * @default MIT
+       */
+      license: string;
+      /**
+       * Project
+       * @default Local TTS Web UI
+       */
+      project: string;
+    };
+    /** BookmarkIn */
+    BookmarkIn: {
+      /**
+       * Note
+       * @default
+       */
+      note: string;
+      /** Segmentindex */
+      segmentIndex: number;
+    };
+    /** BookmarkOut */
+    BookmarkOut: {
+      /** Createdat */
+      createdAt: string;
+      /** Id */
+      id: string;
+      /** Note */
+      note: string;
+      /** Sectionindex */
+      sectionIndex: number;
+      /** Segmentindex */
+      segmentIndex: number;
+      /** Text */
+      text: string;
+    };
     /** CacheCleared */
     CacheCleared: {
       /** Removedentries */
@@ -867,6 +1017,11 @@ export type components = {
     };
     /** ExportRequest */
     ExportRequest: {
+      /**
+       * Captions
+       * @default false
+       */
+      captions: boolean;
       /** Documentid */
       documentId: string;
       /** Firstsection */
@@ -980,6 +1135,11 @@ export type components = {
      * @enum {string}
      */
     JobStatus: 'queued' | 'running' | 'succeeded' | 'failed' | 'canceled' | 'interrupted';
+    /** NoteUpdate */
+    NoteUpdate: {
+      /** Note */
+      note: string;
+    };
     /** PasteTextRequest */
     PasteTextRequest: {
       /** Text */
@@ -1045,6 +1205,34 @@ export type components = {
       /** Voiceid */
       voiceId?: string | null;
     };
+    /** PronunciationIn */
+    PronunciationIn: {
+      /**
+       * Matchcase
+       * @default false
+       */
+      matchCase: boolean;
+      /** Sayas */
+      sayAs: string;
+      /** Word */
+      word: string;
+    };
+    /** PronunciationOut */
+    PronunciationOut: {
+      /** Createdat */
+      createdAt: string;
+      /** Id */
+      id: string;
+      /**
+       * Matchcase
+       * @default false
+       */
+      matchCase: boolean;
+      /** Sayas */
+      sayAs: string;
+      /** Word */
+      word: string;
+    };
     /** QualityIssue */
     QualityIssue: {
       /** Code */
@@ -1100,6 +1288,24 @@ export type components = {
     RecordingCheck: {
       report: components['schemas']['QualityReport'];
       suggested: components['schemas']['Cleanup'] | null;
+    };
+    /** SearchHit */
+    SearchHit: {
+      /** Sectionindex */
+      sectionIndex: number;
+      /** Segmentindex */
+      segmentIndex: number;
+      /** Text */
+      text: string;
+    };
+    /** SearchResults */
+    SearchResults: {
+      /** Hits */
+      hits: components['schemas']['SearchHit'][];
+      /** Query */
+      query: string;
+      /** Total */
+      total: number;
     };
     /** SectionContent */
     SectionContent: {
@@ -1179,6 +1385,7 @@ export type components = {
     };
     /** SystemInfo */
     SystemInfo: {
+      about?: components['schemas']['About'];
       /** Cpucores */
       cpuCores: number;
       /** Gpus */
@@ -1452,6 +1659,138 @@ export interface operations {
       };
     };
   };
+  list_bookmarks_api_documents__document_id__bookmarks_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        document_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['BookmarkOut'][];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  add_bookmark_api_documents__document_id__bookmarks_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        document_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['BookmarkIn'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['BookmarkOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  delete_bookmark_api_documents__document_id__bookmarks__bookmark_id__delete: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        bookmark_id: string;
+        document_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  update_bookmark_api_documents__document_id__bookmarks__bookmark_id__patch: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        bookmark_id: string;
+        document_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['NoteUpdate'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['BookmarkOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
   save_progress_api_documents__document_id__progress_put: {
     parameters: {
       query?: never;
@@ -1473,6 +1812,39 @@ export interface operations {
           [name: string]: unknown;
         };
         content?: never;
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  search_document_api_documents__document_id__search_get: {
+    parameters: {
+      query: {
+        q: string;
+      };
+      header?: never;
+      path: {
+        document_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['SearchResults'];
+        };
       };
       /** @description Validation Error */
       422: {
@@ -2031,6 +2403,123 @@ export interface operations {
         content: {
           'application/json': components['schemas']['Preferences'];
         };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  list_pronunciations_api_pronunciations_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['PronunciationOut'][];
+        };
+      };
+    };
+  };
+  create_pronunciation_api_pronunciations_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['PronunciationIn'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['PronunciationOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  update_pronunciation_api_pronunciations__rule_id__put: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        rule_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['PronunciationIn'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['PronunciationOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  delete_pronunciation_api_pronunciations__rule_id__delete: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        rule_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
       };
       /** @description Validation Error */
       422: {

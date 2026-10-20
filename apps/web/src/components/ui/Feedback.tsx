@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 /**
  * Purpose: Consistent status messaging: banners, empty states, badges and progress bars.
  * Scope: `Banner` (info/success/warning/error with optional action), `StatusRegion` (a polite live

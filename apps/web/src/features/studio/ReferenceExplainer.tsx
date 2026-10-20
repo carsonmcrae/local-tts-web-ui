@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 /**
  * Purpose: Explain, honestly, how a quick voice works before anyone records.
  * Scope: Short references vs. studio sessions vs. fine-tuned models (and which ones this app uses),

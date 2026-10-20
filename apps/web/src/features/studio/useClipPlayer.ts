@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 /**
  * Purpose: Play one short audio clip at a time from a URL (a reference recording or a test sample).
  * Scope: A single private Audio element; `toggle(src)` starts that clip (stopping any other) or stops

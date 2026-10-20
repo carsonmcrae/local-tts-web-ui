@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 /**
  * Purpose: Component tests for the main screens against a mocked local API.
  * Scope: Library empty/list/error states and upload validation, reader read-along highlighting and
@@ -33,6 +35,7 @@ afterEach(() => vi.unstubAllGlobals());
 
 const base = {
   'GET /api/engines': [kokoro()],
+  'GET /api/pronunciations': [],
   'GET /api/preferences': preferences,
   'GET /api/voices': [
     voice(),
@@ -129,6 +132,7 @@ describe('Reader', () => {
 
   const documentRoutes = () => ({
     [`GET /api/documents/${doc.id}`]: doc,
+    [`GET /api/documents/${doc.id}/bookmarks`]: [],
     'GET /api/documents/': doc,
     [`GET /api/documents/${doc.id}/segments`]: () =>
       new Response(new Blob(['wav']), { headers: { 'X-Audio-Duration': '1' } }),
@@ -249,6 +253,7 @@ describe('Player', () => {
     mockApi({
       ...base,
       [`GET /api/documents/${doc.id}`]: doc,
+      [`GET /api/documents/${doc.id}/bookmarks`]: [],
       [`GET /api/documents/${doc.id}/sections/0`]: { sectionIndex: 0, segments: [] },
       [`GET /api/documents/${doc.id}/segments`]: json(
         { error: { code: 'engine_not_installed', message: 'Install the voice model first.' } },

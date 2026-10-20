@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 /**
  * Purpose: Listen to the best built voices and choose one.
  * Scope: The top three candidates as radio choices, best match first, each with its match score, the

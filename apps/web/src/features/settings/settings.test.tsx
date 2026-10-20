@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 /**
  * Purpose: Tests for the Settings screen's preferences and system sections.
  * Scope: Saving playback preferences (voice, speed, pace, export format, follow-along) and applying
@@ -10,6 +12,7 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { SystemInfo } from '@/api/types';
 import type { usePlayer } from '@/features/player/PlayerProvider';
+import { DEFAULT_READING_TEXT, readReadingText } from '@/lib/readingText';
 import { json, kokoro, mockApi, PlayerSpy, preferences, renderWithApp, voice } from '@/test/render';
 import SettingsPage from './SettingsPage';
 import { diagnosticsReport } from './SystemSections';
@@ -36,6 +39,7 @@ function api(overrides: Record<string, unknown> = {}) {
       voice({ id: 'kokoro:bm_george', name: 'George', language: 'English (UK)' }),
     ],
     'GET /api/system': system,
+    'GET /api/pronunciations': [],
     'PUT /api/preferences': (_url: URL, init: RequestInit) => JSON.parse(String(init.body)),
     ...overrides,
   });
@@ -52,6 +56,47 @@ function renderSettings(route = '/settings') {
   );
   return { user: userEvent.setup(), player: () => latest.player, ...view };
 }
+
+describe('Reading text', () => {
+  it('changes the size, spacing and typeface of the reading text on this device', async () => {
+    api();
+    const { user } = renderSettings();
+    const appearance = await screen.findByRole('region', { name: 'Appearance' });
+    await user.click(within(appearance).getByRole('radio', { name: 'Large' }));
+    await user.click(within(appearance).getByRole('radio', { name: 'Relaxed' }));
+    await user.click(within(appearance).getByRole('radio', { name: 'Sans serif' }));
+    const preview = within(appearance).getByLabelText('Reading text preview');
+    expect(preview).toHaveAttribute('data-typeface', 'sans');
+    expect(preview.style.getPropertyValue('--reader-scale')).toBe('1.15');
+    expect(preview.style.getPropertyValue('--reader-leading')).toBe('2.05');
+    expect(JSON.parse(localStorage.getItem('ltts.readingText') ?? '{}')).toEqual({
+      size: 'large',
+      spacing: 'relaxed',
+      typeface: 'sans',
+    });
+  });
+
+  it('reads only sensible saved values and still applies a change without storage', async () => {
+    localStorage.setItem(
+      'ltts.readingText',
+      JSON.stringify({ size: 'huge', spacing: 'compact', typeface: 7 }),
+    );
+    expect(readReadingText()).toEqual({ size: 'medium', spacing: 'compact', typeface: 'serif' });
+    localStorage.setItem('ltts.readingText', '{not json');
+    expect(readReadingText()).toEqual(DEFAULT_READING_TEXT);
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new DOMException('denied', 'SecurityError');
+    });
+    api();
+    const { user } = renderSettings();
+    const appearance = await screen.findByRole('region', { name: 'Appearance' });
+    await user.click(within(appearance).getByRole('radio', { name: 'Extra large' }));
+    expect(within(appearance).getByRole('radio', { name: 'Extra large' })).toHaveAttribute(
+      'aria-checked',
+      'true',
+    );
+  });
+});
 
 describe('Playback preferences', () => {
   it('saves each preference and applies it to the player', async () => {

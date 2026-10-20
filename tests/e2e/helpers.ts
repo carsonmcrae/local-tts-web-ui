@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 /**
  * Purpose: Shared steps for end-to-end tests.
  * Scope: Adding documents (paste or upload of fixtures), starting playback, waiting for the spoken

@@ -1,7 +1,10 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 """Purpose: HTTP endpoints for the document library.
 
 Scope: Raw-body uploads (no multipart parser), pasted text, library listing, document detail,
-section contents and corrections (rename, move a section's start), reading progress and deletion.
+section contents and corrections (rename, move a section's start), search, bookmarks with notes,
+reading progress and deletion.
 Blocking work runs in the thread pool.
 Does NOT belong: Ingestion rules (``service.py``) or audio (``synthesis``).
 """
@@ -15,17 +18,21 @@ from fastapi.concurrency import run_in_threadpool
 
 from ltts.common import ensure_free_space, new_id, save_request_body
 from ltts.container import ServicesDep
+from ltts.documents.bookmarks import BookmarkIn, BookmarkOut, NoteUpdate
 from ltts.documents.schemas import (
     DocumentDetail,
     DocumentSummary,
     PasteTextRequest,
     ProgressUpdate,
+    SearchResults,
     SectionContent,
     SectionUpdate,
 )
 
 router = APIRouter(prefix="/api/documents", tags=["documents"])
 DocumentId = Annotated[str, Path(pattern=r"^[0-9a-f]{32}$")]
+BookmarkId = Annotated[str, Path(pattern=r"^[0-9a-f]{32}$")]
+MAX_SEARCH_HITS = 200
 
 
 @router.get("")
@@ -70,6 +77,37 @@ def update_section(
 ) -> DocumentDetail:
     title = body.title.strip() if body.title else None
     return services.document_repo.update_section(document_id, section_index, title or None, body.start_segment)
+
+
+@router.get("/{document_id}/search")
+def search_document(
+    document_id: DocumentId, q: Annotated[str, Query(min_length=1, max_length=200)], services: ServicesDep
+) -> SearchResults:
+    return services.document_repo.search(document_id, q, MAX_SEARCH_HITS)
+
+
+@router.get("/{document_id}/bookmarks")
+def list_bookmarks(document_id: DocumentId, services: ServicesDep) -> list[BookmarkOut]:
+    return services.bookmarks.list_for(document_id)
+
+
+@router.post("/{document_id}/bookmarks", status_code=201)
+def add_bookmark(document_id: DocumentId, body: BookmarkIn, services: ServicesDep) -> BookmarkOut:
+    """Bookmark a sentence; bookmarking it again replaces its note."""
+    return services.bookmarks.add(document_id, body)
+
+
+@router.patch("/{document_id}/bookmarks/{bookmark_id}")
+def update_bookmark(
+    document_id: DocumentId, bookmark_id: BookmarkId, body: NoteUpdate, services: ServicesDep
+) -> BookmarkOut:
+    return services.bookmarks.update_note(document_id, bookmark_id, body.note)
+
+
+@router.delete("/{document_id}/bookmarks/{bookmark_id}", status_code=204)
+def delete_bookmark(document_id: DocumentId, bookmark_id: BookmarkId, services: ServicesDep) -> Response:
+    services.bookmarks.delete(document_id, bookmark_id)
+    return Response(status_code=204)
 
 
 @router.put("/{document_id}/progress", status_code=204)

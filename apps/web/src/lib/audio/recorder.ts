@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 /**
  * Purpose: Record from the microphone with a live input-level meter.
  * Scope: Permission request with plain-language errors (denied, no device, insecure context),

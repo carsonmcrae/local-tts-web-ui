@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 /**
  * Purpose: Tests for describing a recording cleanup and remembering the last one used.
  * Scope: Plain-language descriptions for one to four settings; whether a cleanup changes anything;

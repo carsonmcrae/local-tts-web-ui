@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 /**
  * Purpose: Edge cases of the API client and the query hooks that screens rarely reach.
  * Scope: Error bodies without an error object, aborted requests, unreadable audio headers, plain

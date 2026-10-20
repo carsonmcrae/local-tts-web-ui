@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 /**
  * Purpose: Shared fixtures for the studio voice tests.
  * Scope: A fake lossless recorder (its microphone state lives in `mic`), session, take, job and

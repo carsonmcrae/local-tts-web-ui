@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 /**
  * Purpose: Build the studio voice from the session's takes.
  * Scope: An install prompt while the cloning engine is missing; otherwise the session's tone

@@ -1,7 +1,9 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 /**
  * Purpose: Export a document (or a range of chapters) as downloadable audio.
  * Scope: Format (MP3/WAV), single file vs one file per chapter (ZIP + playlist), chapter range,
- *   live progress with cancel, resume after cancel/failure (cached sentences are reused), and the
+ *   optional sentence-timed subtitles (SRT, delivered in a ZIP with the audio), live progress with cancel, resume after cancel/failure (cached sentences are reused), and the
  *   download link once ready.
  * Does NOT belong: Export assembly (server) or live playback.
  */
@@ -13,7 +15,7 @@ import type { JobOut, SectionOut } from '@/api/types';
 import { buttonClasses, Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
 import { Banner, ProgressBar } from '@/components/ui/Feedback';
-import { Field, Select } from '@/components/ui/Field';
+import { Field, Select, Switch } from '@/components/ui/Field';
 import { formatBytes, formatDuration } from '@/lib/format';
 
 interface ExportDialogProps {
@@ -98,6 +100,7 @@ export function ExportDialog({
   const preferences = usePreferences();
   const [chosenFormat, setChosenFormat] = useState<'mp3' | 'wav' | null>(null);
   const [layout, setLayout] = useState<'single' | 'chapters'>('single');
+  const [captions, setCaptions] = useState(false);
   const [range, setRange] = useState<Range>('all');
   const [first, setFirst] = useState(0);
   const [last, setLast] = useState(Math.max(sections.length - 1, 0));
@@ -118,7 +121,7 @@ export function ExportDialog({
     const [firstSection, lastSection] = bounds();
     setErrorMessage(null);
     start.mutate(
-      { documentId, voiceId, pace, format, layout, firstSection, lastSection },
+      { documentId, voiceId, pace, format, layout, firstSection, lastSection, captions },
       {
         onSuccess: (created) => setJobId(created.id),
         onError: (error) => setErrorMessage(describeError(error)),
@@ -208,6 +211,12 @@ export function ExportDialog({
             </Select>
           )}
         </Field>
+        <Switch
+          checked={captions}
+          onCheckedChange={setCaptions}
+          label="Subtitles"
+          description="Adds a sentence-timed subtitle file (SRT) next to each audio file, for video editors and players that show lyrics or captions."
+        />
         {range === 'custom' ? (
           <div className="grid gap-4 sm:grid-cols-2">
             {(

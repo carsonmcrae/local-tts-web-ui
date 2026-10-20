@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 /**
  * Purpose: Test harness for rendering screens with the app's real providers.
  * Scope: A route-table API mock for `fetch` (matched by method and path prefix), sample API objects,
@@ -196,10 +198,11 @@ function sectionText(doc: DocumentDetail, sectionIndex: number) {
   };
 }
 
-/** Routes for reading `doc`: its details, each section's text and audio for every segment. */
+/** Routes for reading `doc`: its details, bookmarks (none), each section's text and audio for every segment. */
 export function readerRoutes(doc: DocumentDetail = documentDetail()) {
   return {
     [`GET /api/documents/${doc.id}`]: doc,
+    [`GET /api/documents/${doc.id}/bookmarks`]: [],
     [`GET /api/documents/${doc.id}/sections/`]: (url: URL) =>
       sectionText(doc, Number(url.pathname.split('/').pop())),
     [`GET /api/documents/${doc.id}/segments`]: () =>

@@ -1,9 +1,12 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 /**
  * Purpose: Framework-free playback engine for continuous, progressive document narration.
  * Scope: Plays one segment (sentence) at a time through a single audio element, prefetches the next
  *   few segments at lower server priority, aborts work that's no longer needed, advances
- *   automatically, applies voice/pace/rate changes, and persists reading progress. Every async
- *   step is guarded by a generation counter so rapid skipping can never play stale audio.
+ *   automatically, applies voice/pace/rate changes, stops for a sleep timer (after some minutes
+ *   or at the end of the section, always between sentences), and persists reading progress. Every
+ *   async step is guarded by a generation counter so rapid skipping can never play stale audio.
  * Does NOT belong: React bindings (PlayerProvider) or UI.
  */
 
@@ -22,6 +25,9 @@ export interface PlayerError {
   message: string;
 }
 
+/** Stop playing after a time, or when the section being read ends. */
+export type SleepTimer = { kind: 'minutes'; endsAt: number } | { kind: 'section' };
+
 export interface PlayerState {
   document: PlayerDocument | null;
   segmentIndex: number;
@@ -32,6 +38,7 @@ export interface PlayerState {
   pace: number;
   currentTime: number;
   duration: number;
+  sleep: SleepTimer | null;
 }
 
 interface SegmentAudio {
@@ -64,6 +71,8 @@ export interface ControllerDeps {
   ) => Promise<SegmentAudio>;
   saveProgress: (documentId: string, index: number, voiceId: string) => void;
   toError: (error: unknown) => PlayerError;
+  /** The clock for sleep timers (milliseconds); defaults to Date.now. */
+  now?: () => number;
 }
 
 const PREFETCH_AHEAD = 3;
@@ -99,6 +108,7 @@ export class PlaybackController {
       error: null,
       currentTime: 0,
       duration: 0,
+      sleep: null,
       ...initial,
     };
     deps.media.addEventListener('ended', () => this.onEnded());
@@ -212,6 +222,13 @@ export class PlaybackController {
     return this.restartWithNewAudio();
   }
 
+  /** Stop after `minutes`, at the end of the section being read, or (null) not at all. */
+  setSleepTimer(choice: number | 'section' | null): void {
+    if (choice === null) this.set({ sleep: null });
+    else if (choice === 'section') this.set({ sleep: { kind: 'section' } });
+    else this.set({ sleep: { kind: 'minutes', endsAt: this.now() + choice * 60_000 } });
+  }
+
   /** Take corrected sections for the loaded document (a chapter was renamed or moved). */
   refresh(document: PlayerDocument): void {
     if (this.state.document?.id === document.id) this.set({ document });
@@ -225,6 +242,7 @@ export class PlaybackController {
     this.set({
       document: null,
       status: 'idle',
+      sleep: null,
       segmentIndex: 0,
       error: null,
       currentTime: 0,
@@ -366,7 +384,25 @@ export class PlaybackController {
       this.persist();
       return;
     }
-    void this.goTo(this.state.segmentIndex + 1, true);
+    const next = this.state.segmentIndex + 1;
+    if (this.sleepsBefore(next)) {
+      // Stop between sentences, ready to carry on from the next one.
+      this.set({ sleep: null });
+      void this.goTo(next, false);
+      return;
+    }
+    void this.goTo(next, true);
+  }
+
+  private sleepsBefore(next: number): boolean {
+    const { sleep, segmentIndex } = this.state;
+    if (!sleep) return false;
+    if (sleep.kind === 'minutes') return this.now() >= sleep.endsAt;
+    return this.sectionAt(next)?.index !== this.sectionAt(segmentIndex)?.index;
+  }
+
+  private now(): number {
+    return (this.deps.now ?? Date.now)();
   }
 
   private persist(): void {

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 /**
  * Purpose: Page-level layout primitives shared by every screen.
  * Scope: `PageHeader` (title, description, actions; sets document.title), `Section` (titled card

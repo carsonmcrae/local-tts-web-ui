@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 /**
  * Purpose: The Settings screen.
  * Scope: Section index (desktop), hash deep links (e.g. /settings#engines) and the ordered settings
@@ -7,12 +9,14 @@
 import { useEffect } from 'react';
 import { useLocation } from 'react-router';
 import { PageHeader } from '@/components/ui/Layout';
+import { PronunciationSection } from '@/features/pronunciation/PronunciationSection';
 import { AppearanceSection, PlaybackSection } from './PreferenceSections';
 import { AboutSection, EnginesSection, PrivacySection, StorageSection } from './SystemSections';
 
 const INDEX = [
   ['appearance', 'Appearance'],
   ['playback', 'Playback'],
+  ['pronunciation', 'Pronunciation'],
   ['engines', 'Engines & models'],
   ['storage', 'Storage'],
   ['privacy', 'Privacy'],
@@ -47,10 +51,14 @@ export default function SettingsPage() {
         </ul>
       </nav>
       <div className="min-w-0 flex-1">
-        <PageHeader title="Settings" description="Preferences, engines, storage and privacy." />
+        <PageHeader
+          title="Settings"
+          description="Preferences, pronunciation, engines, storage and privacy."
+        />
         <div className="flex flex-col gap-8">
           <AppearanceSection />
           <PlaybackSection />
+          <PronunciationSection />
           <EnginesSection />
           <StorageSection />
           <PrivacySection />

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 /**
  * Purpose: Instant, in-browser quality feedback for a voice recording.
  * Scope: Mirrors the server's checks (apps/server/src/ltts/voices/quality.py): speech duration,

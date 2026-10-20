@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 """Purpose: Produce audio for a document segment or arbitrary preview text, using the cache first.
 
 Scope: Rewrites display text into speech text, builds the cache key, schedules synthesis on the
@@ -33,10 +35,17 @@ class ClientGoneError(Exception):
 
 
 class SynthesisService:
-    def __init__(self, registry: EngineRegistry, cache: AudioCache, documents: DocumentRepository):
+    def __init__(
+        self,
+        registry: EngineRegistry,
+        cache: AudioCache,
+        documents: DocumentRepository,
+        pronounce: Callable[[str], str] = lambda text: text,
+    ):
         self._registry = registry
         self._cache = cache
         self._documents = documents
+        self._pronounce = pronounce  # the pronunciation dictionary, applied before normalising
         self._schedulers: dict[str, EngineScheduler] = {}
         self._lock = threading.Lock()
 
@@ -81,7 +90,7 @@ class SynthesisService:
         self, voice_id: str, text: str, boundary: str, pace: float, priority: int
     ) -> tuple[Future[CachedAudio], str, str]:
         voice = self._registry.resolve(voice_id)
-        spoken = speech_text(text) or "."
+        spoken = self._spoken(text)
         key = self._key(voice, spoken, boundary, pace)
         scheduler = self._scheduler(voice.engine.id)
         future = scheduler.submit(key, priority, lambda: self._render(voice, key, spoken, boundary, pace))
@@ -89,7 +98,11 @@ class SynthesisService:
 
     def cached_or_none(self, voice_id: str, text: str, boundary: str, pace: float) -> CachedAudio | None:
         voice = self._registry.resolve(voice_id)
-        return self._cache.get(self._key(voice, speech_text(text) or ".", boundary, pace))
+        return self._cache.get(self._key(voice, self._spoken(text), boundary, pace))
+
+    def _spoken(self, text: str) -> str:
+        """What the engine is asked to say: the dictionary's pronunciations, then speech normalisation."""
+        return speech_text(self._pronounce(text)) or "."
 
     def render_blocking(
         self,

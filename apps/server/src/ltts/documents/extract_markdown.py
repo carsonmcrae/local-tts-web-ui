@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 """Purpose: Markdown extraction into headed sections of readable paragraphs.
 
 Scope: Parses CommonMark with raw HTML disabled; H1/H2 headings start sections, deeper headings

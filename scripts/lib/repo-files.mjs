@@ -1,4 +1,6 @@
 // @ts-check
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 /**
  * Purpose: List the repository's files the way Git sees them, for the repository gates.
  * Scope: Tracked and untracked files minus anything Git ignores, filtered by a pattern and a list of

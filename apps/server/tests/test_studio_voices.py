@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 """Purpose: Tests for building studio voices and turning a session into a voice profile.
 
 Scope: A build needs enough usable speech and an installed cloning engine; the build job measures

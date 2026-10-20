@@ -8,7 +8,8 @@ Everything you put into the app or make with it:
 
 - the text extracted from your documents (the uploaded file itself isn't kept);
 - voice recordings for custom voices, which are biometric data;
-- generated speech, exports, your reading progress and preferences.
+- generated speech, exports, your reading progress, bookmarks and notes, pronunciations and
+  preferences.
 
 All of it lives in the `data/` folder (see [Installation](Installation#where-things-are-stored)).
 There are no accounts, analytics or telemetry, and documents and recordings never leave the machine.

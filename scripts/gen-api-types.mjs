@@ -1,4 +1,6 @@
 // @ts-check
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 /**
  * Purpose: Generate TypeScript types for the web app from the server's OpenAPI schema.
  * Scope: `ltts openapi` → openapi-typescript → apps/web/src/api/schema.gen.ts (formatted with

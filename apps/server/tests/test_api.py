@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 """Purpose: HTTP-level tests for documents, audio, voices, jobs, preferences and system endpoints.
 
 Scope: Uploads of every supported format through the real raw-body endpoint, validation errors and

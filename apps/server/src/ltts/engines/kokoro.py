@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 """Purpose: Kokoro-82M via kokoro-onnx — the lightweight, CPU-friendly default engine.
 
 Scope: Reports install state of the checksum-pinned model artifact, installs/removes it through the

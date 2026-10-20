@@ -1,4 +1,6 @@
 // @ts-check
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 /**
  * Purpose: Record the README demo video from the real running app, with its real narration audio.
  * Scope: Starts an isolated production-style server with the installed models, drives the UI the way

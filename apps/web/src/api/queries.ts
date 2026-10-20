@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 /**
  * Purpose: TanStack Query hooks and mutations for every server resource.
  * Scope: Query keys, polling for in-progress jobs, cache invalidation after mutations, and raw-body

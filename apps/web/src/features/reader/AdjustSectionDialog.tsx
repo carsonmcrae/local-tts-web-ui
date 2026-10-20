@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 /**
  * Purpose: Correct a section the reader got wrong: rename it or move where it starts.
  * Scope: Lists the end of the previous section and the start of this one as sentences to pick the

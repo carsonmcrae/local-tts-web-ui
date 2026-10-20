@@ -1,9 +1,12 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 """Purpose: Build downloadable audiobooks from a document as a cancellable background job.
 
 Scope: Synthesises every segment in the chosen chapter range at export priority (so live playback
-stays responsive), streams audio into WAV or MP3 via libsndfile, optionally writes one file per
-chapter into a ZIP with an M3U playlist, and reports progress. Because each segment is cached, a
-canceled or interrupted export resumes quickly instead of starting over.
+stays responsive), streams audio into WAV or MP3 via libsndfile with title/album/track tags and the
+project's credit, optionally writes one file per chapter into a ZIP with an M3U playlist, optionally
+adds sentence-timed subtitles (SRT) next to each audio file, and reports progress. Because each
+segment is cached, a canceled or interrupted export resumes quickly instead of starting over.
 Does NOT belong: HTTP (``router.py``) or synthesis internals.
 """
 
@@ -13,17 +16,20 @@ import logging
 import re
 import shutil
 import zipfile
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Literal
 
 import soundfile as sf
 
-from ltts.audio import read_audio
+from ltts import __version__
+from ltts.audio import PAUSE_SECONDS, Float32Array, read_audio
 from ltts.common import ApiModel
 from ltts.config import Settings
 from ltts.documents.repository import DocumentRepository
 from ltts.errors import ConflictError, NotFoundError
 from ltts.jobs import JobContext, JobManager, JobOut, JobStatus
+from ltts.provenance import CREDIT, PROJECT
 from ltts.synthesis.scheduler import PRIORITY_EXPORT
 from ltts.synthesis.service import SynthesisService
 
@@ -39,11 +45,61 @@ class ExportRequest(ApiModel):
     layout: Literal["single", "chapters"] = "single"
     first_section: int | None = None
     last_section: int | None = None
+    captions: bool = False  # sentence-timed SRT subtitles next to each audio file
 
 
 def safe_filename(title: str, fallback: str = "audio") -> str:
     cleaned = re.sub(r"[^\w\- ]+", "", title, flags=re.UNICODE).strip()
     return re.sub(r"\s+", " ", cleaned)[:80] or fallback
+
+
+def srt_time(seconds: float) -> str:
+    """``HH:MM:SS,mmm`` as SubRip subtitles write it."""
+    millis = round(seconds * 1000)
+    hours, rest = divmod(millis, 3_600_000)
+    minutes, rest = divmod(rest, 60_000)
+    return f"{hours:02d}:{minutes:02d}:{rest // 1000:02d},{rest % 1000:03d}"
+
+
+@dataclass
+class _Track:
+    """One output audio file, its running length and the subtitle cue for each sentence in it."""
+
+    path: Path
+    handle: sf.SoundFile
+    seconds: float = 0.0
+    cues: list[tuple[float, float, str]] = field(default_factory=list)
+
+    def add(self, samples: Float32Array, rate: int, text: str, boundary: str) -> None:
+        self.handle.write(samples)
+        length = len(samples) / rate
+        # The cue ends where the sentence does, before the pause that follows it.
+        spoken = max(length - PAUSE_SECONDS.get(boundary, 0.3), 0.1)
+        self.cues.append((self.seconds, self.seconds + spoken, " ".join(text.split())))
+        self.seconds += length
+
+    def write_captions(self) -> Path:
+        path = self.path.with_suffix(".srt")
+        blocks = [f"{n}\n{srt_time(a)} --> {srt_time(b)}\n{text}\n" for n, (a, b, text) in enumerate(self.cues, 1)]
+        path.write_text("\n".join(blocks), encoding="utf-8", newline="\r\n")  # SubRip's usual line ends
+        return path
+
+
+def _naming(layout: str, title: str, chapter: str, section: int) -> tuple[str, dict[str, str]]:
+    """A track's file name (without extension) and tags: the whole book, or one chapter of it."""
+    if layout != "chapters":
+        return safe_filename(title), {"title": title, "album": title}
+    name = f"{section + 1:02d} - {safe_filename(chapter, 'Chapter')}"
+    return name, {"title": chapter or title, "album": title, "tracknumber": str(section + 1)}
+
+
+def _open_track(path: Path, rate: int, audio_format: str, tags: dict[str, str]) -> _Track:
+    fmt, subtype = _SUBTYPES[audio_format]
+    handle = sf.SoundFile(str(path), "w", rate, 1, subtype, format=fmt)
+    # Tags are set before any audio: WAV writes them into its header.
+    for name, value in {**tags, "comment": f"Made with {CREDIT}", "software": f"{PROJECT} {__version__}"}.items():
+        setattr(handle, name, value)
+    return _Track(path, handle)
 
 
 class ExportService:
@@ -98,9 +154,8 @@ class ExportService:
         detail = self._documents.get(req.document_id)
         titles = {s.index: s.title for s in detail.sections}
         folder = self.folder(ctx.job_id)
-        fmt, subtype = _SUBTYPES[req.format]
         base = safe_filename(title)
-        writers: dict[int, tuple[sf.SoundFile, Path]] = {}
+        tracks: dict[int, _Track] = {}
         duration = 0.0
         try:
             for done, (index, section, text, boundary) in enumerate(rows):
@@ -110,32 +165,33 @@ class ExportService:
                 )
                 samples, rate = read_audio(audio.path)
                 key = section if req.layout == "chapters" else -1
-                if key not in writers:
-                    name = (
-                        f"{section + 1:02d} - {safe_filename(titles.get(section, ''), 'Chapter')}" if key >= 0 else base
-                    )
-                    path = folder / f"{name}.{req.format}"
-                    writers[key] = (sf.SoundFile(str(path), "w", rate, 1, subtype, format=fmt), path)
-                writers[key][0].write(samples)
+                if key not in tracks:
+                    name, tags = _naming(req.layout, title, titles.get(section, ""), section)
+                    tracks[key] = _open_track(folder / f"{name}.{req.format}", rate, req.format, tags)
+                tracks[key].add(samples, rate, text, boundary)
                 duration += audio.duration_s
                 ctx.update((done + 1) / len(rows), f"Generated {done + 1} of {len(rows)} passages")
                 log.debug("export progress", extra={"job_id": ctx.job_id, "segment": index})
         finally:
-            for handle, _ in writers.values():
-                handle.close()
-        return self._finish(folder, base, req, [p for _, p in writers.values()], duration)
+            for track in tracks.values():
+                track.handle.close()
+        files = [track.path for track in tracks.values()]
+        captions = [track.write_captions() for track in tracks.values()] if req.captions else []
+        return self._finish(folder, base, req, files, captions, duration)
 
     def _finish(
-        self, folder: Path, base: str, req: ExportRequest, files: list[Path], duration: float
+        self, folder: Path, base: str, req: ExportRequest, files: list[Path], captions: list[Path], duration: float
     ) -> dict[str, Any]:
-        if req.layout == "single":
+        if req.layout == "single" and not captions:
             target = files[0]
         else:
-            target = folder / f"{base} ({req.format.upper()} chapters).zip"
+            kind = "chapters" if req.layout == "chapters" else "with subtitles"
+            target = folder / f"{base} ({req.format.upper()} {kind}).zip"
             playlist = "#EXTM3U\n" + "".join(f"{p.name}\n" for p in files)
             with zipfile.ZipFile(target, "w", compression=zipfile.ZIP_STORED) as archive:
-                for path in files:
+                for path in [*files, *captions]:
                     archive.write(path, arcname=path.name)
                     path.unlink()
-                archive.writestr(f"{base}.m3u", playlist)
+                if req.layout == "chapters":
+                    archive.writestr(f"{base}.m3u", playlist)
         return {"filename": target.name, "sizeBytes": target.stat().st_size, "durationS": round(duration, 1)}

@@ -40,6 +40,8 @@ jobs:
       - run: npm run typecheck --workspace @ltts/web && npx tsc -p scripts/tsconfig.json && npx tsc -p tests/e2e/tsconfig.json
       - run: npm run test:coverage --workspace @ltts/web
       - run: npm run build
+      - name: Website builds with no broken local links
+        run: npm run site:build
 
   server:
     name: Server (${{ matrix.os }})

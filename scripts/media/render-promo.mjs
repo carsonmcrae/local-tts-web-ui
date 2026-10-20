@@ -17,7 +17,7 @@ import { readFile } from 'node:fs/promises';
 import { createServer } from 'node:http';
 import path from 'node:path';
 import { repoRoot } from '../lib/paths.mjs';
-import { startManaged, stopManaged, waitForHttp } from '../lib/processes.mjs';
+import { withAppServer } from './app-server.mjs';
 import { findTool, run } from './ffmpeg.mjs';
 import { mix, voiceOver } from './promo-audio.mjs';
 
@@ -61,21 +61,10 @@ async function serveComposition() {
 
 /** Generates the voice-over with the real app, then mixes the soundtrack. @param {number} total */
 async function soundtrack(total) {
-  const app = startManaged({
-    name: 'promo',
-    label: '[promo-server]',
-    command: process.execPath,
-    args: [path.join(repoRoot, 'scripts', 'e2e-server.mjs'), '--port', PORT],
-    cwd: repoRoot,
-  });
-  try {
-    if (!(await waitForHttp(`http://127.0.0.1:${PORT}/api/health`, 180_000)))
-      throw new Error('server did not start');
-    const cues = await voiceOver(`http://127.0.0.1:${PORT}`, WORK);
+  return withAppServer('promo', PORT, async (base) => {
+    const cues = await voiceOver(base, WORK);
     return { cues, file: await mix(WORK, cues, total) };
-  } finally {
-    stopManaged(app);
-  }
+  });
 }
 
 /** @param {number} s */

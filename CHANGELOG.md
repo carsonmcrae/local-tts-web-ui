@@ -8,6 +8,10 @@ All notable changes to this project are documented here. The format follows
 
 ### Added
 
+- **Project website** rebuilt for TTSNative: features, the overview and demo videos, screenshots,
+  privacy, install steps, how it is built and a FAQ, plus a speech demo that uses the browser's own
+  voices (clearly labelled as not TTSNative's, with online voices flagged). Built and link-checked by
+  `npm run site:build`, tested in Chromium and on phones, and published to GitHub Pages.
 - **Studio voices:** a guided, resumable session for your most faithful voice. A microphone check
   (including a thin, "tinny" microphone), 48 passages in six styles recorded losslessly or imported
   from a long recording, then a build that averages the speaker over the session, tests five candidate

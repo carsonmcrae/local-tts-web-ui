@@ -26,6 +26,7 @@
     "start": "node scripts/start.mjs",
     "doctor": "node scripts/doctor.mjs",
     "build": "npm run build --workspace @ltts/web",
+    "brand:build": "node scripts/brand/build-brand.mjs",
     "test": "npm run test:web && npm run test:server",
     "test:web": "npm run test --workspace @ltts/web",
     "test:server": "node scripts/uv-run.mjs --cwd apps/server run --frozen pytest",
@@ -50,6 +51,8 @@
     "media:demo": "npm run build && node scripts/media/record-demo.mjs",
     "media:promo": "node scripts/media/render-promo.mjs",
     "media:screenshots": "npm run build && node scripts/capture-screenshots.mjs",
+    "media:voices": "node scripts/media/voice-samples.mjs",
+    "site:build": "node scripts/site/build-site.mjs --out .tools/site --base-url https://example.invalid",
     "check": "npm run format:check && npm run lint && npm run typecheck && npm run api:check && npm run deps:check && npm run duplication && npm run test && npm run build"
   },
   "devDependencies": {

@@ -3,9 +3,11 @@
 /**
  * Purpose: Shared steps for end-to-end tests.
  * Scope: Adding documents (paste or upload of fixtures), starting playback, waiting for the spoken
- *   sentence to advance (proof that real audio played to its end), and reading API JSON.
+ *   sentence to advance (proof that real audio played to its end), reading API JSON, and listing
+ *   serious or critical axe (WCAG 2.2 AA) violations.
  * Does NOT belong: Assertions specific to one scenario.
  */
+import AxeBuilder from '@axe-core/playwright';
 import type { Page, Response } from '@playwright/test';
 import { expect } from '@playwright/test';
 import path from 'node:path';
@@ -49,4 +51,16 @@ export async function waitForActiveSegment(
   await expect(page.locator(`[data-index="${index}"][data-active="true"]`)).toBeVisible({
     timeout,
   });
+}
+
+/** The serious or critical WCAG 2.2 AA violations on the current page, as "rule (count)". */
+export async function seriousViolations(page: Page): Promise<string[]> {
+  // @axe-core/playwright bundles its own playwright-core typings; the runtime Page is compatible.
+  const axePage = page as unknown as ConstructorParameters<typeof AxeBuilder>[0]['page'];
+  const results = await new AxeBuilder({ page: axePage })
+    .withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa'])
+    .analyze();
+  return results.violations
+    .filter((v) => v.impact === 'serious' || v.impact === 'critical')
+    .map((v) => `${v.id} (${v.nodes.length})`);
 }

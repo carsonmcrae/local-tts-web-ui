@@ -7,9 +7,8 @@
  *   phone layouts have no horizontal overflow, usable touch targets and working uploads/playback.
  * Does NOT belong: The core reading journey (reader.spec.ts).
  */
-import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
-import { pasteText, play, uploadFixture } from './helpers';
+import { pasteText, play, seriousViolations, uploadFixture } from './helpers';
 
 const NO_MODELS = 'http://127.0.0.1:8798';
 
@@ -39,15 +38,7 @@ test('main screens have no serious accessibility violations', async ({ page }) =
   ]) {
     await page.goto(path);
     await page.waitForLoadState('networkidle');
-    // @axe-core/playwright bundles its own playwright-core typings; the runtime Page is compatible.
-    const axePage = page as unknown as ConstructorParameters<typeof AxeBuilder>[0]['page'];
-    const results = await new AxeBuilder({ page: axePage })
-      .withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa'])
-      .analyze();
-    const serious = results.violations.filter(
-      (v) => v.impact === 'serious' || v.impact === 'critical',
-    );
-    expect(serious.map((v) => `${path}: ${v.id} (${v.nodes.length})`)).toEqual([]);
+    expect((await seriousViolations(page)).map((v) => `${path}: ${v}`)).toEqual([]);
   }
 });
 

@@ -227,9 +227,9 @@ describe('Engines', () => {
       }), // prettier-ignore
     });
     await startChatterboxUpdate();
-    const failure = await screen.findByRole('alert');
-    expect(within(failure).getByText('Update failed')).toBeInTheDocument();
-    expect(within(failure).getByText(/installation was not removed/)).toBeInTheDocument();
+    // The card's notice and the toast are both alerts, so find the card's by its title.
+    const notice = await screen.findByText('Update failed');
+    expect(notice.closest('[role="alert"]')).toHaveTextContent(/installation was not removed/);
     expect(screen.getByRole('button', { name: 'Update Chatterbox Turbo' })).toBeInTheDocument();
   });
 });

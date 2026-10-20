@@ -112,12 +112,18 @@ def test_kokoro_loads_once_on_the_cpu_and_speaks(kokoro: KokoroEngine) -> None:
     assert sys.modules["onnxruntime"].telemetry_off == [True] and os.environ["ORT_DISABLE_TELEMETRY"] == "1"
 
 
-def test_kokoro_rejects_unknown_voices_and_reports_failed_passages(kokoro: KokoroEngine) -> None:
+def test_kokoro_rejects_unknown_voices_and_reports_failed_passages(
+    kokoro: KokoroEngine, caplog: pytest.LogCaptureFixture
+) -> None:
     with pytest.raises(SynthesisError) as unknown:
         kokoro.synthesize("Hi.", VoiceSpec("zz_nobody"), 1.0)
     assert unknown.value.code == "voice_not_found"
     with pytest.raises(SynthesisError, match="couldn't speak"):
         kokoro.synthesize("unspeakable", VoiceSpec("af_heart"), 1.0)
+    # The log names the failure without quoting the passage (kokoro-onnx messages can contain it).
+    record = next(r for r in caplog.records if r.getMessage() == "kokoro synthesis failed")
+    assert record.exc_info is None and record.error_type == "ValueError"  # type: ignore[attr-defined]
+    assert "unspeakable" not in caplog.text and "phonemes failed" not in caplog.text
 
 
 def test_kokoro_refuses_empty_or_non_finite_audio(kokoro: KokoroEngine) -> None:

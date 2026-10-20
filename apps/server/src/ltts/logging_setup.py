@@ -35,5 +35,6 @@ def configure_logging(env: str) -> None:
     root = logging.getLogger()
     root.handlers[:] = [handler]
     root.setLevel(logging.DEBUG if env == "development" else logging.INFO)
-    for noisy in ("httpx", "httpcore", "multipart", "phonemizer", "python_multipart"):
+    # kokoro_onnx logs each sentence's phonemes at DEBUG when the common LOG_LEVEL variable says so.
+    for noisy in ("httpx", "httpcore", "multipart", "phonemizer", "python_multipart", "kokoro_onnx"):
         logging.getLogger(noisy).setLevel(logging.WARNING)

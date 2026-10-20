@@ -210,7 +210,10 @@ class KokoroEngine(Engine):
         try:
             samples, sample_rate = model.create(text, voice=voice.key, speed=pace, lang=voice.language_code)
         except Exception as exc:
-            log.exception("kokoro synthesis failed", extra={"voice": voice.key, "chars": len(text)})
+            # The type only: kokoro-onnx error messages quote the passage (or its phonemes), and logs get
+            # pasted into bug reports.
+            extra = {"voice": voice.key, "chars": len(text), "error_type": type(exc).__name__}
+            log.error("kokoro synthesis failed", extra=extra)
             raise SynthesisError("Kokoro couldn't speak this passage.") from exc
         audio = np.asarray(samples, dtype=np.float32)
         if audio.size == 0 or not np.isfinite(audio).all():

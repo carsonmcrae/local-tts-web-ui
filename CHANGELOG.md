@@ -71,6 +71,11 @@ All notable changes to this project are documented here. The format follows
 - **Node.js 22.22 or newer** is now required (React Router 8 and jsdom 30 need it).
 - Dependencies: React Router 8, radix-ui 1.7, Vitest 5, jsdom 30.
 
+### Fixed
+
+- **Website on phones:** the install commands scroll sideways on narrow screens and can now be reached
+  and scrolled with a keyboard (a labelled, focusable region). The phone tests now run axe.
+
 ### Security
 
 - The optional Chatterbox worker moved to torch 2.11, transformers 5.11 and setuptools 84, clearing

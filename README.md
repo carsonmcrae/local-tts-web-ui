@@ -141,9 +141,10 @@ or that the speaker gave permission; generated audio carries Resemble AI's inaud
 
 ## Privacy
 
-No telemetry, analytics or accounts. Documents, recordings and generated audio stay in the `data/` folder.
-The only network requests are the downloads you start (setup and optional engines), from pinned URLs with
-checksums. After that the app works fully offline. See [SECURITY.md](SECURITY.md) and the
+No telemetry, analytics or accounts (ONNX Runtime's default telemetry is switched off). Documents,
+recordings and generated audio stay in the `data/` folder. The only network requests are the downloads
+you start (setup and optional engines) from GitHub, PyPI, npm and Hugging Face, using pinned URLs with
+checksums; like any download, those hosts see your IP address. After that the app works fully offline. See [SECURITY.md](SECURITY.md) and the
 [threat model](docs/security/threat-model.md).
 
 ## Screenshots
@@ -201,7 +202,8 @@ TTSNative is general-purpose software that you run on your own computer. You dec
 whose voice it copies and what you do with the audio, so that's your responsibility:
 
 - **Voices.** Only clone your own voice, or one whose owner has given you explicit permission (for a
-  child, their parent or guardian). Voice Studio asks you to confirm this before it creates a voice.
+  child, their parent or guardian; for someone who has died, their estate). Voice Studio asks you to
+  confirm this before it creates a voice.
 - **Content.** Make sure you have the right to use the documents you load and to share or publish the
   audio you make from them. Listening privately to your own documents is what the app is for.
 - **No impersonation or deception.** Don't use TTSNative to impersonate anyone, to pass generated speech
@@ -210,7 +212,9 @@ whose voice it copies and what you do with the audio, so that's your responsibil
   endorse such uses.
 
 TTSNative is provided under the MIT License "as is", without warranty of any kind; see [LICENSE](LICENSE).
-This section explains how the software is meant to be used; it doesn't add terms to the licence.
+This section explains how the software is meant to be used; it doesn't add terms to the licence. To
+report misuse the project can act on, such as a release, fork or website using TTSNative's name to
+deceive people, use [GitHub's private reporting](https://github.com/carsonmcrae/ttsnative/security/advisories/new).
 
 ## Licence and credits
 

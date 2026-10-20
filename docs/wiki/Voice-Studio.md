@@ -160,9 +160,9 @@ Only create voices you have the right to use. Before a voice can be created, you
 statement:
 
 > I am the person speaking in this recording, or I have their explicit permission to create and use a
-> synthetic copy of their voice (for a child, a parent's or guardian's). I won't use it to impersonate
-> or deceive anyone, to pass generated speech off as a real recording, or in any way that breaks the
-> law or someone's rights.
+> synthetic copy of their voice (for a child, a parent's or guardian's; for someone who has died, their
+> estate's). I won't use it to impersonate or deceive anyone, to pass generated speech off as a real
+> recording, or in any way that breaks the law or someone's rights.
 
 The server refuses to create a voice without it (whether you use the app or call its API) and stores
 the statement's wording and when you confirmed with the voice. Each voice card shows "Consent

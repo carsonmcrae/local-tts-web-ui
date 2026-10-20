@@ -2,9 +2,10 @@
 # Copyright (c) 2026 Carson McRae
 """Purpose: Kokoro-82M via kokoro-onnx — the lightweight, CPU-friendly default engine.
 
-Scope: Reports install state of the checksum-pinned model artifact, installs/removes it through the
-model store, lazily loads one ONNX session (thread-safe double-checked), lists the 54 built-in
-voices with metadata, and synthesises 24 kHz mono audio with a native pace control.
+Scope: Reports install state of the checksum-pinned model artifact (including damaged files), installs,
+repairs and removes it through the model store, verifies every file before lazily loading one ONNX
+session (thread-safe double-checked), lists the 54 built-in voices with metadata, and synthesises
+24 kHz mono audio with a native pace control, rejecting empty or non-finite output.
 Does NOT belong: Text segmentation, pauses between segments or caching (``synthesis``).
 """
 
@@ -29,7 +30,7 @@ from ltts.engines.base import (
 from ltts.engines.kokoro_voices import GRADES, describe
 from ltts.errors import ConflictError, EngineUnavailableError, SynthesisError
 from ltts.jobs import JobContext
-from ltts.modelstore.store import ModelStore
+from ltts.modelstore.store import Damage, ModelStore, describe_damage
 
 log = logging.getLogger("ltts.engines.kokoro")
 ARTIFACT = "kokoro-v1.0"
@@ -50,18 +51,19 @@ class KokoroEngine(Engine):
 
     # -- lifecycle -------------------------------------------------------
     def is_ready(self) -> bool:
-        return self._store.is_installed(ARTIFACT)
+        return self._store.is_installed(ARTIFACT) and not self._store.damage(ARTIFACT)
 
     def _ensure_loaded(self) -> Any:
         if self._model is not None:
             return self._model
-        if not self.is_ready():
+        if not self._store.is_installed(ARTIFACT) and not self._store.damage(ARTIFACT):
             raise EngineUnavailableError(
                 "The Kokoro voice model isn't installed yet. Install it from Settings → Engines & models.",
                 code="engine_not_installed",
             )
         with self._lock:
             if self._model is None:
+                self._store.require_intact(ARTIFACT)  # every file is hashed before the first load
                 try:
                     import onnxruntime as rt
                     from kokoro_onnx import Kokoro
@@ -97,7 +99,9 @@ class KokoroEngine(Engine):
     def revision(self) -> str:
         return f"{ARTIFACT}/{ENGINE_CODE_VERSION}"
 
-    def _status(self, ready: bool) -> tuple[EngineStatus, str]:
+    def _status(self, ready: bool, damage: list[Damage]) -> tuple[EngineStatus, str]:
+        if damage:
+            return "needs_repair", describe_damage("The Kokoro model", damage)
         if not ready:
             return "not_installed", "Model not installed"
         if self._load_error:
@@ -107,7 +111,8 @@ class KokoroEngine(Engine):
     def info(self) -> EngineInfo:
         art = self._store.artifact(ARTIFACT)
         ready = self.is_ready()
-        status, message = self._status(ready)
+        damage = self._store.damage(ARTIFACT)
+        status, message = self._status(ready, damage)
         return EngineInfo(
             id=self.id,
             name="Kokoro",
@@ -143,6 +148,7 @@ class KokoroEngine(Engine):
                 )
             ],
             installed_bytes=self._store.installed_bytes(ARTIFACT),
+            damaged_files=[item.name for item in damage],
         )
 
     def voices(self) -> list[VoiceInfo]:
@@ -179,6 +185,11 @@ class KokoroEngine(Engine):
         self._ensure_loaded()
         return {"artifact": ARTIFACT}
 
+    @override
+    def repair(self, context: JobContext) -> dict[str, Any]:
+        """Installing re-checks every file and downloads only those that fail, so a repair is an install."""
+        return self.install(context, None)
+
     # Nothing runs, so the job context is not used.
     @override
     def update(self, context: JobContext) -> dict[str, Any]:
@@ -200,4 +211,12 @@ class KokoroEngine(Engine):
         except Exception as exc:
             log.exception("kokoro synthesis failed", extra={"voice": voice.key, "chars": len(text)})
             raise SynthesisError("Kokoro couldn't speak this passage.") from exc
-        return AudioClip(np.asarray(samples, dtype=np.float32), int(sample_rate))
+        audio = np.asarray(samples, dtype=np.float32)
+        if audio.size == 0 or not np.isfinite(audio).all():
+            log.error("kokoro produced unusable audio", extra={"voice": voice.key, "samples": int(audio.size)})
+            raise SynthesisError(
+                "Kokoro produced no usable audio for this passage. If it keeps happening, check the model in "
+                "Settings → Engines & models.",
+                code="synthesis_invalid_audio",
+            )
+        return AudioClip(audio, int(sample_rate))

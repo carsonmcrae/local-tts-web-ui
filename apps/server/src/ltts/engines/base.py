@@ -17,11 +17,12 @@ from typing import Any, Literal, Protocol, runtime_checkable
 
 import numpy as np
 import numpy.typing as npt
+from pydantic import Field
 
 from ltts.common import ApiModel
 from ltts.jobs import JobContext
 
-EngineStatus = Literal["ready", "not_installed", "installing", "error"]
+EngineStatus = Literal["ready", "not_installed", "installing", "needs_repair", "error"]
 Delivery = Literal["steady", "natural", "expressive"]
 
 
@@ -63,6 +64,9 @@ class EngineInfo(ApiModel):
     installed_bytes: int
     install_job_id: str | None = None
     update_available: bool = False  # installed from an older runtime lock; POST /engines/{id}/update applies it
+    damaged_files: list[str] = Field(
+        default_factory=list
+    )  # model files that are missing, incomplete or fail their checksum
 
 
 class VoiceInfo(ApiModel):
@@ -146,6 +150,10 @@ class Engine(Protocol):
 
     def update(self, context: JobContext) -> dict[str, Any]:
         """Bring an installed engine up to date in place; only offered when ``info().update_available``."""
+        ...
+
+    def repair(self, context: JobContext) -> dict[str, Any]:
+        """Download again only the model files that fail verification; offered when status is needs_repair."""
         ...
 
     def uninstall(self) -> None: ...

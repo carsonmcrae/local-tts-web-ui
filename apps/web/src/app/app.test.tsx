@@ -46,6 +46,18 @@ describe('App', () => {
     expect(screen.getAllByRole('link', { name: 'Studio' })).toHaveLength(1);
   });
 
+  it('tells the listener when the voice model needs repair', async () => {
+    mockApi({
+      'GET /api/engines': [kokoro({ status: 'needs_repair' })],
+      'GET /api/preferences': preferences,
+      'GET /api/voices': [voice()],
+      'GET /api/documents': [],
+    });
+    window.history.pushState({}, '', '/library');
+    render(<App />);
+    expect(await screen.findByText('Voices need repair')).toBeInTheDocument();
+  });
+
   it('moves between the main sections from the navigation', async () => {
     mockApi({
       'GET /api/engines': [kokoro()],

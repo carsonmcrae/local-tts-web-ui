@@ -3,9 +3,10 @@
 """Purpose: Optional Chatterbox Turbo engine (MIT) for zero-shot voice cloning, run out-of-process.
 
 Scope: Installs an isolated, locked environment (CPU or CUDA PyTorch) with uv plus checksum-pinned
-weights, offers an in-place update when the worker lock has changed since the install, reports
-hardware-aware install options, and synthesises through ``WorkerClient`` using a custom profile's
-built studio voice or reference recording (or the model's built-in voice), with a delivery preset.
+weights (verified before every worker load, re-downloaded by a repair), offers an in-place update when
+the worker lock has changed since the install, reports hardware-aware install options, and synthesises
+through ``WorkerClient`` using a custom profile's built studio voice or reference recording (or the
+model's built-in voice), with a delivery preset.
 Builds studio voices (``VoiceBuilder``): measures takes, builds a voice from one take plus a session
 identity, and auditions it. Output is 24 kHz and carries Resemble's imperceptible Perth watermark.
 Does NOT belong: Profile storage/consent (``voices``), running uv and the install marker
@@ -51,7 +52,7 @@ from ltts.engines.worker_client import WorkerClient
 from ltts.errors import EngineUnavailableError
 from ltts.hardware import detect_gpus
 from ltts.jobs import JobContext
-from ltts.modelstore.store import ModelStore
+from ltts.modelstore.store import ModelStore, describe_damage
 
 log = logging.getLogger("ltts.engines.chatterbox")
 ARTIFACT = "chatterbox-turbo"
@@ -103,7 +104,12 @@ class ChatterboxEngine(Engine, VoiceBuilder):
         return str(option) if option else None
 
     def is_ready(self) -> bool:
-        return self._installed_option() is not None and self._python.is_file() and self._store.is_installed(ARTIFACT)
+        return (
+            self._installed_option() is not None
+            and self._python.is_file()
+            and self._store.is_installed(ARTIFACT)
+            and not self._store.damage(ARTIFACT)
+        )
 
     def update_available(self) -> bool:
         """The environment was built from another worker lock, or before locks were recorded (legacy marker)."""
@@ -135,6 +141,7 @@ class ChatterboxEngine(Engine, VoiceBuilder):
         update = ready and self.update_available()
         option = self._installed_option()
         device = (self._worker.loaded or {}).get("device") if self._worker and self._worker.loaded else option
+        damage = self._store.damage(ARTIFACT)
         return EngineInfo(
             id=self.id,
             name="Chatterbox Turbo",
@@ -143,8 +150,10 @@ class ChatterboxEngine(Engine, VoiceBuilder):
             ),
             license=self._store.artifact(ARTIFACT).license,
             optional=True,
-            status="ready" if ready else "not_installed",
-            status_message=_status_message(ready, update=update),
+            status="needs_repair" if damage else "ready" if ready else "not_installed",
+            status_message=(
+                describe_damage("The Chatterbox model", damage) if damage else _status_message(ready, update=update)
+            ),
             supports_cloning=True,
             controls=[],
             languages=["English"],
@@ -156,6 +165,7 @@ class ChatterboxEngine(Engine, VoiceBuilder):
             install_options=self._options(),
             installed_bytes=self._store.installed_bytes(ARTIFACT) + int(self._marker_data().get("envBytes", 0)),
             update_available=update,
+            damaged_files=[item.name for item in damage],
         )
 
     def voices(self) -> list[VoiceInfo]:
@@ -228,6 +238,19 @@ class ChatterboxEngine(Engine, VoiceBuilder):
         log.info("chatterbox environment updated", extra={"lock_sha256": digest})
         return {"option": choice, "device": loaded.get("device"), "updated": True}
 
+    @override
+    def repair(self, context: JobContext) -> dict[str, Any]:
+        """Download again only the damaged weight files; the Python environment is left as it is."""
+        self.close()
+        self._store.install(
+            ARTIFACT,
+            lambda done, total, name: context.update(
+                done / total, f"Downloading {name} ({done // MB} / {total // MB} MB)"
+            ),
+            lambda: context.canceled,
+        )
+        return {"artifact": ARTIFACT, "repaired": True}
+
     def _verified_load(self, option: str) -> dict[str, Any]:
         try:
             return self._ensure_worker(option)
@@ -262,6 +285,7 @@ class ChatterboxEngine(Engine, VoiceBuilder):
                 )
             if not self._worker.loaded:
                 device = option or self._installed_option() or "auto"
+                self._store.require_intact(ARTIFACT)  # every weight file is hashed before the worker loads it
                 model_dir = str(self._store.directory(ARTIFACT))
                 self._worker.loaded = self._worker.call("load", LOAD_TIMEOUT_S, modelDir=model_dir, device=device)
                 log.info("chatterbox loaded", extra={"device": self._worker.loaded.get("device")})

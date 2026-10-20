@@ -252,6 +252,23 @@ export type paths = {
     patch?: never;
     trace?: never;
   };
+  '/api/engines/{engine_id}/repair': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Repair Engine */
+    post: operations['repair_engine_api_engines__engine_id__repair_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/engines/{engine_id}/update': {
     parameters: {
       query?: never;
@@ -943,6 +960,8 @@ export type components = {
     EngineInfo: {
       /** Controls */
       controls: components['schemas']['EngineControl'][];
+      /** Damagedfiles */
+      damagedFiles?: string[];
       /** Description */
       description: string;
       /** Device */
@@ -971,7 +990,7 @@ export type components = {
        * Status
        * @enum {string}
        */
-      status: 'ready' | 'not_installed' | 'installing' | 'error';
+      status: 'ready' | 'not_installed' | 'installing' | 'needs_repair' | 'error';
       /** Statusmessage */
       statusMessage: string;
       /** Supportscloning */
@@ -2052,6 +2071,37 @@ export interface operations {
         'application/json': components['schemas']['InstallRequest'];
       };
     };
+    responses: {
+      /** @description Successful Response */
+      202: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['JobOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  repair_engine_api_engines__engine_id__repair_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        engine_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
     responses: {
       /** @description Successful Response */
       202: {

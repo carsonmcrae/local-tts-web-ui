@@ -25,6 +25,9 @@ import { formatClock } from '@/lib/format';
 import type { PlaybackController, PlayerError } from './controller';
 import { SHORTCUTS, SPEEDS } from './useShortcuts';
 
+/** Errors fixed in Settings → Engines & models rather than by retrying. */
+const SETTINGS_ERRORS = new Set(['engine_not_installed', 'model_damaged']);
+
 export function ErrorStrip({
   error,
   onRetry,
@@ -35,7 +38,7 @@ export function ErrorStrip({
       role="alert"
     >
       <span>{error?.message ?? 'Playback failed.'}</span>
-      {error?.code === 'engine_not_installed' ? (
+      {SETTINGS_ERRORS.has(error?.code ?? '') ? (
         <Link
           to="/settings#engines"
           className="font-medium text-accent-text underline-offset-2 hover:underline"

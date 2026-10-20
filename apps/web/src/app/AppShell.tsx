@@ -41,6 +41,7 @@ function engineStatus(offline: boolean, engines: readonly EngineInfo[] | undefin
   const status = engines?.find((engine) => engine.id === 'kokoro')?.status;
   if (status === 'ready') return { label: 'Voices ready', dot: 'bg-success' };
   if (status === 'installing') return { label: 'Installing voices…', dot: 'bg-warning' };
+  if (status === 'needs_repair') return { label: 'Voices need repair', dot: 'bg-danger' };
   return { label: 'Voices not installed', dot: 'bg-warning' };
 }
 

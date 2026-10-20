@@ -87,9 +87,11 @@ def _models(args: argparse.Namespace) -> int:
     artifact_id = {"kokoro": "kokoro-v1.0", "chatterbox": "chatterbox-turbo"}.get(args.target, args.target)
     art = store.artifact(artifact_id)
     if args.action == "ensure":
-        if store.is_installed(artifact_id):
-            print(f"✓ {art.label} is installed ({settings.resolved_models_dir / artifact_id})")
+        if store.verify(artifact_id):
+            print(f"✓ {art.label} is installed and verified ({settings.resolved_models_dir / artifact_id})")
             return 0
+        for problem in store.damage(artifact_id, deep=True):
+            print(f"! {problem.describe()}: downloading it again")
         size_mb = art.total_bytes / 1_048_576
         print(f"› Installing {art.label} ({size_mb:.0f} MB). Missing files are downloaded; all are SHA-256 verified…")
         store.install(artifact_id, _progress, lambda: False)
@@ -97,6 +99,8 @@ def _models(args: argparse.Namespace) -> int:
     elif args.action == "verify":
         ok = store.verify(artifact_id)
         print(("✓ verified" if ok else "✗ missing or corrupt") + f": {art.label}")
+        for problem in store.damage(artifact_id, deep=True):
+            print(f"  {problem.describe()}")
         return 0 if ok else 1
     else:
         store.remove(artifact_id)
@@ -121,7 +125,11 @@ def _doctor(_: argparse.Namespace) -> int:
     gpus = detect_gpus()
     print("GPUs: " + (", ".join(f"{g.vendor} {g.name}" for g in gpus) or "none detected (CPU mode)"))
     for artifact_id, art in store.artifacts.items():
-        state = "installed" if store.is_installed(artifact_id) else "not installed"
+        damage = store.damage(artifact_id, deep=True)
+        state = "installed, SHA-256 verified" if store.is_installed(artifact_id) and not damage else "not installed"
+        if damage:
+            state = "DAMAGED: " + "; ".join(item.describe() for item in damage)
+            state += " (repair in Settings → Engines & models, or run npm run setup)"
         print(f"Model {art.label}: {state}")
     return 0
 

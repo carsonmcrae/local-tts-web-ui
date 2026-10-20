@@ -2,7 +2,7 @@
 # Copyright (c) 2026 Carson McRae
 """Purpose: Engine, voice-library and background-job endpoints.
 
-Scope: List engines with capabilities and install state, start/cancel installs and updates, uninstall, list
+Scope: List engines with capabilities and install state, start/cancel installs, updates and repairs, uninstall, list
 all voices (built-in and custom), and read/cancel jobs.
 Does NOT belong: Voice-profile creation (``voices/router.py``).
 """
@@ -41,6 +41,11 @@ def install_engine(engine_id: EngineId, body: InstallRequest, services: Services
 @router.post("/engines/{engine_id}/update", status_code=202)
 def update_engine(engine_id: EngineId, services: ServicesDep) -> JobOut:
     return services.engines.update(engine_id)
+
+
+@router.post("/engines/{engine_id}/repair", status_code=202)
+def repair_engine(engine_id: EngineId, services: ServicesDep) -> JobOut:
+    return services.engines.repair(engine_id)
 
 
 @router.delete("/engines/{engine_id}", status_code=204)

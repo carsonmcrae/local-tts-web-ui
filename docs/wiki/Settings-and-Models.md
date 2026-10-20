@@ -51,9 +51,14 @@ licence. Model files are downloaded from pinned sources and verified with SHA-25
 - **Remove.** **Remove** deletes the engine's model files and clears the audio cache. Your documents
   and voice recordings are kept, and you can reinstall at any time. Removing Chatterbox Turbo also
   removes its separate environment.
+- **Repair.** Before an engine loads its model, every file is checked against its published SHA-256
+  checksum (once per file, and again whenever the file changes). If a file is missing, incomplete or
+  doesn't match, the engine shows **Needs repair**, names the files, and offers **Repair**: only the
+  damaged files are downloaded again, each is verified before it replaces anything, and your
+  documents, recordings, voices and other models aren't touched.
 
-You can also install the Kokoro model from a terminal with `npm run setup`, and check the installed
-Kokoro files against their checksums with:
+You can also install (or repair) the Kokoro model from a terminal with `npm run setup`, and check the
+installed Kokoro files against their checksums with:
 
 ```bash
 node scripts/uv-run.mjs run --frozen --project apps/server ltts models verify kokoro

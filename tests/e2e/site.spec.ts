@@ -56,7 +56,10 @@ test.afterAll(() => {
   server.close();
 });
 
-/** A scripted SpeechSynthesis: one voice on the device, one online; records what it was asked. */
+/**
+ * A scripted SpeechSynthesis: one voice on the device, one online; records what it was asked and
+ * queues utterances like a browser (window.finishUtterance() ends the one being spoken).
+ */
 async function fakeSpeech(page: Page) {
   await page.addInitScript(() => {
     const spoken: { text: string; rate: number; voice: string }[] = [];
@@ -88,19 +91,30 @@ async function fakeSpeech(page: Page) {
         this.text = text;
       }
     }
+    const queue: Utterance[] = [];
     // The real speechSynthesis is a read-only accessor, so it is redefined rather than assigned.
     Object.defineProperties(window, {
       SpeechSynthesisUtterance: { value: Utterance, configurable: true },
       spoken: { value: spoken },
+      finishUtterance: {
+        value: () => {
+          queue.shift()?.onend?.();
+          queue[0]?.onstart?.();
+        },
+      },
       speechSynthesis: {
         configurable: true,
         value: {
           getVoices: () => voices,
           addEventListener: () => undefined,
-          cancel: () => spoken.push({ text: '(cancel)', rate: 0, voice: '' }),
+          cancel: () => {
+            spoken.push({ text: '(cancel)', rate: 0, voice: '' });
+            for (const u of queue.splice(0)) u.onerror?.({ error: 'interrupted' });
+          },
           speak: (u: Utterance) => {
             spoken.push({ text: u.text, rate: u.rate, voice: u.voice?.name ?? '' });
-            u.onstart?.();
+            queue.push(u);
+            if (queue.length === 1) u.onstart?.();
           },
         },
       },
@@ -108,7 +122,7 @@ async function fakeSpeech(page: Page) {
   });
 }
 
-test.describe('website @site', () => {
+test.describe('website @site @cross-browser', () => {
   test('calls to action reach real sections, and social links use the base URL', async ({
     page,
   }) => {
@@ -159,6 +173,29 @@ test.describe('website @site', () => {
     await page.getByLabel('Text to read').fill('  ');
     await page.getByRole('button', { name: 'Speak' }).click();
     await expect(page.locator('#speech-status')).toHaveText('Type something to read first.');
+  });
+
+  test('the demo reads sentence by sentence and highlights the one being read', async ({
+    page,
+  }) => {
+    await fakeSpeech(page);
+    await page.goto(`${BASE}/#try`);
+    await expect(page.getByLabel('Browser voice')).toBeEnabled();
+    await page.getByLabel('Text to read').fill('First sentence here. And a second one!');
+    await page.getByRole('button', { name: 'Speak' }).click();
+    const current = page.locator('#speech-readalong .current');
+    await expect(current).toHaveText('First sentence here.');
+    const spoken = await page.evaluate(() =>
+      (window as unknown as { spoken: { text: string }[] }).spoken.map((item) => item.text),
+    );
+    expect(spoken).toEqual(['(cancel)', 'First sentence here.', 'And a second one!']);
+    const finish = () =>
+      page.evaluate(() => (window as unknown as { finishUtterance: () => void }).finishUtterance());
+    await finish();
+    await expect(current).toHaveText('And a second one!');
+    await finish();
+    await expect(current).toHaveCount(0);
+    await expect(page.locator('#speech-status')).toHaveText('Done.');
   });
 
   test('browsers without speech get an explanation', async ({ page }) => {

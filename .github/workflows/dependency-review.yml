@@ -1,18 +1,12 @@
 # Purpose: Block pull requests that add dependencies with known high-severity vulnerabilities.
-# Scope: Manifest and lockfile changes in pull requests.
+# Scope: Manifest and lockfile changes in pull requests. Runs on every pull request (it passes at once
+#   when no dependency changed) because "review" is a required check: a path filter would leave
+#   pull requests without dependency changes waiting for a check that never runs.
 # Does NOT belong: Full audits (ci.yml security job).
 name: Dependency review
 
 on:
   pull_request:
-    paths:
-      - package.json
-      - package-lock.json
-      - apps/web/package.json
-      - apps/server/pyproject.toml
-      - apps/server/uv.lock
-      - apps/chatterbox-worker/pyproject.toml
-      - apps/chatterbox-worker/uv.lock
 
 permissions:
   contents: read

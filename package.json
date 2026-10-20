@@ -10,7 +10,7 @@
     "apps/web"
   ],
   "engines": {
-    "node": ">=22.12",
+    "node": ">=22.22",
     "npm": ">=10"
   },
   "packageManager": "npm@11.11.0",

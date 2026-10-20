@@ -10,7 +10,7 @@ import { BootstrapError, ok, step } from './log.mjs';
 import { serverDir } from './paths.mjs';
 import { resolveUv, uvEnv } from './uv.mjs';
 
-export const MIN_NODE = [22, 12];
+export const MIN_NODE = [22, 22];
 
 export function assertNodeVersion() {
   const [major = 0, minor = 0] = process.versions.node.split('.').map(Number);

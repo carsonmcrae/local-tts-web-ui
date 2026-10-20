@@ -38,7 +38,7 @@ narration voice from a short recording of yourself.
 
 ## Quick start
 
-You need **Node.js 22.12 or newer** and Git. That's all — the first run installs everything else inside
+You need **Node.js 22.22 or newer** and Git. That's all — the first run installs everything else inside
 this folder.
 
 ```bash

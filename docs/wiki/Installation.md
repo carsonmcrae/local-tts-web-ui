@@ -2,7 +2,7 @@
 
 ## Requirements
 
-You need **Node.js 22.12 or newer** and **Git**. You don't need to install Python yourself: the first
+You need **Node.js 22.22 or newer** and **Git**. You don't need to install Python yourself: the first
 run installs everything else inside the project folder.
 
 |         | Basic reader (Kokoro)     | Voice cloning (Chatterbox, optional)                                          |

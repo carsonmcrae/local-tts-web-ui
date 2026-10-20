@@ -74,11 +74,12 @@ Runtime dependencies only (development tooling is not distributed). Model weight
 | @radix-ui/react-use-size@1.1.5 | MIT |  |
 | @radix-ui/react-visually-hidden@1.2.12 | MIT |  |
 | @radix-ui/rect@1.1.3 | MIT |  |
+| @remix-run/route-pattern@0.22.1 | MIT |  |
 | @tanstack/query-core@5.104.1 | MIT |  |
 | @tanstack/react-query@5.104.1 | MIT |  |
 | aria-hidden@1.2.6 | MIT |  |
 | clsx@2.1.1 | MIT |  |
-| cookie@1.1.1 | MIT |  |
+| cookie-es@3.1.1 | MIT |  |
 | detect-node-es@1.1.0 | MIT |  |
 | get-nonce@1.0.1 | MIT |  |
 | lucide-react@1.52.0 | ISC |  |
@@ -86,11 +87,10 @@ Runtime dependencies only (development tooling is not distributed). Model weight
 | react-dom@19.3.0 | MIT |  |
 | react-remove-scroll-bar@2.3.8 | MIT |  |
 | react-remove-scroll@2.7.2 | MIT |  |
-| react-router@7.18.4 | MIT |  |
+| react-router@8.4.0 | MIT |  |
 | react-style-singleton@2.2.3 | MIT |  |
 | react@19.3.0 | MIT |  |
 | scheduler@0.28.0 | MIT |  |
-| set-cookie-parser@2.7.2 | MIT |  |
 | tailwind-merge@3.7.0 | MIT |  |
 | tslib@2.8.1 | 0BSD |  |
 | use-callback-ref@1.3.3 | MIT |  |

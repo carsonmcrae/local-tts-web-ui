@@ -4,7 +4,7 @@ Thanks for helping improve Local TTS. This guide covers setup, the quality bar a
 
 ## Setup
 
-Prerequisites: **Node.js 22.12+** (see `.nvmrc`) and Git. Nothing else — the bootstrap installs a
+Prerequisites: **Node.js 22.22+** (see `.nvmrc`) and Git. Nothing else — the bootstrap installs a
 checksum-verified `uv`, which installs Python 3.12 and the locked dependencies inside the repository.
 
 ```bash

@@ -39,7 +39,7 @@ Everything runs locally: no accounts, no cloud and no telemetry. The app listens
 | Voice Studio | Optional Chatterbox Turbo engine; a 10–20 second recording, quality checks, explicit consent and permanent deletion |
 | Export       | MP3 or WAV; the whole document, one section or a range; one file or one file per chapter                            |
 | Privacy      | Binds to `127.0.0.1`; no telemetry; documents and recordings never leave your computer                              |
-| Requirements | Node.js 22.12 or newer and Git; everything else is installed inside the project folder on first run                 |
+| Requirements | Node.js 22.22 or newer and Git; everything else is installed inside the project folder on first run                 |
 
 ## More
 

@@ -4,6 +4,24 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/). See [docs/guides/release-process.md](docs/guides/release-process.md).
 
+## [Unreleased]
+
+### Added
+
+- **Chatterbox updates in place:** when the worker's locked packages change, Settings → Engines &
+  models offers "Update available" instead of a reinstall.
+
+### Changed
+
+- **Node.js 22.22 or newer** is now required (React Router 8 and jsdom 30 need it).
+- Dependencies: React Router 8, radix-ui 1.7, Vitest 5, jsdom 30.
+
+### Security
+
+- The optional Chatterbox worker moved to torch 2.11, transformers 5.11 and setuptools 84, clearing
+  its open advisories; the one remaining, in code the worker never calls, is documented in
+  [docs/security/supply-chain.md](docs/security/supply-chain.md).
+
 ## [2.0.0] - 2026-10-19
 
 A complete rebuild. v1 was a single Gradio script; v2 is a local-first document reader and voice
@@ -63,5 +81,6 @@ fresh with `npm install && npm run dev`.
 Initial Gradio prototype (`kokoro_tts_ui.py`), tagged `v1.0.0` at commit `1452251`. See
 [docs/architecture/legacy-audit.md](docs/architecture/legacy-audit.md).
 
+[Unreleased]: https://github.com/carsonmcrae/local-tts-web-ui/compare/v2.0.0...HEAD
 [2.0.0]: https://github.com/carsonmcrae/local-tts-web-ui/compare/v1.0.0...v2.0.0
 [1.0.0]: https://github.com/carsonmcrae/local-tts-web-ui/tree/v1.0.0

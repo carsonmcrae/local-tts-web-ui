@@ -28,7 +28,7 @@ When it finishes, the dialog shows **Your audio is ready** with the file name, s
 **Download** button.
 
 How long an export takes depends on your computer. On the machine used for the
-[performance measurements](https://github.com/carsonmcrae/local-tts-web-ui/blob/main/docs/guides/performance.md),
+[performance measurements](https://github.com/carsonmcrae/ttsnative/blob/main/docs/guides/performance.md),
 Kokoro generated speech about five times faster than real time.
 
 ## File names

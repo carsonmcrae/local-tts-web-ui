@@ -1,21 +1,40 @@
-# Local TTS
-
-**Read documents aloud with natural voices — privately, on your own computer.**
-
-Upload a PDF, Word document, EPUB, Markdown or text file, press Play, and follow along as each sentence
-is highlighted. Everything runs locally: no accounts, no cloud, no telemetry. Optionally, create a
-narration voice from a short recording of yourself.
-
-[![CI](https://github.com/carsonmcrae/local-tts-web-ui/actions/workflows/ci.yml/badge.svg)](https://github.com/carsonmcrae/local-tts-web-ui/actions/workflows/ci.yml)
-[![CodeQL](https://github.com/carsonmcrae/local-tts-web-ui/actions/workflows/codeql.yml/badge.svg)](https://github.com/carsonmcrae/local-tts-web-ui/actions/workflows/codeql.yml)
-[![Latest release](https://img.shields.io/github/v/release/carsonmcrae/local-tts-web-ui)](https://github.com/carsonmcrae/local-tts-web-ui/releases/latest)
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="brand/webp/ttsnative-banner-dark.webp" />
+    <img src="brand/webp/ttsnative-banner.webp" alt="TTSNative: natural text-to-speech. Private, powerful, and local." width="860" />
+  </picture>
+</p>
 
 <p align="center">
-  <a href="https://carsonmcrae.github.io/local-tts-web-ui/#overview"><img src="docs/media/local-tts-promo-poster.webp" alt="Local TTS showcase video: any document, read aloud" width="860" /></a>
+  <a href="https://carsonmcrae.github.io/ttsnative/"><strong>Website</strong></a> ·
+  <a href="#quick-start"><strong>Install</strong></a> ·
+  <a href="https://github.com/carsonmcrae/ttsnative/wiki"><strong>User guide</strong></a> ·
+  <a href="https://github.com/carsonmcrae/ttsnative/releases/latest"><strong>Latest release</strong></a>
+</p>
+
+<p align="center">
+  <a href="https://github.com/carsonmcrae/ttsnative/actions/workflows/ci.yml"><img src="https://github.com/carsonmcrae/ttsnative/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
+  <a href="https://github.com/carsonmcrae/ttsnative/actions/workflows/codeql.yml"><img src="https://github.com/carsonmcrae/ttsnative/actions/workflows/codeql.yml/badge.svg" alt="CodeQL" /></a>
+  <a href="https://github.com/carsonmcrae/ttsnative/releases/latest"><img src="https://img.shields.io/github/v/release/carsonmcrae/ttsnative" alt="Latest release" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License: MIT" /></a>
+</p>
+
+# TTSNative
+
+**Natural text-to-speech. Private, powerful, and local.**
+
+TTSNative reads your documents aloud with natural voices, on your own computer. Open a PDF, Word document,
+EPUB, Markdown or text file, press Play, and follow along as each sentence is highlighted. Speech is
+generated locally: no accounts, no subscriptions, no telemetry and no cloud inference. Optionally, create
+a narration voice from a recording of yourself, with your consent built in.
+
+TTSNative is free and open source (MIT). It was called **Local TTS** until version 2.0.
+
+<p align="center">
+  <a href="https://carsonmcrae.github.io/ttsnative/#overview"><img src="docs/media/ttsnative-promo-poster.webp" alt="TTSNative showcase video: any document, read aloud" width="860" /></a>
   <br />
-  <a href="https://carsonmcrae.github.io/local-tts-web-ui/#overview"><strong>▶ Watch the overview (0:45)</strong></a> (the voice-over is spoken by Local TTS)
-  · <a href="https://carsonmcrae.github.io/local-tts-web-ui/#demo"><strong>▶ Watch the demo (2:17)</strong></a> (recorded from the running app, with its real narration)
+  <a href="https://carsonmcrae.github.io/ttsnative/#overview"><strong>▶ Watch the overview (0:45)</strong></a> (the voice-over is spoken by TTSNative)
+  · <a href="https://carsonmcrae.github.io/ttsnative/#demo"><strong>▶ Watch the demo (2:17)</strong></a> (recorded from the running app, with its real narration)
 </p>
 
 ![The reader narrating a document with the current sentence highlighted](docs/images/reader-light.png)
@@ -49,8 +68,8 @@ You need **Node.js 22.22 or newer** and Git. That's all — the first run instal
 this folder.
 
 ```bash
-git clone https://github.com/carsonmcrae/local-tts-web-ui.git
-cd local-tts-web-ui
+git clone https://github.com/carsonmcrae/ttsnative.git
+cd ttsnative
 npm install
 npm run dev
 ```
@@ -111,12 +130,12 @@ or that the speaker gave permission; generated audio carries Resemble AI's inaud
 
 ## Documentation
 
-- **[User guide (wiki)](https://github.com/carsonmcrae/local-tts-web-ui/wiki)**: installation, reading documents, voices, Voice Studio, exporting,
+- **[User guide (wiki)](https://github.com/carsonmcrae/ttsnative/wiki)**: installation, reading documents, voices, Voice Studio, exporting,
   settings, keyboard shortcuts, troubleshooting and FAQ.
 - **Reference ([docs/](docs/))**: [architecture](docs/architecture/overview.md),
   [configuration](docs/guides/configuration.md), [security](docs/security/threat-model.md),
   [testing](docs/guides/testing.md) and [releases](docs/guides/release-process.md).
-- **[Changelog](CHANGELOG.md)** and **[releases](https://github.com/carsonmcrae/local-tts-web-ui/releases)**: every release lists its changes and
+- **[Changelog](CHANGELOG.md)** and **[releases](https://github.com/carsonmcrae/ttsnative/releases)**: every release lists its changes and
   ships checksums, SBOMs and signed build provenance.
 
 ## Privacy
@@ -164,7 +183,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md), [testing](docs/guides/testing.md),
 
 - [Contributing](CONTRIBUTING.md): how to set up, test and propose changes.
 - [Code of conduct](CODE_OF_CONDUCT.md) and [getting help](SUPPORT.md): questions go to
-  [Discussions](https://github.com/carsonmcrae/local-tts-web-ui/discussions), bugs to [Issues](https://github.com/carsonmcrae/local-tts-web-ui/issues/new/choose).
+  [Discussions](https://github.com/carsonmcrae/ttsnative/discussions), bugs to [Issues](https://github.com/carsonmcrae/ttsnative/issues/new/choose).
 - [Security policy](SECURITY.md): report vulnerabilities privately, never in a public issue.
 
 ## Roadmap
@@ -177,12 +196,12 @@ See [CONTRIBUTING.md](CONTRIBUTING.md), [testing](docs/guides/testing.md),
 
 ## Licence and credits
 
-Local TTS is created and maintained by **Carson McRae** and released under the MIT License — see
+TTSNative is created and maintained by **Carson McRae** and released under the MIT License — see
 [LICENSE](LICENSE). Model weights and dependencies have their own licences; see the
 [licence inventory](docs/security/license-inventory.md).
 
 **Using or forking this project?** The licence asks one thing: keep the copyright notice in LICENSE. A
-credit line such as "Based on [Local TTS](https://github.com/carsonmcrae/local-tts-web-ui) by Carson
+credit line such as "Based on [TTSNative](https://github.com/carsonmcrae/ttsnative) by Carson
 McRae (MIT)" is appreciated. [ATTRIBUTION.md](ATTRIBUTION.md) explains what is required and what is
 only asked, and [CITATION.cff](CITATION.cff) gives the citation.
 

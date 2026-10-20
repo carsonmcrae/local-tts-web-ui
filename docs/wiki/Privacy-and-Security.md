@@ -1,6 +1,6 @@
 # Privacy and security
 
-Local TTS is built to keep your documents and your voice on your own computer.
+TTSNative is built to keep your documents and your voice on your own computer.
 
 ## What stays on your computer
 
@@ -39,8 +39,8 @@ else. Model formats were chosen so that loading a model can't run code (ONNX and
 PyTorch file is loaded with `weights_only=True`).
 
 Details:
-[model provenance](https://github.com/carsonmcrae/local-tts-web-ui/blob/main/docs/security/model-provenance.md)
-and [supply chain](https://github.com/carsonmcrae/local-tts-web-ui/blob/main/docs/security/supply-chain.md).
+[model provenance](https://github.com/carsonmcrae/ttsnative/blob/main/docs/security/model-provenance.md)
+and [supply chain](https://github.com/carsonmcrae/ttsnative/blob/main/docs/security/supply-chain.md).
 
 ## How the app protects you
 
@@ -75,13 +75,13 @@ and [supply chain](https://github.com/carsonmcrae/local-tts-web-ui/blob/main/doc
   The default Kokoro reader doesn't install them.
 - Some runtime dependencies are GPL-licensed (espeak-ng and phonemizer).
 
-The [threat model](https://github.com/carsonmcrae/local-tts-web-ui/blob/main/docs/security/threat-model.md)
+The [threat model](https://github.com/carsonmcrae/ttsnative/blob/main/docs/security/threat-model.md)
 covers these in full.
 
 ## Reporting a vulnerability
 
 Please report vulnerabilities privately through
-[GitHub private vulnerability reporting](https://github.com/carsonmcrae/local-tts-web-ui/security/advisories/new).
+[GitHub private vulnerability reporting](https://github.com/carsonmcrae/ttsnative/security/advisories/new).
 Don't open a public issue. Include steps to reproduce and the affected version (**Settings → About**).
 You can expect an acknowledgement within a week.
 
@@ -90,4 +90,4 @@ You can expect an acknowledgement within a week.
 | 2.x                    | Yes       |
 | 1.x (Gradio prototype) | No        |
 
-See [SECURITY.md](https://github.com/carsonmcrae/local-tts-web-ui/blob/main/SECURITY.md).
+See [SECURITY.md](https://github.com/carsonmcrae/ttsnative/blob/main/SECURITY.md).

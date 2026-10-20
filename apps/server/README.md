@@ -1,6 +1,6 @@
 # ltts — local API server
 
-FastAPI service behind the Local TTS web UI. It extracts text from documents, segments it for
+FastAPI service behind the TTSNative web app. It extracts text from documents, segments it for
 speech, synthesizes audio with local engines (Kokoro by default), caches results, manages
 checksum-verified model downloads and stores custom voice profiles. Everything binds to
 `127.0.0.1` by default.

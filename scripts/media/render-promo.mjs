@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 Carson McRae
 /**
- * Purpose: Render the showcase video (docs/media/local-tts-promo.mp4) from promo/promo.html.
+ * Purpose: Render the showcase video (docs/media/ttsnative-promo.mp4) from promo/promo.html.
  * Scope: A loopback file server limited to the composition, the screenshots and the app's fonts;
  *   headless Chromium stepping window.seek(t) frame by frame (PNG frames piped to FFmpeg); the
  *   soundtrack from promo-audio.mjs (voice-over spoken by the app through an isolated server); a
@@ -23,7 +23,7 @@ import { mix, voiceOver } from './promo-audio.mjs';
 
 const WORK = path.join(repoRoot, '.tools', 'media', 'promo');
 const OUT = path.join(repoRoot, 'docs', 'media');
-const NAME = 'local-tts-promo';
+const NAME = 'ttsnative-promo';
 const ALLOWED = ['/scripts/media/promo/', '/docs/images/', '/node_modules/@fontsource-variable/'];
 /** @type {Record<string, string>} */
 const TYPES = {

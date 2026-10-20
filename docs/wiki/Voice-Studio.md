@@ -19,7 +19,7 @@ It copies a voice from a short reference recording at the moment it speaks ("zer
   the speaker's identity across the whole session, and builds the voice from the take that works best,
   which you choose by ear.
 - **English.** In this app, Chatterbox Turbo is listed as an English engine. Multilingual cloning is on
-  the [roadmap](https://github.com/carsonmcrae/local-tts-web-ui/blob/main/README.md#roadmap).
+  the [roadmap](https://github.com/carsonmcrae/ttsnative/blob/main/README.md#roadmap).
 
 ## What you need
 
@@ -68,7 +68,7 @@ About two minutes. A wizard guides you through five steps.
 
 About 30–45 minutes, and you can stop and continue later: every take is saved as you go, and Voice
 Studio shows **Studio session in progress** with **Continue** and **Discard**. Use a USB or XLR
-microphone if you can. The [recording guide](https://github.com/carsonmcrae/local-tts-web-ui/blob/main/docs/guides/studio-recording.md)
+microphone if you can. The [recording guide](https://github.com/carsonmcrae/ttsnative/blob/main/docs/guides/studio-recording.md)
 covers microphone, Windows and room setup.
 
 1. **Before you start.** How the voice is built, microphone and room setup, and what is stored.

@@ -73,8 +73,8 @@ function useMediaSession(controller: PlaybackController, state: PlayerState): vo
     const section = controller.sectionAt(state.segmentIndex);
     navigator.mediaSession.metadata = new MediaMetadata({
       title: state.document.title,
-      artist: section?.title ?? 'Local TTS',
-      album: 'Local TTS',
+      artist: section?.title ?? 'TTSNative',
+      album: 'TTSNative',
     });
     navigator.mediaSession.playbackState = state.status === 'playing' ? 'playing' : 'paused';
   }, [controller, state.document, state.segmentIndex, state.status]);

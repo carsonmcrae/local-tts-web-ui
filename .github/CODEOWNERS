@@ -7,4 +7,5 @@
 /apps/server/src/ltts/voices/                  @carsonmcrae
 /scripts/lib/download.mjs                      @carsonmcrae
 /scripts/toolchain.json                        @carsonmcrae
-/.github/workflows/                            @carsonmcrae
+/.github/                                      @carsonmcrae
+/.github/CODEOWNERS                            @carsonmcrae

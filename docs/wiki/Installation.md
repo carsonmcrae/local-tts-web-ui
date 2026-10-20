@@ -18,8 +18,8 @@ been tested by hand; see the [FAQ](FAQ#which-operating-systems-and-browsers-are-
 ## Install
 
 ```bash
-git clone https://github.com/carsonmcrae/local-tts-web-ui.git
-cd local-tts-web-ui
+git clone https://github.com/carsonmcrae/ttsnative.git
+cd ttsnative
 npm install
 npm run dev
 ```
@@ -71,7 +71,7 @@ reload for development.
 
 ## Updating
 
-Local TTS is updated with Git:
+TTSNative is updated with Git:
 
 ```bash
 git pull
@@ -83,13 +83,13 @@ Every start re-syncs the Python environment from the committed lockfile, so new 
 are installed automatically. Your `data/` folder isn't tracked by Git, so your library, voices and
 models are kept.
 
-The [changelog](https://github.com/carsonmcrae/local-tts-web-ui/blob/main/CHANGELOG.md) and the
-[releases page](https://github.com/carsonmcrae/local-tts-web-ui/releases) list what changed in each
+The [changelog](https://github.com/carsonmcrae/ttsnative/blob/main/CHANGELOG.md) and the
+[releases page](https://github.com/carsonmcrae/ttsnative/releases) list what changed in each
 version, and **Settings → About** shows the version you're running.
 
 ## Uninstalling
 
-Nothing is installed system-wide. To remove Local TTS, stop the app (**Ctrl+C**) and delete the
+Nothing is installed system-wide. To remove TTSNative, stop the app (**Ctrl+C**) and delete the
 project folder. If you pointed `LTTS_DATA_DIR`, `LTTS_MODELS_DIR` or `LTTS_ENGINES_DIR` at a folder
 outside the project, delete that folder too.
 
@@ -108,5 +108,5 @@ npm run doctor
 The doctor checks Node, uv, the Python environment, installed models, GPUs, ports and disk space. It
 only reports: it never installs or changes anything. Run it first when something doesn't work, and
 include its output (or **Settings → About → Copy diagnostics**) when you
-[report a bug](https://github.com/carsonmcrae/local-tts-web-ui/issues). See also
+[report a bug](https://github.com/carsonmcrae/ttsnative/issues). See also
 [Troubleshooting](Troubleshooting).

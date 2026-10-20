@@ -15,7 +15,7 @@ import { repoRoot } from '../lib/paths.mjs';
 import { findTool, run } from './ffmpeg.mjs';
 
 const OUT = path.join(repoRoot, 'docs', 'media');
-const NAME = 'local-tts-demo';
+const NAME = 'ttsnative-demo';
 
 /** @typedef {{ id: number, type: string, src: string, t: number, at: number, rate: number, text: string }} MediaEvent */
 /** @typedef {{ src: string, start: number, end: number, at: number, rate: number, text: string }} Piece */

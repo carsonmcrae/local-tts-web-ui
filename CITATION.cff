@@ -1,14 +1,14 @@
 cff-version: 1.2.0
 message: 'If you use or build on this software, please cite it as below.'
-title: 'Local TTS Web UI'
+title: 'TTSNative'
 abstract: 'A local-first document reader and voice studio: reads PDFs, Word files, EPUBs and text aloud with on-device text-to-speech and exports audiobooks.'
 type: software
 authors:
   - family-names: McRae
     given-names: Carson
     alias: carsonmcrae
-repository-code: 'https://github.com/carsonmcrae/local-tts-web-ui'
-url: 'https://github.com/carsonmcrae/local-tts-web-ui'
+repository-code: 'https://github.com/carsonmcrae/ttsnative'
+url: 'https://github.com/carsonmcrae/ttsnative'
 license: MIT
 keywords:
   - text-to-speech

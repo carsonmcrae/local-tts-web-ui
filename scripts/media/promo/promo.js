@@ -374,7 +374,7 @@ scene(38.2, DURATION + 1, (L) => {
     L,
     'h abs',
     at(0, 330, { width: `${W}px`, textAlign: 'center', fontSize: '140px' }),
-    'Local TTS',
+    'TTSNative',
   );
   const sub = el(
     L,
@@ -392,13 +392,13 @@ scene(38.2, DURATION + 1, (L) => {
     L,
     'sub abs',
     at(0, 800, { width: `${W}px`, textAlign: 'center', fontSize: '28px' }),
-    'Free and open source · MIT licence · github.com/carsonmcrae/local-tts-web-ui',
+    'Free and open source · MIT licence · github.com/carsonmcrae/ttsnative',
   );
   const credit = el(
     L,
     'sub abs',
     at(0, 990, { width: `${W}px`, textAlign: 'center', fontSize: '21px', color: '#6b6c72' }),
-    'Voice-over generated on this computer by Local TTS (Kokoro voice “Heart”).',
+    'Voice-over generated on this computer by TTSNative (Kokoro voice “Heart”).',
   );
   return (t) => {
     set(logo, { s: mix(0.4, 1, pr(t, 38.4, 39.1, E.back)), o: pr(t, 38.4, 38.8) });

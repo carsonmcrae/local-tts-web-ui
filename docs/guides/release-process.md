@@ -18,7 +18,7 @@ and server versions in **Settings → About**.
 6. On an up-to-date `main`, create and push an annotated tag:
 
    ```bash
-   git tag -a v2.0.1 -m "Local TTS 2.0.1"
+   git tag -a v2.0.1 -m "TTSNative 2.0.1"
    git push origin v2.0.1
    ```
 
@@ -37,7 +37,7 @@ that tag. Anyone can verify a download:
 
 ```bash
 sha256sum --check --ignore-missing SHA256SUMS.txt
-gh attestation verify local-tts-web-ui-2.0.1-source.tar.gz --repo carsonmcrae/local-tts-web-ui
+gh attestation verify ttsnative-2.0.1-source.tar.gz --repo carsonmcrae/ttsnative
 ```
 
 Tags matching `v*` are protected: they can't be moved or deleted.

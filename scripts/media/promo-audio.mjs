@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 Carson McRae
 /**
- * Purpose: Build the showcase video's soundtrack: a voice-over spoken by Local TTS itself, over the
+ * Purpose: Build the showcase video's soundtrack: a voice-over spoken by TTSNative itself, over the
  *   synthesized music bed.
  * Scope: Generates each voice-over line through the running app's API (Kokoro voice "Heart"), checks
  *   that it fits its scene window, places it on the timeline, ducks the music under the voice, adds
@@ -23,7 +23,7 @@ const CUES = [
   {
     start: 5.9,
     limit: 12,
-    text: 'Open a PDF, an e-book, or a Word file, and Local TTS reads it aloud.',
+    text: 'Open a PDF, an e-book, or a Word file, and TTSNative reads it aloud.',
   },
   {
     start: 12.6,
@@ -48,7 +48,7 @@ const CUES = [
   {
     start: 38.9,
     limit: 44.6,
-    text: 'Local TTS. Free and open source. And yes, it made this voice-over.',
+    text: 'TTSNative. Free and open source. And yes, it made this voice-over.',
   },
 ];
 const WHOOSHES = [5.4, 12, 19.6, 25.6, 32, 38.2];

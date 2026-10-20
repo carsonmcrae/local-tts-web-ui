@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for helping improve Local TTS. This guide covers setup, the quality bar and how changes are reviewed.
+Thanks for helping improve TTSNative. This guide covers setup, the quality bar and how changes are reviewed.
 
 ## Setup
 

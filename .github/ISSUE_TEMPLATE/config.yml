@@ -1,14 +1,14 @@
 blank_issues_enabled: false
 contact_links:
   - name: Report a security vulnerability
-    url: https://github.com/carsonmcrae/local-tts-web-ui/security/advisories/new
+    url: https://github.com/carsonmcrae/ttsnative/security/advisories/new
     about: Please report vulnerabilities privately.
   - name: Ask a question
-    url: https://github.com/carsonmcrae/local-tts-web-ui/discussions/categories/q-a
-    about: Questions about using or setting up Local TTS.
+    url: https://github.com/carsonmcrae/ttsnative/discussions/categories/q-a
+    about: Questions about using or setting up TTSNative.
   - name: User guide (wiki)
-    url: https://github.com/carsonmcrae/local-tts-web-ui/wiki
+    url: https://github.com/carsonmcrae/ttsnative/wiki
     about: How to read documents, choose voices, clone a voice and export audio.
   - name: Troubleshooting guide
-    url: https://github.com/carsonmcrae/local-tts-web-ui/blob/main/docs/guides/troubleshooting.md
+    url: https://github.com/carsonmcrae/ttsnative/blob/main/docs/guides/troubleshooting.md
     about: Common setup and playback problems.

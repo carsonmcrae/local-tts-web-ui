@@ -1,7 +1,7 @@
 # Development
 
 A short orientation for contributors. For the full rules, read
-[CONTRIBUTING.md](https://github.com/carsonmcrae/local-tts-web-ui/blob/main/CONTRIBUTING.md).
+[CONTRIBUTING.md](https://github.com/carsonmcrae/ttsnative/blob/main/CONTRIBUTING.md).
 
 ## How it fits together
 
@@ -52,7 +52,7 @@ Web unit tests sit next to the code (`apps/web/src/**/*.test.ts(x)`); server tes
 The end-to-end suite builds the UI, starts isolated servers, and runs Playwright in Chromium, Firefox,
 WebKit, and Pixel 7 and iPhone 13 emulation with real audio. CI runs the server tests on Ubuntu,
 Windows and macOS. See the
-[testing guide](https://github.com/carsonmcrae/local-tts-web-ui/blob/main/docs/guides/testing.md) for
+[testing guide](https://github.com/carsonmcrae/ttsnative/blob/main/docs/guides/testing.md) for
 what is and isn't covered.
 
 ## Conventions
@@ -90,7 +90,7 @@ Releases follow Semantic Versioning. The version appears in six places, and `npm
 if they disagree. Pushing a version tag runs the Release workflow, which checks the tag against the
 app version and a dated `CHANGELOG.md` entry, runs `npm run check`, and publishes the release with
 checksums (`SHA256SUMS.txt`), SBOMs and signed build provenance. See the
-[release process](https://github.com/carsonmcrae/local-tts-web-ui/blob/main/docs/guides/release-process.md).
+[release process](https://github.com/carsonmcrae/ttsnative/blob/main/docs/guides/release-process.md).
 
 ## Editing this wiki
 
@@ -101,9 +101,9 @@ names (`Getting-Started.md` becomes **Getting Started**), and links between page
 
 ## Further reading
 
-- [Architecture overview](https://github.com/carsonmcrae/local-tts-web-ui/blob/main/docs/architecture/overview.md)
-  and [design decisions](https://github.com/carsonmcrae/local-tts-web-ui/blob/main/docs/architecture/decisions.md)
-- [Configuration](https://github.com/carsonmcrae/local-tts-web-ui/blob/main/docs/guides/configuration.md)
-  and [performance](https://github.com/carsonmcrae/local-tts-web-ui/blob/main/docs/guides/performance.md)
-- [Threat model](https://github.com/carsonmcrae/local-tts-web-ui/blob/main/docs/security/threat-model.md)
-  and [supply chain](https://github.com/carsonmcrae/local-tts-web-ui/blob/main/docs/security/supply-chain.md)
+- [Architecture overview](https://github.com/carsonmcrae/ttsnative/blob/main/docs/architecture/overview.md)
+  and [design decisions](https://github.com/carsonmcrae/ttsnative/blob/main/docs/architecture/decisions.md)
+- [Configuration](https://github.com/carsonmcrae/ttsnative/blob/main/docs/guides/configuration.md)
+  and [performance](https://github.com/carsonmcrae/ttsnative/blob/main/docs/guides/performance.md)
+- [Threat model](https://github.com/carsonmcrae/ttsnative/blob/main/docs/security/threat-model.md)
+  and [supply chain](https://github.com/carsonmcrae/ttsnative/blob/main/docs/security/supply-chain.md)

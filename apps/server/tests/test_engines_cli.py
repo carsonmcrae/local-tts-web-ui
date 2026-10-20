@@ -136,7 +136,7 @@ def test_cli_openapi_doctor_and_models(
     schema = json.loads(capsys.readouterr().out)
     assert "/api/documents/upload" in schema["paths"]
     assert cli_main(["doctor"]) == 0
-    assert "Local TTS" in capsys.readouterr().out
+    assert "TTSNative" in capsys.readouterr().out
     assert cli_main(["models", "verify", "kokoro"]) == 1
     assert cli_main(["models", "remove", "kokoro"]) == 0
 

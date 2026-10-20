@@ -2,7 +2,7 @@
 # Scope: Default rules plus a narrow allow-list for known non-secrets (pinned checksums are 64-hex
 #   strings that can look like keys).
 # Does NOT belong: Broad path ignores — add exact patterns with a reason instead.
-title = "local-tts-web-ui gitleaks config"
+title = "ttsnative gitleaks config"
 
 [extend]
 useDefault = true

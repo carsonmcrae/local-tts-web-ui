@@ -183,7 +183,7 @@ def test_exports_carry_subtitles_and_tags(client: TestClient) -> None:
     with sf.SoundFile(io.BytesIO(archive.read("Wardens.wav"))) as audio:
         tags = audio.copy_metadata()
     assert tags["title"] == "Wardens" and tags["album"] == "Wardens"
-    assert "comment" not in tags and "Local TTS" not in tags.get("software", "")  # no branding in exports
+    assert "comment" not in tags and "TTSNative" not in tags.get("software", "")  # no branding in exports
 
     chapters = wait_job(
         client, client.post("/api/exports", json={**request, "format": "mp3", "layout": "chapters"}).json()["id"]

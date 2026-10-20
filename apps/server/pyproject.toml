@@ -31,8 +31,8 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/carsonmcrae/local-tts-web-ui"
-Source = "https://github.com/carsonmcrae/local-tts-web-ui"
+Homepage = "https://github.com/carsonmcrae/ttsnative"
+Source = "https://github.com/carsonmcrae/ttsnative"
 
 [project.scripts]
 ltts = "ltts.cli:main"

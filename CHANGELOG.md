@@ -45,6 +45,11 @@ All notable changes to this project are documented here. The format follows
 
 ### Changed
 
+- **Renamed to TTSNative** (formerly Local TTS), with a new identity: an N drawn as five waveform bars,
+  the app icon and favicon, logos and a brand guide (`brand/`). The repository is now
+  `carsonmcrae/ttsnative`; old GitHub links redirect. Internal identifiers are unchanged, so existing
+  installations keep working: the `ltts` package and command, `LTTS_*` settings, the `data/` folder and
+  saved browser preferences. Releases are now named `TTSNative <version>`, with `ttsnative-*` files.
 - PDF chapters now start at their heading line, not at the top of the page the outline points to, so
   the end of one chapter no longer appears at the start of the next.
 - API: `POST /api/voice-profiles/analyze` returns `{report, suggested}`;
@@ -121,6 +126,6 @@ fresh with `npm install && npm run dev`.
 Initial Gradio prototype (`kokoro_tts_ui.py`), tagged `v1.0.0` at commit `1452251`. See
 [docs/architecture/legacy-audit.md](docs/architecture/legacy-audit.md).
 
-[Unreleased]: https://github.com/carsonmcrae/local-tts-web-ui/compare/v2.0.0...HEAD
-[2.0.0]: https://github.com/carsonmcrae/local-tts-web-ui/compare/v1.0.0...v2.0.0
-[1.0.0]: https://github.com/carsonmcrae/local-tts-web-ui/tree/v1.0.0
+[Unreleased]: https://github.com/carsonmcrae/ttsnative/compare/v2.0.0...HEAD
+[2.0.0]: https://github.com/carsonmcrae/ttsnative/compare/v1.0.0...v2.0.0
+[1.0.0]: https://github.com/carsonmcrae/ttsnative/tree/v1.0.0

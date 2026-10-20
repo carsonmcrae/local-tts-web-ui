@@ -13,7 +13,7 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { repoRoot } from './lib/paths.mjs';
 
-const REPO = 'carsonmcrae/local-tts-web-ui';
+const REPO = 'carsonmcrae/ttsnative';
 
 /** @param {string} message */
 function fail(message) {

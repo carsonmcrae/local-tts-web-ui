@@ -267,6 +267,10 @@
             read: “TTSNative reads your documents aloud with natural voices, right on your own
             computer. Nothing you open ever leaves it.”
           </p>
+          <p class="fine">
+            Voices from Kokoro-82M by hexgrad (Apache-2.0). Siwis was trained on the SIWIS corpus
+            (CC BY 4.0).
+          </p>
           <ul class="samples">
             <li>
               <span>Heart <small>US English · grade A</small></span
@@ -346,8 +350,10 @@ Open a document, press Play, and follow along as each sentence is read to you.</
             <p>
               The app runs a small server on your own computer that only listens to your own
               computer. Your documents, recordings and generated audio stay in its folder. It has no
-              accounts, analytics or telemetry; the only downloads are the voice models, from pinned
-              addresses and checked against fixed SHA-256 checksums.
+              accounts, analytics or telemetry (including ONNX Runtime's, which TTSNative switches
+              off). Besides installing its runtime (uv, Python and locked packages), the only
+              downloads are the voice models, from pinned addresses and checked against fixed
+              SHA-256 checksums.
             </p>
             <p>
               Voice cloning is optional, needs the speaker's explicit consent, and deleting a voice
@@ -358,8 +364,14 @@ Open a document, press Play, and follow along as each sentence is read to you.</
             <h2>This website</h2>
             <p>
               This page has no cookies, analytics or third-party requests: everything is served from
-              this site. The browser demo runs entirely in your browser, and nothing you type is
-              sent to us.
+              this site. The browser demo runs in your browser and nothing you type is sent to us;
+              if you pick an online browser voice, your browser's maker may receive the text, as the
+              demo explains. The site is hosted on GitHub Pages, which, like any web host, logs
+              visitors' IP addresses for security and operations (see
+              <a
+                href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement"
+                >GitHub's privacy statement</a
+              >).
             </p>
           </div>
         </div>
@@ -528,6 +540,16 @@ npm run dev</code></pre>
           </p>
         </details>
         <details>
+          <summary>Can I clone anyone's voice?</summary>
+          <p>
+            Only your own, or one whose owner has given you explicit permission (for a child, a
+            parent or guardian). Voice Studio asks you to confirm this before it creates a voice.
+            Everything runs on your computer, so how you use the audio is up to you, and so is the
+            responsibility; see
+            <a href="https://github.com/carsonmcrae/ttsnative#responsible-use">responsible use</a>.
+          </p>
+        </details>
+        <details>
           <summary>Is the browser demo the same as the app?</summary>
           <p>
             No. The demo uses whatever voices your browser provides. The app uses the Kokoro and
@@ -569,6 +591,7 @@ npm run dev</code></pre>
           <a href="https://github.com/carsonmcrae/ttsnative/releases">Releases</a>
           <a href="https://github.com/carsonmcrae/ttsnative/wiki">Guide</a>
           <a href="https://github.com/carsonmcrae/ttsnative/security/policy">Security</a>
+          <a href="https://github.com/carsonmcrae/ttsnative#responsible-use">Responsible use</a>
           <a href="https://github.com/carsonmcrae/ttsnative/blob/main/LICENSE">Licence</a>
         </nav>
       </div>

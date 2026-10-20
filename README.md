@@ -195,6 +195,23 @@ See [CONTRIBUTING.md](CONTRIBUTING.md), [testing](docs/guides/testing.md),
 - Better English pronunciation with the misaki G2P used to train Kokoro
 - M4B audiobook export with chapter markers
 
+## Responsible use
+
+TTSNative is general-purpose software that you run on your own computer. You decide what it reads,
+whose voice it copies and what you do with the audio, so that's your responsibility:
+
+- **Voices.** Only clone your own voice, or one whose owner has given you explicit permission (for a
+  child, their parent or guardian). Voice Studio asks you to confirm this before it creates a voice.
+- **Content.** Make sure you have the right to use the documents you load and to share or publish the
+  audio you make from them. Listening privately to your own documents is what the app is for.
+- **No impersonation or deception.** Don't use TTSNative to impersonate anyone, to pass generated speech
+  off as a real recording of someone, for fraud, or in any way that breaks the law or other people's
+  rights (including their rights over their voice and likeness). The project doesn't authorise or
+  endorse such uses.
+
+TTSNative is provided under the MIT License "as is", without warranty of any kind; see [LICENSE](LICENSE).
+This section explains how the software is meant to be used; it doesn't add terms to the licence.
+
 ## Licence and credits
 
 TTSNative is created and maintained by **Carson McRae** and released under the MIT License — see

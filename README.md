@@ -34,7 +34,7 @@ TTSNative is free and open source (MIT). It was called **Local TTS** until versi
   <a href="https://ttsnative.com/#overview"><img src="docs/media/ttsnative-promo-poster.webp" alt="TTSNative showcase video: any document, read aloud" width="860" /></a>
   <br />
   <a href="https://ttsnative.com/#overview"><strong>▶ Watch the overview (0:45)</strong></a> (the voice-over is spoken by TTSNative)
-  · <a href="https://ttsnative.com/#demo"><strong>▶ Watch the demo (2:17)</strong></a> (recorded from the running app, with its real narration)
+  · <a href="https://ttsnative.com/#demo"><strong>▶ Watch the demo (2:23)</strong></a> (recorded from the running app, with its real narration)
 </p>
 
 ![The reader narrating a document with the current sentence highlighted](docs/images/reader-light.png)
@@ -147,8 +147,6 @@ checksums. After that the app works fully offline. See [SECURITY.md](SECURITY.md
 [threat model](docs/security/threat-model.md).
 
 ## Screenshots
-
-Captured just before the rename, so the app's header still shows its former name, Local TTS.
 
 | Library                                 | Voice library                         |
 | --------------------------------------- | ------------------------------------- |

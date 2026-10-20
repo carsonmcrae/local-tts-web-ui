@@ -29,8 +29,14 @@
     #demo-end p { font-size: 24px; color: #55565c; margin: 6px 0; }
     #demo-end code { font: 600 22px ui-monospace, Consolas, monospace; background: #fff; border: 1px solid #e3e0da;
       padding: 10px 18px; border-radius: 12px; display: inline-block; margin-top: 22px; }`;
-  const logo = `<svg width="96" height="96" viewBox="0 0 32 32"><rect width="32" height="32" rx="8" fill="#4f46e5"/>
-    <path d="M9 20.5v-9M13.5 23v-14M18 19v-6M22.5 21.5v-11" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/></svg>`;
+  // The TTSNative app icon (brand/svg/ttsnative-app-icon.svg).
+  const logo = `<svg width="96" height="96" viewBox="0 0 64 64"><defs><linearGradient id="demo-tile"
+    gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="64" y2="64"><stop offset="0" stop-color="#4F46E5"/>
+    <stop offset="1" stop-color="#0891B2"/></linearGradient></defs><rect width="64" height="64" rx="15"
+    fill="url(#demo-tile)"/><g fill="#fff"><rect x="15.08" y="16.16" width="5.04" height="31.68" rx="2.52"/>
+    <rect x="22.28" y="17.6" width="5.04" height="14.4" rx="2.52"/><rect x="29.48" y="24.8" width="5.04"
+    height="14.4" rx="2.52"/><rect x="36.68" y="32" width="5.04" height="14.4" rx="2.52"/><rect x="43.88"
+    y="16.16" width="5.04" height="31.68" rx="2.52"/></g></svg>`;
   const arrow = `<svg viewBox="0 0 24 24" width="26" height="26"><path d="M4 2.5l15.5 9.2-6.9 1.6-3.6 6.2z"
     fill="#111" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/></svg>`;
 

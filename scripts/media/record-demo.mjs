@@ -220,8 +220,13 @@ async function studio(page, say, reference) {
   await click(page, nav(page, 'Voice Studio'));
   await page.waitForTimeout(1200);
   await click(page, page.getByRole('button', { name: 'Create voice' }).first());
-  const wizard = page.getByRole('dialog', { name: 'Create a voice' });
+  // First the chooser (quick or studio voice), then the quick voice's wizard in its place.
   await page.waitForTimeout(1500);
+  const chooser = page.getByRole('dialog', { name: 'Create a voice' });
+  await click(page, chooser.getByRole('button', { name: /Quick voice/ }));
+  const wizard = page.getByRole('dialog', { name: 'Create a quick voice' });
+  await wizard.waitFor();
+  await page.waitForTimeout(1200);
   await click(page, wizard.getByRole('button', { name: /Continue/ }));
   await say('This reference is a built-in synthetic voice, not a real person', '6');
   await wizard.getByTestId('voice-file-input').setInputFiles(reference);

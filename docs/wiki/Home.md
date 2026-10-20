@@ -11,7 +11,7 @@ Everything runs locally: no accounts, no cloud and no telemetry. The app listens
 ## Watch it
 
 - [Demo video](https://ttsnative.com/#demo)
-  (2:17): recorded from the running app, with its real narration.
+  (2:23): recorded from the running app, with its real narration.
 - [Showcase video](https://ttsnative.com/#overview)
   (0:45): an overview whose voice-over is spoken by TTSNative.
 

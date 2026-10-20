@@ -38,6 +38,11 @@ updates:
       interval: monthly
     cooldown:
       default-days: 30
+    ignore:
+      # torchaudio's last release is 2.11 and its compiled extensions are built against torch 2.11, so
+      # torch stays there too (docs/security/supply-chain.md). Revisit when Chatterbox drops torchaudio.
+      - dependency-name: torch
+        versions: ['>=2.12']
   - package-ecosystem: github-actions
     directories: ['/', '/.github/actions/*']
     schedule:

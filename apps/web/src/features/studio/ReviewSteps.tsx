@@ -16,6 +16,7 @@ import { Spinner } from '@/components/ui/Spinner';
 import { analyzeSamples } from '@/lib/audio/analysis';
 import { encodeWav } from '@/lib/audio/wav';
 import type { CapturedClip } from './CaptureStep';
+import { blobId, useDataUrl } from './useDataUrl';
 
 const ICONS = {
   ok: <CheckCircle2 size={17} className="text-success" />,
@@ -29,17 +30,6 @@ interface ReviewProps {
   onVerdict: (ok: boolean, wav: Blob) => void;
 }
 
-const blobIds = new WeakMap<Blob, number>();
-let nextBlobId = 1;
-function blobId(blob: Blob): number {
-  let id = blobIds.get(blob);
-  if (id === undefined) {
-    id = nextBlobId++;
-    blobIds.set(blob, id);
-  }
-  return id;
-}
-
 function useServerAnalysis(wav: Blob) {
   const query = useQuery({
     queryKey: ['analyze', blobId(wav)],
@@ -48,25 +38,6 @@ function useServerAnalysis(wav: Blob) {
     retry: false,
   });
   return { data: query.data, error: query.error, pending: query.isPending };
-}
-
-function readAsDataUrl(blob: Blob): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    // readAsDataURL always produces a string result.
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = () => reject(reader.error ?? new Error('Could not read the recording.'));
-    reader.readAsDataURL(blob);
-  });
-}
-
-/** A data: URL for local playback — WebKit refuses to play media from Blob URLs. */
-function useDataUrl(blob: Blob): string | undefined {
-  return useQuery({
-    queryKey: ['data-url', blobId(blob)],
-    queryFn: () => readAsDataUrl(blob),
-    staleTime: Infinity,
-  }).data;
 }
 
 export function ReviewStep({ clip, onRetake, onVerdict }: Readonly<ReviewProps>) {

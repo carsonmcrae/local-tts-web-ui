@@ -13,7 +13,9 @@ All notable changes to this project are documented here. The format follows
   from a long recording, then a build that averages the speaker over the session, tests five candidate
   voices and lets you pick by ear. Quick voices are unchanged.
 - **Delivery** for custom voices: Steady, Natural or Expressive.
-- **Bright microphone warning** in every voice-recording check.
+- **Microphone tone checks** (bright or thin, measured on vowels so "s" sounds don't count) in every
+  voice-recording check. In a studio session, the microphone check plays your recording back, picks
+  your USB/XLR microphone, and can correct the tone automatically, with a before-and-after preview.
 - **Chatterbox updates in place:** when the worker's locked packages change, Settings → Engines &
   models offers "Update available" instead of a reinstall.
 

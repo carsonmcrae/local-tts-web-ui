@@ -1,6 +1,7 @@
 /**
  * Purpose: Lossless microphone capture for studio voice sessions.
- * Scope: Lists audio inputs, opens the chosen one with every browser voice-processing stage off (echo
+ * Scope: Lists audio inputs (without Chrome's "Default" and "Communications" aliases) and picks the
+ *   likeliest studio microphone, opens the chosen one with every browser voice-processing stage off (echo
  *   cancellation, noise suppression, auto-gain), streams raw samples through an AudioWorklet served
  *   same-origin from /audio/capture-worklet.js, drives the same live level meter as MicRecorder, and
  *   releases the microphone on stop or cancel. Returns float samples at the device's own rate.
@@ -20,15 +21,27 @@ export interface RawClip {
   sampleRate: number;
 }
 
+// Chrome lists the current default and communications devices twice, under these ids.
+const ALIASES = new Set(['', 'default', 'communications']);
+const STUDIO =
+  /usb|xlr|rode|blue|yeti|shure|audio-technica|at20|samson|elgato|wave:|focusrite|scarlett|zoom|seiren|quadcast|fifine|maono|condenser/i;
+const CASUAL =
+  /webcam|camera|headset|hands-free|cloud|wireless|array|built-in|realtek|virtual|stereo mix|bluetooth/i;
+
 /** The microphones the browser offers; labels appear once the page has microphone permission. */
 export async function listInputs(): Promise<AudioInput[]> {
   const devices = (await navigator.mediaDevices?.enumerateDevices?.()) ?? [];
   return devices
-    .filter((device) => device.kind === 'audioinput' && device.deviceId !== '')
+    .filter((device) => device.kind === 'audioinput' && !ALIASES.has(device.deviceId))
     .map((device, index) => ({
       deviceId: device.deviceId,
       label: device.label || `Microphone ${index + 1}`,
     }));
+}
+
+/** The input that looks most like a studio microphone (USB/XLR, not a webcam or headset), if any. */
+export function preferredInput(inputs: readonly AudioInput[]): AudioInput | undefined {
+  return inputs.find((input) => STUDIO.test(input.label) && !CASUAL.test(input.label));
 }
 
 function join(chunks: readonly Float32Array[]): Float32Array {

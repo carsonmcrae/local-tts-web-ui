@@ -1,6 +1,7 @@
 """Purpose: HTTP endpoints for studio voice sessions.
 
-Scope: Check a microphone test clip; create, list, read and delete draft sessions; save (raw WAV,
+Scope: Check a microphone test clip and preview a tone correction on it; create (with an optional
+tone correction), list, read and delete draft sessions; save (raw WAV,
 FLAC or OGG body) or delete numbered takes; import a long recording; start the voice build job; play
 a candidate's test samples; and finish a session into a voice profile (with explicit consent).
 Does NOT belong: Session storage and the build itself (``sessions.py``, ``studio.py``).
@@ -10,17 +11,17 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, Path, Query, Request, Response
+from fastapi import APIRouter, Body, Path, Query, Request, Response
 from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import FileResponse
 
-from ltts.common import MB
+from ltts.common import MB, ApiModel
 from ltts.container import ServicesDep
 from ltts.jobs import JobOut
 from ltts.voices.profiles import VoiceProfileOut
-from ltts.voices.quality import QualityReport
+from ltts.voices.quality import ToneCorrection
 from ltts.voices.router import receive_upload
-from ltts.voices.sessions import TakeOut, VoiceSessionOut
+from ltts.voices.sessions import MicCheckOut, TakeOut, VoiceSessionOut
 from ltts.voices.studio import FinishRequest
 
 router = APIRouter(prefix="/api/voice-sessions", tags=["voice studio"])
@@ -28,10 +29,16 @@ SessionId = Annotated[str, Path(pattern=r"^[0-9a-f]{32}$")]
 TakeNumber = Annotated[int, Path(ge=1, le=999)]
 MAX_TAKE_BYTES = 20 * MB
 MAX_IMPORT_BYTES = 600 * MB  # 30 minutes of 48 kHz, 24-bit stereo WAV fits
+TrebleDb = Annotated[float, Query(alias="trebleDb", ge=-9.0, le=0.0)]
+BassDb = Annotated[float, Query(alias="bassDb", ge=0.0, le=6.0)]
+
+
+class SessionCreate(ApiModel):
+    tone: ToneCorrection | None = None
 
 
 @router.post("/microphone-check")
-async def check_microphone(request: Request, services: ServicesDep) -> QualityReport:
+async def check_microphone(request: Request, services: ServicesDep) -> MicCheckOut:
     target = await receive_upload(request, services, MAX_TAKE_BYTES)
     try:
         return await run_in_threadpool(services.voice_sessions.check_microphone, target)
@@ -39,9 +46,22 @@ async def check_microphone(request: Request, services: ServicesDep) -> QualityRe
         target.unlink(missing_ok=True)
 
 
+@router.post("/tone-preview", response_class=Response, responses={200: {"content": {"audio/wav": {}}}})
+async def preview_tone(
+    request: Request, services: ServicesDep, treble_db: TrebleDb = 0.0, bass_db: BassDb = 0.0
+) -> Response:
+    target = await receive_upload(request, services, MAX_TAKE_BYTES)
+    tone = ToneCorrection(treble_db=treble_db, bass_db=bass_db)
+    try:
+        audio = await run_in_threadpool(services.voice_sessions.preview_tone, target, tone)
+    finally:
+        target.unlink(missing_ok=True)
+    return Response(content=audio, media_type="audio/wav")
+
+
 @router.post("", status_code=201)
-def create_session(services: ServicesDep) -> VoiceSessionOut:
-    return services.voice_sessions.create()
+def create_session(services: ServicesDep, body: Annotated[SessionCreate | None, Body()] = None) -> VoiceSessionOut:
+    return services.voice_sessions.create(body.tone if body else None)
 
 
 @router.get("")

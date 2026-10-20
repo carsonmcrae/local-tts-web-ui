@@ -626,6 +626,23 @@ export type paths = {
     patch?: never;
     trace?: never;
   };
+  '/api/voice-sessions/tone-preview': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Preview Tone */
+    post: operations['preview_tone_api_voice_sessions_tone_preview_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/voices': {
     parameters: {
       query?: never;
@@ -933,6 +950,11 @@ export type components = {
      * @enum {string}
      */
     JobStatus: 'queued' | 'running' | 'succeeded' | 'failed' | 'canceled' | 'interrupted';
+    /** MicCheckOut */
+    MicCheckOut: {
+      report: components['schemas']['QualityReport'];
+      suggested: components['schemas']['ToneCorrection'] | null;
+    };
     /** PasteTextRequest */
     PasteTextRequest: {
       /** Text */
@@ -1012,11 +1034,10 @@ export type components = {
     };
     /** QualityReport */
     QualityReport: {
-      /**
-       * Brightnessdb
-       * @default 0
-       */
-      brightnessDb: number;
+      /** Bodydb */
+      bodyDb?: number | null;
+      /** Brightnessdb */
+      brightnessDb?: number | null;
       /** Clippingratio */
       clippingRatio: number;
       /** Durations */
@@ -1088,6 +1109,10 @@ export type components = {
       /** Text */
       text: string;
     };
+    /** SessionCreate */
+    SessionCreate: {
+      tone?: components['schemas']['ToneCorrection'] | null;
+    };
     /** StorageInfo */
     StorageInfo: {
       /** Audiocachebytes */
@@ -1158,6 +1183,22 @@ export type components = {
        * @enum {string}
        */
       source: 'recording' | 'import';
+    };
+    /**
+     * ToneCorrection
+     * @description A gentle shelving correction: treble (above about 4 kHz) cut, bass (below about 250 Hz) boost.
+     */
+    ToneCorrection: {
+      /**
+       * Bassdb
+       * @default 0
+       */
+      bassDb: number;
+      /**
+       * Trebledb
+       * @default 0
+       */
+      trebleDb: number;
     };
     /** ValidationError */
     ValidationError: {
@@ -1260,6 +1301,7 @@ export type components = {
       requiredSpeechS: number;
       /** Takes */
       takes: components['schemas']['TakeOut'][];
+      tone: components['schemas']['ToneCorrection'] | null;
       /** Updatedat */
       updatedAt: string;
       /** Usablespeechs */
@@ -2191,7 +2233,11 @@ export interface operations {
       path?: never;
       cookie?: never;
     };
-    requestBody?: never;
+    requestBody?: {
+      content: {
+        'application/json': components['schemas']['SessionCreate'] | null;
+      };
+    };
     responses: {
       /** @description Successful Response */
       201: {
@@ -2200,6 +2246,15 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['VoiceSessionOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
         };
       };
     };
@@ -2471,7 +2526,39 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          'application/json': components['schemas']['QualityReport'];
+          'application/json': components['schemas']['MicCheckOut'];
+        };
+      };
+    };
+  };
+  preview_tone_api_voice_sessions_tone_preview_post: {
+    parameters: {
+      query?: {
+        bassDb?: number;
+        trebleDb?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'audio/wav': unknown;
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
         };
       };
     };

@@ -66,7 +66,7 @@ export const take = (number: number, promptId: string | null, speechS = 12): Ses
 }); // prettier-ignore
 
 export const studioSession = (overrides: Partial<VoiceSession> = {}): VoiceSession => ({
-  id: ID, takes: [], usableSpeechS: 0, requiredSpeechS: 20, candidates: [], buildJobId: null,
+  id: ID, takes: [], usableSpeechS: 0, requiredSpeechS: 20, candidates: [], buildJobId: null, tone: null,
   createdAt: '2026-10-20T10:00:00+00:00', updatedAt: '2026-10-20T10:00:00+00:00', ...overrides,
 }); // prettier-ignore
 
@@ -118,13 +118,18 @@ export function studioApi(initial: VoiceSession | null, overrides: Record<string
     'GET /api/voice-profiles/consent': { statement: 'I have permission to use this voice.' },
     'GET /api/voice-sessions': () => (state.session ? [state.session] : []),
     'GET /api/voice-sessions/': sessionOr404,
-    'POST /api/voice-sessions': () => {
-      state.session = studioSession();
+    'POST /api/voice-sessions': (_url: URL, init: RequestInit) => {
+      const body = JSON.parse(String(init.body)) as { tone: VoiceSession['tone'] };
+      state.session = studioSession({ tone: body.tone });
       return json(state.session, 201);
     },
-    'POST /api/voice-sessions/microphone-check': quality(5, [
-      { code: 'bright', severity: 'warning', message: 'The microphone sounds thin or tinny.' },
-    ]),
+    'POST /api/voice-sessions/microphone-check': {
+      report: quality(5, [
+        { code: 'bright', severity: 'warning', message: 'The microphone sounds bright or harsh.' },
+      ]),
+      suggested: { trebleDb: -4.5, bassDb: 0 },
+    },
+    'POST /api/voice-sessions/tone-preview': () => new Response(new Blob(['corrected'])),
     'PUT /api/voice-sessions/': saveTake,
     'POST /api/voice-sessions/': post,
     'GET /api/jobs/': nextJob,

@@ -1,13 +1,14 @@
 /**
  * Purpose: Tests for lossless studio capture and 24-bit WAV encoding.
- * Scope: Input listing (labels, permission-less entries), the secure-context and browser-support
+ * Scope: Input listing (labels, permission-less entries, Chrome's default and communications aliases)
+ *   and the preferred studio microphone, the secure-context and browser-support
  *   checks, opening a chosen device with voice processing off, collecting worklet batches until
  *   "done", the level meter, releasing the microphone, a failed start, and 24-bit PCM samples —
  *   with fake media devices, AudioContext and AudioWorkletNode (jsdom has neither).
  * Does NOT belong: The quick recorder (audio.test.ts) or the session UI.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { listInputs, PcmRecorder, WORKLET_URL } from './pcmRecorder';
+import { listInputs, PcmRecorder, preferredInput, WORKLET_URL } from './pcmRecorder';
 import { MicrophoneError } from './recorder';
 import { encodeWavBuffer } from './wav';
 
@@ -48,6 +49,8 @@ function installAudio({ secure = true, worklet = true } = {}) {
     mediaDevices: {
       getUserMedia,
       enumerateDevices: async () => [
+        { kind: 'audioinput', deviceId: 'default', label: 'Default - USB Mic' },
+        { kind: 'audioinput', deviceId: 'communications', label: 'Communications - USB Mic' },
         { kind: 'audioinput', deviceId: 'usb', label: 'USB Mic' },
         { kind: 'audioinput', deviceId: 'second', label: '' },
         { kind: 'audioinput', deviceId: '', label: '' },
@@ -100,6 +103,16 @@ describe('listInputs', () => {
       { deviceId: 'usb', label: 'USB Mic' },
       { deviceId: 'second', label: 'Microphone 2' },
     ]);
+  });
+
+  it('prefers a studio microphone over webcams and headsets', () => {
+    const inputs = [
+      { deviceId: 'cam', label: 'Microphone (HD Pro Webcam C920)' },
+      { deviceId: 'headset', label: 'Microphone (HyperX Cloud III Wireless)' },
+      { deviceId: 'rode', label: 'Microphone (RODE NT-USB)' },
+    ];
+    expect(preferredInput(inputs)?.deviceId).toBe('rode');
+    expect(preferredInput(inputs.slice(0, 2))).toBeUndefined();
   });
 
   it('returns nothing without media devices', async () => {

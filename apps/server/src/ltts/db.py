@@ -110,6 +110,10 @@ MIGRATIONS: tuple[str, ...] = (
         PRIMARY KEY (session_id, number)
     );
     """,
+    # 3: a studio session's tone correction for a bright or thin microphone
+    """
+    ALTER TABLE voice_sessions ADD COLUMN tone_json TEXT;
+    """,
 )
 
 

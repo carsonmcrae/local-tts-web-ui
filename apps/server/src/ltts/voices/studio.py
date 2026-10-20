@@ -71,7 +71,7 @@ def rank_prompts(
 
     def score(i: int) -> float:
         q = takes[i].quality
-        bright = 0.5 if q.brightness_db > BRIGHT_DB else 0.0
+        bright = 0.5 if q.brightness_db is not None and q.brightness_db > BRIGHT_DB else 0.0
         return (
             min(q.speech_s, 12) / 12
             + min(q.snr_db, 40) / 40
@@ -175,7 +175,7 @@ class StudioService:
         profile = self._profiles.create_studio(
             StudioVoice(
                 name=request.name.strip(),
-                reference=self._sessions.take_path(session_id, take.number),
+                reference=self._sessions.build_audio(session_id, take.number),
                 voice=self._sessions.candidate_dir(session_id, candidate.index) / "voice.safetensors",
                 takes=self._sessions.folder(session_id) / "takes",
                 quality=take.quality,

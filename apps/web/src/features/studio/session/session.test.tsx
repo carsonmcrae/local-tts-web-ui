@@ -82,11 +82,28 @@ describe('Studio voice wizard', () => {
     expect(within(dialog).getByText('Now read the line aloud.')).toBeInTheDocument();
     await user.click(within(dialog).getByRole('button', { name: 'Stop' }));
     expect(
-      await within(dialog).findByText('The microphone sounds thin or tinny.'),
+      await within(dialog).findByText('The microphone sounds bright or harsh.'),
     ).toBeInTheDocument();
+    const correct = within(dialog).getByRole('switch', { name: 'Correct the tone automatically' });
+    expect(correct).toBeChecked();
+    expect(within(dialog).getByText(/treble lowered by 4.5 dB/)).toBeInTheDocument();
+    const original = within(dialog).getByRole('button', { name: 'Play your recording' });
+    await waitFor(() => expect(original).toBeEnabled());
+    await user.click(original);
+    await user.click(await within(dialog).findByRole('button', { name: 'Stop' }));
+    const fixed = within(dialog).getByRole('button', { name: 'Play it corrected' });
+    await waitFor(() => expect(fixed).toBeEnabled());
+    await user.click(fixed);
+    expect(await within(dialog).findByRole('button', { name: 'Stop' })).toBeInTheDocument();
+    await user.click(correct);
+    expect(correct).not.toBeChecked();
+    await user.click(correct);
+    expect(within(dialog).getByRole('button', { name: 'Check again' })).toBeInTheDocument();
 
     await user.click(within(dialog).getByRole('button', { name: /Continue/ }));
     expect(await within(dialog).findByText(/Passage 1 of 48/)).toBeInTheDocument();
+    const created = calls.find((c) => c.method === 'POST' && c.path === '/api/voice-sessions');
+    expect(JSON.parse(String(created?.body))).toEqual({ tone: { trebleDb: -4.5, bassDb: 0 } });
     expect(within(dialog).getByRole('button', { name: /Continue/ })).toBeDisabled();
     await recordTake(user, dialog, tick);
     expect(await within(dialog).findByText(/Passage 2 of 48/)).toBeInTheDocument();
@@ -99,6 +116,9 @@ describe('Studio voice wizard', () => {
 
     await user.click(within(dialog).getByRole('button', { name: /Continue/ }));
     expect(within(dialog).getByText(/measures all 2 usable takes/)).toBeInTheDocument();
+    expect(within(dialog).getByText(/Tone correction is on/)).toHaveTextContent(
+      'treble lowered by 4.5 dB',
+    );
     await user.click(within(dialog).getByRole('button', { name: 'Build my voice' }));
     expect(
       await within(dialog).findByText('Listening to your takes (0 of 2)…'),
@@ -273,15 +293,32 @@ describe('Studio voice wizard', () => {
 describe('Studio edge cases', () => {
   it('reports each microphone check verdict and a microphone that would not start', async () => {
     const reports = [
-      quality(5),
-      quality(5, [{ code: 'no_speech', severity: 'error', message: 'We couldn’t hear you.' }]),
+      { report: quality(5), suggested: null },
+      {
+        report: quality(5, [
+          { code: 'no_speech', severity: 'error', message: 'We couldn’t hear you.' },
+        ]),
+        suggested: null,
+      },
+      {
+        report: quality(5, [{ code: 'thin', severity: 'warning', message: 'Sounds thin.' }]),
+        suggested: { trebleDb: 0, bassDb: 3 },
+      },
     ];
-    studioApi(null, { 'POST /api/voice-sessions/microphone-check': () => reports.shift() });
+    studioApi(null, {
+      'POST /api/voice-sessions/microphone-check': () => reports.shift(),
+      'POST /api/voice-sessions/tone-preview': () =>
+        json({ error: { code: 'unsupported_audio', message: 'Preview failed.' } }, 415),
+    });
     const tick = controlFrames();
     const user = userEvent.setup();
     renderWithApp(<VoiceStudioPage />);
     const dialog = await openStudio(user);
     await user.click(within(dialog).getByRole('button', { name: /Continue/ }));
+    const microphone = await within(dialog).findByLabelText('Microphone');
+    await waitFor(() => expect(microphone).toHaveValue('usb')); // the studio microphone is picked for you
+    await user.selectOptions(microphone, '');
+    expect(microphone).toHaveValue(''); // and choosing the system default sticks
     mic.startError = new DOMException('missing', 'NotFoundError');
     await user.click(await within(dialog).findByRole('button', { name: 'Check microphone' }));
     expect(await within(dialog).findByText(/No microphone was found/)).toBeInTheDocument();
@@ -289,14 +326,18 @@ describe('Studio edge cases', () => {
     for (const [seconds, verdict] of [
       [9, 'Your microphone sounds good'],
       [18, 'We couldn’t hear you.'],
+      [27, 'Sounds thin.'],
     ] as const) {
-      await user.click(within(dialog).getByRole('button', { name: 'Check microphone' }));
+      await user.click(within(dialog).getByRole('button', { name: /Check (microphone|again)/ }));
       await waitFor(() =>
         expect(within(dialog).getByRole('button', { name: 'Stop' })).toBeInTheDocument(),
       );
       tick(seconds);
       expect(await within(dialog).findByText(verdict)).toBeInTheDocument();
     }
+    expect(within(dialog).getByText(/low end raised by 3 dB/)).toBeInTheDocument();
+    expect(await within(dialog).findByText('Preview failed.')).toBeInTheDocument();
+    expect(mic.started).toEqual([undefined, undefined, undefined]);
   });
 
   it('explains a session or voice that could not be created', async () => {

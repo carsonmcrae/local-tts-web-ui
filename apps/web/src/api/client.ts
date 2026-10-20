@@ -92,6 +92,11 @@ export async function api<T>(path: string, options: RequestOptions = {}): Promis
   return (await response.json()) as T;
 }
 
+/** A binary response, such as generated audio, as a Blob. */
+export async function apiBlob(path: string, options: RequestOptions = {}): Promise<Blob> {
+  return (await send(path, options)).blob();
+}
+
 export interface PreparedAudio {
   /** Direct same-origin URL for an audio element (WebKit refuses media from Blob URLs). */
   url: string;

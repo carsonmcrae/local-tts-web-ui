@@ -108,6 +108,12 @@ to their newest releases that are old enough (for example `certifi` 2026.10.18 â
 release needs `antlr4-python3-runtime` 4.9, which ships only as an sdist and would run its `setup.py` on
 install. Remove the exception after 2026-10-23, when the 14-day window covers that release.
 
+`certifi` 2026.10.19 (uploaded 2026-10-20) fixes GHSA-6q48-6c7w-9gw2, which `pip-audit` began reporting
+against 2026.7.22 on 2026-10-20 and which failed the security job for every pull request. Both Python
+projects take it through a security exception (`exclude-newer-package`, cut-off 2026-10-21) rather than
+waiting out the cool-down; certifi is Mozilla's CA bundle as data, with no install-time code. Remove the
+exception after 2026-11-03.
+
 Both Python projects use a rolling window (`exclude-newer = "14 days"`, uv 0.9.17 or newer), so a
 re-lock always considers releases at least 14 days old without a date to bump. npm applies the same
 rule to new resolutions through `min-release-age=14` in `.npmrc` (npm 11.10 or newer).

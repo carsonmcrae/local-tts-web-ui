@@ -60,6 +60,9 @@ packages = ["src/ltts"]
 [tool.uv]
 # Supply-chain cool-down: only resolve releases that have been public for at least two weeks.
 exclude-newer = "14 days"
+# Security exception: certifi 2026.10.19 fixes GHSA-6q48-6c7w-9gw2 and is newer than the window. Drop this
+# after 2026-11-03, when the 14-day window covers it.
+exclude-newer-package = { certifi = "2026-10-21T00:00:00Z" }
 
 [tool.ruff]
 line-length = 120

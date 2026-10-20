@@ -1,12 +1,12 @@
 # Security policy
 
-Local TTS processes untrusted documents and audio and downloads third-party model files, so it is
+TTSNative processes untrusted documents and audio and downloads third-party model files, so it is
 built with security as a first-class requirement even though it runs on your own computer.
 
 ## Reporting a vulnerability
 
 Please report vulnerabilities privately through
-[GitHub private vulnerability reporting](https://github.com/carsonmcrae/local-tts-web-ui/security/advisories/new).
+[GitHub private vulnerability reporting](https://github.com/carsonmcrae/ttsnative/security/advisories/new).
 Do not open a public issue. Include steps to reproduce and the affected version (Settings → About).
 You can expect an acknowledgement within a week.
 

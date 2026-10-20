@@ -46,14 +46,14 @@ then run `npm run dev`. See [Installation](Installation#uninstalling).
 ## Still stuck?
 
 - Read the full
-  [troubleshooting guide](https://github.com/carsonmcrae/local-tts-web-ui/blob/main/docs/guides/troubleshooting.md).
+  [troubleshooting guide](https://github.com/carsonmcrae/ttsnative/blob/main/docs/guides/troubleshooting.md).
 - Check the [FAQ](FAQ).
-- Ask in [Discussions](https://github.com/carsonmcrae/local-tts-web-ui/discussions/categories/q-a), or
-  [open an issue](https://github.com/carsonmcrae/local-tts-web-ui/issues) with the output of
+- Ask in [Discussions](https://github.com/carsonmcrae/ttsnative/discussions/categories/q-a), or
+  [open an issue](https://github.com/carsonmcrae/ttsnative/issues) with the output of
   `npm run doctor` or **Settings → About → Copy diagnostics**. Please don't paste document text,
   voice recordings or other personal data into public issues.
 - Security problems: report them privately (see
   [Privacy and Security](Privacy-and-Security#reporting-a-vulnerability)).
 
-[SUPPORT.md](https://github.com/carsonmcrae/local-tts-web-ui/blob/main/SUPPORT.md) lists where to go
+[SUPPORT.md](https://github.com/carsonmcrae/ttsnative/blob/main/SUPPORT.md) lists where to go
 for each kind of help. It's a volunteer project, so replies may take a few days.

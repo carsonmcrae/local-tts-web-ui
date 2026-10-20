@@ -30,7 +30,7 @@ from ltts.security import SecurityMiddleware
 log = logging.getLogger("ltts.app")
 # Shown in the OpenAPI description (the interactive docs in development).
 AUTHOR = "Carson McRae"
-HOMEPAGE = "https://github.com/carsonmcrae/local-tts-web-ui"
+HOMEPAGE = "https://github.com/carsonmcrae/ttsnative"
 
 
 def _housekeeping(services: Services) -> None:
@@ -85,8 +85,8 @@ def create_app(
             engine.close()
 
     app = FastAPI(
-        title="Local TTS API",
-        description=f"The local API of Local TTS by {AUTHOR} ({HOMEPAGE}).",
+        title="TTSNative API",
+        description=f"The local API of TTSNative by {AUTHOR} ({HOMEPAGE}).",
         version=__version__,
         contact={"name": AUTHOR, "url": HOMEPAGE},
         license_info={"name": "MIT", "identifier": "MIT"},

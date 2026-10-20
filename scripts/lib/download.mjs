@@ -42,31 +42,25 @@ function assertAllowedUrl(url, allowedHosts) {
 function request(url, allowedHosts, redirectsLeft) {
   const target = assertAllowedUrl(url, allowedHosts);
   return new Promise((resolve, reject) => {
-    const req = https.get(
-      target,
-      { headers: { 'user-agent': 'local-tts-web-ui-bootstrap' } },
-      (res) => {
-        const status = res.statusCode ?? 0;
-        if (status >= 300 && status < 400 && res.headers.location) {
-          res.resume();
-          if (redirectsLeft <= 0) {
-            reject(new BootstrapError('Too many redirects while downloading.'));
-            return;
-          }
-          const next = new URL(res.headers.location, target).toString();
-          request(next, allowedHosts, redirectsLeft - 1).then(resolve, reject);
+    const req = https.get(target, { headers: { 'user-agent': 'ttsnative-bootstrap' } }, (res) => {
+      const status = res.statusCode ?? 0;
+      if (status >= 300 && status < 400 && res.headers.location) {
+        res.resume();
+        if (redirectsLeft <= 0) {
+          reject(new BootstrapError('Too many redirects while downloading.'));
           return;
         }
-        if (status !== 200) {
-          res.resume();
-          reject(
-            new BootstrapError(`Download failed with HTTP ${status} from ${target.hostname}.`),
-          );
-          return;
-        }
-        resolve(res);
-      },
-    );
+        const next = new URL(res.headers.location, target).toString();
+        request(next, allowedHosts, redirectsLeft - 1).then(resolve, reject);
+        return;
+      }
+      if (status !== 200) {
+        res.resume();
+        reject(new BootstrapError(`Download failed with HTTP ${status} from ${target.hostname}.`));
+        return;
+      }
+      resolve(res);
+    });
     req.setTimeout(60_000, () => req.destroy(new Error('Network timeout after 60 seconds.')));
     req.on('error', (error) =>
       reject(

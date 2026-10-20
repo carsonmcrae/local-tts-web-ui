@@ -16,7 +16,7 @@ import type { Plugin } from 'vite';
 import { defineConfig } from 'vitest/config';
 
 const apiPort = process.env.LTTS_API_PORT ?? '8765';
-const BANNER = '/*! Local TTS | Copyright (c) 2026 Carson McRae | MIT License */';
+const BANNER = '/*! TTSNative | Copyright (c) 2026 Carson McRae | MIT License */';
 const { version } = JSON.parse(
   readFileSync(new URL('./package.json', import.meta.url), 'utf8'),
 ) as { version: string };

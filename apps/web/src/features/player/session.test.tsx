@@ -83,7 +83,7 @@ describe('Media Session', () => {
     mockReaderApi(doc);
     const { session } = installMediaSession();
     renderReader(doc);
-    await waitFor(() => expect(session.metadata).toMatchObject({ artist: 'Local TTS' }));
+    await waitFor(() => expect(session.metadata).toMatchObject({ artist: 'TTSNative' }));
   });
 });
 

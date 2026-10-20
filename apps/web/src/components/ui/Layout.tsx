@@ -12,7 +12,7 @@ import { cn } from '@/lib/cn';
 
 export function usePageTitle(title: string): void {
   useEffect(() => {
-    document.title = title ? `${title} · Local TTS` : 'Local TTS';
+    document.title = title ? `${title} · TTSNative` : 'TTSNative';
   }, [title]);
 }
 

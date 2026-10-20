@@ -114,7 +114,7 @@ def _doctor(_: argparse.Namespace) -> int:
 
     settings = Settings()
     store = ModelStore(settings.resolved_models_dir, reserve_mb=settings.min_free_disk_mb)
-    print(f"Local TTS {__version__} — Python {platform.python_version()} on {platform.platform()}")
+    print(f"TTSNative {__version__} — Python {platform.python_version()} on {platform.platform()}")
     print(f"Data directory:   {settings.resolved_data_dir}")
     print(f"Models directory: {settings.resolved_models_dir}")
     print(f"ONNX Runtime {onnxruntime.__version__}: {', '.join(onnxruntime.get_available_providers())}")
@@ -135,7 +135,7 @@ def _openapi(_: argparse.Namespace) -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(prog="ltts", description="Local TTS server")
+    parser = argparse.ArgumentParser(prog="ltts", description="TTSNative server")
     parser.add_argument("--version", action="version", version=__version__)
     sub = parser.add_subparsers(dest="command", required=True)
     serve = sub.add_parser("serve", help="run the API (and optionally the built UI)")

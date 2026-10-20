@@ -1,7 +1,7 @@
 # Attribution
 
-Local TTS was created by **Carson McRae**
-([github.com/carsonmcrae/local-tts-web-ui](https://github.com/carsonmcrae/local-tts-web-ui)) and is
+TTSNative was created by **Carson McRae**
+([github.com/carsonmcrae/ttsnative](https://github.com/carsonmcrae/ttsnative)) and is
 released under the [MIT License](LICENSE). You may use, study, fork, modify, sell and redistribute it.
 This page separates what the licence requires from what the author asks.
 
@@ -19,7 +19,7 @@ Distributing the code without that notice is outside what the licence permits.
 These are courtesies. The licence does not require them.
 
 - **Credit the project** in your README or about page, for example: "Based on
-  [Local TTS](https://github.com/carsonmcrae/local-tts-web-ui) by Carson McRae (MIT)".
+  [TTSNative](https://github.com/carsonmcrae/ttsnative) by Carson McRae (MIT)".
 - **Keep the per-file notices.** Source files start with an `SPDX-License-Identifier: MIT` line and a
   copyright line. They make the licence of each file clear when it is copied on its own.
 - **Don't imply endorsement.** The MIT License covers copyright in the code; it says nothing about the
@@ -30,7 +30,7 @@ These are courtesies. The licence does not require them.
 
 ## Third-party work
 
-Local TTS builds on other people's work. Its dependencies, models and fonts keep their own licences;
+TTSNative builds on other people's work. Its dependencies, models and fonts keep their own licences;
 see the [README](README.md#licence-and-credits) and the
 [licence inventory](docs/security/license-inventory.md). The built web app ships their licence texts in
 `THIRD-PARTY-LICENSES.md`.

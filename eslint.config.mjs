@@ -91,6 +91,11 @@ export default defineConfig(
     },
   },
   {
+    // The public website's scripts run in the visitor's browser.
+    files: ['site/**/*.js'],
+    languageOptions: { globals: { ...globals.browser } },
+  },
+  {
     files: ['apps/web/src/**/*.test.{ts,tsx}', 'apps/web/src/test/**', 'tests/**'],
     rules: { 'max-lines-per-function': 'off', '@typescript-eslint/no-floating-promises': 'off' },
   },

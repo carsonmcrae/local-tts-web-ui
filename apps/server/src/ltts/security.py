@@ -115,7 +115,7 @@ class SecurityMiddleware:
             return 403, "cross_site_blocked", "Cross-site requests are not allowed."
         path: str = scope["path"]
         if path.startswith("/api/") and scope["method"] not in SAFE_METHODS and CLIENT_HEADER not in headers:
-            return 403, "missing_client_header", "Requests must come from the Local TTS app."
+            return 403, "missing_client_header", "Requests must come from the TTSNative app."
         client = scope.get("client")
         if self.settings.allow_network and not _is_loopback(client[0] if client else None):
             return self._check_token(headers, scope.get("query_string", b""))

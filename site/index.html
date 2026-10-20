@@ -1,447 +1,576 @@
 <!doctype html>
 <!--
-  Purpose: The project's public landing page (GitHub Pages): what Local TTS is, the overview and demo
-    videos playing inline with captions, features and how to install.
-  Scope: One static page with inline styles and no scripts or third-party requests. The Pages workflow
-    copies the videos from docs/media into ./media at build time.
-  Does NOT belong: The app itself (apps/web) or user documentation (the wiki).
+  Purpose: The TTSNative website: what the app does, a browser speech demo, and how to install it.
+  Scope: One static, accessible page (styles.css, sections.css, demo.js) with no third-party requests.
+    The build (scripts/site/build-site.mjs) adds the videos, screenshots and logos, fills in
+    %BASE_URL%, and drops sections whose files are missing (marked with "requires" comments).
+  Does NOT belong: The app itself (apps/web) or the user guide (the wiki).
 -->
 <html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Local TTS: private text-to-speech for your documents</title>
+    <title>TTSNative: natural text-to-speech, private and local</title>
     <meta
       name="description"
-      content="Turn PDFs, EPUBs, Word and Markdown files into natural narration with read-along highlighting. Optional consent-based voice cloning. Free, open source, and runs entirely on your computer."
+      content="TTSNative reads PDFs, e-books and documents aloud with natural voices, entirely on your own computer. Free and open source, with sentence-by-sentence highlighting, audio export and optional consent-based voice cloning."
     />
-    <meta property="og:title" content="Local TTS" />
+    <link rel="canonical" href="%BASE_URL%/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="TTSNative" />
+    <meta property="og:title" content="TTSNative: natural text-to-speech, private and local" />
     <meta
       property="og:description"
-      content="Any document, read aloud: privately, on your own computer."
+      content="Any document, read aloud with natural voices, on your own computer. Free and open source."
     />
+    <meta property="og:url" content="%BASE_URL%/" />
+    <meta property="og:image" content="%BASE_URL%/media/social-preview.png" />
     <meta
-      property="og:image"
-      content="https://carsonmcrae.github.io/local-tts-web-ui/media/social-preview.png"
+      property="og:image:alt"
+      content="TTSNative: natural text-to-speech. Private, powerful, and local."
     />
-    <meta property="og:type" content="website" />
     <meta name="twitter:card" content="summary_large_image" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#f7f6f3" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0e0f14" media="(prefers-color-scheme: dark)" />
     <link rel="icon" href="favicon.svg" type="image/svg+xml" />
-    <style>
-      @font-face {
-        font-family: Inter;
-        src: url('fonts/inter-latin-wght-normal.woff2') format('woff2');
-        font-weight: 100 900;
-        font-display: swap;
-      }
-      :root {
-        color-scheme: light dark;
-        --bg: #f7f6f3;
-        --surface: #ffffff;
-        --line: #e3e0da;
-        --text: #1c1d21;
-        --muted: #55565c;
-        --accent: #4f46e5;
-        --accent-text: #4338ca;
-        --accent-soft: #eef0ff;
-      }
-      @media (prefers-color-scheme: dark) {
-        :root {
-          --bg: #121316;
-          --surface: #1a1b1f;
-          --line: #2c2d33;
-          --text: #ececef;
-          --muted: #a9aab1;
-          --accent: #5b54e8;
-          --accent-text: #aaa6ff;
-          --accent-soft: #24233d;
-        }
-      }
-      * {
-        box-sizing: border-box;
-      }
-      body {
-        margin: 0;
-        background: var(--bg);
-        color: var(--text);
-        font:
-          17px/1.6 Inter,
-          system-ui,
-          -apple-system,
-          'Segoe UI',
-          sans-serif;
-      }
-      a {
-        color: var(--accent-text);
-      }
-      .wrap {
-        max-width: 1120px;
-        margin: 0 auto;
-        padding: 0 20px;
-      }
-      header.top {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 16px;
-        padding: 18px 0;
-      }
-      .brand {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        font-weight: 700;
-        font-size: 19px;
-        color: var(--text);
-        text-decoration: none;
-      }
-      .brand svg {
-        width: 34px;
-        height: 34px;
-      }
-      nav.links {
-        display: flex;
-        gap: 20px;
-        flex-wrap: wrap;
-      }
-      nav.links a {
-        color: var(--muted);
-        text-decoration: none;
-        font-weight: 550;
-        font-size: 15px;
-      }
-      nav.links a:hover {
-        color: var(--text);
-      }
-      .hero {
-        text-align: center;
-        padding: 48px 0 28px;
-      }
-      h1 {
-        font-size: clamp(40px, 7vw, 76px);
-        line-height: 1.03;
-        letter-spacing: -0.04em;
-        margin: 0 0 18px;
-      }
-      .grad {
-        background: linear-gradient(110deg, #4f46e5 10%, #8b5cf6 90%);
-        -webkit-background-clip: text;
-        background-clip: text;
-        color: transparent;
-      }
-      .lede {
-        font-size: clamp(18px, 2.2vw, 21px);
-        color: var(--muted);
-        max-width: 720px;
-        margin: 0 auto 28px;
-      }
-      .actions {
-        display: flex;
-        gap: 12px;
-        justify-content: center;
-        flex-wrap: wrap;
-      }
-      .btn {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        padding: 12px 22px;
-        border-radius: 999px;
-        font-weight: 650;
-        text-decoration: none;
-        border: 1px solid var(--line);
-        background: var(--surface);
-        color: var(--text);
-      }
-      .btn.primary {
-        background: var(--accent);
-        border-color: var(--accent);
-        color: #fff;
-      }
-      .video {
-        margin: 28px auto 0;
-        border-radius: 18px;
-        overflow: hidden;
-        border: 1px solid var(--line);
-        box-shadow: 0 40px 80px -40px rgba(28, 29, 33, 0.45);
-        background: #000;
-      }
-      .video video {
-        display: block;
-        width: 100%;
-        height: auto;
-        aspect-ratio: 16 / 9;
-      }
-      .note {
-        color: var(--muted);
-        font-size: 14px;
-        text-align: center;
-        margin: 10px 0 0;
-      }
-      section {
-        padding: 56px 0 8px;
-      }
-      h2 {
-        font-size: clamp(28px, 4vw, 40px);
-        letter-spacing: -0.03em;
-        line-height: 1.1;
-        margin: 0 0 10px;
-      }
-      .section-lede {
-        color: var(--muted);
-        margin: 0 0 24px;
-        max-width: 760px;
-      }
-      .grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-        gap: 16px;
-      }
-      .card {
-        background: var(--surface);
-        border: 1px solid var(--line);
-        border-radius: 16px;
-        padding: 20px 22px;
-      }
-      .card h3 {
-        margin: 0 0 6px;
-        font-size: 18px;
-      }
-      .card p {
-        margin: 0;
-        color: var(--muted);
-        font-size: 16px;
-      }
-      .tag {
-        display: inline-block;
-        font-size: 12px;
-        font-weight: 700;
-        letter-spacing: 0.04em;
-        text-transform: uppercase;
-        color: var(--accent-text);
-        background: var(--accent-soft);
-        border-radius: 6px;
-        padding: 2px 8px;
-        margin-bottom: 10px;
-      }
-      pre {
-        background: var(--surface);
-        border: 1px solid var(--line);
-        border-radius: 14px;
-        padding: 18px 20px;
-        overflow-x: auto;
-        font:
-          15px/1.7 ui-monospace,
-          'Cascadia Code',
-          Consolas,
-          monospace;
-      }
-      footer {
-        margin-top: 64px;
-        padding: 28px 0 40px;
-        border-top: 1px solid var(--line);
-        color: var(--muted);
-        font-size: 14px;
-      }
-      footer .row {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px 22px;
-        justify-content: space-between;
-      }
-      @media (max-width: 640px) {
-        nav.links {
-          display: none;
-        }
-        .hero {
-          padding-top: 24px;
-        }
-      }
-    </style>
+    <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="sections.css" />
+    <script src="demo.js" defer></script>
   </head>
   <body>
-    <div class="wrap">
-      <header class="top">
-        <a class="brand" href="./" aria-label="Local TTS home">
-          <svg viewBox="0 0 32 32" aria-hidden="true">
-            <rect width="32" height="32" rx="8" fill="#4f46e5" />
-            <path
-              d="M9 20.5v-9M13.5 23v-14M18 19v-6M22.5 21.5v-11"
-              stroke="#fff"
-              stroke-width="2.4"
-              stroke-linecap="round"
-            />
+    <a class="skip" href="#main">Skip to content</a>
+    <header class="top">
+      <div class="wrap top-row">
+        <a class="brand" href="./" aria-label="TTSNative home">
+          <svg viewBox="0 0 64 64" width="30" height="30" aria-hidden="true">
+            <defs>
+              <linearGradient
+                id="mark"
+                gradientUnits="userSpaceOnUse"
+                x1="0"
+                y1="0"
+                x2="64"
+                y2="64"
+              >
+                <stop offset="0" class="stop-a" />
+                <stop offset="1" class="stop-b" />
+              </linearGradient>
+            </defs>
+            <g fill="url(#mark)">
+              <rect x="8.5" y="10" width="7" height="44" rx="3.5" />
+              <rect x="18.5" y="12" width="7" height="20" rx="3.5" />
+              <rect x="28.5" y="22" width="7" height="20" rx="3.5" />
+              <rect x="38.5" y="32" width="7" height="20" rx="3.5" />
+              <rect x="48.5" y="10" width="7" height="44" rx="3.5" />
+            </g>
           </svg>
-          Local TTS
+          <span class="wordmark">TTS<span>Native</span></span>
         </a>
-        <nav class="links" aria-label="Page">
-          <a href="#overview">Overview</a>
+        <nav aria-label="Main">
           <a href="#features">Features</a>
-          <a href="#demo">Demo</a>
-          <a href="#start">Get started</a>
-          <a href="https://github.com/carsonmcrae/local-tts-web-ui/wiki">Guide</a>
-          <a href="https://github.com/carsonmcrae/local-tts-web-ui">GitHub</a>
+          <a href="#try">Try it</a>
+          <a href="#install">Install</a>
+          <a href="#engineering">Engineering</a>
+          <a href="https://github.com/carsonmcrae/ttsnative">GitHub</a>
         </nav>
-      </header>
+      </div>
+    </header>
 
-      <main>
-        <div class="hero" id="overview">
-          <h1>Any document.<br /><span class="grad">Read aloud.</span></h1>
-          <p class="lede">
-            Turn PDFs, e-books, Word files and notes into natural narration, and follow along
-            sentence by sentence. Optionally, create a voice of your own. Everything runs on your
-            computer: no accounts, no cloud, no telemetry.
+    <main id="main">
+      <section class="hero wrap" aria-labelledby="hero-title">
+        <div>
+          <p class="eyebrow">Free and open source · Runs on your computer</p>
+          <h1 id="hero-title">Natural text-to-speech. Private, powerful, and local.</h1>
+          <p class="lead">
+            TTSNative reads your PDFs, e-books and documents aloud with natural voices, highlighting
+            each sentence as it speaks. Speech is generated on your own computer: no accounts, no
+            subscriptions, no telemetry and no cloud inference.
           </p>
           <div class="actions">
-            <a class="btn primary" href="#start">Get started</a>
-            <a class="btn" href="https://github.com/carsonmcrae/local-tts-web-ui/releases/latest"
-              >Latest release</a
-            >
-            <a class="btn" href="https://github.com/carsonmcrae/local-tts-web-ui">View on GitHub</a>
+            <a class="btn primary" href="#install">Install TTSNative</a>
+            <a class="btn" href="#try">Try speech in your browser</a>
+            <a class="btn ghost" href="https://github.com/carsonmcrae/ttsnative">View the source</a>
           </div>
-          <div class="video">
-            <video
-              controls
-              playsinline
-              preload="metadata"
-              poster="media/local-tts-promo-poster.webp"
-            >
-              <source src="media/local-tts-promo.mp4" type="video/mp4" />
-              <track
-                kind="captions"
-                src="media/local-tts-promo-captions.vtt"
-                srclang="en"
-                label="English"
-                default
-              />
-              <a href="media/local-tts-promo.mp4">Download the overview video (MP4)</a>
-            </video>
-          </div>
-          <p class="note">The 45-second overview. Its voice-over was generated by Local TTS.</p>
+          <p class="fine">Windows, macOS and Linux · Node.js 22.22 or newer · MIT licence</p>
         </div>
+        <figure class="shot">
+          <picture>
+            <source srcset="images/reader-dark.png" media="(prefers-color-scheme: dark)" />
+            <img
+              src="images/reader-light.png"
+              width="1440"
+              height="900"
+              alt="TTSNative reading a document aloud, with the sentence being spoken highlighted and the player at the bottom"
+            />
+          </picture>
+        </figure>
+      </section>
 
-        <section id="features" aria-labelledby="features-title">
-          <h2 id="features-title">Everything you need to listen</h2>
-          <p class="section-lede">
-            A reader, a voice library and an optional voice studio, in one app that you run with two
-            commands.
-          </p>
-          <div class="grid">
-            <div class="card">
-              <span class="tag">Reader</span>
-              <h3>PDF, EPUB, Word, Markdown and text</h3>
+      <section id="features" class="band" aria-labelledby="features-title">
+        <div class="wrap">
+          <h2 id="features-title">Everything you need to listen to a document</h2>
+          <ul class="cards">
+            <li>
+              <h3>Any document, read aloud</h3>
               <p>
-                Upload a file or paste text. Chapters and pages are found for you, and you pick up
-                where you left off.
+                PDF, Word (DOCX), EPUB, Markdown, plain text or pasted text. Chapters come from the
+                document's own structure, and you can fix one that starts in the wrong place.
               </p>
-            </div>
-            <div class="card">
-              <span class="tag">Read-along</span>
-              <h3>Follow every sentence</h3>
+            </li>
+            <li>
+              <h3>Natural voices</h3>
               <p>
-                The sentence being spoken is highlighted, and the page follows the narration from
-                chapter to chapter.
+                54 Kokoro voices in English (US and UK), Spanish, French, Hindi, Italian,
+                Portuguese, Japanese and Mandarin. Compare them side by side on your own passage.
               </p>
-            </div>
-            <div class="card">
-              <span class="tag">Fast</span>
+            </li>
+            <li>
+              <h3>Read along</h3>
+              <p>
+                The sentence being spoken is highlighted and kept in view. Click any sentence to
+                start there; your place is saved for next time.
+              </p>
+            </li>
+            <li>
               <h3>Starts in about a second</h3>
               <p>
-                Sentences are generated just ahead of you and cached, so even whole books start
-                playing almost at once.
+                Sentences are generated just ahead of you and cached, so even a whole book never has
+                to be rendered up front.
               </p>
-            </div>
-            <div class="card">
-              <span class="tag">Voices</span>
-              <h3>54 natural voices</h3>
+            </li>
+            <li>
+              <h3>Study aids</h3>
               <p>
-                Kokoro voices in nine languages, with quality grades and side-by-side comparison on
-                your own passage.
+                Search inside a document, bookmarks with notes, a pronunciation dictionary for
+                names, a sleep timer, and adjustable text size and spacing.
               </p>
-            </div>
-            <div class="card">
-              <span class="tag">Optional</span>
-              <h3>A voice of your own</h3>
+            </li>
+            <li>
+              <h3>Audio export</h3>
               <p>
-                Voice Studio clones a voice from about 20 seconds of speech, with quality checks and
-                required consent.
+                MP3 or WAV, the whole document or chosen chapters, one file or one per chapter, with
+                optional sentence-timed subtitles.
               </p>
-            </div>
-            <div class="card">
-              <span class="tag">Private</span>
-              <h3>Stays on your computer</h3>
+            </li>
+            <li>
+              <h3>Voice Studio (optional)</h3>
               <p>
-                Binds to 127.0.0.1, works offline after setup, and never sends documents or
-                recordings anywhere.
+                Create a narration voice from your own recording, with explicit consent, live
+                quality checks and noise cleanup. Uses the optional Chatterbox engine.
               </p>
-            </div>
-          </div>
-        </section>
+            </li>
+            <li>
+              <h3>Works offline</h3>
+              <p>
+                After the first setup downloads the voices, TTSNative needs no internet connection.
+                It listens only on your computer by default.
+              </p>
+            </li>
+          </ul>
+        </div>
+      </section>
 
-        <section id="demo" aria-labelledby="demo-title">
-          <h2 id="demo-title">See it working</h2>
-          <p class="section-lede">
-            Recorded from the running app with its real narration: a PDF upload, read-along across
-            chapters, voice comparison, Voice Studio, export and the dark theme.
-          </p>
-          <div class="video">
+      <section id="watch" class="wrap" aria-labelledby="watch-title">
+        <h2 id="watch-title">See it working</h2>
+        <p class="fine">
+          Recorded just before the rename, so the app's header still reads Local TTS. Everything
+          else is the same app.
+        </p>
+        <div class="videos">
+          <figure id="overview">
             <video
               controls
+              preload="none"
               playsinline
-              preload="metadata"
-              poster="media/local-tts-demo-poster.webp"
+              poster="media/ttsnative-promo-poster.webp"
+              width="1920"
+              height="1080"
             >
-              <source src="media/local-tts-demo.mp4" type="video/mp4" />
+              <source src="media/ttsnative-promo.mp4" type="video/mp4" />
               <track
                 kind="captions"
-                src="media/local-tts-demo-captions.vtt"
+                src="media/ttsnative-promo-captions.vtt"
                 srclang="en"
                 label="English"
                 default
               />
-              <a href="media/local-tts-demo.mp4">Download the demo video (MP4)</a>
             </video>
-          </div>
-          <p class="note">
-            The cloned voice in the demo comes from a built-in synthetic voice, not a real person.
-            <a href="https://github.com/carsonmcrae/local-tts-web-ui/blob/main/docs/media/README.md"
-              >How these videos were made</a
+            <figcaption>
+              The 45-second overview. Its voice-over was generated by the app itself.
+            </figcaption>
+          </figure>
+          <figure id="demo">
+            <video
+              controls
+              preload="none"
+              playsinline
+              poster="media/ttsnative-demo-poster.webp"
+              width="1920"
+              height="1080"
             >
-          </p>
-        </section>
+              <source src="media/ttsnative-demo.mp4" type="video/mp4" />
+              <track
+                kind="captions"
+                src="media/ttsnative-demo-captions.vtt"
+                srclang="en"
+                label="English"
+                default
+              />
+            </video>
+            <figcaption>
+              A 2-minute recording of the running app with its real narration: upload, read along,
+              compare voices, Voice Studio and export.
+              <a href="https://github.com/carsonmcrae/ttsnative/blob/main/docs/media/README.md"
+                >How the videos were made</a
+              >.
+            </figcaption>
+          </figure>
+        </div>
+        <div class="gallery">
+          <figure>
+            <img
+              src="images/library.png"
+              width="1440"
+              height="900"
+              loading="lazy"
+              alt="The library with documents, progress and the continue-listening card"
+            />
+            <figcaption>Library</figcaption>
+          </figure>
+          <figure>
+            <img
+              src="images/voices.png"
+              width="1440"
+              height="900"
+              loading="lazy"
+              alt="The voice library with filters, quality grades and side-by-side comparison"
+            />
+            <figcaption>Voices</figcaption>
+          </figure>
+          <figure>
+            <img
+              src="images/studio.png"
+              width="1440"
+              height="900"
+              loading="lazy"
+              alt="Voice Studio with the quick and studio voice options"
+            />
+            <figcaption>Voice Studio</figcaption>
+          </figure>
+        </div>
+      </section>
 
-        <section id="start" aria-labelledby="start-title">
-          <h2 id="start-title">Get started</h2>
-          <p class="section-lede">
-            You need Node.js 22.22 or newer and Git. The first run installs everything else inside
-            the project folder: a checksum-verified Python toolchain and the voice model (about 340
-            MB). No GPU is needed.
+      <!-- requires: audio/af_heart.mp3 audio/af_bella.mp3 audio/am_michael.mp3 audio/bf_emma.mp3 audio/bm_george.mp3 audio/ff_siwis.mp3 audio/ef_dora.mp3 -->
+      <section id="voices" class="band" aria-labelledby="voices-title">
+        <div class="wrap">
+          <h2 id="voices-title">Hear the voices</h2>
+          <p>
+            Generated by the TTSNative app itself, on a CPU, exactly as it speaks. English voices
+            read: “TTSNative reads your documents aloud with natural voices, right on your own
+            computer. Nothing you open ever leaves it.”
           </p>
-          <pre><code>git clone https://github.com/carsonmcrae/local-tts-web-ui.git
-cd local-tts-web-ui
+          <ul class="samples">
+            <li>
+              <span>Heart <small>US English · grade A</small></span
+              ><audio controls preload="none" src="audio/af_heart.mp3"></audio>
+            </li>
+            <li>
+              <span>Bella <small>US English · grade A−</small></span
+              ><audio controls preload="none" src="audio/af_bella.mp3"></audio>
+            </li>
+            <li>
+              <span>Michael <small>US English · grade C+</small></span
+              ><audio controls preload="none" src="audio/am_michael.mp3"></audio>
+            </li>
+            <li>
+              <span>Emma <small>UK English · grade B−</small></span
+              ><audio controls preload="none" src="audio/bf_emma.mp3"></audio>
+            </li>
+            <li>
+              <span>George <small>UK English · grade C</small></span
+              ><audio controls preload="none" src="audio/bm_george.mp3"></audio>
+            </li>
+            <li>
+              <span>Siwis <small>French · “TTSNative lit vos documents à voix haute…”</small></span
+              ><audio controls preload="none" src="audio/ff_siwis.mp3"></audio>
+            </li>
+            <li>
+              <span>Dora <small>Spanish · “TTSNative lee tus documentos en voz alta…”</small></span
+              ><audio controls preload="none" src="audio/ef_dora.mp3"></audio>
+            </li>
+          </ul>
+        </div>
+      </section>
+      <!-- /requires -->
+
+      <section id="try" class="wrap" aria-labelledby="try-title">
+        <h2 id="try-title">Try speech in your browser</h2>
+        <p class="note-box">
+          <strong>This demo uses your browser's built-in voices, not TTSNative's.</strong> They vary
+          by device and sound different from the Kokoro voices in the app. It shows the idea in
+          seconds; the installed app is the real thing.
+        </p>
+        <form id="speech" class="demo" novalidate>
+          <label for="speech-text">Text to read</label>
+          <textarea id="speech-text" rows="4" maxlength="1000">
+Open a document, press Play, and follow along as each sentence is read to you.</textarea>
+          <div class="demo-row">
+            <div>
+              <label for="speech-voice">Browser voice</label>
+              <select id="speech-voice" disabled>
+                <option>Loading voices…</option>
+              </select>
+            </div>
+            <div>
+              <label for="speech-rate"
+                >Speed <output id="speech-rate-value" for="speech-rate">1.0×</output></label
+              >
+              <input id="speech-rate" type="range" min="0.5" max="2" step="0.1" value="1" />
+            </div>
+          </div>
+          <p id="speech-online" class="warn" hidden>
+            This voice is an online voice from your browser's maker, so your text may be sent to
+            their servers. Voices without “online” stay on this device.
+          </p>
+          <div class="actions">
+            <button class="btn primary" type="submit" id="speech-play" disabled>Speak</button>
+            <button class="btn" type="button" id="speech-stop" disabled>Stop</button>
+          </div>
+          <output id="speech-status" class="fine status-line" aria-live="polite"></output>
+        </form>
+      </section>
+
+      <section id="privacy" class="band" aria-labelledby="privacy-title">
+        <div class="wrap two">
+          <div>
+            <h2 id="privacy-title">Private by design</h2>
+            <p>
+              The app runs a small server on your own computer that only listens to your own
+              computer. Your documents, recordings and generated audio stay in its folder. It has no
+              accounts, analytics or telemetry; the only downloads are the voice models, from pinned
+              addresses and checked against fixed SHA-256 checksums.
+            </p>
+            <p>
+              Voice cloning is optional, needs the speaker's explicit consent, and deleting a voice
+              removes its recordings.
+            </p>
+          </div>
+          <div>
+            <h2>This website</h2>
+            <p>
+              This page has no cookies, analytics or third-party requests: everything is served from
+              this site. The browser demo runs entirely in your browser, and nothing you type is
+              sent to us.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section id="install" class="wrap" aria-labelledby="install-title">
+        <h2 id="install-title">Install TTSNative</h2>
+        <p>
+          TTSNative runs from its source code; there's no installer yet. You need
+          <strong>Node.js 22.22 or newer</strong> and <strong>Git</strong>. The first run installs
+          everything else inside the project folder.
+        </p>
+        <div class="code">
+          <pre><code id="install-commands">git clone https://github.com/carsonmcrae/ttsnative.git
+cd ttsnative
 npm install
 npm run dev</code></pre>
-          <p class="section-lede">
-            Your browser opens at <code>http://127.0.0.1:5173</code>. The
-            <a href="https://github.com/carsonmcrae/local-tts-web-ui/wiki">user guide</a> covers
-            installation, voices, voice cloning, exporting and troubleshooting.
-          </p>
-        </section>
-      </main>
-
-      <footer>
-        <div class="row">
-          <span>Local TTS is free and open source under the MIT licence.</span>
-          <span>
-            <a href="https://github.com/carsonmcrae/local-tts-web-ui/wiki">Guide</a> ·
-            <a href="https://github.com/carsonmcrae/local-tts-web-ui/releases">Releases</a> ·
-            <a href="https://github.com/carsonmcrae/local-tts-web-ui/security/policy">Security</a> ·
-            <a href="https://github.com/carsonmcrae/local-tts-web-ui/blob/main/CODE_OF_CONDUCT.md"
-              >Code of conduct</a
-            >
-          </span>
+          <button class="btn copy" type="button" data-copy="install-commands">Copy</button>
         </div>
-      </footer>
-    </div>
+        <ol class="steps">
+          <li>
+            <strong>First run</strong> sets up Python 3.12 and the locked dependencies (with a
+            checksum-verified copy of uv if you don't have it) and downloads the Kokoro voice model
+            (about 340 MB). Later starts take a few seconds.
+          </li>
+          <li>
+            <strong>Your browser opens</strong> at <code>http://127.0.0.1:5173</code>. Drop in a
+            document and press Play. Press Ctrl+C in the terminal to stop.
+          </li>
+          <li>
+            <strong>Voice cloning</strong> is optional: install the Chatterbox engine from Settings
+            (about 8 GB with an NVIDIA GPU, about 4.5 GB on CPU).
+          </li>
+          <li>
+            <strong>To uninstall</strong>, delete the folder. Nothing is installed system-wide.
+          </li>
+        </ol>
+        <table>
+          <caption>
+            Tested support
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col">Platform</th>
+              <th scope="col">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Windows 11</td>
+              <td>
+                Fully tested: setup, unit and integration tests, real inference, and browser tests
+                in Chromium, Firefox, WebKit and mobile emulation.
+              </td>
+            </tr>
+            <tr>
+              <td>macOS, Linux</td>
+              <td>
+                Server tests run in CI on macOS 15 and Ubuntu 24.04; the full app hasn't been tested
+                by hand on them yet.
+              </td>
+            </tr>
+            <tr>
+              <td>Memory and disk</td>
+              <td>
+                About 1 GB of RAM while speaking and 0.7 GB of disk. No GPU needed for reading.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="actions">
+          <a class="btn primary" href="https://github.com/carsonmcrae/ttsnative/releases/latest"
+            >Latest release</a
+          >
+          <a class="btn" href="https://github.com/carsonmcrae/ttsnative/wiki/Installation"
+            >Installation guide</a
+          >
+          <a class="btn ghost" href="https://github.com/carsonmcrae/ttsnative/wiki/Troubleshooting"
+            >Troubleshooting</a
+          >
+        </p>
+      </section>
+
+      <section id="engineering" class="band" aria-labelledby="engineering-title">
+        <div class="wrap">
+          <h2 id="engineering-title">How it's built</h2>
+          <figure class="arch" aria-labelledby="arch-caption">
+            <ol>
+              <li>
+                <strong>Web app</strong><span>React 19, TypeScript, Vite, Tailwind, Radix UI</span>
+              </li>
+              <li>
+                <strong>Local server</strong><span>Python 3.12, FastAPI, SQLite, on 127.0.0.1</span>
+              </li>
+              <li>
+                <strong>Speech engines</strong
+                ><span>Kokoro-82M (ONNX Runtime); Chatterbox Turbo in an isolated worker</span>
+              </li>
+            </ol>
+            <figcaption id="arch-caption">
+              Documents are parsed in a sandboxed process; sentences are synthesised on demand,
+              cached, and streamed to the player.
+            </figcaption>
+          </figure>
+          <ul class="cards small">
+            <li>
+              <h3>Testing</h3>
+              <p>
+                Unit and integration tests with 100% line and branch coverage on the server and the
+                web app, and Playwright journeys with real inference across Chromium, Firefox,
+                WebKit and mobile emulation.
+              </p>
+            </li>
+            <li>
+              <h3>Security</h3>
+              <p>
+                Loopback-only by default, CSRF and DNS-rebinding defences, sandboxed document
+                parsing, checksum-verified models, CodeQL, dependency review and signed release
+                provenance.
+              </p>
+            </li>
+            <li>
+              <h3>Accessibility</h3>
+              <p>
+                Targets WCAG 2.2 AA: full keyboard use, visible focus, screen-reader labels, reduced
+                motion and axe checks in the browser tests.
+              </p>
+            </li>
+            <li>
+              <h3>Open development</h3>
+              <p>
+                <a href="https://github.com/carsonmcrae/ttsnative">Source</a>,
+                <a href="https://github.com/carsonmcrae/ttsnative/wiki">user guide</a>,
+                <a
+                  href="https://github.com/carsonmcrae/ttsnative/blob/main/docs/architecture/overview.md"
+                  >architecture</a
+                >
+                and
+                <a href="https://github.com/carsonmcrae/ttsnative/blob/main/CHANGELOG.md"
+                  >changelog</a
+                >. Designed and built by <a href="https://github.com/carsonmcrae">Carson McRae</a>.
+              </p>
+            </li>
+          </ul>
+        </div>
+      </section>
+
+      <section id="faq" class="wrap" aria-labelledby="faq-title">
+        <h2 id="faq-title">Questions</h2>
+        <details>
+          <summary>Is it really free?</summary>
+          <p>
+            Yes. TTSNative is open source under the MIT licence, with no paid tier. The voice models
+            have their own open licences (Kokoro: Apache-2.0; Chatterbox: MIT).
+          </p>
+        </details>
+        <details>
+          <summary>Does it need the internet?</summary>
+          <p>
+            Only for the first setup and to install the optional voice-cloning engine. After that it
+            works offline.
+          </p>
+        </details>
+        <details>
+          <summary>Is the browser demo the same as the app?</summary>
+          <p>
+            No. The demo uses whatever voices your browser provides. The app uses the Kokoro and
+            Chatterbox models on your computer, adds document reading, highlighting, export and
+            Voice Studio.
+          </p>
+        </details>
+        <details>
+          <summary>Can I use it on my phone?</summary>
+          <p>
+            The app runs on a computer. You can then open it from a phone on the same network; see
+            the
+            <a href="https://github.com/carsonmcrae/ttsnative/wiki/Other-Devices"
+              >guide to other devices</a
+            >.
+          </p>
+        </details>
+        <details>
+          <summary>What about scanned PDFs?</summary>
+          <p>
+            Image-only PDFs are detected and reported. Text recognition (OCR) isn't supported yet.
+          </p>
+        </details>
+        <details>
+          <summary>It used to be called Local TTS?</summary>
+          <p>
+            Yes. Version 2.0 was released as Local TTS; the project was renamed TTSNative
+            afterwards. Old links redirect.
+          </p>
+        </details>
+      </section>
+    </main>
+
+    <footer class="foot">
+      <div class="wrap foot-row">
+        <span>© 2026 Carson McRae · TTSNative is free and open source under the MIT licence.</span>
+        <nav aria-label="Project">
+          <a href="https://github.com/carsonmcrae/ttsnative">GitHub</a>
+          <a href="https://github.com/carsonmcrae/ttsnative/releases">Releases</a>
+          <a href="https://github.com/carsonmcrae/ttsnative/wiki">Guide</a>
+          <a href="https://github.com/carsonmcrae/ttsnative/security/policy">Security</a>
+          <a href="https://github.com/carsonmcrae/ttsnative/blob/main/LICENSE">Licence</a>
+        </nav>
+      </div>
+    </footer>
   </body>
 </html>

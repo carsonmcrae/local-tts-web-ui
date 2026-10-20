@@ -1,4 +1,4 @@
-# Using Local TTS from other devices
+# Using TTSNative from other devices
 
 By default, the server only listens on `127.0.0.1`, so other devices on your network, including your
 phone, can't reach it. That's deliberate.
@@ -55,5 +55,5 @@ Phone layouts and playback were tested with Pixel 7 and iPhone 13 emulation. Rea
 on Apple hardware, haven't been verified.
 
 The full guide is
-[docs/guides/lan-access.md](https://github.com/carsonmcrae/local-tts-web-ui/blob/main/docs/guides/lan-access.md).
+[docs/guides/lan-access.md](https://github.com/carsonmcrae/ttsnative/blob/main/docs/guides/lan-access.md).
 See also [Privacy and Security](Privacy-and-Security#network-mode).

@@ -122,7 +122,7 @@ async function main() {
   if (!webReady) throw new BootstrapError('The web dev server did not start within 60 seconds.');
   console.log('');
   const appUrl = `http://${HOST}:${webPort}`;
-  ok(`${color.bold('Local TTS is running:')} ${color.cyan(appUrl)}`);
+  ok(`${color.bold('TTSNative is running:')} ${color.cyan(appUrl)}`);
   console.log(color.dim('  Press Ctrl+C to stop both services.\n'));
 }
 

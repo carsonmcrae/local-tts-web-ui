@@ -3,10 +3,10 @@
   "name": "@ltts/web",
   "version": "2.0.0",
   "author": "Carson McRae",
-  "homepage": "https://github.com/carsonmcrae/local-tts-web-ui",
+  "homepage": "https://github.com/carsonmcrae/ttsnative",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/carsonmcrae/local-tts-web-ui.git"
+    "url": "git+https://github.com/carsonmcrae/ttsnative.git"
   },
   "license": "MIT",
   "private": true,

@@ -233,8 +233,14 @@ describe('Adjusting a section', () => {
         { index: 1, title: 'The Second', startSegment: 4, segmentCount: 2, page: 5 },
       ],
     });
+    // Like the server, later fetches of the document return the saved sections.
+    let saved = false;
     const { calls } = mockReaderApi(book, {
-      [`PATCH /api/documents/${book.id}/sections/1`]: moved,
+      [`GET /api/documents/${book.id}`]: () => (saved ? moved : book),
+      [`PATCH /api/documents/${book.id}/sections/1`]: () => {
+        saved = true;
+        return moved;
+      },
     });
     const { user, controller } = await openReader();
     await viewChapterTwo(user);

@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for helping improve Local TTS. This guide covers setup, the quality bar and how changes are reviewed.
+Thanks for helping improve TTSNative. This guide covers setup, the quality bar and how changes are reviewed.
 
 ## Setup
 
@@ -51,6 +51,9 @@ npm run dev
   suite runs axe.
 
 ## Pull requests
+
+`main` only accepts pull requests that pass CI, and outside contributions need a code owner's approval
+(see [repository protection](docs/security/repository-protection.md)).
 
 1. Branch from `main`; keep the change focused.
 2. Add or update tests; run `npm run check` (and `test:inference` / `test:e2e` for playback or UI changes).

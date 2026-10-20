@@ -1,6 +1,6 @@
 # Code of conduct
 
-Local TTS follows the [Contributor Covenant, version 2.1](https://www.contributor-covenant.org/version/2/1/code_of_conduct/).
+TTSNative follows the [Contributor Covenant, version 2.1](https://www.contributor-covenant.org/version/2/1/code_of_conduct/).
 It applies to everyone who takes part in this project: in issues, pull requests, discussions, the wiki,
 and anywhere else you represent the project.
 
@@ -10,7 +10,7 @@ and anywhere else you represent the project.
 - Assume good intent, give feedback on the work rather than the person, and accept feedback gracefully.
 - No harassment, insults, sexualised language or imagery, or personal or political attacks.
 - Don't publish anyone's private information, and don't use this project's voice tools to imitate a
-  real person without their explicit consent (see [Voice Studio](https://github.com/carsonmcrae/local-tts-web-ui/wiki/Voice-Studio)).
+  real person without their explicit consent (see [Voice Studio](https://github.com/carsonmcrae/ttsnative/wiki/Voice-Studio)).
 
 ## Reporting
 
@@ -20,7 +20,7 @@ If something here makes you uncomfortable or breaks these rules, tell the mainta
 - Or contact [@carsonmcrae](https://github.com/carsonmcrae) through the options on their GitHub profile.
 
 Reports are read promptly and kept confidential. For security vulnerabilities, use
-[private vulnerability reporting](https://github.com/carsonmcrae/local-tts-web-ui/security/advisories/new)
+[private vulnerability reporting](https://github.com/carsonmcrae/ttsnative/security/advisories/new)
 instead (see [SECURITY.md](SECURITY.md)).
 
 ## Enforcement

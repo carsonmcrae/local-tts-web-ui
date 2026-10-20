@@ -1,6 +1,6 @@
 **[Home](Home)**
 
-**Using Local TTS**
+**Using TTSNative**
 
 - [Installation](Installation)
 - [Getting Started](Getting-Started)
@@ -24,5 +24,5 @@
 **Project**
 
 - [Development](Development)
-- [Repository](https://github.com/carsonmcrae/local-tts-web-ui)
-- [Changelog](https://github.com/carsonmcrae/local-tts-web-ui/blob/main/CHANGELOG.md)
+- [Repository](https://github.com/carsonmcrae/ttsnative)
+- [Changelog](https://github.com/carsonmcrae/ttsnative/blob/main/CHANGELOG.md)

@@ -18,7 +18,6 @@ import { repoFiles } from './lib/repo-files.mjs';
 
 const CHECKED = /^(apps|scripts|tests)\/.*\.(ts|tsx|mjs|py|css)$/;
 const EXEMPT = [/schema\.gen\.ts$/, /vite-env\.d\.ts$/, /^tests\/fixtures\//];
-const MARKER = /\/__init__\.py$/;
 const LICENCE_LINES = ['SPDX-License-Identifier: MIT', 'Copyright (c) 2026 Carson McRae'];
 const FIELDS = ['Purpose:', 'Scope:', 'Does NOT belong:'];
 
@@ -37,7 +36,9 @@ for (const file of files) {
     problems.push('missing the SPDX licence and copyright lines at the top');
   }
   const head = lines.slice(0, 15).join('\n');
-  const missing = MARKER.test(file) ? [] : FIELDS.filter((field) => !head.includes(field));
+  const missing = file.endsWith('/__init__.py')
+    ? []
+    : FIELDS.filter((field) => !head.includes(field));
   if (missing.length) problems.push(`header missing ${missing.join(', ')}`);
   if (/(Purpose|Scope):\s*(TODO|TBD|\.\.\.)/i.test(head))
     problems.push('header has placeholder text');

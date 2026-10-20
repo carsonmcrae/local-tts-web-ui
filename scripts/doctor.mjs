@@ -76,7 +76,7 @@ function checkDisk() {
 }
 
 async function main() {
-  console.log(color.bold('Local TTS doctor\n'));
+  console.log(color.bold('TTSNative doctor\n'));
   checkNode();
   checkPython(await checkUv());
   await checkPorts();

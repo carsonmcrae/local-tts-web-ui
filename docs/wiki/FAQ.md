@@ -1,6 +1,6 @@
 # FAQ
 
-## Does Local TTS work offline?
+## Does TTSNative work offline?
 
 Yes, once setup has finished. The first run needs internet access to download uv, Python 3.12, the
 server's packages and the Kokoro voice model. Installing the optional Chatterbox Turbo engine needs
@@ -10,7 +10,7 @@ one more download. After that, reading, listening, voice creation and export all
 
 No. Kokoro, the default engine, runs on the CPU only and uses about 1 GB of RAM while speaking. On the
 machine used for the
-[performance measurements](https://github.com/carsonmcrae/local-tts-web-ui/blob/main/docs/guides/performance.md)
+[performance measurements](https://github.com/carsonmcrae/ttsnative/blob/main/docs/guides/performance.md)
 it generated speech about five times faster than real time. Older or low-power CPUs may not keep up
 with continuous playback at high speeds.
 
@@ -49,7 +49,7 @@ download. You install it from **Settings → Engines & models** only if you want
 ## Can I clone a voice in a language other than English?
 
 Not yet. In this app, Chatterbox Turbo is an English engine. Multilingual voice cloning is on the
-[roadmap](https://github.com/carsonmcrae/local-tts-web-ui/blob/main/README.md#roadmap).
+[roadmap](https://github.com/carsonmcrae/ttsnative/blob/main/README.md#roadmap).
 
 ## Can it read scanned PDFs?
 
@@ -71,14 +71,14 @@ playlist. See [Exporting Audio](Exporting-Audio). M4B export with chapter marker
 
 | Component                                            | Licence                                                                               |
 | ---------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| Local TTS                                            | MIT                                                                                   |
+| TTSNative                                            | MIT                                                                                   |
 | Kokoro-82M model weights                             | Apache-2.0; training data includes CC BY material (Koniwa CC BY 3.0, SIWIS CC BY 4.0) |
 | kokoro-onnx (ONNX export and runtime library)        | MIT                                                                                   |
 | Chatterbox Turbo (optional)                          | MIT, code and weights                                                                 |
 | espeak-ng (phonemisation, installed as a dependency) | GPL-3.0                                                                               |
 
 Other dependencies have their own licences; see the
-[licence inventory](https://github.com/carsonmcrae/local-tts-web-ui/blob/main/docs/security/license-inventory.md).
+[licence inventory](https://github.com/carsonmcrae/ttsnative/blob/main/docs/security/license-inventory.md).
 
 ## Can I use it on my phone?
 

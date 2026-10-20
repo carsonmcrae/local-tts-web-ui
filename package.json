@@ -1,12 +1,12 @@
 {
   "//": "Purpose: Root workspace manifest and the single entry point for every developer command. Scope: npm workspaces, pinned tooling, and scripts that orchestrate both the web app and the Python server through scripts/*.mjs. Does NOT belong: App runtime dependencies (apps/web/package.json, apps/server/pyproject.toml).",
-  "name": "local-tts-web-ui",
+  "name": "ttsnative",
   "version": "2.0.0",
   "author": "Carson McRae",
-  "homepage": "https://github.com/carsonmcrae/local-tts-web-ui",
+  "homepage": "https://github.com/carsonmcrae/ttsnative",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/carsonmcrae/local-tts-web-ui.git"
+    "url": "git+https://github.com/carsonmcrae/ttsnative.git"
   },
   "private": true,
   "description": "Local-first document reader and voice studio with natural-sounding offline text-to-speech.",
@@ -26,6 +26,7 @@
     "start": "node scripts/start.mjs",
     "doctor": "node scripts/doctor.mjs",
     "build": "npm run build --workspace @ltts/web",
+    "brand:build": "node scripts/brand/build-brand.mjs",
     "test": "npm run test:web && npm run test:server",
     "test:web": "npm run test --workspace @ltts/web",
     "test:server": "node scripts/uv-run.mjs --cwd apps/server run --frozen pytest",
@@ -50,6 +51,8 @@
     "media:demo": "npm run build && node scripts/media/record-demo.mjs",
     "media:promo": "node scripts/media/render-promo.mjs",
     "media:screenshots": "npm run build && node scripts/capture-screenshots.mjs",
+    "media:voices": "node scripts/media/voice-samples.mjs",
+    "site:build": "node scripts/site/build-site.mjs --out .tools/site --base-url https://example.invalid",
     "check": "npm run format:check && npm run lint && npm run typecheck && npm run api:check && npm run deps:check && npm run duplication && npm run test && npm run build"
   },
   "devDependencies": {

@@ -91,7 +91,7 @@ data. Paste it into bug reports.
 
 The defaults work out of the box. Server settings can be changed with environment variables, or by
 copying
-[`.env.example`](https://github.com/carsonmcrae/local-tts-web-ui/blob/main/.env.example) to `.env`
+[`.env.example`](https://github.com/carsonmcrae/ttsnative/blob/main/.env.example) to `.env`
 in the project folder. Some commonly changed ones:
 
 | Variable                          | Default         | Purpose                                               |
@@ -109,4 +109,4 @@ The startup scripts read a few more variables: `LTTS_API_PORT` and `LTTS_WEB_POR
 read from the environment of the terminal you start the app from, not from `.env`.
 
 The full list is in the
-[configuration guide](https://github.com/carsonmcrae/local-tts-web-ui/blob/main/docs/guides/configuration.md).
+[configuration guide](https://github.com/carsonmcrae/ttsnative/blob/main/docs/guides/configuration.md).

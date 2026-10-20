@@ -150,10 +150,10 @@ describe('Field', () => {
 describe('Layout', () => {
   it('sets the document title and shows an eyebrow', () => {
     render(<PageHeader title="Voices" eyebrow="Library" />);
-    expect(document.title).toBe('Voices · Local TTS');
+    expect(document.title).toBe('Voices · TTSNative');
     expect(screen.getByText('Library')).toBeInTheDocument();
     renderHook(() => usePageTitle(''));
-    expect(document.title).toBe('Local TTS');
+    expect(document.title).toBe('TTSNative');
   });
 
   it('labels a section by its heading when it has an id', () => {

@@ -1,6 +1,6 @@
-# Local TTS
+# TTSNative
 
-Local TTS reads documents aloud with natural voices, privately, on your own computer. Add a PDF,
+TTSNative reads documents aloud with natural voices, privately, on your own computer. Add a PDF,
 Word document, EPUB, Markdown or text file (or paste text), press Play and follow along as each
 sentence is highlighted. Optionally, you can create a narration voice from your own recordings: a
 short clip for a quick voice, or a guided session for a studio voice.
@@ -10,10 +10,10 @@ Everything runs locally: no accounts, no cloud and no telemetry. The app listens
 
 ## Watch it
 
-- [Demo video](https://carsonmcrae.github.io/local-tts-web-ui/#demo)
+- [Demo video](https://carsonmcrae.github.io/ttsnative/#demo)
   (2:17): recorded from the running app, with its real narration.
-- [Showcase video](https://carsonmcrae.github.io/local-tts-web-ui/#overview)
-  (0:45): an overview whose voice-over is spoken by Local TTS.
+- [Showcase video](https://carsonmcrae.github.io/ttsnative/#overview)
+  (0:45): an overview whose voice-over is spoken by TTSNative.
 
 ## Start here
 
@@ -43,9 +43,9 @@ Everything runs locally: no accounts, no cloud and no telemetry. The app listens
 
 ## More
 
-- [README](https://github.com/carsonmcrae/local-tts-web-ui/blob/main/README.md) and
-  [changelog](https://github.com/carsonmcrae/local-tts-web-ui/blob/main/CHANGELOG.md)
-- [Technical guides](https://github.com/carsonmcrae/local-tts-web-ui/tree/main/docs/guides) for
+- [README](https://github.com/carsonmcrae/ttsnative/blob/main/README.md) and
+  [changelog](https://github.com/carsonmcrae/ttsnative/blob/main/CHANGELOG.md)
+- [Technical guides](https://github.com/carsonmcrae/ttsnative/tree/main/docs/guides) for
   configuration, testing, performance and troubleshooting
-- Questions: [Discussions](https://github.com/carsonmcrae/local-tts-web-ui/discussions/categories/q-a).
-  Bugs: [Issues](https://github.com/carsonmcrae/local-tts-web-ui/issues).
+- Questions: [Discussions](https://github.com/carsonmcrae/ttsnative/discussions/categories/q-a).
+  Bugs: [Issues](https://github.com/carsonmcrae/ttsnative/issues).

@@ -14,7 +14,7 @@
 A file's contents must match its extension: a text file renamed to `.pdf`, for example, is refused.
 Password-protected PDFs are refused too; remove the password and upload the file again.
 
-Local TTS doesn't keep the uploaded file. It extracts the text on your computer, stores that in its
+TTSNative doesn't keep the uploaded file. It extracts the text on your computer, stores that in its
 library, and deletes the upload.
 
 ## Limits
@@ -66,7 +66,7 @@ uploading them again.
 
 ## Scanned PDFs
 
-Local TTS reads the text layer of a PDF. It doesn't support OCR (reading text from images) yet.
+TTSNative reads the text layer of a PDF. It doesn't support OCR (reading text from images) yet.
 
 - If no page has text, the PDF is refused with a message that it has no text layer and looks like
   scanned images.
@@ -137,7 +137,7 @@ your most recent unfinished document. Opening a document puts you back where you
 
 ## Playback speed and speaking pace
 
-Local TTS has two ways to change how fast you hear the text:
+TTSNative has two ways to change how fast you hear the text:
 
 |                 | Playback speed                                                   | Speaking pace                          |
 | --------------- | ---------------------------------------------------------------- | -------------------------------------- |

@@ -26,7 +26,9 @@ function Brand() {
     <div className="flex items-center gap-2.5 px-2">
       <img src="/favicon.svg" alt="" className="size-8" />
       <div className="leading-tight">
-        <p className="text-[15px] font-semibold tracking-tight">Local TTS</p>
+        <p className="text-[15px] font-bold tracking-tight">
+          TTS<span className="text-accent-text">Native</span>
+        </p>
         <p className="text-xs text-muted">Reader &amp; voice studio</p>
       </div>
     </div>

@@ -6,7 +6,7 @@
  * Scope: Starts an isolated production-style server with the installed models, drives the UI the way
  *   a person would (upload, choose a voice, play, chapters, voice library, Voice Studio, export,
  *   settings), captures the screen through Chromium's screencast at 1920×1080 and logs every audio
- *   clip the app plays. demo-assemble.mjs then turns that into docs/media/local-tts-demo.mp4.
+ *   clip the app plays. demo-assemble.mjs then turns that into docs/media/ttsnative-demo.mp4.
  *   Usage: `npm run build && node scripts/media/record-demo.mjs` (needs FFmpeg; see docs/media).
  * Does NOT belong: Encoding (demo-assemble.mjs) or tests (tests/e2e). Nothing here is staged: every
  *   frame and every sound comes from the app as it runs.
@@ -312,7 +312,7 @@ async function main() {
     captions.push({ t: Date.now() / 1000, text: null });
     await page.evaluate(() =>
       /** @type {any} */ (globalThis).__demo.endCard(
-        'Local TTS',
+        'TTSNative',
         [
           'Private text-to-speech for your documents.',
           'Free and open source under the MIT licence.',

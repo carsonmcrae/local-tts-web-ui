@@ -105,3 +105,25 @@ when a choice changes the stack, a trust boundary, data storage or the setup exp
   is busy meanwhile, so other custom voices wait. Sessions and studio voices take more disk (24-bit
   FLAC takes). A built voice's file name and delivery are part of its audio cache revision, so a
   rebuild or delivery change never serves old audio; quick voices keep their original revision.
+
+## ADR-10: The website's demo uses the browser's own voices, not TTSNative's model
+
+- **Context:** The website should let visitors hear something before they install. The TTSNative
+  voices come from Kokoro running on the visitor's own computer; the website is static (GitHub
+  Pages) and promises no cookies, analytics or third-party requests.
+- **Decision:** The "Try speech in your browser" demo uses the Web Speech API (`speechSynthesis`). It
+  lists voices on the device first, flags online voices (some browsers send the text to a cloud
+  service for those), says plainly that these are the browser's voices and not TTSNative's, and
+  explains when a browser can't speak. To hear the real voices, the page offers short clips generated
+  by the app itself (`npm run media:voices`), shown only when the clips exist.
+- **Alternatives:** Kokoro in the browser (ONNX Runtime Web or `kokoro-js` with WebGPU or WebAssembly).
+  Deferred: the model is about 90 MB even at 8-bit and 325 MB at full precision, downloaded per
+  browser; files that size would be served from a model host such as Hugging Face rather than Pages,
+  breaking the no-third-party-requests promise; WebGPU isn't available in every browser, and the
+  WebAssembly fallback is slow and can exhaust memory on phones; and the phonemiser it relies on is
+  GPL-licensed eSpeak NG compiled to WebAssembly (see ADR-1), which would need its own licence review
+  before shipping on the site.
+- **Consequences:** The demo works instantly in most browsers, costs nothing to host and sends nothing
+  anywhere unless the visitor picks an online voice (which is labelled). It sounds different from
+  the app, so the page says so. Revisit when a small (under ~50 MB) model with a licence-clean
+  phonemiser can be self-hosted within Pages' limits.

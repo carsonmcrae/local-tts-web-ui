@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: MIT */
+/* Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui */
 /*
  * Purpose: Design-system foundation: semantic colour tokens (light + dark), typography, radii,
  *   shadows, focus rings, motion preferences and the reader's text styles.
@@ -137,12 +139,17 @@
 }
 
 @layer components {
+  /* Size and line spacing follow the reader's text settings (lib/readingText.ts). */
   .reader-text {
     @apply font-serif text-text;
-    font-size: clamp(1.0625rem, 0.98rem + 0.35vw, 1.25rem);
-    line-height: 1.8;
+    font-size: calc(clamp(1.0625rem, 0.98rem + 0.35vw, 1.25rem) * var(--reader-scale, 1));
+    line-height: var(--reader-leading, 1.8);
     max-width: 68ch;
     font-optical-sizing: auto;
+  }
+
+  .reader-text[data-typeface='sans'] {
+    @apply font-sans;
   }
 
   .reader-seg {
@@ -156,6 +163,13 @@
     .reader-seg:hover {
       background: color-mix(in srgb, var(--highlight) 55%, transparent);
     }
+  }
+
+  /* A bookmarked sentence carries a dotted accent underline (and "(bookmarked)" for screen readers). */
+  .reader-seg[data-bookmarked='true'] {
+    text-decoration: underline dotted var(--accent);
+    text-decoration-thickness: 0.09em;
+    text-underline-offset: 0.28em;
   }
 
   /* The spread shadow widens the highlight without adding padding that would look like double spaces. */

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 """Purpose: Edge-case tests for the DOCX, EPUB, Markdown and HTML extractors, type sniffing and SafeZip.
 
 Scope: DOCX Title and custom heading styles, empty paragraphs and table rows, damaged and empty files;

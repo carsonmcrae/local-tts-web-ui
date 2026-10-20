@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 /**
  * Purpose: Unit tests for the in-browser audio helpers: decoding and resampling, quality analysis
  *   edge cases and microphone recording.

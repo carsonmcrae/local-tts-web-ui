@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 """Purpose: Studio-voice operations: measure session takes, build a voice and audition it.
 
 Scope: ``measure`` returns each take's speaker embeddings (voice encoder and S3Gen x-vector) and pitch

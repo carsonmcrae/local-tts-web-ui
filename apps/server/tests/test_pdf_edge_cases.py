@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 """Purpose: Edge-case tests for PDF extraction that the happy-path extractor tests do not reach.
 
 Scope: Page-number line forms, paragraph rebuilding across hyphenated and lowercase line breaks,

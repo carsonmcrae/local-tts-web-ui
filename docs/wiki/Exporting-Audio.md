@@ -11,6 +11,7 @@ you're currently listening with.
 | Format         | **MP3**: smaller files that play everywhere. **WAV**: lossless, larger files.                                   |
 | Files          | **Single file**: one continuous file. **One file per chapter**: a ZIP with one file per chapter and a playlist. |
 | What to export | **Whole document**, **Current section only**, or **A range of sections** (choose **From** and **To**).          |
+| Subtitles      | Adds a sentence-timed subtitle file (SRT) next to each audio file. The download is then a ZIP with both.        |
 
 The format starts with your choice in **Settings → Playback → Export format**, which is MP3 unless
 you change it.
@@ -36,6 +37,10 @@ Kokoro generated speech about five times faster than real time.
 | -------------------- | -------------------------------------------------------------------------------------------------------------------- |
 | Single file          | One file named after the document, for example `My Book.mp3`                                                         |
 | One file per chapter | `My Book (MP3 chapters).zip`, containing `01 - Chapter title.mp3`, `02 - …` and so on, plus a `My Book.m3u` playlist |
+
+Each audio file is tagged with a title (the chapter, or the document), the document as the album, a
+track number for chapter files, and a comment naming the app it was made with. With **Subtitles** on,
+each audio file comes with an `.srt` file of the same name, timed sentence by sentence.
 
 ## Where exports go
 

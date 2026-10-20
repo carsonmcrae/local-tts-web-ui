@@ -1,4 +1,6 @@
 // @ts-check
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 /**
  * Purpose: Build the showcase video's soundtrack: a voice-over spoken by Local TTS itself, over the
  *   synthesized music bed.

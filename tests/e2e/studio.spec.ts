@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 /**
  * Purpose: Custom voice creation, use and deletion end to end, with consented synthetic test audio.
  * Scope: The reference "speaker" is a built-in Kokoro voice generated on the fly (no real person's

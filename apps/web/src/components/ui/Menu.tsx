@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 /**
  * Purpose: Popovers and option menus anchored to a trigger (speed menu, voice picker, actions).
  * Scope: Radix Popover with consistent surface styling, and a single-choice option list built from

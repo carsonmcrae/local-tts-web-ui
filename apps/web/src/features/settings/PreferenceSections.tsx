@@ -1,6 +1,9 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 /**
  * Purpose: Settings sections for appearance and playback preferences.
- * Scope: Theme (per device), default voice, playback speed, speaking pace, export format and
+ * Scope: Theme and the reading text's size, line spacing and typeface (per device, with a preview),
+ *   default voice, playback speed, speaking pace, export format and
  *   read-along auto-scroll — saved to the server so every browser shares them.
  * Does NOT belong: Engines, storage or diagnostics (SystemSections).
  */
@@ -14,6 +17,8 @@ import { Slider } from '@/components/ui/Slider';
 import { cn } from '@/lib/cn';
 import { usePlayer } from '@/features/player/PlayerProvider';
 import { SPEEDS } from '@/features/player/useShortcuts';
+import type { LineSpacing, TextSize, Typeface } from '@/lib/readingText';
+import { readingTextStyle, useReadingText } from '@/lib/readingText';
 import type { ThemeChoice } from '@/lib/theme';
 import { useTheme } from '@/lib/theme';
 
@@ -23,29 +28,99 @@ const THEMES: readonly { value: ThemeChoice; label: string; icon: ReactNode }[] 
   { value: 'dark', label: 'Dark', icon: <Moon size={16} /> },
 ];
 
+const SIZES: readonly { value: TextSize; label: string }[] = [
+  { value: 'small', label: 'Small' },
+  { value: 'medium', label: 'Medium' },
+  { value: 'large', label: 'Large' },
+  { value: 'xlarge', label: 'Extra large' },
+];
+const SPACINGS: readonly { value: LineSpacing; label: string }[] = [
+  { value: 'compact', label: 'Compact' },
+  { value: 'normal', label: 'Normal' },
+  { value: 'relaxed', label: 'Relaxed' },
+];
+const TYPEFACES: readonly { value: Typeface; label: string }[] = [
+  { value: 'serif', label: 'Serif' },
+  { value: 'sans', label: 'Sans serif' },
+];
+
+/** A row of mutually exclusive choices drawn as buttons (a radio group). */
+function ChoiceGroup<T extends string>({
+  label,
+  options,
+  value,
+  onChange,
+}: Readonly<{
+  label: string;
+  options: readonly { value: T; label: string; icon?: ReactNode }[];
+  value: T;
+  onChange: (value: T) => void;
+}>) {
+  return (
+    <div
+      role="radiogroup"
+      aria-label={label}
+      className="grid gap-2 sm:max-w-md"
+      style={{ gridTemplateColumns: `repeat(${options.length}, minmax(0, 1fr))` }}
+    >
+      {options.map((option) => (
+        <button
+          key={option.value}
+          type="button"
+          role="radio"
+          aria-checked={value === option.value}
+          onClick={() => onChange(option.value)}
+          className={cn(
+            'flex h-11 items-center justify-center gap-2 rounded-[var(--radius-md)] border px-2 text-sm font-medium transition-colors',
+            value === option.value
+              ? 'border-accent bg-accent-soft text-accent-text'
+              : 'border-line hover:bg-surface-2',
+          )}
+        >
+          {option.icon}
+          {option.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 export function AppearanceSection() {
   const [theme, setTheme] = useTheme();
+  const [text, setText] = useReadingText();
   return (
     <Section id="appearance" title="Appearance" description="Saved on this device only.">
-      <div role="radiogroup" aria-label="Theme" className="grid grid-cols-3 gap-2 sm:max-w-md">
-        {THEMES.map((option) => (
-          <button
-            key={option.value}
-            type="button"
-            role="radio"
-            aria-checked={theme === option.value}
-            onClick={() => setTheme(option.value)}
-            className={cn(
-              'flex h-11 items-center justify-center gap-2 rounded-[var(--radius-md)] border text-sm font-medium transition-colors',
-              theme === option.value
-                ? 'border-accent bg-accent-soft text-accent-text'
-                : 'border-line hover:bg-surface-2',
-            )}
+      <div className="flex flex-col gap-5">
+        <ChoiceGroup label="Theme" options={THEMES} value={theme} onChange={setTheme} />
+        <div className="flex flex-col gap-3">
+          <p className="text-sm font-medium">Reading text</p>
+          <ChoiceGroup
+            label="Text size"
+            options={SIZES}
+            value={text.size}
+            onChange={(size) => setText({ size })}
+          />
+          <ChoiceGroup
+            label="Line spacing"
+            options={SPACINGS}
+            value={text.spacing}
+            onChange={(spacing) => setText({ spacing })}
+          />
+          <ChoiceGroup
+            label="Typeface"
+            options={TYPEFACES}
+            value={text.typeface}
+            onChange={(typeface) => setText({ typeface })}
+          />
+          <p
+            aria-label="Reading text preview"
+            className="reader-text m-0 rounded-[var(--radius-md)] border border-line bg-surface-2 px-4 py-3"
+            style={readingTextStyle(text)}
+            data-typeface={text.typeface}
           >
-            {option.icon}
-            {option.label}
-          </button>
-        ))}
+            The keeper climbed the old lighthouse every evening, and the lamp burned until dawn.
+          </p>
+        </div>
       </div>
     </Section>
   );

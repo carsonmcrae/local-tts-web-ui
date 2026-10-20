@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 """Purpose: Plain-text and pasted-text extraction.
 
 Scope: Encoding detection (UTF-8/UTF-16 with BOM, then UTF-8, then Windows-1252), paragraph

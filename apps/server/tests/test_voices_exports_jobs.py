@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 """Purpose: Tests for voice profiles, quality checks, exports and background jobs.
 
 Scope: Reference-quality analysis (pass, too short, too quiet, clipping, noisy), profile creation

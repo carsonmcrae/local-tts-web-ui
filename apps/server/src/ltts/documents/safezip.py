@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 """Purpose: Defensive read-only access to ZIP containers (DOCX, EPUB).
 
 Scope: Up-front checks for entry count, declared uncompressed size, per-entry compression ratio,

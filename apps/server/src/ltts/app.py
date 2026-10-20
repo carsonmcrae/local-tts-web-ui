@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 """Purpose: FastAPI application factory.
 
 Scope: Builds services, registers routers, error handlers and the security middleware, runs
@@ -23,6 +25,7 @@ from ltts import __version__
 from ltts.config import Settings
 from ltts.container import Services, build_services
 from ltts.errors import NotFoundError, install_error_handlers
+from ltts.provenance import AUTHOR, CREDIT, FINGERPRINT, HOMEPAGE, LICENSE
 from ltts.security import SecurityMiddleware
 
 log = logging.getLogger("ltts.app")
@@ -71,6 +74,7 @@ def create_app(
 
     @asynccontextmanager
     async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+        log.info("starting", extra={"app": CREDIT, "version": __version__, "fingerprint": FINGERPRINT})
         _housekeeping(services)
         if settings.warm_up_engines:
             threading.Thread(target=_warm_up, args=(services,), name="warm-up", daemon=True).start()
@@ -80,7 +84,10 @@ def create_app(
 
     app = FastAPI(
         title="Local TTS API",
+        description=f"The local API of {CREDIT}.",
         version=__version__,
+        contact={"name": AUTHOR, "url": HOMEPAGE},
+        license_info={"name": LICENSE, "identifier": LICENSE},
         lifespan=lifespan,
         docs_url="/api/docs" if settings.env == "development" else None,
         redoc_url=None,
@@ -93,13 +100,14 @@ def create_app(
     from ltts.engines.router import router as engines_router
     from ltts.exports.router import router as exports_router
     from ltts.preferences import router as preferences_router
+    from ltts.pronunciation.router import router as pronunciation_router
     from ltts.synthesis.router import router as audio_router
     from ltts.system import router as system_router
     from ltts.voices.router import router as voices_router
     from ltts.voices.sessions_router import router as voice_sessions_router
 
     for router in (system_router, documents_router, audio_router, engines_router, voices_router,
-                   voice_sessions_router, exports_router, preferences_router):  # fmt: skip
+                   voice_sessions_router, exports_router, preferences_router, pronunciation_router):  # fmt: skip
         app.include_router(router)
     if static_dir is not None:
         _mount_static(app, static_dir)

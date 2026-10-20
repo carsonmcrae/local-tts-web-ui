@@ -96,6 +96,38 @@ without blank lines is read one paragraph per line. Pasted text is stored only o
 
 While narration plays, the reader follows it into the next section.
 
+## Searching a document
+
+Press the magnifying glass next to Play (**Search this document**) and type a word, name or phrase.
+Results appear as you type, in reading order, each with its section and the words found marked. Case
+and extra spaces don't matter. Choosing a result shows that sentence and moves the playback position
+to it. The first 200 matches are listed, with the total count above them.
+
+## Bookmarks and notes
+
+- **Bookmark a sentence** while listening with the bookmark button in the player bar or the `B` key;
+  press it again to remove the bookmark. Bookmarked sentences have a dotted underline in the text.
+- **The Bookmarks tab**, next to **Contents** in the side panel (or in the **Contents** dialog on
+  smaller screens), lists them in reading order. Choose one to jump back to it.
+- **Notes.** **Add a note** (or **Edit note**) keeps up to 2,000 characters with a bookmark.
+- **Export notes** saves every bookmark and note as a Markdown file, grouped by section.
+
+Bookmarks are stored with the document on your computer, are deleted with it, and stay on the right
+sentence when you [fix a chapter](#fixing-a-chapter).
+
+## Sleep timer
+
+The moon button in the player bar stops playback after 5, 10, 15, 30, 45 or 60 minutes, or at the end
+of the section being read. While a timer runs, the button shows the minutes left (or "End of
+section"). Playback always stops between sentences, ready to carry on from the next one; **Off**
+cancels the timer.
+
+## Reading text
+
+Settings → Appearance changes how the text looks on this device: **Text size** (Small to Extra
+large), **Line spacing** (Compact, Normal, Relaxed) and **Typeface** (Serif or Sans serif), with a
+preview.
+
 ## Resume
 
 Your position in each document is saved automatically as you listen. Library cards show how much
@@ -115,7 +147,13 @@ Local TTS has two ways to change how fast you hear the text:
 | Applies to      | Every voice                                                      | Kokoro voices                          |
 | When it applies | Immediately                                                      | New audio is generated at the new pace |
 
+## Your library
+
+With more than one document, the Library has a search box (titles and file names) and a **Sort by**
+menu: **Last read or added** (the default), **Title**, **Date added** or **Least listened**. The
+sort is remembered on this device.
+
 ## Deleting a document
 
-Use the bin icon on a document's card in the Library and confirm. The document and its reading
-progress are permanently removed from your computer.
+Use the bin icon on a document's card in the Library and confirm. The document, its reading
+progress and its bookmarks are permanently removed from your computer.

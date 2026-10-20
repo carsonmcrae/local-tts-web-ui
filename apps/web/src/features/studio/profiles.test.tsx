@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 /**
  * Purpose: Tests for managing custom voices in Voice Studio and the less common wizard paths.
  * Scope: Reference playback, renaming (cancel), using a profile for reading, deleting the reading

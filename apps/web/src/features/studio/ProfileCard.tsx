@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 /**
  * Purpose: One custom voice profile in Voice Studio.
  * Scope: Name, kind (quick or studio), source, length, creation date, consent timestamp, what is

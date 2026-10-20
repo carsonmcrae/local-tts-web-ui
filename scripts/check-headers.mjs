@@ -1,4 +1,6 @@
 // @ts-check
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 /**
  * Purpose: Require a useful module header on every hand-written source file.
  * Scope: TS/TSX/MJS/PY/CSS source under apps/, scripts/ and tests/ must state `Purpose:`,

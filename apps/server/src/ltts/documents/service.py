@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 """Purpose: Orchestrate document ingestion from a saved upload or pasted text to stored segments.
 
 Scope: Enforces document-count and concurrency limits, verifies the real file type, runs the

@@ -2,6 +2,13 @@
   "//": "Purpose: The React web UI package. Scope: Runtime UI dependencies and web-only scripts (vite, vitest). Does NOT belong: Repository-wide tooling (root package.json).",
   "name": "@ltts/web",
   "version": "2.0.0",
+  "author": "Carson McRae",
+  "homepage": "https://github.com/carsonmcrae/local-tts-web-ui",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/carsonmcrae/local-tts-web-ui.git"
+  },
+  "license": "MIT",
   "private": true,
   "type": "module",
   "scripts": {

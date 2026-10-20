@@ -1,15 +1,19 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 /**
  * Purpose: Render one section's text for reading along, with the spoken sentence highlighted.
- * Scope: Groups segments into headings and paragraphs, highlights the active segment (sentence-level
- *   timing is exact because each segment is its own audio clip), starts playback from any clicked
- *   or keyboard-activated sentence (the text is a single tab stop; arrow keys move between
- *   sentences, Enter or Space plays), and keeps the active sentence in view without fighting a
- *   user who scrolls away.
+ * Scope: Groups segments into headings and paragraphs in the reader's chosen size, spacing and
+ *   typeface, highlights the active segment (sentence-level timing is exact because each segment is
+ *   its own audio clip), marks bookmarked sentences (with an accessible description), starts
+ *   playback from any clicked or keyboard-activated sentence (the text is a single tab stop; arrow
+ *   keys move between sentences, Enter or Space plays), and keeps the active sentence in view
+ *   without fighting a user who scrolls away.
  * Does NOT belong: Section navigation or player controls.
  */
 import type { KeyboardEvent } from 'react';
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useId, useMemo, useRef } from 'react';
 import type { SegmentOut } from '@/api/types';
+import { readingTextStyle, useReadingText } from '@/lib/readingText';
 
 interface Block {
   key: number;
@@ -38,12 +42,21 @@ const MOVES: Readonly<Record<string, number>> = {
 interface SentenceProps {
   segment: SegmentOut;
   active: boolean;
+  /** The id of the hidden "Bookmarked" text when this sentence is bookmarked. */
+  describedBy: string | undefined;
   tabStop: boolean;
   onSelect: (index: number) => void;
   onMove: (index: number, step: number) => void;
 }
 
-function Sentence({ segment, active, tabStop, onSelect, onMove }: Readonly<SentenceProps>) {
+function Sentence({
+  segment,
+  active,
+  describedBy,
+  tabStop,
+  onSelect,
+  onMove,
+}: Readonly<SentenceProps>) {
   const onKeyDown = (event: KeyboardEvent<HTMLSpanElement>) => {
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
@@ -65,6 +78,8 @@ function Sentence({ segment, active, tabStop, onSelect, onMove }: Readonly<Sente
       className="reader-seg"
       data-index={segment.index}
       data-active={active}
+      data-bookmarked={describedBy !== undefined}
+      aria-describedby={describedBy}
       aria-current={active ? 'true' : undefined}
       onClick={() => onSelect(segment.index)}
       onKeyDown={onKeyDown}
@@ -77,6 +92,7 @@ function Sentence({ segment, active, tabStop, onSelect, onMove }: Readonly<Sente
 interface DocumentTextProps {
   segments: readonly SegmentOut[];
   activeIndex: number | null;
+  bookmarked: ReadonlySet<number>;
   autoScroll: boolean;
   onSelect: (index: number) => void;
 }
@@ -84,10 +100,13 @@ interface DocumentTextProps {
 export function DocumentText({
   segments,
   activeIndex,
+  bookmarked,
   autoScroll,
   onSelect,
 }: Readonly<DocumentTextProps>) {
   const blocks = useMemo(() => toBlocks(segments), [segments]);
+  const [readingText] = useReadingText();
+  const bookmarkLabel = useId();
   const container = useRef<HTMLDivElement>(null);
   const lastUserScroll = useRef(0);
 
@@ -128,13 +147,22 @@ export function DocumentText({
   };
 
   return (
-    <div ref={container} className="reader-text mx-auto">
+    <div
+      ref={container}
+      className="reader-text mx-auto"
+      style={readingTextStyle(readingText)}
+      data-typeface={readingText.typeface}
+    >
+      <span id={bookmarkLabel} hidden>
+        Bookmarked
+      </span>
       {blocks.map((block) => {
         const content = block.segments.map((segment, position) => (
           <span key={segment.index}>
             <Sentence
               segment={segment}
               active={segment.index === activeIndex}
+              describedBy={bookmarked.has(segment.index) ? bookmarkLabel : undefined}
               tabStop={segment.index === tabStop}
               onSelect={onSelect}
               onMove={focusNeighbour}

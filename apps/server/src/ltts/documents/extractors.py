@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 """Purpose: Dispatch a verified document type to its extractor and enforce post-extraction rules.
 
 Scope: One ``extract`` entry point used both in-process (tests) and inside the sandbox process;

@@ -1,4 +1,6 @@
 // @ts-check
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 /**
  * Purpose: Enforce source file size limits across languages (repository rule, see CONTRIBUTING.md).
  * Scope: Every tracked source file (TS/TSX/MJS/PY/CSS/MD/YML). Under 300 lines is the target;

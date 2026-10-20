@@ -10,6 +10,7 @@ version = "2.0.0"
 description = "Local-first text-to-speech reader: document extraction, Kokoro synthesis and voice studio API."
 readme = "README.md"
 license = "MIT"
+authors = [{ name = "Carson McRae" }]
 requires-python = ">=3.12,<3.13"
 dependencies = [
   "fastapi>=0.142,<1",
@@ -28,6 +29,10 @@ dependencies = [
   "markdown-it-py>=4.2,<5",
   "psutil>=7.2,<8",
 ]
+
+[project.urls]
+Homepage = "https://github.com/carsonmcrae/local-tts-web-ui"
+Source = "https://github.com/carsonmcrae/local-tts-web-ui"
 
 [project.scripts]
 ltts = "ltts.cli:main"

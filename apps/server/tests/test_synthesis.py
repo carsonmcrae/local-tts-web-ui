@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 """Purpose: Tests for the audio cache, the engine scheduler and audio helpers.
 
 Scope: Cache key sensitivity (text, voice, pace, engine revision), LRU eviction under a byte limit,

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 """Purpose: Build and hold the application's service graph (manual dependency injection).
 
 Scope: Constructs every service once per app from ``Settings`` and exposes them to routes through
@@ -15,12 +17,14 @@ from fastapi import Depends, Request
 
 from ltts.common import MB
 from ltts.db import Database
+from ltts.documents.bookmarks import BookmarkStore
 from ltts.documents.repository import DocumentRepository
 from ltts.documents.service import DocumentService
 from ltts.engines.registry import EngineRegistry
 from ltts.exports.service import ExportService
 from ltts.jobs import JobManager
 from ltts.modelstore.store import ModelStore
+from ltts.pronunciation.store import PronunciationStore
 from ltts.synthesis.cache import AudioCache
 from ltts.synthesis.service import SynthesisService
 from ltts.voices.profiles import CLONING_ENGINE, VoiceProfileService
@@ -52,6 +56,8 @@ class Services:
     studio: StudioService
     exports: ExportService
     preferences: PreferenceStore
+    pronunciations: PronunciationStore
+    bookmarks: BookmarkStore
 
 
 def build_services(
@@ -74,7 +80,8 @@ def build_services(
     factory = engine_factory or (lambda s, m: [KokoroEngine(m), ChatterboxEngine(s, m)])
     registry = EngineRegistry(factory(settings, store), jobs)
     cache = AudioCache(settings.path("cache", "audio"), db, settings.audio_cache_max_mb * MB)
-    synthesis = SynthesisService(registry, cache, documents)
+    pronunciations = PronunciationStore(db)
+    synthesis = SynthesisService(registry, cache, documents, pronunciations.apply)
     voices = VoiceProfileService(settings, db, cache.purge_voice)
     registry.attach_custom_voices(voices.resolve, lambda: voices.as_voices(lambda: registry.is_ready(CLONING_ENGINE)))
     sessions = VoiceSessionService(settings, db, jobs)
@@ -94,6 +101,8 @@ def build_services(
         studio=studio,
         exports=ExportService(settings, jobs, documents, synthesis),
         preferences=PreferenceStore(db),
+        pronunciations=pronunciations,
+        bookmarks=BookmarkStore(db),
     )
 
 

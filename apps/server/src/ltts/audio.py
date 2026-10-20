@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 """Purpose: Small, dependency-light audio utilities shared by synthesis, export and voice profiles.
 
 Scope: Natural pauses after segments (by boundary type), click-free fades, peak normalisation,

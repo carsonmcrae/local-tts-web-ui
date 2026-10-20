@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 """Purpose: Split extracted text into speech segments with stable, deterministic boundaries.
 
 Scope: Rule-based sentence splitting (abbreviations, initials, decimals, closing quotes), splitting

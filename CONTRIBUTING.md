@@ -29,8 +29,12 @@ npm run dev
 
 ## Engineering rules
 
-- **File headers.** Every source and test file starts with `Purpose:`, `Scope:` and `Does NOT belong:`
-  (checked by `scripts/check-headers.mjs`). Write real content, not boilerplate.
+- **File headers.** Every source and test file starts with the two licence lines
+  (`SPDX-License-Identifier: MIT` and `Copyright (c) 2026 Carson McRae - ...`, checked by
+  `scripts/check-provenance.mjs`; see [ATTRIBUTION.md](ATTRIBUTION.md)), then `Purpose:`, `Scope:` and
+  `Does NOT belong:` (checked by `scripts/check-headers.mjs`). Write real content, not boilerplate.
+- **Contributions** are made under the project's MIT License. You keep the copyright in your changes
+  and may add your own copyright line under the existing one in a file you substantially change.
 - **File size.** Aim for under 300 lines; over 400 is flagged; over 500 fails unless justified in
   `scripts/file-size-exceptions.json`. Split by responsibility, never into `part1`/`misc` files.
 - **Complexity.** TypeScript logic ≤ 15 cyclomatic, React components ≤ 20 and ≤ 200 lines per function;

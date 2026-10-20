@@ -1,4 +1,6 @@
 // @ts-check
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 /**
  * Purpose: Produce the dependency license inventory and fail on unreviewed copyleft licenses.
  * Scope: Production npm packages (from node_modules package.json files reachable from the web app)

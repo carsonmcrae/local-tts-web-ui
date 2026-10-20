@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 /**
  * Purpose: Install, monitor and remove speech engines from anywhere in the UI.
  * Scope: `EnginePanel` (status, hardware advice, install options with download/disk sizes, live

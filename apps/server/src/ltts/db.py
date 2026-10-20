@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 """Purpose: SQLite persistence primitives: connections and forward-only schema migrations.
 
 Scope: Short-lived connections (safe across request and worker threads) with WAL, foreign keys and
@@ -117,6 +119,24 @@ MIGRATIONS: tuple[str, ...] = (
     # 4: the tone correction grew into a full cleanup (noise reduction, rumble filter and tone)
     """
     ALTER TABLE voice_sessions RENAME COLUMN tone_json TO cleanup_json;
+    """,
+    # 5: the pronunciation dictionary, and bookmarks with notes
+    """
+    CREATE TABLE pronunciations (
+        id TEXT PRIMARY KEY,
+        word TEXT NOT NULL,
+        say_as TEXT NOT NULL,
+        match_case INTEGER NOT NULL DEFAULT 0,
+        created_at TEXT NOT NULL
+    );
+    CREATE TABLE bookmarks (
+        id TEXT PRIMARY KEY,
+        document_id TEXT NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+        segment_idx INTEGER NOT NULL,
+        note TEXT NOT NULL DEFAULT '',
+        created_at TEXT NOT NULL,
+        UNIQUE (document_id, segment_idx)
+    );
     """,
 )
 

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 /**
  * Purpose: Accessible modal dialogs and confirmation prompts.
  * Scope: Radix Dialog with focus trapping, Escape/overlay dismissal, a consistent header/footer

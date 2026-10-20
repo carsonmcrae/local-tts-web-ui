@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 /**
  * Purpose: Check the microphone before a studio session, hear it, and clean it up by ear.
  * Scope: Lists the inputs and picks the likeliest studio microphone until the speaker chooses one;

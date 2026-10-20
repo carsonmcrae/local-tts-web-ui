@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 /**
  * Purpose: Tests for the per-device theme preference hook.
  * Scope: Reading and saving the choice (including blocked storage), applying the `dark` class, and

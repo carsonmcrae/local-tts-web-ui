@@ -1,4 +1,6 @@
 // @ts-check
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 /**
  * Purpose: Locate or provision the `uv` Python manager that owns the server's environment.
  * Scope: Prefer an explicit LTTS_UV_PATH, then a project-local pinned copy, then a recent

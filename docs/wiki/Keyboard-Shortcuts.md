@@ -2,13 +2,14 @@
 
 These shortcuts work on any page once a document is loaded in the player.
 
-| Keys                 | Action                    |
-| -------------------- | ------------------------- |
-| `Space`, `K`         | Play or pause             |
-| `←`, `→`             | Previous or next sentence |
-| `Shift ←`, `Shift →` | Previous or next section  |
-| `[`, `]`             | Slower or faster          |
-| `?`                  | Show keyboard shortcuts   |
+| Keys                 | Action                                                |
+| -------------------- | ----------------------------------------------------- |
+| `Space`, `K`         | Play or pause                                         |
+| `←`, `→`             | Previous or next sentence                             |
+| `Shift ←`, `Shift →` | Previous or next section                              |
+| `[`, `]`             | Slower or faster                                      |
+| `B`                  | Bookmark the sentence being read (again to remove it) |
+| `?`                  | Show keyboard shortcuts                               |
 
 In each row, the first key does the first action and the second key the second (for example, `←` goes
 to the previous sentence and `→` to the next).

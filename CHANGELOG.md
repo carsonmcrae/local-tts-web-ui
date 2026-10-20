@@ -25,6 +25,21 @@ All notable changes to this project are documented here. The format follows
   new dependencies.
 - **Adjust this section** in the reader: rename a chapter or move where it starts, sentence by
   sentence.
+- **Pronunciation dictionary** (Settings → Pronunciation): whole-word rules such as "Kael" → "Kale",
+  optionally case-sensitive, heard before saving, applied to reading, previews and exports; only
+  sentences containing a changed word are regenerated.
+- **Bookmarks and notes**: bookmark the sentence being read (button or `B`), a Bookmarks tab beside
+  Contents, notes on each bookmark, and an export of all notes as Markdown.
+- **Search** inside a document, with matches marked and a jump to the sentence; **library search and
+  sort** (title, date added, least listened).
+- **Sleep timer**: stop after 5–60 minutes or at the end of the section, always between sentences.
+- **Reading text settings**: text size, line spacing and typeface, per device.
+- **Export subtitles and tags**: optional sentence-timed SRT subtitles, and title, album and track
+  tags in exported audio.
+- **Attribution and provenance**: [NOTICE](NOTICE), [ATTRIBUTION.md](ATTRIBUTION.md) and
+  [CITATION.cff](CITATION.cff); SPDX licence and copyright lines in every source file, checked by
+  `npm run lint:repo`; the author and licence in Settings → About, the API description, package
+  metadata, the web bundle's licence banner and exported audio.
 
 ### Changed
 
@@ -32,7 +47,10 @@ All notable changes to this project are documented here. The format follows
   the end of one chapter no longer appears at the start of the next.
 - API: `POST /api/voice-profiles/analyze` returns `{report, suggested}`;
   `POST /api/voice-sessions/tone-preview` is replaced by `POST /api/voice-profiles/cleanup-preview`;
-  a studio session's `tone` is now `cleanup`. New: `PATCH /api/documents/{id}/sections/{index}`.
+  a studio session's `tone` is now `cleanup`. New: `PATCH /api/documents/{id}/sections/{index}`,
+  `GET /api/documents/{id}/search`, `/api/documents/{id}/bookmarks` and `/api/pronunciations`;
+  `GET /api/system` reports `about`; exports accept `captions`. Database migration 5 adds the
+  `pronunciations` and `bookmarks` tables.
 - **Node.js 22.22 or newer** is now required (React Router 8 and jsdom 30 need it).
 - Dependencies: React Router 8, radix-ui 1.7, Vitest 5, jsdom 30.
 

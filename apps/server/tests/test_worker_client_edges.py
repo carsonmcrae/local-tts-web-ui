@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 """Purpose: Edge-case tests for the worker protocol client that a well-behaved worker never triggers.
 
 Scope: Forwarding worker stderr to the debug log, a process that could not be started, a pipe that

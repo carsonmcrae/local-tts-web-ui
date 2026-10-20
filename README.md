@@ -24,6 +24,11 @@ narration voice from a short recording of yourself.
 
 - **Reader** — PDF, DOCX, EPUB, Markdown, TXT or pasted text. Sentence-by-sentence read-along, chapter and
   page navigation, resume where you left off, keyboard shortcuts and lock-screen media controls.
+- **Study and listening aids** — search inside a document, bookmarks with notes (exported as Markdown), a
+  sleep timer, adjustable text size, spacing and typeface, a searchable and sortable library, and a fix for
+  chapters that start in the wrong place.
+- **Pronunciation dictionary** — teach every voice how to say character names and unusual words; only the
+  sentences that contain a changed word are regenerated.
 - **Starts instantly, even for whole books** — sentences are generated just ahead of you and cached, so
   playback begins in about a second and long documents never need to be rendered up front.
 - **54 natural voices** (Kokoro-82M) across English (US/UK), Spanish, French, Hindi, Italian, Portuguese,
@@ -31,7 +36,8 @@ narration voice from a short recording of yourself.
 - **Voice Studio (optional)** — create a voice from a 10–20 second recording or an existing clip, or record a
   guided studio session (lossless, 48 passages, resumable) that the app builds into your most faithful voice
   from the best takes. Live quality checks, explicit consent, a delivery setting and one-click permanent deletion.
-- **Export** — WAV or MP3, the whole document or selected chapters, one file or one per chapter.
+- **Export** — WAV or MP3, the whole document or selected chapters, one file or one per chapter, tagged with
+  titles and track numbers, with optional sentence-timed subtitles (SRT).
 - **Private by design** — binds to `127.0.0.1`, works offline after setup, and never sends documents or
   recordings anywhere.
 - Light and dark themes, responsive layout for phones and tablets, accessible controls (WCAG 2.2 AA target,
@@ -171,8 +177,16 @@ See [CONTRIBUTING.md](CONTRIBUTING.md), [testing](docs/guides/testing.md),
 
 ## Licence and credits
 
-MIT — see [LICENSE](LICENSE). Model weights and dependencies have their own licences; see the
+Local TTS Web UI is created and maintained by **Carson McRae** and released under the MIT License — see
+[LICENSE](LICENSE) and [NOTICE](NOTICE). Model weights and dependencies have their own licences; see the
 [licence inventory](docs/security/license-inventory.md).
+
+**Using or forking this project?** Keep the copyright notices (in LICENSE, NOTICE and at the top of every
+source file) and credit the project, for example: "Based on
+[Local TTS Web UI](https://github.com/carsonmcrae/local-tts-web-ui) by Carson McRae (MIT)". The rules
+are in [ATTRIBUTION.md](ATTRIBUTION.md), and [CITATION.cff](CITATION.cff) gives the citation.
+
+Built on the work of:
 
 - [Kokoro-82M](https://huggingface.co/hexgrad/Kokoro-82M) by hexgrad (Apache-2.0); its training data includes
   CC-BY material from the Koniwa (CC BY 3.0) and SIWIS (CC BY 4.0) corpora.

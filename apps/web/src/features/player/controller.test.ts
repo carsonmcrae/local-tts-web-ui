@@ -1,8 +1,11 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 /**
  * Purpose: Behavioural tests for the PlaybackController state machine.
  * Scope: Loading without autoplay, playback with prefetch, auto-advance on `ended`, stale-request
  *   protection when skipping, section navigation, voice/pace changes, error and autoplay-block
- *   handling, and progress persistence — using a fake media element and fetcher.
+ *   handling, the sleep timer, and progress persistence — using a fake media element, fetcher and
+ *   clock.
  * Does NOT belong: React rendering (PlayerBar tests) or real audio.
  */
 import { describe, expect, it, vi } from 'vitest';
@@ -39,7 +42,7 @@ const DOC: PlayerDocument = {
   ],
 };
 
-function setup() {
+function setup(overrides: Partial<ControllerDeps> = {}) {
   const media = new FakeMedia();
   const requests: {
     index: number;
@@ -57,6 +60,7 @@ function setup() {
     },
     saveProgress: vi.fn(),
     toError: (error) => ({ code: 'test', message: String(error) }),
+    ...overrides,
   };
   const controller = new PlaybackController(deps, { voiceId: 'kokoro:a', rate: 1, pace: 1 });
   return { controller, media, requests, deps, pending };
@@ -205,6 +209,42 @@ describe('PlaybackController edge cases', () => {
     media.emit('ended');
     expect(controller.getState()).toMatchObject({ status: 'idle', voiceId: 'kokoro:b' });
     expect(requests).toHaveLength(0);
+  });
+
+  it('stops between sentences when the sleep timer runs out', async () => {
+    const clock = { now: 0 };
+    const { controller, media } = setup({ now: () => clock.now });
+    controller.setSleepTimer(1);
+    expect(controller.getState().sleep).toEqual({ kind: 'minutes', endsAt: 60_000 });
+    await controller.load(DOC, 0, true);
+    clock.now = 30_000;
+    media.emit('ended');
+    await flush();
+    expect(controller.getState()).toMatchObject({ segmentIndex: 1, status: 'playing' });
+    clock.now = 61_000;
+    media.emit('ended');
+    await flush();
+    expect(controller.getState()).toMatchObject({ segmentIndex: 2, status: 'paused', sleep: null });
+  });
+
+  it('stops at the end of the section, and the timer can be turned off', async () => {
+    const { controller, media } = setup();
+    await controller.load(DOC, 1, true);
+    controller.setSleepTimer('section');
+    media.emit('ended');
+    await flush();
+    expect(controller.getState()).toMatchObject({ segmentIndex: 2, status: 'playing' });
+    media.emit('ended');
+    await flush();
+    expect(controller.getState()).toMatchObject({ segmentIndex: 3, status: 'paused', sleep: null });
+    controller.setSleepTimer(5);
+    const { sleep } = controller.getState();
+    expect(sleep?.kind === 'minutes' && sleep.endsAt > Date.now()).toBe(true); // the real clock
+    controller.setSleepTimer(null);
+    expect(controller.getState().sleep).toBeNull();
+    controller.setSleepTimer('section');
+    controller.unload();
+    expect(controller.getState().sleep).toBeNull();
   });
 
   it('takes corrected sections only for the loaded document', async () => {

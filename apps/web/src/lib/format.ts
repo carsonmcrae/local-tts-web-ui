@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 /**
  * Purpose: Human-friendly formatting of sizes, durations, dates and document types.
  * Scope: Pure functions with no React dependency (unit-tested in format.test.ts).

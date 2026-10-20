@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 /**
  * Purpose: Play short voice previews, one at a time, reusing audio already generated.
  * Scope: A single preview audio element, a per-(voice, text, pace) cache of direct audio URLs, loading/playing

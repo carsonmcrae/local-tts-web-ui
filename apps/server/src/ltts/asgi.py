@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 """Purpose: Import target for uvicorn (``ltts.asgi:app``), including auto-reload workers.
 
 Scope: Builds settings from the environment (the CLI exports its overrides there so reload

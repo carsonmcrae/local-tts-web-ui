@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 """Purpose: Real-inference tests — no fakes — for the default and the optional cloning engine.
 
 Scope: Uses the installed models (``data/models`` and ``data/engines``) with a temporary library:

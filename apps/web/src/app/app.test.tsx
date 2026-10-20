@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 /**
  * Purpose: Tests for the application root: lazy routes and the shell's engine status.
  * Scope: Opening a document by URL through the real router (lazy page with a loading state), moving

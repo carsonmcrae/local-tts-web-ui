@@ -2,6 +2,12 @@
   "//": "Purpose: Root workspace manifest and the single entry point for every developer command. Scope: npm workspaces, pinned tooling, and scripts that orchestrate both the web app and the Python server through scripts/*.mjs. Does NOT belong: App runtime dependencies (apps/web/package.json, apps/server/pyproject.toml).",
   "name": "local-tts-web-ui",
   "version": "2.0.0",
+  "author": "Carson McRae",
+  "homepage": "https://github.com/carsonmcrae/local-tts-web-ui",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/carsonmcrae/local-tts-web-ui.git"
+  },
   "private": true,
   "description": "Local-first document reader and voice studio with natural-sounding offline text-to-speech.",
   "license": "MIT",
@@ -29,7 +35,7 @@
     "lint": "npm run lint:web && npm run lint:server && npm run lint:repo",
     "lint:web": "eslint . --max-warnings 0",
     "lint:server": "node scripts/uv-run.mjs --cwd apps/server run --frozen ruff check src tests && node scripts/uv-run.mjs --cwd apps/server run --frozen ruff format --check src tests",
-    "lint:repo": "node scripts/check-file-size.mjs && node scripts/check-headers.mjs && node scripts/check-version.mjs",
+    "lint:repo": "node scripts/check-file-size.mjs && node scripts/check-headers.mjs && node scripts/check-provenance.mjs && node scripts/check-version.mjs",
     "format": "prettier --write . && node scripts/uv-run.mjs --cwd apps/server run --frozen ruff format src tests",
     "format:check": "prettier --check .",
     "typecheck": "npm run typecheck --workspace @ltts/web && tsc -p scripts/tsconfig.json && node scripts/uv-run.mjs --cwd apps/server run --frozen mypy",

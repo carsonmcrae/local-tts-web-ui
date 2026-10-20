@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 """Purpose: Tests for the Chatterbox engine's studio-voice operations over the real stdio protocol.
 
 Scope: ``measure_takes`` parses the worker's per-take features; ``build_voice`` sends the session

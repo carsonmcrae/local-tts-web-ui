@@ -1,15 +1,18 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 /**
  * Purpose: The persistent audio player docked at the bottom of every screen.
- * Scope: Wires player state to the transport, position, voice, speed and export controls; persists
- *   voice/speed choices as preferences; enables keyboard shortcuts; collapses to a compact layout on
- *   phones and announces errors to assistive technology.
+ * Scope: Wires player state to the transport, position, voice, speed, bookmark, sleep-timer and
+ *   export controls; persists voice/speed choices as preferences; enables keyboard shortcuts;
+ *   collapses to a compact layout on phones and announces errors to assistive technology.
  * Does NOT belong: Playback logic (controller.ts) or presentational pieces (PlayerParts.tsx).
  */
-import { Download, Keyboard } from 'lucide-react';
+import { Bookmark, BookmarkCheck, Download, Keyboard } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { Link } from 'react-router';
 import { usePreferences, useSavePreferences, useVoices } from '@/api/queries';
 import { IconButton } from '@/components/ui/Button';
+import { useBookmarkToggle } from '@/features/bookmarks/useBookmarkToggle';
 import { ExportDialog } from '@/features/reader/ExportDialog';
 import type { PlayerState } from './controller';
 import {
@@ -21,6 +24,7 @@ import {
   Transport,
 } from './PlayerParts';
 import { usePlayer } from './PlayerProvider';
+import { SleepMenu } from './SleepMenu';
 import { useShortcuts } from './useShortcuts';
 import { VoicePicker } from './VoicePicker';
 
@@ -66,10 +70,12 @@ export function PlayerBar() {
   const [exportOpen, setExportOpen] = useState(false);
   const openHelp = useCallback(() => setHelpOpen(true), []);
   const { document, status, rate } = state;
+  const bookmark = useBookmarkToggle(document?.id ?? null, state.segmentIndex);
   useShortcuts(controller, {
     enabled: Boolean(document),
     onRateChange: changeRate,
     onHelp: openHelp,
+    onBookmark: bookmark.toggle,
   });
   if (!document) return null;
 
@@ -77,6 +83,19 @@ export function PlayerBar() {
   const position = scrub ?? state.segmentIndex;
   const section = controller.sectionAt(position);
   const busy = status === 'loading';
+  const bookmarkButton = (size: 'sm' | 'md') => (
+    <IconButton
+      label={bookmark.bookmarked ? 'Remove the bookmark' : 'Bookmark this sentence'}
+      icon={bookmark.bookmarked ? <BookmarkCheck size={17} /> : <Bookmark size={17} />}
+      size={size}
+      active={bookmark.bookmarked}
+      disabled={bookmark.busy}
+      onClick={bookmark.toggle}
+    />
+  );
+  const sleepMenu = (
+    <SleepMenu sleep={state.sleep} onChange={(choice) => controller.setSleepTimer(choice)} />
+  );
   const voicePicker = (compact: boolean) => (
     <VoicePicker
       compact={compact}
@@ -108,6 +127,8 @@ export function PlayerBar() {
           <div className="hidden items-center gap-0.5 md:flex md:w-56 md:justify-end lg:w-64">
             {voicePicker(false)}
             <SpeedMenu rate={rate} onChange={changeRate} />
+            {bookmarkButton('md')}
+            {sleepMenu}
             <IconButton
               label="Export audio"
               icon={<Download size={18} />}
@@ -135,6 +156,8 @@ export function PlayerBar() {
           />
           <div className="flex items-center md:hidden">
             {voicePicker(true)}
+            {bookmarkButton('sm')}
+            {sleepMenu}
             <button
               type="button"
               aria-label={`Playback speed ${rate}×. Change speed`}

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 /**
  * Purpose: Labelled form controls with consistent styling and accessible hints/errors.
  * Scope: `Field` (label + hint + error wiring via ids), `Input`, `Textarea`, `Select` (native, for

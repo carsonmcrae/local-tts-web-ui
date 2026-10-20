@@ -1,4 +1,6 @@
 // @ts-check
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 /**
  * Purpose: `npm run setup` — idempotent bootstrap of everything the app needs locally.
  * Scope: Node check, pinned uv, locked Python environment, and the default Kokoro model

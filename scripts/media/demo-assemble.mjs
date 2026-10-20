@@ -1,4 +1,6 @@
 // @ts-check
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 /**
  * Purpose: Turn a demo recording (screencast frames + the app's audio log) into the shipped video.
  * Scope: Frames → constant 30 fps H.264; the soundtrack is rebuilt from the exact audio files the app

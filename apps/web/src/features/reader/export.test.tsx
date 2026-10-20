@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 /**
  * Purpose: Tests for exporting a document as audio.
  * Scope: Format, file layout and range choices (and the request they produce), cancelling a running
@@ -97,9 +99,10 @@ describe('ExportDialog', () => {
     await user.selectOptions(await screen.findByLabelText('What to export'), 'custom');
     await user.selectOptions(screen.getByLabelText('From'), '1');
     await user.selectOptions(screen.getByLabelText('To'), '0');
+    await user.click(screen.getByRole('switch', { name: 'Subtitles' }));
     await user.click(screen.getByRole('button', { name: 'Start export' }));
     await waitFor(() =>
-      expect(exportBody(calls)).toMatchObject({ firstSection: 0, lastSection: 1 }),
+      expect(exportBody(calls)).toMatchObject({ firstSection: 0, lastSection: 1, captions: true }),
     );
   });
 

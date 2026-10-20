@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 /**
  * Purpose: Record one lossless take with a live level meter and an automatic stop.
  * Scope: Starts a PcmRecorder on the chosen input, updates elapsed time and level every animation

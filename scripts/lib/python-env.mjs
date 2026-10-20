@@ -1,4 +1,6 @@
 // @ts-check
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 /**
  * Purpose: Create and verify the server's isolated Python environment through uv.
  * Scope: Node version gate, `uv sync --frozen` against the committed lockfile, and a helper

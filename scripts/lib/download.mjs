@@ -1,4 +1,6 @@
 // @ts-check
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 /**
  * Purpose: Verified HTTPS downloads for bootstrap toolchain artifacts.
  * Scope: Redirect following restricted to an allow-list of hosts, exact size and SHA-256

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 """Purpose: The ``ltts`` command line: serve the app, manage models, print diagnostics/OpenAPI.
 
 Scope: ``serve`` (loopback by default; network exposure needs an explicit flag and generates an

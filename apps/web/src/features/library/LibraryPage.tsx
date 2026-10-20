@@ -1,8 +1,10 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 /**
  * Purpose: The library — the app's home screen.
  * Scope: Upload/paste entry points, drag-and-drop anywhere on the page, a "continue listening" card
- *   for the most recent document, the document list, a one-click sample, and loading/empty/error
- *   states.
+ *   for the most recent document, the searchable, sortable document list, a one-click sample, and
+ *   loading/empty/error states.
  * Does NOT belong: Reading view (ReaderPage).
  */
 import { BookOpen, PlayCircle, Sparkles } from 'lucide-react';
@@ -16,7 +18,8 @@ import { Button, buttonClasses } from '@/components/ui/Button';
 import { Banner, EmptyState, ProgressBar, Skeleton, StatusRegion } from '@/components/ui/Feedback';
 import { PageHeader } from '@/components/ui/Layout';
 import { DefaultVoicesBanner } from '@/features/engines/EngineSetup';
-import { DocumentCard, documentFacts } from './DocumentCard';
+import { documentFacts } from './DocumentCard';
+import { LibraryList } from './LibraryList';
 import { SAMPLE_TEXT, SAMPLE_TITLE } from './sample';
 import {
   DropTarget,
@@ -116,17 +119,7 @@ function LibraryContent({
           facts={documentFacts(recent).join(' · ')}
         />
       ) : null}
-      <div className="mb-3 flex items-baseline justify-between">
-        <h2 className="text-base font-semibold tracking-tight">All documents</h2>
-        <span className="text-[13px] text-muted">
-          {list.length} total · drag files anywhere to add
-        </span>
-      </div>
-      <ul className="grid gap-3 lg:grid-cols-2">
-        {list.map((doc) => (
-          <DocumentCard key={doc.id} doc={doc} />
-        ))}
-      </ul>
+      <LibraryList documents={list} />
     </>
   );
 }

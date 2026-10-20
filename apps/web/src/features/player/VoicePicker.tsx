@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 /**
  * Purpose: Choose the narration voice from the player without leaving the page.
  * Scope: Searchable popover listing custom voices first, then built-in voices grouped by language;

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 """Purpose: Small shared primitives used across feature packages.
 
 Scope: The camelCase API base model, identifier generation, UTC timestamps, disk-space checks and

@@ -1,7 +1,9 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
 /**
  * Purpose: Global keyboard shortcuts for listening without touching the mouse.
  * Scope: Space/K play-pause, ←/→ previous/next sentence, Shift+←/→ previous/next section, [ and ]
- *   slower/faster, ? opens the shortcut sheet. Ignored while typing, inside dialogs, on native
+ *   slower/faster, B bookmarks the sentence being read, ? opens the shortcut sheet. Ignored while typing, inside dialogs, on native
  *   interactive controls (so Space still activates buttons) and with Ctrl/Alt/Meta held.
  * Does NOT belong: Command implementations (PlaybackController).
  */
@@ -15,6 +17,7 @@ export const SHORTCUTS: readonly { keys: string[]; action: string }[] = [
   { keys: ['←', '→'], action: 'Previous or next sentence' },
   { keys: ['Shift ←', 'Shift →'], action: 'Previous or next section' },
   { keys: ['[', ']'], action: 'Slower or faster' },
+  { keys: ['B'], action: 'Bookmark the sentence being read (again to remove it)' },
   { keys: ['?'], action: 'Show keyboard shortcuts' },
 ];
 
@@ -32,9 +35,14 @@ export function stepSpeed(current: number, direction: 1 | -1): number {
 
 export function useShortcuts(
   controller: PlaybackController,
-  options: { enabled: boolean; onRateChange: (rate: number) => void; onHelp: () => void },
+  options: {
+    enabled: boolean;
+    onRateChange: (rate: number) => void;
+    onHelp: () => void;
+    onBookmark: () => void;
+  },
 ): void {
-  const { enabled, onRateChange, onHelp } = options;
+  const { enabled, onRateChange, onHelp, onBookmark } = options;
   useEffect(() => {
     if (!enabled) return undefined;
     const onKeyDown = (event: KeyboardEvent) => {
@@ -49,6 +57,7 @@ export function useShortcuts(
         ArrowRight: () => void (event.shiftKey ? controller.nextSection() : controller.next()),
         '[': () => onRateChange(stepSpeed(controller.getState().rate, -1)),
         ']': () => onRateChange(stepSpeed(controller.getState().rate, 1)),
+        b: onBookmark,
         '?': onHelp,
       };
       const action = actions[event.key];
@@ -59,5 +68,5 @@ export function useShortcuts(
     };
     globalThis.addEventListener('keydown', onKeyDown);
     return () => globalThis.removeEventListener('keydown', onKeyDown);
-  }, [controller, enabled, onRateChange, onHelp]);
+  }, [controller, enabled, onRateChange, onHelp, onBookmark]);
 }

@@ -37,7 +37,8 @@ exclude-newer = "14 days"
 # Exception: every omegaconf before 2.4.0 (2026-10-09) needs antlr4-python3-runtime 4.9, which ships only
 # as an sdist and would run its setup.py on install. Drop this after 2026-10-23, when the 14-day window covers it.
 # certifi 2026.10.19 fixes GHSA-6q48-6c7w-9gw2 (security exception, as in apps/server); drop after 2026-11-03.
-exclude-newer-package = { omegaconf = "2026-10-10T00:00:00Z", certifi = "2026-10-21T00:00:00Z" }
+# pillow 13.0.0 (2026-10-16) fixes nine advisories (security exception, override below); drop after 2026-10-30.
+exclude-newer-package = { omegaconf = "2026-10-10T00:00:00Z", certifi = "2026-10-21T00:00:00Z", pillow = "2026-10-17T00:00:00Z" }
 conflicts = [[{ extra = "cpu" }, { extra = "cuda" }]]
 # chatterbox-tts declares gradio as a hard dependency but never imports it; drop it (and its large
 # dependency tree) from this environment. It also pins diffusers==0.29.0, which has high-severity
@@ -51,6 +52,9 @@ conflicts = [[{ extra = "cpu" }, { extra = "cuda" }]]
 # torch declares setuptools<82, but only torch.utils.cpp_extension (building C++ extensions at runtime)
 # uses it, which nothing here does; setuptools 83+ fixes GHSA-h35f-9h28-mq5c. Perth's one pkg_resources
 # call (setuptools 82 removed that package) is served by ltts_chatterbox_worker/compat.py.
+# Pillow comes in through diffusers, which imports it but decodes no images here; 12.3.0 has nine
+# advisories (GHSA-8g5g-8vmr-9782 critical, six high) fixed only in 13.0.0. gradio caps pillow<13, but
+# it is never installed (above); diffusers accepts any Pillow.
 # Triage of every advisory and the latest numbers: docs/security/supply-chain.md.
 override-dependencies = [
   "gradio; sys_platform == 'never'",
@@ -58,6 +62,7 @@ override-dependencies = [
   "safetensors>=0.8.0,<0.9",
   "transformers>=5.11.0,<5.12",
   "setuptools>=83,<85",
+  "pillow>=13.0.0,<14",
 ]
 
 # chatterbox-tts 0.1.7's declared requirements, verbatim except torch/torchaudio==2.6.0, which become

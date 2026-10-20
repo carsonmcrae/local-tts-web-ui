@@ -59,7 +59,8 @@ export function brokenLinks(/** @type {string} */ html, /** @type {string} */ ou
 
 function main() {
   const out = path.resolve(option('--out'));
-  const base = option('--base-url').replace(/\/+$/, '');
+  let base = option('--base-url');
+  while (base.endsWith('/')) base = base.slice(0, -1);
   rmSync(out, { recursive: true, force: true });
   cpSync(path.join(repoRoot, 'site'), out, { recursive: true });
 

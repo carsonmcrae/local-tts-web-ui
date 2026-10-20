@@ -45,8 +45,8 @@
       'speech-status',
       'speech-online',
     ].map($);
-    const synth = window.speechSynthesis;
-    if (!synth || typeof window.SpeechSynthesisUtterance !== 'function') {
+    const synth = globalThis.speechSynthesis;
+    if (!synth || typeof globalThis.SpeechSynthesisUtterance !== 'function') {
       select.innerHTML = '<option>Not available</option>';
       status.textContent =
         'This browser can’t speak text aloud. Try a current Chrome, Edge, Firefox or Safari, or install TTSNative.';

@@ -129,6 +129,11 @@ input[type='range'] {
   accent-color: var(--accent);
 }
 
+.status-line {
+  display: block;
+  min-height: 1.6em;
+}
+
 /* Privacy, install, engineering */
 .two {
   display: grid;

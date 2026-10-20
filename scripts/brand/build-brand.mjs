@@ -76,8 +76,10 @@ const stops = (theme) =>
   theme === 'light' ? [COLORS.indigo, COLORS.cyan] : [COLORS.indigoLight, COLORS.cyanLight];
 
 /** @param {string} title @param {string} viewBox @param {string} body @param {string} [defs] */
-const svg = (title, viewBox, body, defs = '') =>
-  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${viewBox}" role="img" aria-label="${title}"><title>${title}</title>${defs ? `<defs>${defs}</defs>` : ''}${body}</svg>`;
+const svg = (title, viewBox, body, defs = '') => {
+  const defsTag = defs ? `<defs>${defs}</defs>` : '';
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${viewBox}" role="img" aria-label="${title}"><title>${title}</title>${defsTag}${body}</svg>`;
+};
 
 /** The symbol alone, in the brand gradient (light backgrounds) or its lighter twin (dark). */
 const symbol = (/** @type {Theme} */ theme) =>
@@ -208,8 +210,9 @@ async function render(page, name, source, widths) {
   for (const width of widths) {
     const height = Math.round((width * vh) / vw);
     await page.setViewportSize({ width, height });
+    const sized = final.replace('<svg ', `<svg width="${width}" height="${height}" `);
     await page.setContent(
-      `<!doctype html><body style="margin:0;background:transparent">${final.replace('<svg ', `<svg width="${width}" height="${height}" `)}</body>`,
+      `<!doctype html><body style="margin:0;background:transparent">${sized}</body>`,
     );
     await page.evaluate(() => /** @type {any} */ (globalThis).document.fonts.ready);
     await page.screenshot({

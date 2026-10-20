@@ -78,6 +78,10 @@ All notable changes to this project are documented here. The format follows
 
 ### Security
 
+- **ONNX Runtime telemetry is now switched off.** Official ONNX Runtime builds send usage telemetry
+  to Microsoft by default (Windows TraceLogging, or HTTPS on other platforms). TTSNative now sets
+  `ORT_DISABLE_TELEMETRY` and calls `disable_telemetry_events()` before Kokoro loads, so the
+  "no telemetry" promise holds.
 - **certifi 2026.10.19** in the server and the Chatterbox worker, fixing GHSA-6q48-6c7w-9gw2. It is
   one day old, so it comes in through a documented exception to the 14-day release cool-down.
 - The optional Chatterbox worker moved to torch 2.11, transformers 5.11 and setuptools 84, clearing

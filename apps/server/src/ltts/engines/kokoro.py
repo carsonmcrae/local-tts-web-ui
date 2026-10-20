@@ -31,6 +31,7 @@ from ltts.engines.kokoro_voices import GRADES, describe
 from ltts.errors import ConflictError, EngineUnavailableError, SynthesisError
 from ltts.jobs import JobContext
 from ltts.modelstore.store import Damage, ModelStore, describe_damage
+from ltts.onnx import onnxruntime
 
 log = logging.getLogger("ltts.engines.kokoro")
 ARTIFACT = "kokoro-v1.0"
@@ -65,7 +66,7 @@ class KokoroEngine(Engine):
             if self._model is None:
                 self._store.require_intact(ARTIFACT)  # every file is hashed before the first load
                 try:
-                    import onnxruntime as rt
+                    rt = onnxruntime()  # before kokoro_onnx, which imports onnxruntime itself
                     from kokoro_onnx import Kokoro
 
                     # Pin the CPU provider explicitly: kokoro-onnx otherwise enables every provider the

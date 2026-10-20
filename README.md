@@ -148,6 +148,8 @@ checksums. After that the app works fully offline. See [SECURITY.md](SECURITY.md
 
 ## Screenshots
 
+Captured just before the rename, so the app's header still shows its former name, Local TTS.
+
 | Library                                 | Voice library                         |
 | --------------------------------------- | ------------------------------------- |
 | ![Library](docs/images/library.png)     | ![Voices](docs/images/voices.png)     |

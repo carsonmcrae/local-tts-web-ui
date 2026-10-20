@@ -84,6 +84,9 @@ All notable changes to this project are documented here. The format follows
   "no telemetry" promise holds.
 - **certifi 2026.10.19** in the server and the Chatterbox worker, fixing GHSA-6q48-6c7w-9gw2. It is
   one day old, so it comes in through a documented exception to the 14-day release cool-down.
+- **Pillow 13.0.0** in the Chatterbox worker, fixing nine advisories in 12.3.0 (one critical, six
+  high). The worker never opens images, so none was reachable; the release is four days old and also
+  comes in through a documented cool-down exception.
 - The optional Chatterbox worker moved to torch 2.11, transformers 5.11 and setuptools 84, clearing
   its open advisories; the one remaining, in code the worker never calls, is documented in
   [docs/security/supply-chain.md](docs/security/supply-chain.md).

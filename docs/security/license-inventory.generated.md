@@ -104,7 +104,7 @@ Runtime dependencies only (development tooling is not distributed). Model weight
 | annotated-types==0.8.0 | MIT |  |
 | anyio==4.15.1 | MIT |  |
 | attrs==26.1.0 | MIT |  |
-| certifi==2026.7.22 | Mozilla Public License 2.0 (MPL 2.0) |  |
+| certifi==2026.10.19 | Mozilla Public License 2.0 (MPL 2.0) |  |
 | cffi==2.1.1 | MIT-0 |  |
 | click==8.5.0 | BSD-3-Clause |  |
 | cloudpickle==3.1.2 | BSD License |  |

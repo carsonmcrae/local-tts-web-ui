@@ -1,8 +1,9 @@
 """Purpose: Create, list, update and permanently delete local custom voice profiles.
 
 Scope: Quick voices: validates an uploaded reference recording (container, channels, sample rate,
-duration), runs the quality checks, requires explicit consent, trims and normalises the clip, and
-stores only that reference WAV plus metadata under ``data/voices/<id>/``. Studio voices: stores a
+duration), runs the quality checks (and suggests a cleanup), requires explicit consent, applies the
+chosen cleanup, trims and normalises the clip, and stores only that reference WAV plus metadata under
+``data/voices/<id>/``; previews a cleanup on a recording. Studio voices: stores a
 finished session's chosen take, its built voice file and the session's takes there. Both have a
 delivery (sampling preset) that is part of the audio cache revision. No model is trained and nothing
 leaves the machine. Deleting a profile removes its recordings, metadata and all audio made with it.
@@ -23,12 +24,13 @@ from typing import Literal
 import numpy as np
 import soundfile as sf
 
-from ltts.audio import normalize_peak, read_audio, trim_silence
+from ltts.audio import encode_wav, normalize_peak, read_audio, trim_silence
 from ltts.common import ApiModel, new_id, utc_now
 from ltts.config import Settings
 from ltts.db import Database
 from ltts.engines.base import Delivery, VoiceInfo, VoiceSpec
 from ltts.errors import AppError, ConflictError, NotFoundError, UnsupportedDocumentError
+from ltts.voices.cleanup import Cleanup, RecordingCheck, apply_cleanup, suggest_cleanup
 from ltts.voices.quality import QualityReport, analyze
 
 log = logging.getLogger("ltts.voices")
@@ -135,9 +137,16 @@ class VoiceProfileService:
     def reference_path(self, profile_id: str) -> Path:
         return self.root / profile_id / "reference.wav"
 
-    def analyze_file(self, path: Path) -> QualityReport:
+    def analyze_file(self, path: Path) -> RecordingCheck:
         samples, rate = _decode(path, self._settings.max_voice_reference_s)
-        return analyze(trim_silence(samples, rate), rate)
+        report = analyze(trim_silence(samples, rate), rate)
+        # The untrimmed recording: its pauses show the background the cleanup is suggested for.
+        return RecordingCheck(report=report, suggested=suggest_cleanup(report, samples, rate))
+
+    def cleanup_preview(self, path: Path, cleanup: Cleanup) -> bytes:
+        """A recording with ``cleanup`` applied, as WAV, to compare with the original."""
+        samples, rate = _decode(path, self._settings.max_voice_reference_s)
+        return encode_wav(apply_cleanup(samples, rate, cleanup), rate)
 
     def _check_can_create(self, consent: bool) -> None:
         if not consent:
@@ -166,7 +175,9 @@ class VoiceProfileService:
         sf.write(str(folder / "reference.wav"), clip, rate, subtype="PCM_16")
         return profile_id, folder, clip
 
-    def create(self, path: Path, name: str, consent: bool, source: str) -> VoiceProfileOut:
+    def create(
+        self, path: Path, name: str, consent: bool, source: str, cleanup: Cleanup | None = None
+    ) -> VoiceProfileOut:
         self._check_can_create(consent)
         samples, rate = _decode(path, self._settings.max_voice_reference_s)
         trimmed = trim_silence(samples, rate)
@@ -176,6 +187,9 @@ class VoiceProfileService:
                 "The recording didn't pass the quality checks.",
                 details={"report": report.model_dump(by_alias=True)},
             )
+        if cleanup is not None and cleanup.active:
+            # Cleaned before trimming, so noise reduction learns the background from the pauses.
+            trimmed = trim_silence(apply_cleanup(samples, rate, cleanup), rate)
         profile_id, _, clip = self._new_folder(trimmed, rate)
         self._insert(
             {

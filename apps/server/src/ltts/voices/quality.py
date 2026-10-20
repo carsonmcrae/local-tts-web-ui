@@ -5,10 +5,9 @@ ratio and the microphone's tone on vowels (sibilants like "s" and "sh" are left 
 naturally bright): brightness (4-8 kHz against 2-4 kHz) and body (low end against presence). Turns
 them into blocking errors or advisory warnings with plain-language fixes. Three rule sets: a quick
 voice's single clip, a studio session take (tone is checked once, in the microphone check), and a
-microphone check. Suggests the gentle tone correction that brings a bright or thin microphone back to
-a natural balance. The browser runs the clip checks live, but this server-side result is
+microphone check. The browser runs the clip checks live, but this server-side result is
 authoritative.
-Does NOT belong: Applying the correction (``audio.apply_tone``) or storing profiles (``profiles.py``).
+Does NOT belong: Suggesting or applying a cleanup (``cleanup.py``) or storing profiles (``profiles.py``).
 """
 
 from __future__ import annotations
@@ -18,7 +17,6 @@ from typing import Literal
 
 import numpy as np
 import numpy.typing as npt
-from pydantic import Field
 
 from ltts.audio import Float32Array, frame_rms_db
 from ltts.common import ApiModel
@@ -31,10 +29,6 @@ SILENCE_DB = -45.0
 # Tone on vowels (median frame). Natural speech measured from -11 to -3 dB brightness and 10 to 21 dB body.
 BRIGHT_DB = 0.0
 THIN_DB = 7.0
-NATURAL_BRIGHTNESS_DB = -6.0
-NATURAL_BODY_DB = 15.0
-MAX_TREBLE_CUT_DB = 9.0
-MAX_BASS_BOOST_DB = 6.0
 _SPECTRUM_FRAME = 2048
 SILENT_POWER = 1e-6  # per-sample power below which a frame holds no usable sound
 PRESENCE_FLOOR = 1e-4  # 2-4 kHz more than 40 dB below the low band holds no speech, only noise
@@ -59,13 +53,6 @@ class QualityReport(ApiModel):
     body_db: float | None = None
     ok: bool
     issues: list[QualityIssue]
-
-
-class ToneCorrection(ApiModel):
-    """A gentle shelving correction: treble (above about 4 kHz) cut, bass (below about 250 Hz) boost."""
-
-    treble_db: float = Field(default=0.0, ge=-MAX_TREBLE_CUT_DB, le=0.0)
-    bass_db: float = Field(default=0.0, ge=0.0, le=MAX_BASS_BOOST_DB)
 
 
 def _db(value: float) -> float:
@@ -99,10 +86,10 @@ _SOUND_RULES = (
 )  # fmt: skip
 _TONE_RULES = (
     _Rule("brightness_db", False, BRIGHT_DB, "bright", "warning",
-          "The microphone sounds bright or harsh, and the voice will copy that. A studio voice can correct "
+          "The microphone sounds bright or harsh, and the voice will copy that. The app can correct "
           "the tone for you; you can also angle the mic slightly away from your mouth."),
     _Rule("body_db", True, THIN_DB, "thin", "warning",
-          "The microphone sounds thin, with little low end, and the voice will copy that. A studio voice can "
+          "The microphone sounds thin, with little low end, and the voice will copy that. The app can "
           "correct the tone for you; a USB or XLR microphone, a little closer, sounds fuller."),
 )  # fmt: skip
 _PAUSES = _Rule("pause_ratio", False, 0.5, "pauses", "warning",
@@ -201,19 +188,3 @@ def analyze(samples: Float32Array, sample_rate: int, rules: Rules = CLIP_RULES) 
     return QualityReport.model_validate(
         {**values, "ok": not any(i.severity == "error" for i in issues), "issues": issues}
     )
-
-
-def suggest_tone(report: QualityReport) -> ToneCorrection | None:
-    """The correction that brings a bright or thin microphone back to a natural balance, if it needs one."""
-    if not report.ok:
-        return None  # fix the blocking problem (no speech, clipping, noise) first
-    codes = {issue.code for issue in report.issues}
-    treble = 0.0
-    bass = 0.0
-    if "bright" in codes and report.brightness_db is not None:
-        treble = -min(report.brightness_db - NATURAL_BRIGHTNESS_DB, MAX_TREBLE_CUT_DB)
-    if "thin" in codes and report.body_db is not None:
-        bass = min(NATURAL_BODY_DB - report.body_db, MAX_BASS_BOOST_DB)
-    if not treble and not bass:
-        return None
-    return ToneCorrection(treble_db=round(treble * 2) / 2, bass_db=round(bass * 2) / 2)

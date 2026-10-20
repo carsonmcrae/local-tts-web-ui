@@ -1,7 +1,8 @@
 """Purpose: Wire-format models for the documents API.
 
-Scope: Library summaries, document detail with sections, section contents, paste requests and
-reading-progress updates. ``estimated_seconds`` is a character-rate estimate until real audio exists.
+Scope: Library summaries, document detail with sections, section contents, paste requests,
+section corrections (title and where it starts) and reading-progress updates. ``estimated_seconds``
+is a character-rate estimate until real audio exists.
 Does NOT belong: Internal extraction structures (``types.py``).
 """
 
@@ -71,6 +72,13 @@ class SectionContent(ApiModel):
 class PasteTextRequest(ApiModel):
     text: str = Field(min_length=1, max_length=2_000_000)
     title: str | None = Field(default=None, max_length=MAX_TITLE_CHARS)
+
+
+class SectionUpdate(ApiModel):
+    """A reader's correction to a section: a new title, and/or the sentence it should start at."""
+
+    title: str | None = Field(default=None, min_length=1, max_length=MAX_TITLE_CHARS)
+    start_segment: int | None = Field(default=None, ge=0)
 
 
 class ProgressUpdate(ApiModel):

@@ -1,6 +1,6 @@
 /**
  * Purpose: Tests for the reading view: contents, paging, play/resume, read-along and its keyboard
- *   model, auto-scroll, and loading/error states.
+ *   model, auto-scroll, correcting a section, and loading/error states.
  * Scope: ReaderPage with ReaderParts, SectionNav and DocumentText against the mocked API; the
  *   player's controller is reached through a small spy component where a test needs to act on it.
  * Does NOT belong: Player controls (features/player tests) or exporting (export.test.tsx).
@@ -206,6 +206,101 @@ describe('Read-along scrolling', () => {
     act(() => controller().unload());
     expect(sentence('Sentence 5.')).toHaveAttribute('data-active', 'false');
     expect(scroll).not.toHaveBeenCalled();
+  });
+});
+
+const adjust = async (user: ReturnType<typeof userEvent.setup>) => {
+  await user.click(screen.getByRole('button', { name: 'Adjust this section' }));
+  return screen.findByRole('dialog', { name: 'Adjust this section' });
+};
+
+const viewChapterTwo = async (user: ReturnType<typeof userEvent.setup>) => {
+  const sidebar = screen.getByRole('complementary', { name: 'Document contents' });
+  await user.click(within(sidebar).getByRole('button', { name: /Chapter Two/ }));
+  await screen.findByText('Section 2 of 2 · Chapter Two');
+};
+
+const closed = () => waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+
+describe('Adjusting a section', () => {
+  it('moves where a chapter starts and renames it, and the player follows', async () => {
+    const moved = documentDetail({
+      ...book,
+      sections: [
+        { index: 0, title: 'Chapter One', startSegment: 0, segmentCount: 4, page: 1 },
+        { index: 1, title: 'The Second', startSegment: 4, segmentCount: 2, page: 5 },
+      ],
+    });
+    const { calls } = mockReaderApi(book, {
+      [`PATCH /api/documents/${book.id}/sections/1`]: moved,
+    });
+    const { user, controller } = await openReader();
+    await viewChapterTwo(user);
+    const dialog = await adjust(user);
+    const current = await within(dialog).findByRole('radio', {
+      name: 'Chapter Two Starts here now',
+    });
+    expect(current).toBeChecked();
+    // A chapter can't start at (or before) the previous chapter's own first sentence.
+    expect(within(dialog).queryByRole('radio', { name: 'Chapter One' })).not.toBeInTheDocument();
+    await user.click(within(dialog).getByRole('radio', { name: 'Sentence 5.' }));
+    const title = within(dialog).getByLabelText('Title');
+    await user.clear(title);
+    await user.type(title, ' The Second ');
+    await user.click(within(dialog).getByRole('button', { name: 'Save' }));
+    await closed();
+    const patch = calls.find((call) => call.method === 'PATCH');
+    expect(JSON.parse(String(patch?.body))).toEqual({ title: 'The Second', startSegment: 4 });
+    expect(await screen.findByText('Section 2 of 2 · The Second')).toBeInTheDocument();
+    expect(controller().sectionAt(3)?.title).toBe('Chapter One');
+  });
+
+  it('only renames the first section and saves nothing when nothing changed', async () => {
+    const { calls } = mockReaderApi(book);
+    const { user } = await openReader();
+    let dialog = await adjust(user);
+    expect(within(dialog).getByText(/first section always starts/)).toBeInTheDocument();
+    expect(within(dialog).queryByRole('radio')).not.toBeInTheDocument();
+    const title = within(dialog).getByLabelText('Title');
+    await user.clear(title);
+    expect(within(dialog).getByText('Give the section a title.')).toBeInTheDocument();
+    expect(within(dialog).getByRole('button', { name: 'Save' })).toBeDisabled();
+    await user.type(title, 'Chapter One');
+    await user.click(within(dialog).getByRole('button', { name: 'Save' }));
+    await closed();
+    dialog = await adjust(user);
+    await user.keyboard('{Escape}');
+    await closed();
+    dialog = await adjust(user);
+    await user.click(within(dialog).getByRole('button', { name: 'Cancel' }));
+    await closed();
+    expect(calls.some((call) => call.method === 'PATCH')).toBe(false);
+  });
+
+  it('explains a correction the server refuses', async () => {
+    mockReaderApi(book, {
+      [`PATCH /api/documents/${book.id}/sections/0`]: json(
+        { error: { code: 'invalid', message: 'That title could not be saved.' } },
+        409,
+      ),
+    });
+    const { user } = await openReader();
+    const dialog = await adjust(user);
+    await user.type(within(dialog).getByLabelText('Title'), ' (draft)');
+    await user.click(within(dialog).getByRole('button', { name: 'Save' }));
+    expect(await within(dialog).findByText('That title could not be saved.')).toBeInTheDocument();
+  });
+
+  it('explains when the sentences around the boundary cannot be loaded', async () => {
+    mockReaderApi(book, {
+      // A handler: the reader and the dialog both ask for this section.
+      [`GET /api/documents/${book.id}/sections/0`]: () =>
+        json({ error: { code: 'section_missing', message: 'The first chapter is missing.' } }, 404),
+    });
+    const { user } = await openReader();
+    await viewChapterTwo(user);
+    const dialog = await adjust(user);
+    expect(await within(dialog).findByText('The first chapter is missing.')).toBeInTheDocument();
   });
 });
 

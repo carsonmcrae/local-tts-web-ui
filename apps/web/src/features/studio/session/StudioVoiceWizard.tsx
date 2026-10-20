@@ -1,9 +1,9 @@
 /**
  * Purpose: The guided "Studio voice" flow: a longer recorded session built into a voice.
  * Scope: Seven steps — understand, microphone check, record (creating the session on the way in),
- *   build, choose, name & consent, try it — with step gating, the microphone check's tone correction
- *   carried into the new session, resuming an existing draft session at
- *   the recording step, and finishing the session into a profile. Closing keeps the draft.
+ *   build, choose, name & consent, try it — with step gating, the microphone check's cleanup (noise,
+ *   rumble, tone) carried into the new session and remembered for next time, resuming an existing
+ *   draft session at the recording step, and finishing the session into a profile. Closing keeps the draft.
  * Does NOT belong: Step internals (MicCheckStep, SessionRecorder, BuildStep, CandidatePicker) or the
  *   quick route (CreateVoiceWizard).
  */
@@ -11,9 +11,10 @@ import { Sparkles } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { describeError } from '@/api/client';
 import { useCreateSession, useFinishSession, useVoiceSession } from '@/api/queries';
-import type { ToneCorrection, VoiceSession } from '@/api/types';
+import type { Cleanup, VoiceSession } from '@/api/types';
 import { Dialog } from '@/components/ui/Dialog';
 import { Banner, Skeleton } from '@/components/ui/Feedback';
+import { isActive, NO_CLEANUP, rememberCleanup } from '../cleanup';
 import { DetailsStep } from '../ReviewSteps';
 import { TestStep } from '../TestStep';
 import { Stepper, WizardFooter } from '../WizardChrome';
@@ -92,7 +93,7 @@ export function StudioVoiceWizard({
   const [step, setStep] = useState(resumeId ? RECORD : 0);
   const [sessionId, setSessionId] = useState<string | null>(resumeId);
   const [deviceId, setDeviceId] = useState<string | null>(null);
-  const [tone, setTone] = useState<ToneCorrection | null>(null);
+  const [cleanup, setCleanup] = useState<Cleanup>(NO_CLEANUP);
   const [candidate, setCandidate] = useState<number | null>(null);
   const [name, setName] = useState('');
   const [consent, setConsent] = useState(false);
@@ -107,8 +108,9 @@ export function StudioVoiceWizard({
   const close = () => onOpenChange(false);
   const next = () => {
     if (step === MICROPHONE && !sessionId) {
-      create.mutate(tone, {
+      create.mutate(isActive(cleanup) ? cleanup : null, {
         onSuccess: (created) => {
+          rememberCleanup(cleanup);
           setSessionId(created.id);
           setStep(RECORD);
         },
@@ -154,7 +156,12 @@ export function StudioVoiceWizard({
       <Stepper steps={STEPS} step={step} />
       {step === 0 ? <StudioIntro /> : null}
       {step === MICROPHONE ? (
-        <MicCheckStep deviceId={deviceId} onDevice={setDeviceId} tone={tone} onTone={setTone} />
+        <MicCheckStep
+          deviceId={deviceId}
+          onDevice={setDeviceId}
+          cleanup={cleanup}
+          onCleanup={setCleanup}
+        />
       ) : null}
       {step >= RECORD && step < DETAILS ? (
         <SessionStep

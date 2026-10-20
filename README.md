@@ -178,6 +178,8 @@ MIT — see [LICENSE](LICENSE). Model weights and dependencies have their own li
   CC-BY material from the Koniwa (CC BY 3.0) and SIWIS (CC BY 4.0) corpora.
 - [kokoro-onnx](https://github.com/thewh1teagle/kokoro-onnx) by thewh1teagle (MIT).
 - [Chatterbox](https://github.com/resemble-ai/chatterbox) by Resemble AI (MIT).
+- Voice Studio's noise reduction follows the spectral gating approach of
+  [noisereduce](https://github.com/timsainb/noisereduce) by Tim Sainburg (MIT), re-implemented in NumPy.
 - [espeak-ng](https://github.com/espeak-ng/espeak-ng) (GPL-3.0) for phonemisation, installed as a dependency.
 - [PDFium](https://pdfium.googlesource.com/pdfium/) via pypdfium2, [python-docx](https://github.com/python-openxml/python-docx),
   [FastAPI](https://fastapi.tiangolo.com), [React](https://react.dev), [Radix UI](https://www.radix-ui.com),

@@ -2,22 +2,24 @@
  * Purpose: The reading view for one document.
  * Scope: Loads the document into the player at the saved position (without auto-playing), follows
  *   the spoken section while playing, offers the contents panel (sidebar on desktop, dialog on
- *   phones), and composes the header, warnings, section text and section pager.
+ *   phones) and the "adjust this section" correction, and composes the header, warnings, section
+ *   text and section pager.
  * Does NOT belong: Player controls (PlayerBar) or text rendering details (DocumentText).
  */
-import { ListTree } from 'lucide-react';
+import { ListTree, PenLine } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router';
 import { ApiError, describeError } from '@/api/client';
 import { useDocument, usePreferences } from '@/api/queries';
 import type { DocumentDetail, SectionOut } from '@/api/types';
-import { buttonClasses } from '@/components/ui/Button';
+import { Button, buttonClasses } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
 import { Banner, EmptyState, Skeleton, StatusRegion } from '@/components/ui/Feedback';
 import { usePageTitle } from '@/components/ui/Layout';
 import { DefaultVoicesBanner } from '@/features/engines/EngineSetup';
 import type { PlayerDocument } from '@/features/player/controller';
 import { usePlayer } from '@/features/player/PlayerProvider';
+import { AdjustSectionDialog } from './AdjustSectionDialog';
 import { ReaderHeader, SectionBody, SectionPager } from './ReaderParts';
 import { SectionNav } from './SectionNav';
 
@@ -50,6 +52,7 @@ function Reader({ doc }: Readonly<{ doc: DocumentDetail }>) {
   const [viewed, setViewed] = useState(() => sectionOf(doc, doc.progress?.segmentIndex ?? 0));
   const [followed, setFollowed] = useState(speaking);
   const [tocOpen, setTocOpen] = useState(false);
+  const [adjusting, setAdjusting] = useState<SectionOut | undefined>();
   const playerDoc = useMemo(() => toPlayerDocument(doc), [doc]);
 
   // Follow the narration into the next section (adjusting state during render, not in an effect).
@@ -66,6 +69,9 @@ function Reader({ doc }: Readonly<{ doc: DocumentDetail }>) {
     // Only when the document changes; the player owns the position afterwards.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [doc.id]);
+
+  // A corrected section changes the document; the player keeps following the new boundaries.
+  useEffect(() => controller.refresh(playerDoc), [controller, playerDoc]);
 
   const jump = (target: SectionOut) => {
     setViewed(target.index);
@@ -112,9 +118,19 @@ function Reader({ doc }: Readonly<{ doc: DocumentDetail }>) {
           </Banner>
         ))}
         {multiSection ? (
-          <p className="mb-6 text-[13px] font-medium text-muted">
-            Section {viewed + 1} of {doc.sections.length} · {doc.sections[viewed]?.title}
-          </p>
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-2">
+            <p className="text-[13px] font-medium text-muted">
+              Section {viewed + 1} of {doc.sections.length} · {doc.sections[viewed]?.title}
+            </p>
+            <Button
+              variant="ghost"
+              size="sm"
+              icon={<PenLine size={14} />}
+              onClick={() => setAdjusting(doc.sections[viewed])}
+            >
+              Adjust this section
+            </Button>
+          </div>
         ) : null}
         <SectionBody
           documentId={doc.id}
@@ -132,6 +148,14 @@ function Reader({ doc }: Readonly<{ doc: DocumentDetail }>) {
       <Dialog open={tocOpen} onOpenChange={setTocOpen} title="Contents">
         {nav}
       </Dialog>
+      {adjusting ? (
+        <AdjustSectionDialog
+          key={adjusting.index}
+          documentId={doc.id}
+          section={adjusting}
+          onClose={() => setAdjusting(undefined)}
+        />
+      ) : null}
     </div>
   );
 }

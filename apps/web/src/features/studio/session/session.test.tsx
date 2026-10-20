@@ -84,26 +84,28 @@ describe('Studio voice wizard', () => {
     expect(
       await within(dialog).findByText('The microphone sounds bright or harsh.'),
     ).toBeInTheDocument();
-    const correct = within(dialog).getByRole('switch', { name: 'Correct the tone automatically' });
-    expect(correct).toBeChecked();
-    expect(within(dialog).getByText(/treble lowered by 4.5 dB/)).toBeInTheDocument();
-    const original = within(dialog).getByRole('button', { name: 'Play your recording' });
+    const panel = within(dialog).getByRole('region', { name: 'Clean up the recording' });
+    expect(
+      within(panel).getByText(
+        'Suggested for this recording: background noise reduced by 50% and treble lowered by 4.5 dB.',
+      ),
+    ).toBeInTheDocument();
+    expect(within(panel).getByRole('button', { name: 'Using the suggestion' })).toBeDisabled();
+    const original = within(panel).getByRole('button', { name: 'Play original' });
     await waitFor(() => expect(original).toBeEnabled());
     await user.click(original);
-    await user.click(await within(dialog).findByRole('button', { name: 'Stop' }));
-    const fixed = within(dialog).getByRole('button', { name: 'Play it corrected' });
-    await waitFor(() => expect(fixed).toBeEnabled());
-    await user.click(fixed);
-    expect(await within(dialog).findByRole('button', { name: 'Stop' })).toBeInTheDocument();
-    await user.click(correct);
-    expect(correct).not.toBeChecked();
-    await user.click(correct);
+    await user.click(await within(panel).findByRole('button', { name: 'Stop' }));
+    await user.click(within(panel).getByRole('button', { name: 'Play cleaned up' }));
+    await within(panel).findByRole('button', { name: 'Play original' }); // the cleaned copy plays
+    await user.click(within(panel).getByRole('button', { name: 'Stop' }));
     expect(within(dialog).getByRole('button', { name: 'Check again' })).toBeInTheDocument();
 
     await user.click(within(dialog).getByRole('button', { name: /Continue/ }));
     expect(await within(dialog).findByText(/Passage 1 of 48/)).toBeInTheDocument();
     const created = calls.find((c) => c.method === 'POST' && c.path === '/api/voice-sessions');
-    expect(JSON.parse(String(created?.body))).toEqual({ tone: { trebleDb: -4.5, bassDb: 0 } });
+    expect(JSON.parse(String(created?.body))).toEqual({
+      cleanup: { noiseReduction: 0.5, lowCut: false, trebleDb: -4.5, bassDb: 0 },
+    });
     expect(within(dialog).getByRole('button', { name: /Continue/ })).toBeDisabled();
     await recordTake(user, dialog, tick);
     expect(await within(dialog).findByText(/Passage 2 of 48/)).toBeInTheDocument();
@@ -116,8 +118,8 @@ describe('Studio voice wizard', () => {
 
     await user.click(within(dialog).getByRole('button', { name: /Continue/ }));
     expect(within(dialog).getByText(/measures all 2 usable takes/)).toBeInTheDocument();
-    expect(within(dialog).getByText(/Tone correction is on/)).toHaveTextContent(
-      'treble lowered by 4.5 dB',
+    expect(within(dialog).getByText(/Cleanup is on/)).toHaveTextContent(
+      'background noise reduced by 50% and treble lowered by 4.5 dB',
     );
     await user.click(within(dialog).getByRole('button', { name: 'Build my voice' }));
     expect(
@@ -148,7 +150,7 @@ describe('Studio voice wizard', () => {
     await waitFor(() => expect(calls.some((c) => c.method === 'PATCH')).toBe(true));
     expect(within(dialog).getByText(/More rise and fall/)).toBeInTheDocument();
     await pressDone(user, dialog);
-  });
+  }, 15_000); // the whole wizard, end to end: allow for slow or busy machines
 
   it('continues or discards a draft session', async () => {
     const draft = studioSession({
@@ -302,12 +304,12 @@ describe('Studio edge cases', () => {
       },
       {
         report: quality(5, [{ code: 'thin', severity: 'warning', message: 'Sounds thin.' }]),
-        suggested: { trebleDb: 0, bassDb: 3 },
+        suggested: { noiseReduction: 0, lowCut: false, trebleDb: 0, bassDb: 3 },
       },
     ];
     studioApi(null, {
       'POST /api/voice-sessions/microphone-check': () => reports.shift(),
-      'POST /api/voice-sessions/tone-preview': () =>
+      'POST /api/voice-profiles/cleanup-preview': () =>
         json({ error: { code: 'unsupported_audio', message: 'Preview failed.' } }, 415),
     });
     const tick = controlFrames();
@@ -336,7 +338,19 @@ describe('Studio edge cases', () => {
       expect(await within(dialog).findByText(verdict)).toBeInTheDocument();
     }
     expect(within(dialog).getByText(/low end raised by 3 dB/)).toBeInTheDocument();
+    await user.click(within(dialog).getByRole('button', { name: 'Play cleaned up' }));
     expect(await within(dialog).findByText('Preview failed.')).toBeInTheDocument();
+    // Changing a setting offers the suggestion again; turning the cleanup off leaves nothing to play.
+    await user.click(within(dialog).getByRole('switch', { name: 'Filter out low rumble' }));
+    await user.click(within(dialog).getByRole('button', { name: 'Use suggested' }));
+    await user.click(within(dialog).getByRole('button', { name: 'Turn cleanup off' }));
+    expect(within(dialog).getByRole('button', { name: 'Play cleaned up' })).toBeDisabled();
+    within(dialog).getByRole('slider', { name: 'Background noise reduction' }).focus();
+    await user.keyboard('{ArrowRight}');
+    within(dialog).getByRole('slider', { name: 'Treble' }).focus();
+    await user.keyboard('{ArrowLeft}');
+    expect(within(dialog).getByText('5%')).toBeInTheDocument();
+    expect(within(dialog).getByText('-0.5 dB')).toBeInTheDocument();
     expect(mic.started).toEqual([undefined, undefined, undefined]);
   });
 

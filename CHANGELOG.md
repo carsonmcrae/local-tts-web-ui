@@ -18,9 +18,21 @@ All notable changes to this project are documented here. The format follows
   your USB/XLR microphone, and can correct the tone automatically, with a before-and-after preview.
 - **Chatterbox updates in place:** when the worker's locked packages change, Settings → Engines &
   models offers "Update available" instead of a reinstall.
+- **Recording cleanup** for quick and studio voices: background noise reduction, a low-rumble filter
+  and treble and low-end controls, with a suggestion measured from the recording, a before-and-after
+  preview, and your last choice remembered for the next recording. Noise reduction follows the
+  approach of [noisereduce](https://github.com/timsainb/noisereduce) (MIT), re-implemented without
+  new dependencies.
+- **Adjust this section** in the reader: rename a chapter or move where it starts, sentence by
+  sentence.
 
 ### Changed
 
+- PDF chapters now start at their heading line, not at the top of the page the outline points to, so
+  the end of one chapter no longer appears at the start of the next.
+- API: `POST /api/voice-profiles/analyze` returns `{report, suggested}`;
+  `POST /api/voice-sessions/tone-preview` is replaced by `POST /api/voice-profiles/cleanup-preview`;
+  a studio session's `tone` is now `cleanup`. New: `PATCH /api/documents/{id}/sections/{index}`.
 - **Node.js 22.22 or newer** is now required (React Router 8 and jsdom 30 need it).
 - Dependencies: React Router 8, radix-ui 1.7, Vitest 5, jsdom 30.
 

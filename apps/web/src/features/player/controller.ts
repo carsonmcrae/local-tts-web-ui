@@ -212,6 +212,11 @@ export class PlaybackController {
     return this.restartWithNewAudio();
   }
 
+  /** Take corrected sections for the loaded document (a chapter was renamed or moved). */
+  refresh(document: PlayerDocument): void {
+    if (this.state.document?.id === document.id) this.set({ document });
+  }
+
   unload(): void {
     this.generation += 1;
     this.deps.media.pause();

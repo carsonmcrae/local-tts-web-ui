@@ -67,8 +67,8 @@ def test_profile_rejects_bad_audio(client: TestClient) -> None:
     assert short.status_code == 422 and short.json()["error"]["code"] == "reference_quality"
     garbage = client.post("/api/voice-profiles", params={"name": "x", "consent": "true"}, content=b"not audio at all")
     assert garbage.json()["error"]["code"] == "unsupported_audio"
-    report = client.post("/api/voice-profiles/analyze", content=wav_bytes(speech_like(12))).json()
-    assert report["ok"] is True and report["speechS"] > 6
+    checked = client.post("/api/voice-profiles/analyze", content=wav_bytes(speech_like(12))).json()
+    assert checked["report"]["ok"] is True and checked["report"]["speechS"] > 6 and checked["suggested"] is None
 
 
 def test_export_formats_and_chapters(client: TestClient) -> None:

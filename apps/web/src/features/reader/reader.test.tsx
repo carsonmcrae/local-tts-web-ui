@@ -276,7 +276,7 @@ describe('Adjusting a section', () => {
     await user.type(title, 'Chapter One');
     await user.click(within(dialog).getByRole('button', { name: 'Save' }));
     await closed();
-    dialog = await adjust(user);
+    await adjust(user);
     await user.keyboard('{Escape}');
     await closed();
     dialog = await adjust(user);

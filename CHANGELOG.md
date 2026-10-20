@@ -70,6 +70,9 @@ All notable changes to this project are documented here. The format follows
   `pronunciations` and `bookmarks` tables.
 - **Node.js 22.22 or newer** is now required (React Router 8 and jsdom 30 need it).
 - Dependencies: React Router 8, radix-ui 1.7, Vitest 5, jsdom 30.
+- Development tooling: ESLint 10 (ESLint 9 is no longer supported). eslint-plugin-jsx-a11y has not
+  yet published ESLint 10 support, so an npm override accepts it; its rules run unchanged. The server
+  tests use httpx2, which Starlette's test client now prefers; the app itself still uses httpx.
 
 ### Fixed
 

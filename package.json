@@ -35,7 +35,7 @@
     "lint": "npm run lint:web && npm run lint:server && npm run lint:repo",
     "lint:web": "eslint . --max-warnings 0",
     "lint:server": "node scripts/uv-run.mjs --cwd apps/server run --frozen ruff check src tests && node scripts/uv-run.mjs --cwd apps/server run --frozen ruff format --check src tests",
-    "lint:repo": "node scripts/check-file-size.mjs && node scripts/check-headers.mjs && node scripts/check-provenance.mjs && node scripts/check-version.mjs",
+    "lint:repo": "node scripts/check-file-size.mjs && node scripts/check-headers.mjs && node scripts/check-version.mjs",
     "format": "prettier --write . && node scripts/uv-run.mjs --cwd apps/server run --frozen ruff format src tests",
     "format:check": "prettier --check .",
     "typecheck": "npm run typecheck --workspace @ltts/web && tsc -p scripts/tsconfig.json && node scripts/uv-run.mjs --cwd apps/server run --frozen mypy",

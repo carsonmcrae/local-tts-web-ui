@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+// Copyright (c) 2026 Carson McRae
 /**
  * Purpose: Voice Studio — create and manage custom voices.
  * Scope: Cloning-engine status (with install), the list of local voice profiles, empty/loading/error

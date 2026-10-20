@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+// Copyright (c) 2026 Carson McRae
 /**
  * Purpose: Tests for the Settings screen's preferences and system sections.
  * Scope: Saving playback preferences (voice, speed, pace, export format, follow-along) and applying

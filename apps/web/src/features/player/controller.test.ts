@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+// Copyright (c) 2026 Carson McRae
 /**
  * Purpose: Behavioural tests for the PlaybackController state machine.
  * Scope: Loading without autoplay, playback with prefetch, auto-advance on `ended`, stale-request

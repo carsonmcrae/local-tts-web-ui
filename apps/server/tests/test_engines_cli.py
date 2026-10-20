@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+# Copyright (c) 2026 Carson McRae
 """Purpose: Unit tests for engine adapters, the worker protocol client, the CLI and app wiring.
 
 Scope: WorkerClient success/error/crash/timeout/idle-stop; Kokoro and Chatterbox engines when not

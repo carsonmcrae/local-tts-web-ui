@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+# Copyright (c) 2026 Carson McRae
 """Purpose: Tests that a changed Chatterbox worker lock reaches existing installs.
 
 Scope: The install marker records the lock's SHA-256 and extra; a matching lock reports no update, a

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+// Copyright (c) 2026 Carson McRae
 /**
  * Purpose: Global keyboard shortcuts for listening without touching the mouse.
  * Scope: Space/K play-pause, ←/→ previous/next sentence, Shift+←/→ previous/next section, [ and ]

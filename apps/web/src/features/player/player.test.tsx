@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+// Copyright (c) 2026 Carson McRae
 /**
  * Purpose: Tests for the docked player: transport, position, speed, voice, dialogs and shortcuts.
  * Scope: PlayerBar wired to a document opened in the reader against the mocked API, keyboard

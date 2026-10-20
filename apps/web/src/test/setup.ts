@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+// Copyright (c) 2026 Carson McRae
 /**
  * Purpose: Global Vitest setup for DOM tests.
  * Scope: jest-dom matchers, automatic cleanup (including local storage), and jsdom gaps the app relies on (matchMedia,

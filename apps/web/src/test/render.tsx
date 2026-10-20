@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+// Copyright (c) 2026 Carson McRae
 /**
  * Purpose: Test harness for rendering screens with the app's real providers.
  * Scope: A route-table API mock for `fetch` (matched by method and path prefix), sample API objects,

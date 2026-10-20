@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+# Copyright (c) 2026 Carson McRae
 """Purpose: HTTP-layer defences for a server that must only ever be driven by its own UI.
 
 Scope: Pure ASGI middleware that (1) rejects unexpected Host headers (DNS rebinding), (2) blocks

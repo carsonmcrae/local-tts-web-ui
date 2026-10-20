@@ -1,6 +1,6 @@
 // @ts-check
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+// Copyright (c) 2026 Carson McRae
 /**
  * Purpose: Run a uv command with the project's pinned uv and shared environment.
  * Scope: Thin wrapper used by npm scripts (`node scripts/uv-run.mjs [--cwd dir] <uv args…>`)

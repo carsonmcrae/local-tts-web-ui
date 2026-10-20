@@ -777,39 +777,6 @@ export type paths = {
 export type webhooks = Record<string, never>;
 export type components = {
   schemas: {
-    /** About */
-    About: {
-      /**
-       * Author
-       * @default Carson McRae
-       */
-      author: string;
-      /**
-       * Copyright
-       * @default Copyright (c) 2026 Carson McRae
-       */
-      copyright: string;
-      /**
-       * Fingerprint
-       * @default ltts-origin-c44dbf7e-6172-4e3a-a46a-636998263e03
-       */
-      fingerprint: string;
-      /**
-       * Homepage
-       * @default https://github.com/carsonmcrae/local-tts-web-ui
-       */
-      homepage: string;
-      /**
-       * License
-       * @default MIT
-       */
-      license: string;
-      /**
-       * Project
-       * @default Local TTS Web UI
-       */
-      project: string;
-    };
     /** BookmarkIn */
     BookmarkIn: {
       /**
@@ -1385,7 +1352,6 @@ export type components = {
     };
     /** SystemInfo */
     SystemInfo: {
-      about?: components['schemas']['About'];
       /** Cpucores */
       cpuCores: number;
       /** Gpus */

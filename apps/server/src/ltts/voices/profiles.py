@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+# Copyright (c) 2026 Carson McRae
 """Purpose: Create, list, update and permanently delete local custom voice profiles.
 
 Scope: Quick voices: validates an uploaded reference recording (container, channels, sample rate,

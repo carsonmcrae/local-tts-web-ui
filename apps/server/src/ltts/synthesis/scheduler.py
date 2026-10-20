@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+# Copyright (c) 2026 Carson McRae
 """Purpose: Fair, cancellable execution of synthesis work, one engine at a time.
 
 Scope: A priority queue served by one worker thread per engine (playback before previews before

@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+# Copyright (c) 2026 Carson McRae
 """Purpose: Tests for the CLI's serve and model commands and for application start-up.
 
 Scope: ``ltts serve`` options (network mode with a given or generated token, static UI, browser

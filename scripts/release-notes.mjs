@@ -1,6 +1,6 @@
 // @ts-check
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+// Copyright (c) 2026 Carson McRae
 /**
  * Purpose: Print the GitHub Release notes for a version tag, refusing to publish a mismatched release.
  * Scope: Checks that the tag (vX.Y.Z) equals the version in package.json and that CHANGELOG.md has a

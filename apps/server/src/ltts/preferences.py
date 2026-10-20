@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+# Copyright (c) 2026 Carson McRae
 """Purpose: User preferences shared by every browser that opens this local app.
 
 Scope: A typed preferences document (default voice, playback rate, pace, export format, read-along

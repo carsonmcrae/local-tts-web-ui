@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+// Copyright (c) 2026 Carson McRae
 /**
  * Purpose: Expose one app-wide PlaybackController to React and keep it in sync with preferences.
  * Scope: Creates the controller with real fetch/audio dependencies (or injected ones for tests),

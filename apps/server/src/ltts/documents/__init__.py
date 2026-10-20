@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+# Copyright (c) 2026 Carson McRae
 """Purpose: Document ingestion — validation, sandboxed extraction, normalisation and segmentation.
 
 Scope: Package marker; see ``service.py`` for the orchestration entry points.

@@ -1,6 +1,6 @@
 // @ts-check
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+// Copyright (c) 2026 Carson McRae
 /**
  * Purpose: Locate FFmpeg/FFprobe by absolute path and run tools for the media scripts.
  * Scope: `LTTS_FFMPEG` (path to ffmpeg; ffprobe is looked up beside it) or the first match on PATH,

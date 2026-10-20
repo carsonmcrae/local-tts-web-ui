@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+# Copyright (c) 2026 Carson McRae
 """Purpose: Tests for type sniffing and every document extractor, including malformed input.
 
 Scope: TXT encodings and chapter detection, Markdown structure, PDF text/outline/header-footer/

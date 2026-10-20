@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+# Copyright (c) 2026 Carson McRae
 """Purpose: Bookmarks and notes on a document's sentences.
 
 Scope: Bookmark a sentence (optionally with a note; bookmarking it again updates the note), list a

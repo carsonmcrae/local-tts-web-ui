@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+# Copyright (c) 2026 Carson McRae
 """Purpose: Draft studio recording sessions: their takes, imported recordings and a microphone check.
 
 Scope: A session is a folder ``data/voices/sessions/<id>/takes/NNN.flac`` (24-bit FLAC at the

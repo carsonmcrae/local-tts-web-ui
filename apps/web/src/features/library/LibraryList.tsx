@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+// Copyright (c) 2026 Carson McRae
 /**
  * Purpose: The library's document list, with search and sorting once there is more than one document.
  * Scope: Filters by title or file name as you type; sorts by last read or added (the server's

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+// Copyright (c) 2026 Carson McRae
 /**
  * Purpose: The reading voice: which voice narrates documents, and choosing a different one.
  * Scope: Reads the saved default voice; choosing a voice switches the player to it and saves it as the

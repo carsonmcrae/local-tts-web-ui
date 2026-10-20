@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+# Copyright (c) 2026 Carson McRae
 """Purpose: Tests for studio recording sessions over HTTP.
 
 Scope: Session lifecycle (create, list, read, delete); saving, replacing and deleting takes with the

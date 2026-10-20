@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+// Copyright (c) 2026 Carson McRae
 /**
  * Purpose: Record a studio session one passage at a time, each take checked and saved at once.
  * Scope: Passage navigation (starting at the first passage without a good take), record and stop with

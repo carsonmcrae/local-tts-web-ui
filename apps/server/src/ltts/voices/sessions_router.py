@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+# Copyright (c) 2026 Carson McRae
 """Purpose: HTTP endpoints for studio voice sessions.
 
 Scope: Check a microphone test clip (its quality and the cleanup it needs); create (with an optional

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+// Copyright (c) 2026 Carson McRae
 /**
  * Purpose: How the reader's text looks on this device: its size, line spacing and typeface.
  * Scope: Reads and saves the choice in localStorage (per device, like the theme), and turns it into

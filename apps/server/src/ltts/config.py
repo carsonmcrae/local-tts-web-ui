@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+# Copyright (c) 2026 Carson McRae
 """Purpose: Centralised, validated runtime configuration for the server.
 
 Scope: Every tunable limit, path and network setting, read from ``LTTS_*`` environment variables

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+// Copyright (c) 2026 Carson McRae
 /**
  * Purpose: The reader's side panel: the table of contents and the document's bookmarks.
  * Scope: Two tabs (Contents only when the document has more than one section), shown in the

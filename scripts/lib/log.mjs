@@ -1,6 +1,6 @@
 // @ts-check
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+// Copyright (c) 2026 Carson McRae
 /**
  * Purpose: Consistent, colour-aware console output for the bootstrap and dev scripts.
  * Scope: Step/ok/warn/fail lines, actionable error formatting, prefixed child-process output.

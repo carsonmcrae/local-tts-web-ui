@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+# Copyright (c) 2026 Carson McRae
 """Purpose: Wire engines together and resolve any voice id to an engine plus voice specification.
 
 Scope: Holds the engine instances, maps ``engine:key`` and ``custom:<profile>`` voice ids, merges

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+// Copyright (c) 2026 Carson McRae
 /**
  * Purpose: Show a recording's quality problems, each with its fix.
  * Scope: One banner per issue: errors (which block) in the error tone, warnings in the warning tone.

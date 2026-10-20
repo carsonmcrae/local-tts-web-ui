@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+# Copyright (c) 2026 Carson McRae
 """Purpose: HTTP endpoints for starting, resuming, downloading and deleting audio exports.
 
 Scope: Thin wrappers over ``ExportService``; downloads use a sanitised attachment filename.

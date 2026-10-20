@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+# Copyright (c) 2026 Carson McRae
 """Purpose: DOCX extraction with python-docx after container validation.
 
 Scope: Pre-validates the ZIP (limits, no XML entity declarations) before python-docx touches it;

@@ -1,6 +1,6 @@
 // @ts-check
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+// Copyright (c) 2026 Carson McRae
 /**
  * Purpose: `npm run start` — production-style local run: one Python process serves the built UI
  *   and the API on a single loopback port.

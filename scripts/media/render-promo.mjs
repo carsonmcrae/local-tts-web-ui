@@ -1,6 +1,6 @@
 // @ts-check
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+// Copyright (c) 2026 Carson McRae
 /**
  * Purpose: Render the showcase video (docs/media/local-tts-promo.mp4) from promo/promo.html.
  * Scope: A loopback file server limited to the composition, the screenshots and the app's fonts;

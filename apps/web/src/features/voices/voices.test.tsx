@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+// Copyright (c) 2026 Carson McRae
 /**
  * Purpose: Tests for browsing, previewing and choosing voices in the voice library.
  * Scope: Filters (search, language, gender, source), the standard-sample preview, stopping and

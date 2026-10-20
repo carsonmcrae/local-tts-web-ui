@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+// Copyright (c) 2026 Carson McRae
 /**
  * Purpose: The passages a studio voice session asks the speaker to read.
  * Scope: 48 original passages (no third-party text) of about 10–15 seconds each, in six styles —

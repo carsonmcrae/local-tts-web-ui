@@ -1,5 +1,5 @@
 cff-version: 1.2.0
-message: 'If you use or build on this software, please cite it as below and keep the copyright notice (see ATTRIBUTION.md).'
+message: 'If you use or build on this software, please cite it as below.'
 title: 'Local TTS Web UI'
 abstract: 'A local-first document reader and voice studio: reads PDFs, Word files, EPUBs and text aloud with on-device text-to-speech and exports audiobooks.'
 type: software
@@ -16,7 +16,3 @@ keywords:
   - document reader
   - voice cloning
   - local-first
-identifiers:
-  - type: other
-    value: 'ltts-origin-c44dbf7e-6172-4e3a-a46a-636998263e03'
-    description: 'Project fingerprint'

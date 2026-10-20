@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+# Copyright (c) 2026 Carson McRae
 """Purpose: Produce audio for a document segment or arbitrary preview text, using the cache first.
 
 Scope: Rewrites display text into speech text, builds the cache key, schedules synthesis on the

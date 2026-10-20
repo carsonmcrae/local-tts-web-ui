@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+# Copyright (c) 2026 Carson McRae
 """Purpose: HTTP-level tests for error paths and less common routes across the API.
 
 Scope: Missing documents, sections and jobs; engine uninstall and the guards while an install job

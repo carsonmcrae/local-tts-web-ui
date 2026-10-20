@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+// Copyright (c) 2026 Carson McRae
 /**
  * Purpose: Review a captured clip, then name it and confirm consent.
  * Scope: `ReviewStep` — playback, instant local checks plus the server's authoritative checks, the

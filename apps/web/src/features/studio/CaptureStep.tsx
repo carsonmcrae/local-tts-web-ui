@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+// Copyright (c) 2026 Carson McRae
 /**
  * Purpose: Capture a reference recording — record with guidance, or import an existing file.
  * Scope: Script display and switching, microphone permission handling, record/stop with a live level

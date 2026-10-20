@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+// Copyright (c) 2026 Carson McRae
 /**
  * Purpose: The guided "Quick voice" flow: one short recording.
  * Scope: Five steps — understand, capture, review (with the cleanup controls), name & consent, test —

@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+# Copyright (c) 2026 Carson McRae
 """Purpose: Best-effort, read-only hardware detection used for diagnostics and install advice.
 
 Scope: NVIDIA GPUs via ``nvidia-smi`` (fixed arguments, short timeout) and Apple Silicon via the

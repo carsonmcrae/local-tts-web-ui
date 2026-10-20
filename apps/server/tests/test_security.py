@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+# Copyright (c) 2026 Carson McRae
 """Purpose: Tests for the HTTP security middleware.
 
 Scope: Host-header allow-list (DNS rebinding), CSRF client header on unsafe methods, Sec-Fetch-Site

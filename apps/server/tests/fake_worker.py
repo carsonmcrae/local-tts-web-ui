@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+# Copyright (c) 2026 Carson McRae
 """Purpose: A stand-in engine worker that speaks the JSON-lines stdio protocol, for WorkerClient tests.
 
 Scope: Echoes requests (``load`` reports the requested device and ``synthesize`` writes a short

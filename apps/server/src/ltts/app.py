@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+# Copyright (c) 2026 Carson McRae
 """Purpose: FastAPI application factory.
 
 Scope: Builds services, registers routers, error handlers and the security middleware, runs
@@ -25,10 +25,12 @@ from ltts import __version__
 from ltts.config import Settings
 from ltts.container import Services, build_services
 from ltts.errors import NotFoundError, install_error_handlers
-from ltts.provenance import AUTHOR, CREDIT, FINGERPRINT, HOMEPAGE, LICENSE
 from ltts.security import SecurityMiddleware
 
 log = logging.getLogger("ltts.app")
+# Shown in the OpenAPI description (the interactive docs in development).
+AUTHOR = "Carson McRae"
+HOMEPAGE = "https://github.com/carsonmcrae/local-tts-web-ui"
 
 
 def _housekeeping(services: Services) -> None:
@@ -74,7 +76,7 @@ def create_app(
 
     @asynccontextmanager
     async def lifespan(_: FastAPI) -> AsyncIterator[None]:
-        log.info("starting", extra={"app": CREDIT, "version": __version__, "fingerprint": FINGERPRINT})
+        log.info("starting", extra={"version": __version__})
         _housekeeping(services)
         if settings.warm_up_engines:
             threading.Thread(target=_warm_up, args=(services,), name="warm-up", daemon=True).start()
@@ -84,10 +86,10 @@ def create_app(
 
     app = FastAPI(
         title="Local TTS API",
-        description=f"The local API of {CREDIT}.",
+        description=f"The local API of Local TTS by {AUTHOR} ({HOMEPAGE}).",
         version=__version__,
         contact={"name": AUTHOR, "url": HOMEPAGE},
-        license_info={"name": LICENSE, "identifier": LICENSE},
+        license_info={"name": "MIT", "identifier": "MIT"},
         lifespan=lifespan,
         docs_url="/api/docs" if settings.env == "development" else None,
         redoc_url=None,

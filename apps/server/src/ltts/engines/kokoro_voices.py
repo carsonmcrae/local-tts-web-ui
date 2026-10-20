@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+# Copyright (c) 2026 Carson McRae
 """Purpose: Human-readable metadata for Kokoro's 54 built-in voices.
 
 Scope: Display name, language, gender and the upstream overall quality grade, transcribed from

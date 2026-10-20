@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2026 Carson McRae - Local TTS Web UI - github.com/carsonmcrae/local-tts-web-ui
+# Copyright (c) 2026 Carson McRae
 """Purpose: Drive an engine worker subprocess over a JSON-lines stdio protocol.
 
 Scope: Starts the worker with a fixed argv (no shell), serialises requests with a lock, enforces

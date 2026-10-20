@@ -52,6 +52,9 @@ npm run dev
 
 ## Pull requests
 
+`main` only accepts pull requests that pass CI, and outside contributions need a code owner's approval
+(see [repository protection](docs/security/repository-protection.md)).
+
 1. Branch from `main`; keep the change focused.
 2. Add or update tests; run `npm run check` (and `test:inference` / `test:e2e` for playback or UI changes).
 3. Update docs and `CHANGELOG.md` under `Unreleased`.

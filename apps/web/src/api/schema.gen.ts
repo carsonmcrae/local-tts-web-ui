@@ -432,8 +432,8 @@ export type paths = {
     delete: operations['delete_profile_api_voice_profiles__profile_id__delete'];
     options?: never;
     head?: never;
-    /** Rename Profile */
-    patch: operations['rename_profile_api_voice_profiles__profile_id__patch'];
+    /** Update Profile */
+    patch: operations['update_profile_api_voice_profiles__profile_id__patch'];
     trace?: never;
   };
   '/api/voice-profiles/{profile_id}/reference': {
@@ -487,6 +487,145 @@ export type paths = {
     patch?: never;
     trace?: never;
   };
+  '/api/voice-sessions': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List Sessions */
+    get: operations['list_sessions_api_voice_sessions_get'];
+    put?: never;
+    /** Create Session */
+    post: operations['create_session_api_voice_sessions_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/voice-sessions/{session_id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get Session */
+    get: operations['get_session_api_voice_sessions__session_id__get'];
+    put?: never;
+    post?: never;
+    /** Delete Session */
+    delete: operations['delete_session_api_voice_sessions__session_id__delete'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/voice-sessions/{session_id}/build': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Build Voice */
+    post: operations['build_voice_api_voice_sessions__session_id__build_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/voice-sessions/{session_id}/candidates/{index}/samples/{sample}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Candidate Sample */
+    get: operations['candidate_sample_api_voice_sessions__session_id__candidates__index__samples__sample__get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/voice-sessions/{session_id}/finish': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Finish Session */
+    post: operations['finish_session_api_voice_sessions__session_id__finish_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/voice-sessions/{session_id}/import': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Import Recording */
+    post: operations['import_recording_api_voice_sessions__session_id__import_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/voice-sessions/{session_id}/takes/{number}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Save Take */
+    put: operations['save_take_api_voice_sessions__session_id__takes__number__put'];
+    post?: never;
+    /** Delete Take */
+    delete: operations['delete_take_api_voice_sessions__session_id__takes__number__delete'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/voice-sessions/microphone-check': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Check Microphone */
+    post: operations['check_microphone_api_voice_sessions_microphone_check_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/voices': {
     parameters: {
       query?: never;
@@ -529,6 +668,22 @@ export type components = {
     CacheCleared: {
       /** Removedentries */
       removedEntries: number;
+    };
+    /**
+     * CandidateOut
+     * @description A voice built from one take, with how closely its test samples matched the session's speaker.
+     */
+    CandidateOut: {
+      /** Index */
+      index: number;
+      /** Promptid */
+      promptId: string | null;
+      /** Samples */
+      samples: number;
+      /** Similarity */
+      similarity: number;
+      /** Takenumber */
+      takeNumber: number;
     };
     /** ConsentInfo */
     ConsentInfo: {
@@ -691,6 +846,21 @@ export type components = {
       /** Voiceid */
       voiceId: string;
     };
+    /** FinishRequest */
+    FinishRequest: {
+      /** Candidate */
+      candidate: number;
+      /** Consent */
+      consent: boolean;
+      /**
+       * Delivery
+       * @default natural
+       * @enum {string}
+       */
+      delivery: 'steady' | 'natural' | 'expressive';
+      /** Name */
+      name: string;
+    };
     /** GpuInfo */
     GpuInfo: {
       /** Memorymb */
@@ -814,6 +984,13 @@ export type components = {
       /** Text */
       text?: string | null;
     };
+    /** ProfileUpdate */
+    ProfileUpdate: {
+      /** Delivery */
+      delivery?: ('steady' | 'natural' | 'expressive') | null;
+      /** Name */
+      name?: string | null;
+    };
     /** ProgressUpdate */
     ProgressUpdate: {
       /** Segmentindex */
@@ -835,6 +1012,8 @@ export type components = {
     };
     /** QualityReport */
     QualityReport: {
+      /** Brightnessdb */
+      brightnessDb: number;
       /** Clippingratio */
       clippingRatio: number;
       /** Durations */
@@ -864,11 +1043,6 @@ export type components = {
       updatedAt: string;
       /** Voiceid */
       voiceId: string | null;
-    };
-    /** RenameRequest */
-    RenameRequest: {
-      /** Name */
-      name: string;
     };
     /** SectionContent */
     SectionContent: {
@@ -965,6 +1139,23 @@ export type components = {
       /** Version */
       version: string;
     };
+    /** TakeOut */
+    TakeOut: {
+      /** Createdat */
+      createdAt: string;
+      /** Durations */
+      durationS: number;
+      /** Number */
+      number: number;
+      /** Promptid */
+      promptId: string | null;
+      quality: components['schemas']['QualityReport'];
+      /**
+       * Source
+       * @enum {string}
+       */
+      source: 'recording' | 'import';
+    };
     /** ValidationError */
     ValidationError: {
       /** Context */
@@ -1019,12 +1210,24 @@ export type components = {
       consentedAt: string;
       /** Createdat */
       createdAt: string;
+      /**
+       * Delivery
+       * @default natural
+       * @enum {string}
+       */
+      delivery: 'steady' | 'natural' | 'expressive';
       /** Durations */
       durationS: number;
       /** Engineid */
       engineId: string;
       /** Id */
       id: string;
+      /**
+       * Kind
+       * @default quick
+       * @enum {string}
+       */
+      kind: 'quick' | 'studio';
       /** Name */
       name: string;
       quality: components['schemas']['QualityReport'];
@@ -1039,6 +1242,25 @@ export type components = {
       stores: string;
       /** Voiceid */
       voiceId: string;
+    };
+    /** VoiceSessionOut */
+    VoiceSessionOut: {
+      /** Buildjobid */
+      buildJobId: string | null;
+      /** Candidates */
+      candidates: components['schemas']['CandidateOut'][];
+      /** Createdat */
+      createdAt: string;
+      /** Id */
+      id: string;
+      /** Requiredspeechs */
+      requiredSpeechS: number;
+      /** Takes */
+      takes: components['schemas']['TakeOut'][];
+      /** Updatedat */
+      updatedAt: string;
+      /** Usablespeechs */
+      usableSpeechS: number;
     };
   };
   responses: never;
@@ -1835,7 +2057,7 @@ export interface operations {
       };
     };
   };
-  rename_profile_api_voice_profiles__profile_id__patch: {
+  update_profile_api_voice_profiles__profile_id__patch: {
     parameters: {
       query?: never;
       header?: never;
@@ -1846,7 +2068,7 @@ export interface operations {
     };
     requestBody: {
       content: {
-        'application/json': components['schemas']['RenameRequest'];
+        'application/json': components['schemas']['ProfileUpdate'];
       };
     };
     responses: {
@@ -1935,6 +2157,318 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['ConsentInfo'];
+        };
+      };
+    };
+  };
+  list_sessions_api_voice_sessions_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['VoiceSessionOut'][];
+        };
+      };
+    };
+  };
+  create_session_api_voice_sessions_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['VoiceSessionOut'];
+        };
+      };
+    };
+  };
+  get_session_api_voice_sessions__session_id__get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        session_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['VoiceSessionOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  delete_session_api_voice_sessions__session_id__delete: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        session_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  build_voice_api_voice_sessions__session_id__build_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        session_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      202: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['JobOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  candidate_sample_api_voice_sessions__session_id__candidates__index__samples__sample__get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        index: number;
+        sample: number;
+        session_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  finish_session_api_voice_sessions__session_id__finish_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        session_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['FinishRequest'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['VoiceProfileOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  import_recording_api_voice_sessions__session_id__import_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        session_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['VoiceSessionOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  save_take_api_voice_sessions__session_id__takes__number__put: {
+    parameters: {
+      query?: {
+        promptId?: string | null;
+      };
+      header?: never;
+      path: {
+        number: number;
+        session_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['TakeOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  delete_take_api_voice_sessions__session_id__takes__number__delete: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        number: number;
+        session_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  check_microphone_api_voice_sessions_microphone_check_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['QualityReport'];
         };
       };
     };

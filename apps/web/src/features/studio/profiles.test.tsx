@@ -22,6 +22,9 @@ import {
   renderWithApp,
   voice,
   voiceProfile,
+  chooseQuickVoice,
+  nameAndConsent,
+  pressDone,
 } from '@/test/render';
 import VoiceStudioPage from './VoiceStudioPage';
 
@@ -70,14 +73,12 @@ const lastAudio = () =>
 /** Walks the wizard from the first step to "Create voice" with an imported recording. */
 async function createThroughWizard(user: UserEvent) {
   await user.click(screen.getByRole('button', { name: 'Create voice' }));
-  const dialog = await screen.findByRole('dialog', { name: 'Create a voice' });
+  const dialog = await chooseQuickVoice(user);
   await user.click(within(dialog).getByRole('button', { name: /Continue/ }));
   await user.upload(within(dialog).getByTestId('voice-file-input'), new File(['RIFF'], 'me.wav'));
   await within(dialog).findByText('verified by the local server');
   await user.click(within(dialog).getByRole('button', { name: /Continue/ }));
-  await user.type(within(dialog).getByLabelText('Voice name'), 'My voice');
-  await user.click(await within(dialog).findByLabelText('I have permission to use this voice.'));
-  await user.click(within(dialog).getByRole('button', { name: 'Create voice' }));
+  await nameAndConsent(user, dialog, 'My voice');
   return dialog;
 }
 
@@ -147,19 +148,23 @@ describe('Create voice wizard', () => {
     api({ 'GET /api/voice-profiles': [] });
     const { user } = renderStudio();
     await user.click(await screen.findByRole('button', { name: 'Create voice' }));
-    let dialog = await screen.findByRole('dialog', { name: 'Create a voice' });
+    let dialog = await chooseQuickVoice(user);
     await user.click(within(dialog).getByRole('button', { name: /Continue/ }));
     await user.upload(within(dialog).getByTestId('voice-file-input'), new File(['RIFF'], 'a.wav'));
     await user.click(await within(dialog).findByRole('button', { name: 'Record again' }));
     expect(within(dialog).getByRole('button', { name: 'Start recording' })).toBeInTheDocument();
     await user.click(within(dialog).getByRole('button', { name: 'Back' }));
-    expect(within(dialog).getByText('A short reference is all this app needs')).toBeInTheDocument();
+    expect(
+      within(dialog).getByText('A short reference is all a quick voice needs'),
+    ).toBeInTheDocument();
     await user.click(within(dialog).getByRole('button', { name: /Continue/ }));
     await user.keyboard('{Escape}');
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
     await user.click(screen.getByRole('button', { name: 'Create your first voice' }));
-    dialog = await screen.findByRole('dialog', { name: 'Create a voice' });
-    expect(within(dialog).getByText('A short reference is all this app needs')).toBeInTheDocument();
+    dialog = await chooseQuickVoice(user);
+    expect(
+      within(dialog).getByText('A short reference is all a quick voice needs'),
+    ).toBeInTheDocument();
   });
 
   it('explains a failed creation', async () => {
@@ -178,8 +183,7 @@ describe('Create voice wizard', () => {
     const dialog = await createThroughWizard(user);
     expect(await within(dialog).findByText('“My voice” is saved')).toBeInTheDocument();
     expect(within(dialog).getByRole('button', { name: /Install Chatterbox Turbo/ })).toBeInTheDocument();
-    await user.click(within(dialog).getByRole('button', { name: 'Done' }));
-    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    await pressDone(user, dialog);
   }); // prettier-ignore
 
   it('tests the new voice, explains a failed sample and sets it for reading', async () => {

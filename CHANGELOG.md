@@ -8,6 +8,12 @@ All notable changes to this project are documented here. The format follows
 
 ### Added
 
+- **Studio voices:** a guided, resumable session for your most faithful voice. A microphone check
+  (including a thin, "tinny" microphone), 48 passages in six styles recorded losslessly or imported
+  from a long recording, then a build that averages the speaker over the session, tests five candidate
+  voices and lets you pick by ear. Quick voices are unchanged.
+- **Delivery** for custom voices: Steady, Natural or Expressive.
+- **Bright microphone warning** in every voice-recording check.
 - **Chatterbox updates in place:** when the worker's locked packages change, Settings → Engines &
   models offers "Update available" instead of a reinstall.
 

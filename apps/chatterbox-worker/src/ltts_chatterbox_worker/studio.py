@@ -20,7 +20,11 @@ import numpy as np
 FORMAT = "ltts-chatterbox-conditioning"
 VERSION = "1"
 EMOTION_ADV = 0.5  # what prepare_conditionals stores; Turbo ignores it
-_LONG_KEYS = ("t3.cond_prompt_speech_tokens", "gen.prompt_token", "gen.prompt_token_len")
+# Token tensors (synthesis turns them into floats in place, so they are cast back to long on load).
+T3_TOKENS = "t3.cond_prompt_speech_tokens"
+GEN_TOKENS = "gen.prompt_token"
+GEN_TOKENS_LEN = "gen.prompt_token_len"
+_LONG_KEYS = (T3_TOKENS, GEN_TOKENS, GEN_TOKENS_LEN)
 _SAMPLING = {"temperature": "temperature", "topP": "top_p"}  # request field -> generate() argument
 
 
@@ -109,9 +113,9 @@ def build(model: Any, prompt: str, output: str, speaker_emb: list[float] | None,
         embedding = torch.tensor(_unit(np.asarray(xvector, dtype=np.float32)))[None] * embedding.norm()
     tensors = {
         "t3.speaker_emb": torch.from_numpy(_unit(speaker))[None],
-        "t3.cond_prompt_speech_tokens": torch.atleast_2d(tokens).long().cpu(),
-        "gen.prompt_token": gen["prompt_token"].long().cpu(),
-        "gen.prompt_token_len": gen["prompt_token_len"].long().cpu(),
+        T3_TOKENS: torch.atleast_2d(tokens).long().cpu(),
+        GEN_TOKENS: gen["prompt_token"].long().cpu(),
+        GEN_TOKENS_LEN: gen["prompt_token_len"].long().cpu(),
         "gen.prompt_feat": gen["prompt_feat"].float().cpu(),
         "gen.embedding": embedding,
     }
@@ -137,12 +141,12 @@ def load_conditioning(path: str, device: str) -> Any:
         tensors[key] = tensors[key].long()
     t3 = T3Cond(
         speaker_emb=tensors["t3.speaker_emb"],
-        cond_prompt_speech_tokens=tensors["t3.cond_prompt_speech_tokens"],
+        cond_prompt_speech_tokens=tensors[T3_TOKENS],
         emotion_adv=EMOTION_ADV * torch.ones(1, 1, 1),
     )
     gen = {
-        "prompt_token": tensors["gen.prompt_token"],
-        "prompt_token_len": tensors["gen.prompt_token_len"],
+        "prompt_token": tensors[GEN_TOKENS],
+        "prompt_token_len": tensors[GEN_TOKENS_LEN],
         "prompt_feat": tensors["gen.prompt_feat"],
         "prompt_feat_len": None,
         "embedding": tensors["gen.embedding"],

@@ -96,9 +96,10 @@ def create_app(
     from ltts.synthesis.router import router as audio_router
     from ltts.system import router as system_router
     from ltts.voices.router import router as voices_router
+    from ltts.voices.sessions_router import router as voice_sessions_router
 
     for router in (system_router, documents_router, audio_router, engines_router, voices_router,
-                   exports_router, preferences_router):  # fmt: skip
+                   voice_sessions_router, exports_router, preferences_router):  # fmt: skip
         app.include_router(router)
     if static_dir is not None:
         _mount_static(app, static_dir)

@@ -11,7 +11,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Literal, Protocol
+from typing import Any, Literal, Protocol, runtime_checkable
 
 import numpy as np
 import numpy.typing as npt
@@ -153,6 +153,7 @@ class Engine(Protocol):
     def close(self) -> None: ...
 
 
+@runtime_checkable
 class VoiceBuilder(Protocol):
     """A cloning engine that builds a studio voice from a recorded session."""
 

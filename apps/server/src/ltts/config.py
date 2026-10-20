@@ -55,6 +55,10 @@ class Settings(BaseSettings):
     min_free_disk_mb: int = Field(default=500, ge=0)
     max_voice_reference_s: float = Field(default=60.0, gt=5)
     max_voice_profiles: int = Field(default=50, ge=1)
+    # Studio voices: usable speech needed before a build, per-session limits, and one imported file's length.
+    min_studio_speech_s: float = Field(default=300.0, ge=10)
+    max_session_takes: int = Field(default=200, ge=1)
+    max_voice_import_s: float = Field(default=1_800.0, gt=10)
 
     # Synthesis.
     warm_up_engines: bool = True

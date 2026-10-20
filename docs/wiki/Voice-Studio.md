@@ -1,7 +1,9 @@
 # Voice Studio
 
-Voice Studio creates a narration voice from a short recording of yourself, or of someone who has given
-you permission. It's optional: the reader and its 54 built-in voices work without it.
+Voice Studio creates a narration voice from your own recordings, or from those of someone who has given
+you permission. It's optional: the reader and its 54 built-in voices work without it. There are two
+ways to create a voice: a **quick voice** from one short recording, and a **studio voice** from a
+longer guided session for the most faithful result.
 
 ## How it works
 
@@ -10,8 +12,12 @@ It copies a voice from a short reference recording at the moment it speaks ("zer
 
 - **No model is trained.** Fine-tuning a model on 30+ minutes of speech can sound closer, but it needs
   hours of GPU time and isn't offered here.
-- **Short is enough.** The engine only uses roughly the first 10–15 seconds of speech, so 10–20 seconds
-  is ideal and longer recordings don't help. A clean, steady sample matters far more than length.
+- **The reference sets the sound.** The engine takes the voice's sound from roughly the first 10
+  seconds of a reference and its speaking style from the first 15. A clean recording matters far more
+  than a long one: a thin, "tinny" microphone makes a thin, tinny voice.
+- **A studio session helps in two ways.** Instead of one clip, the app measures every take, averages
+  the speaker's identity across the whole session, and builds the voice from the take that works best,
+  which you choose by ear.
 - **English.** In this app, Chatterbox Turbo is listed as an English engine. Multilingual cloning is on
   the [roadmap](https://github.com/carsonmcrae/local-tts-web-ui/blob/main/README.md#roadmap).
 
@@ -35,7 +41,11 @@ You can record and save voices before installing the engine, but you need it to 
 
 ## Creating a voice
 
-Press **Create voice** on the Voice Studio page. A wizard guides you through five steps.
+Press **Create voice** on the Voice Studio page and choose **Quick voice** or **Studio voice**.
+
+### Quick voice
+
+About two minutes. A wizard guides you through five steps.
 
 1. **Before you start.** A short explanation of how cloning works, what is stored, consent and the
    watermark.
@@ -51,6 +61,36 @@ Press **Create voice** on the Voice Studio page. A wizard guides you through fiv
 5. **Try it.** Edit the test sentence if you like and press **Generate sample**. The first generation
    loads the model and can take a little while. **Use for reading** makes it your reading voice. If the
    engine isn't installed yet, this step offers to install it instead.
+
+### Studio voice
+
+About 30–45 minutes, and you can stop and continue later: every take is saved as you go, and Voice
+Studio shows **Studio session in progress** with **Continue** and **Discard**. Use a USB or XLR
+microphone if you can. The [recording guide](https://github.com/carsonmcrae/local-tts-web-ui/blob/main/docs/guides/studio-recording.md)
+covers microphone, Windows and room setup.
+
+1. **Before you start.** How the voice is built, microphone and room setup, and what is stored.
+2. **Microphone.** Choose your microphone and press **Check microphone**: stay quiet for two seconds,
+   then read the line on screen. The check reports level, background noise, clipping and whether the
+   microphone sounds thin or tinny, with fixes.
+3. **Record.** Read 48 short passages in six styles (narration, storytelling, conversation, questions,
+   numbers and names, calm). Press **Record**, read the passage, then **Stop**. Each take is recorded
+   losslessly (browser noise suppression, echo cancellation and auto-gain are off), checked and saved
+   at once; a good take moves you to the next passage. Five minutes of usable speech unlocks the
+   build; ten or more is better. Recorded elsewhere? **Import a recording** splits a WAV, FLAC or
+   OGG file (up to 30 minutes) into takes at its pauses.
+4. **Build.** Press **Build my voice**. The app measures every take, averages your voice across the
+   session, then builds and tests five voices from your best takes. This takes a minute or two with a
+   GPU, longer on a CPU, and needs the voice-cloning engine (this step offers to install it).
+5. **Choose.** Listen to the samples of the three best voices, each with a match score, and pick the
+   one that sounds most like the speaker.
+6. **Name & consent** and 7. **Try it**, as for a quick voice.
+
+### Delivery
+
+Each voice has a **Delivery**: **Steady** (even, good for long reading), **Natural** (the default)
+or **Expressive** (more rise and fall, less even from sentence to sentence). Change it in the wizard's
+last step or on the voice card; audio made with the previous delivery is cleared.
 
 ## Recording tips
 
@@ -71,8 +111,10 @@ Your browser shows instant checks; the local server then repeats them, and its r
 | Clipping         | Distorted audio           | A few clipped peaks                     |
 | Background noise | A lot of background noise | Some audible noise                      |
 | Pauses           | None                      | More than half the recording is silence |
+| Brightness       | None                      | The microphone sounds thin or tinny     |
 
-Each problem comes with a plain-language fix, such as moving closer to the microphone.
+A studio take only needs 3 seconds of speech, and the microphone check 2. Each problem comes with a
+plain-language fix, such as moving closer to the microphone.
 
 ## Consent and responsible use
 
@@ -87,17 +129,20 @@ shows "Consent confirmed" with the date.
 
 ## What is stored
 
-Only a trimmed copy of the reference recording (a WAV of at most 30 seconds) is saved, in
-`data/voices/`, with the voice's name and details in the library database. No model is trained and
-nothing is uploaded. You can have up to 50 custom voices.
+For a quick voice, only a trimmed copy of the reference recording (a WAV of at most 30 seconds) is
+saved, in `data/voices/`, with the voice's name and details in the library database. A studio voice
+also keeps its session's takes (24-bit FLAC) and the voice built from them (a small safetensors file).
+Sessions in progress live in `data/voices/sessions/`. No model is trained and nothing is uploaded.
+You can have up to 50 custom voices.
 
-Each voice card has **Play recording**, a rename button, **Use for reading** (once the engine is
-installed) and a delete button.
+Each voice card has **Play recording**, a **Delivery** choice and **Use for reading** (once the
+engine is installed), a rename button and a delete button. Studio voices are marked **Studio**.
 
 ## Permanent deletion
 
 Use the delete button on a voice card and confirm **Delete voice**. This permanently removes the
-reference recording, the voice profile and the cached audio generated with that voice. It can't be
+voice's recordings (including a studio voice's session takes), the voice profile and the cached audio
+generated with that voice. **Discard** does the same for a studio session in progress. It can't be
 undone. If it was your reading voice, the reader switches back to **Heart**.
 
 Audio you exported with the voice isn't removed: delete downloaded files, and the copies in

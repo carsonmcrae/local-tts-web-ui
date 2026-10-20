@@ -59,13 +59,17 @@ class Worker:
         """Point the model at the requested voice; each file is prepared once until another is used."""
         model = self._loaded()
         conditioning, reference = request.get("conditioning"), request.get("reference")
-        voice = f"conditioning:{conditioning}" if conditioning else f"reference:{reference}" if reference else None
-        if voice is None:
+        if conditioning:
+            voice = f"conditioning:{conditioning}"
+            if voice != self.voice:
+                model.conds = studio.load_conditioning(conditioning, self.device)
+        elif reference:
+            voice = f"reference:{reference}"
+            if voice != self.voice:
+                model.prepare_conditionals(reference)
+        else:
+            voice = None
             model.conds = self.default_conds
-        elif voice != self.voice and conditioning:
-            model.conds = studio.load_conditioning(conditioning, self.device)
-        elif voice != self.voice:
-            model.prepare_conditionals(reference)
         self.voice = voice
 
     def synthesize(self, request: dict[str, Any]) -> dict[str, Any]:

@@ -12,7 +12,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import type * as RecorderModule from '@/lib/audio/recorder';
 import type * as WavModule from '@/lib/audio/wav';
 import { decodeToClip } from '@/lib/audio/wav';
-import { json, mockApi, preferences, renderWithApp } from '@/test/render';
+import { controlFrames, json, mockApi, preferences, renderWithApp } from '@/test/render';
 import { CaptureStep } from './CaptureStep';
 import { ReviewStep } from './ReviewSteps';
 import { SCRIPTS } from './script';
@@ -55,24 +55,6 @@ afterEach(() => {
 });
 
 const clip = (trimmed = false) => ({ samples: new Float32Array(240), sampleRate: 24_000, trimmed });
-
-/** Drives animation frames and the clock by hand so elapsed time is deterministic. */
-function controlFrames() {
-  const frames: { next: FrameRequestCallback | null; now: number } = { next: null, now: 0 };
-  vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => {
-    frames.next = callback;
-    return 1;
-  });
-  vi.stubGlobal('cancelAnimationFrame', () => {
-    frames.next = null;
-  });
-  vi.spyOn(performance, 'now').mockImplementation(() => frames.now);
-  return (seconds: number) => {
-    frames.now = seconds * 1000;
-    const callback = frames.next;
-    act(() => callback?.(frames.now));
-  };
-}
 
 function renderCapture() {
   const onCaptured = vi.fn();

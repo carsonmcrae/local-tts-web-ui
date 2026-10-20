@@ -9,10 +9,10 @@ import { FileAudio, Mic, RotateCcw, Square } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Banner, ProgressBar } from '@/components/ui/Feedback';
-import { cn } from '@/lib/cn';
 import { formatClock } from '@/lib/format';
 import { explainMicrophoneError, MicRecorder } from '@/lib/audio/recorder';
 import { decodeToClip } from '@/lib/audio/wav';
+import { LevelMeter } from './LevelMeter';
 import { SCRIPTS } from './script';
 
 export interface CapturedClip {
@@ -25,32 +25,6 @@ export interface CapturedClip {
 const MAX_RECORD_S = 45;
 const TARGET_S = 20;
 const MAX_IMPORT_BYTES = 20 * 1024 * 1024;
-
-/** Colour of one meter bar: lit bars turn red near the top of the range, as a clipping warning. */
-function barColor(lit: boolean, hot: boolean): string {
-  if (!lit) return 'bg-surface-3';
-  return hot ? 'bg-danger' : 'bg-accent';
-}
-
-function LevelMeter({ level }: Readonly<{ level: number }>) {
-  const bars = 24;
-  return (
-    <div className="flex h-8 items-end gap-[3px]" aria-hidden="true">
-      {Array.from({ length: bars }, (_, i) => {
-        return (
-          <span
-            key={i}
-            className={cn(
-              'w-1.5 rounded-sm transition-[height,background-color] duration-75',
-              barColor(level * bars > i, i > bars * 0.85),
-            )}
-            style={{ height: `${30 + (i / bars) * 70}%` }}
-          />
-        );
-      })}
-    </div>
-  );
-}
 
 export function CaptureStep({
   onCaptured,

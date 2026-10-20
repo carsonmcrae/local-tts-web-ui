@@ -5,7 +5,8 @@ uploads a PDF, synthesises its first sentences with Kokoro and checks the result
 (duration, loudness, not silence); synthesises with every English Kokoro voice family; and, when the
 optional Chatterbox engine is installed, clones a synthetic reference voice and checks that the
 clone is closer to the reference speaker than an unrelated voice is, and builds a studio voice from
-several takes: a saved voice reproduces identical audio with the same seed and resembles the speaker.
+several takes: a saved voice reproduces identical audio with the same seed and resembles the speaker,
+and runs a whole studio session over HTTP (takes, build job, finish, speaking with the new voice).
 Run with ``npm run test:inference``. Skips cleanly when models are not installed.
 Does NOT belong: Fast unit tests (they use FakeEngine).
 """
@@ -47,6 +48,7 @@ def real(tmp_path_factory: pytest.TempPathFactory) -> Iterator[TestClient]:
         engines_dir=ENGINES,
         warm_up_engines=False,
         extra_allowed_hosts=["testserver"],
+        min_studio_speech_s=10,
     )
     app = create_app(settings, services=build_services(settings, isolate_extraction=True))
     with TestClient(app, headers={"X-LTTS-Client": "web"}) as client:
@@ -161,6 +163,38 @@ def test_chatterbox_studio_voice_is_reproducible_and_resembles_the_speaker(real:
     assert a.shape == b.shape and float(np.max(np.abs(a - b))) < 1e-3  # saved voice + seed = same audio
     print(f"\nchatterbox: studio voice similarity {scores[0]:.3f}")
     assert scores[0] > 0.8
+
+
+def test_chatterbox_studio_session_end_to_end(real: TestClient) -> None:
+    if not (ENGINES / "chatterbox" / "installed.json").is_file():
+        pytest.skip("Optional Chatterbox engine not installed")
+    passages = [
+        "Before the bridge was built, the only way across the river was a small ferry that ran every half hour.",
+        "Oh no, I completely forgot! The meeting was today? At three? Is there any way we could still catch the end?",
+        "There's something peaceful about early mornings, when the house is quiet and the light is soft.",
+    ]
+    session = real.post("/api/voice-sessions").json()["id"]
+    for number, text in enumerate(passages, start=1):
+        speech = real.post("/api/voices/kokoro:bm_george/preview", json={"text": text})
+        take = real.put(f"/api/voice-sessions/{session}/takes/{number}", content=speech.content)
+        assert take.status_code == 200 and take.json()["quality"]["ok"], take.text
+    started = time.perf_counter()
+    job = real.post(f"/api/voice-sessions/{session}/build").json()
+    while (job := real.get(f"/api/jobs/{job['id']}").json())["status"] in ("queued", "running"):
+        assert time.perf_counter() - started < 600
+        time.sleep(0.5)
+    assert job["status"] == "succeeded", job
+    candidates = real.get(f"/api/voice-sessions/{session}").json()["candidates"]
+    scores = [c["similarity"] for c in candidates]
+    print(f"\nchatterbox: studio build {time.perf_counter() - started:.0f}s, scores {scores}")
+    assert len(candidates) == 3 and candidates[0]["similarity"] > 0.8
+    choice = {"candidate": candidates[0]["index"], "name": "Studio", "consent": True, "delivery": "steady"}
+    profile = real.post(f"/api/voice-sessions/{session}/finish", json=choice).json()
+    spoken, rate = decode(
+        real.post(f"/api/voices/{profile['voiceId']}/preview", json={"text": "A brand new sentence."})
+    )
+    assert_speech(spoken, rate)
+    assert real.delete(f"/api/voice-profiles/{profile['id']}").status_code == 204
 
 
 def chatterbox(client: TestClient) -> ChatterboxEngine:

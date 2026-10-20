@@ -3,7 +3,8 @@
  * Scope: The reference "speaker" is a built-in Kokoro voice generated on the fly (no real person's
  *   voice is used). Imports it in Voice Studio, passes quality checks, confirms consent, creates the
  *   profile, generates a sample with the cloning engine (when installed), narrates a document with
- *   it, and permanently deletes it. Also records with Chromium's fake microphone.
+ *   it, and permanently deletes it. Also records with Chromium's fake microphone, in the quick wizard
+ *   and in a studio session (lossless capture through the AudioWorklet, saved as a take).
  * Does NOT belong: Built-in voice previews (reader.spec.ts).
  */
 import type { Page } from '@playwright/test';
@@ -13,11 +14,16 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { pasteText, play } from './helpers';
 
-/** Opens Voice Studio's "Create a voice" wizard and moves past its introduction. */
-async function openWizard(page: Page) {
+/** Opens one of Voice Studio's creation wizards from the chooser and moves past its introduction. */
+async function openWizard(page: Page, route: 'Quick voice' | 'Studio voice' = 'Quick voice') {
   await page.goto('/studio');
   await page.getByRole('button', { name: 'Create voice' }).first().click();
-  const wizard = page.getByRole('dialog', { name: 'Create a voice' });
+  await page
+    .getByRole('dialog', { name: 'Create a voice' })
+    .getByRole('button', { name: route })
+    .click();
+  const title = route === 'Quick voice' ? 'Create a quick voice' : 'Create a studio voice';
+  const wizard = page.getByRole('dialog', { name: title });
   await wizard.getByRole('button', { name: /Continue/ }).click();
   return wizard;
 }
@@ -95,4 +101,41 @@ test('guided recording with the microphone', async ({ page, browserName }) => {
   await expect(wizard.getByRole('button', { name: 'Record again' })).toBeVisible();
   await expect(wizard.getByText(/too little speech|seconds/i).first()).toBeVisible();
   await expect(wizard.getByRole('button', { name: /Continue/ })).toBeDisabled();
+});
+
+test('studio session records lossless takes with the microphone', async ({
+  page,
+  request,
+  browserName,
+}) => {
+  test.skip(browserName !== 'chromium', 'Fake microphone flags are Chromium-only');
+  const wizard = await openWizard(page, 'Studio voice');
+  await wizard.getByRole('button', { name: 'Check microphone' }).click();
+  await expect(wizard.getByRole('button', { name: 'Stop' })).toBeVisible();
+  await page.waitForTimeout(3000);
+  await wizard.getByRole('button', { name: 'Stop' }).click();
+  // Chromium's fake device plays a test tone; whatever the verdict, the check must report one.
+  await expect(
+    wizard.getByRole('alert').or(wizard.getByText('Your microphone sounds good')).first(),
+  ).toBeVisible();
+  await wizard.getByRole('button', { name: /Continue/ }).click();
+  await expect(wizard.getByText(/Passage 1 of 48/)).toBeVisible();
+  await wizard.getByRole('button', { name: 'Record', exact: true }).click();
+  await expect(wizard.getByRole('button', { name: 'Stop' })).toBeVisible();
+  await page.waitForTimeout(4000);
+  await wizard.getByRole('button', { name: 'Stop' }).click();
+  // The take is saved (the fake tone fails the checks, so it stays on this passage to record again).
+  await expect(wizard.getByRole('button', { name: 'Record again' })).toBeVisible();
+  const sessions = (await (
+    await request.get('/api/voice-sessions', { headers: { 'X-LTTS-Client': 'web' } })
+  ).json()) as {
+    id: string;
+    takes: { number: number; durationS: number }[];
+  }[];
+  expect(sessions).toHaveLength(1);
+  expect(sessions[0]?.takes).toHaveLength(1);
+  expect(sessions[0]?.takes[0]?.durationS).toBeGreaterThan(0);
+  await request.delete(`/api/voice-sessions/${sessions[0]?.id}`, {
+    headers: { 'X-LTTS-Client': 'web' },
+  });
 });

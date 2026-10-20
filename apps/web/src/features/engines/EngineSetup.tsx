@@ -11,7 +11,6 @@ import { useEffect, useRef, useState } from 'react';
 import { describeError } from '@/api/client';
 import {
   isJobActive,
-  useCancelJob,
   useEngines,
   useInstallEngine,
   useJob,
@@ -21,9 +20,10 @@ import {
 import type { EngineInfo, InstallOption, JobOut } from '@/api/types';
 import { Button } from '@/components/ui/Button';
 import { ConfirmDialog } from '@/components/ui/Dialog';
-import { Badge, Banner, ProgressBar } from '@/components/ui/Feedback';
+import { Badge, Banner } from '@/components/ui/Feedback';
 import { useToast } from '@/components/ui/Toast';
 import { cn } from '@/lib/cn';
+import { JobProgress } from '@/features/jobs/JobProgress';
 import { formatBytes } from '@/lib/format';
 
 /** Updates run as install jobs (shared progress, cancel and status) flagged in the payload. */
@@ -146,31 +146,6 @@ function InstallOptions({
   );
 }
 
-function InstallProgress({ job, engineName }: Readonly<{ job: JobOut; engineName: string }>) {
-  const cancel = useCancelJob();
-  return (
-    <div className="flex flex-col gap-2">
-      <ProgressBar
-        value={job.progress}
-        label={`${isUpdateJob(job) ? 'Updating' : 'Installing'} ${engineName}`}
-      />
-      <div className="flex items-center justify-between gap-3 text-[13px] text-muted">
-        <span aria-live="polite" className="truncate">
-          {job.message}
-        </span>
-        <Button
-          size="sm"
-          variant="ghost"
-          onClick={() => cancel.mutate(job.id)}
-          loading={cancel.isPending}
-        >
-          Cancel
-        </Button>
-      </div>
-    </div>
-  );
-}
-
 /** Progress of the running install/update job, why the last one failed, or why it couldn't start. */
 function JobFeedback({
   job,
@@ -185,7 +160,12 @@ function JobFeedback({
 }>) {
   return (
     <>
-      {active && job ? <InstallProgress job={job} engineName={engineName} /> : null}
+      {active && job ? (
+        <JobProgress
+          job={job}
+          label={(isUpdateJob(job) ? 'Updating ' : 'Installing ') + engineName}
+        />
+      ) : null}
       {job?.status === 'failed' ? (
         <Banner tone="error" title={isUpdateJob(job) ? 'Update failed' : 'Installation failed'}>
           {job.message}

@@ -1,12 +1,14 @@
 /**
  * Purpose: TanStack Query hooks and mutations for every server resource.
  * Scope: Query keys, polling for in-progress jobs, cache invalidation after mutations, and raw-body
- *   uploads (documents, voice recordings). One place to see how the UI stays in sync with the server.
+ *   uploads (documents, voice recordings, studio session takes). One place to see how the UI stays in
+ *   sync with the server.
  * Does NOT belong: Presentation or playback state.
  */
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from './client';
 import type {
+  Delivery,
   DocumentDetail,
   DocumentSummary,
   EngineInfo,
@@ -16,8 +18,10 @@ import type {
   QualityReport,
   SectionContent,
   SystemInfo,
+  SessionTake,
   VoiceInfo,
   VoiceProfile,
+  VoiceSession,
 } from './types';
 
 export const keys = {
@@ -30,6 +34,8 @@ export const keys = {
   preferences: ['preferences'] as const,
   system: ['system'] as const,
   profiles: ['voice-profiles'] as const,
+  sessions: ['voice-sessions'] as const,
+  session: (id: string) => ['voice-sessions', id] as const,
 };
 
 const ACTIVE_JOB = new Set(['queued', 'running']);
@@ -234,15 +240,110 @@ export function useDeleteProfile() {
   });
 }
 
-export function useRenameProfile() {
+export function useUpdateProfile() {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: (input: { id: string; name: string }) =>
-      api<VoiceProfile>(`/api/voice-profiles/${input.id}`, {
-        method: 'PATCH',
-        json: { name: input.name },
+    mutationFn: ({ id, ...changes }: { id: string; name?: string; delivery?: Delivery }) =>
+      api<VoiceProfile>(`/api/voice-profiles/${id}`, { method: 'PATCH', json: changes }),
+    onSuccess: () => {
+      void client.invalidateQueries({ queryKey: keys.profiles });
+      void client.invalidateQueries({ queryKey: keys.voices });
+    },
+  });
+}
+
+// -- studio voice sessions ---------------------------------------------------
+
+export function useVoiceSessions() {
+  return useQuery({
+    queryKey: keys.sessions,
+    queryFn: () => api<VoiceSession[]>('/api/voice-sessions'),
+  });
+}
+
+export function useVoiceSession(id: string | null) {
+  return useQuery({
+    queryKey: keys.session(id ?? ''),
+    queryFn: () => api<VoiceSession>(`/api/voice-sessions/${id}`),
+    enabled: Boolean(id),
+  });
+}
+
+export function checkMicrophone(wav: Blob) {
+  return api<QualityReport>('/api/voice-sessions/microphone-check', { method: 'POST', body: wav });
+}
+
+/** A session mutation that refreshes that session and the session list when it succeeds. */
+function useSessionMutation<Input extends { sessionId: string }, Result>(
+  run: (input: Input) => Promise<Result>,
+) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: run,
+    onSuccess: (_result, input) => {
+      void client.invalidateQueries({ queryKey: keys.session(input.sessionId) });
+      void client.invalidateQueries({ queryKey: keys.sessions, exact: true });
+    },
+  });
+}
+
+export function useCreateSession() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: () => api<VoiceSession>('/api/voice-sessions', { method: 'POST' }),
+    onSuccess: () => client.invalidateQueries({ queryKey: keys.sessions, exact: true }),
+  });
+}
+
+export function useSaveTake() {
+  return useSessionMutation(
+    (input: { sessionId: string; number: number; promptId: string; wav: Blob }) =>
+      api<SessionTake>(`/api/voice-sessions/${input.sessionId}/takes/${input.number}`, {
+        method: 'PUT',
+        query: { promptId: input.promptId },
+        body: input.wav,
+      }),
+  );
+}
+
+export function useImportRecording() {
+  return useSessionMutation((input: { sessionId: string; file: Blob }) =>
+    api<VoiceSession>(`/api/voice-sessions/${input.sessionId}/import`, {
+      method: 'POST',
+      body: input.file,
+    }),
+  );
+}
+
+export function useBuildVoice() {
+  return useSessionMutation((input: { sessionId: string }) =>
+    api<JobOut>(`/api/voice-sessions/${input.sessionId}/build`, { method: 'POST' }),
+  );
+}
+
+export function useDeleteSession() {
+  return useSessionMutation((input: { sessionId: string }) =>
+    api<void>(`/api/voice-sessions/${input.sessionId}`, { method: 'DELETE' }),
+  );
+}
+
+export function useFinishSession() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      sessionId,
+      ...choice
+    }: {
+      sessionId: string;
+      candidate: number;
+      name: string;
+    }) =>
+      api<VoiceProfile>(`/api/voice-sessions/${sessionId}/finish`, {
+        method: 'POST',
+        json: { ...choice, consent: true },
       }),
     onSuccess: () => {
+      void client.invalidateQueries({ queryKey: keys.sessions });
       void client.invalidateQueries({ queryKey: keys.profiles });
       void client.invalidateQueries({ queryKey: keys.voices });
     },

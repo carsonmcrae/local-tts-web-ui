@@ -2,7 +2,8 @@
 
 Scope: Session lifecycle (create, list, read, delete); saving, replacing and deleting takes with the
 take quality rules; rejected audio and the per-session take limit; importing a long recording split
-at its pauses; the microphone check (no speech, a bright microphone); the brightness metric; and the
+at its pauses; the microphone check (no speech, a bright or thin microphone, the suggested tone
+correction and its preview); the tone metrics leaving out sibilants; the tone correction itself; and the
 splitter's joining of short pieces.
 Does NOT belong: Building voices and finishing sessions (test_studio_voices.py).
 """
@@ -17,7 +18,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from conftest import SAMPLE_RATE, speech_like, wav_bytes
-from ltts.audio import split_at_pauses
+from ltts.audio import apply_tone, read_audio, split_at_pauses
 from ltts.config import Settings
 from ltts.container import Services
 from ltts.voices.quality import CHECK_RULES, analyze
@@ -39,11 +40,30 @@ def silence(seconds: float) -> np.ndarray:
     return np.zeros(int(seconds * SAMPLE_RATE), dtype=np.float32)
 
 
-def bright(seconds: float = 8.0) -> np.ndarray:
-    """Speech-like audio with a strong 6 kHz component, like a thin, tinny microphone."""
+def voiced(seconds: float) -> np.ndarray:
+    """The syllable envelope speech_like uses, so added tones only sound while "speaking"."""
     t = np.arange(int(seconds * SAMPLE_RATE)) / SAMPLE_RATE
-    voiced = np.sin(2 * np.pi * 3.0 * t) > -0.6  # the same syllable envelope as speech_like
-    return (speech_like(seconds) + 0.2 * np.sin(2 * np.pi * 6_000 * t) * voiced).astype(np.float32)
+    return (np.sin(2 * np.pi * 3.0 * t) > -0.6).astype(np.float32)
+
+
+def tone(hz: float, seconds: float, level: float) -> np.ndarray:
+    t = np.arange(int(seconds * SAMPLE_RATE)) / SAMPLE_RATE
+    return (level * np.sin(2 * np.pi * hz * t) * voiced(seconds)).astype(np.float32)
+
+
+def natural(seconds: float = 8.0) -> np.ndarray:
+    """Speech-like audio with a natural balance: some presence (2-4 kHz) and a little air (4-8 kHz)."""
+    return speech_like(seconds) + tone(2_500, seconds, 0.05) + tone(5_000, seconds, 0.01)
+
+
+def bright(seconds: float = 8.0) -> np.ndarray:
+    """Speech with strong 6 kHz content in its vowels, like a harsh microphone."""
+    return natural(seconds) + tone(6_000, seconds, 0.08)
+
+
+def thin(seconds: float = 8.0) -> np.ndarray:
+    """Speech with almost no low end, like a laptop microphone."""
+    return tone(1_200, seconds, 0.2) + tone(2_500, seconds, 0.2) + tone(180, seconds, 0.02)
 
 
 def error(response: Any) -> str:
@@ -111,18 +131,48 @@ def test_import_splits_a_long_recording_at_its_pauses(client: TestClient) -> Non
     assert error(missing) == "session_not_found"
 
 
-def test_microphone_check_reports_silence_and_a_bright_microphone(client: TestClient) -> None:
-    clean = client.post("/api/voice-sessions/microphone-check", content=wav_bytes(speech_like(8))).json()
-    assert clean["ok"] and clean["issues"] == []
-    quiet = client.post("/api/voice-sessions/microphone-check", content=wav_bytes(silence(4))).json()
-    assert quiet["ok"] is False and quiet["issues"][0]["code"] == "no_speech"
-    thin = client.post("/api/voice-sessions/microphone-check", content=wav_bytes(bright())).json()
-    assert thin["ok"] and [i["code"] for i in thin["issues"]] == ["bright"] and thin["brightnessDb"] > 5
+def test_microphone_check_reports_silence_and_tone_with_a_correction(client: TestClient, tmp_path: Path) -> None:
+    check = "/api/voice-sessions/microphone-check"
+    clean = client.post(check, content=wav_bytes(natural())).json()
+    assert clean["report"]["ok"] and clean["report"]["issues"] == [] and clean["suggested"] is None
+    quiet = client.post(check, content=wav_bytes(silence(4))).json()
+    assert quiet["report"]["issues"][0]["code"] == "no_speech" and quiet["suggested"] is None
+    harsh = client.post(check, content=wav_bytes(bright())).json()
+    assert [i["code"] for i in harsh["report"]["issues"]] == ["bright"] and harsh["report"]["brightnessDb"] > 0
+    assert harsh["suggested"]["trebleDb"] < 0 and harsh["suggested"]["bassDb"] == 0
+    weak = client.post(check, content=wav_bytes(thin())).json()
+    assert [i["code"] for i in weak["report"]["issues"]] == ["thin"] and weak["suggested"]["bassDb"] > 0
+
+    params = {"trebleDb": harsh["suggested"]["trebleDb"]}
+    preview = client.post("/api/voice-sessions/tone-preview", params=params, content=wav_bytes(bright()))
+    assert preview.status_code == 200 and preview.headers["content-type"] == "audio/wav"
+    (tmp_path / "preview.wav").write_bytes(preview.content)
+    samples, rate = read_audio(tmp_path / "preview.wav")
+    assert analyze(samples, rate, CHECK_RULES).issues == []  # the correction clears the warning
+    refused = client.post("/api/voice-sessions/tone-preview", params={"trebleDb": 3}, content=wav_bytes(bright()))
+    assert refused.status_code == 422
 
 
-def test_brightness_is_zero_without_enough_speech() -> None:
-    assert analyze(speech_like(0.05), SAMPLE_RATE, CHECK_RULES).brightness_db == 0.0
-    assert analyze(speech_like(8), SAMPLE_RATE).brightness_db < 5
+def test_tone_leaves_out_sibilants_and_is_unmeasured_without_vowels() -> None:
+    assert analyze(speech_like(0.05), SAMPLE_RATE, CHECK_RULES).brightness_db is None
+    hiss = tone(6_000, 8, 0.3) + speech_like(8, level=0.02)  # all "s": brighter than the vowels below it
+    assert analyze(hiss, SAMPLE_RATE, CHECK_RULES).brightness_db is None
+    steady = (0.3 * np.sin(2 * np.pi * 180 * np.arange(8 * SAMPLE_RATE) / SAMPLE_RATE)).astype(np.float32)
+    assert analyze(steady, SAMPLE_RATE, CHECK_RULES).brightness_db is None  # no presence content at all
+    every_second = (np.arange(8 * SAMPLE_RATE) % SAMPLE_RATE < 2_400).astype(np.float32)
+    sibilant = analyze(natural() + tone(6_000, 8, 0.3) * every_second, SAMPLE_RATE, CHECK_RULES)
+    assert sibilant.brightness_db is not None and sibilant.brightness_db < 0  # short "s" bursts don't count
+    assert sibilant.issues == []
+
+
+def test_tone_correction_is_gentle_and_never_clips() -> None:
+    clip = speech_like(4)
+    assert apply_tone(clip, SAMPLE_RATE, 0.0, 0.0) is clip
+    loud = np.clip(speech_like(4, level=0.65), -0.98, 0.98)
+    boosted = apply_tone(loud, SAMPLE_RATE, 0.0, 6.0)
+    assert float(np.max(np.abs(boosted))) <= 0.99
+    cut_treble = apply_tone(bright(), SAMPLE_RATE, -6.0, 0.0)
+    assert analyze(cut_treble, SAMPLE_RATE, CHECK_RULES).brightness_db < analyze(bright(), SAMPLE_RATE).brightness_db
 
 
 def test_split_joins_short_pieces_up_to_the_maximum() -> None:

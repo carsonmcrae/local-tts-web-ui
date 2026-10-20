@@ -4,7 +4,9 @@ Scope: A session is a folder ``data/voices/sessions/<id>/takes/NNN.flac`` (24-bi
 recording's own sample rate) plus rows in ``voice_sessions`` and ``voice_takes``. Saving a take
 checks it with the take rules; importing a long recording splits it into takes at pauses; any change
 to the takes clears built candidates, and no change is allowed while a build is running. Also checks
-a short microphone test clip. Sessions stay local drafts until finished (``studio.py``) or deleted.
+a short microphone test clip (with the tone correction it suggests), previews a correction on it, and
+keeps the session's chosen correction, applied to corrected copies of the takes for building while
+the originals stay untouched. Sessions stay local drafts until finished (``studio.py``) or deleted.
 Does NOT belong: Building or auditioning voices (``studio.py``) or HTTP parsing (``sessions_router.py``).
 """
 
@@ -19,14 +21,14 @@ from typing import Literal
 
 import soundfile as sf
 
-from ltts.audio import Float32Array, split_at_pauses, trim_silence
+from ltts.audio import Float32Array, apply_tone, encode_wav, read_audio, split_at_pauses, trim_silence
 from ltts.common import MB, ApiModel, ensure_free_space, new_id, utc_now
 from ltts.config import Settings
 from ltts.db import Database
 from ltts.errors import ConflictError, NotFoundError
 from ltts.jobs import JobManager
 from ltts.voices.profiles import decode_recording
-from ltts.voices.quality import CHECK_RULES, TAKE_RULES, QualityReport, analyze
+from ltts.voices.quality import CHECK_RULES, TAKE_RULES, QualityReport, ToneCorrection, analyze, suggest_tone
 
 log = logging.getLogger("ltts.voices.sessions")
 BUILD_JOB = "voice-build"
@@ -67,8 +69,14 @@ class VoiceSessionOut(ApiModel):
     required_speech_s: float
     candidates: list[CandidateOut]
     build_job_id: str | None  # the running voice-build job, if any
+    tone: ToneCorrection | None  # applied to the takes when building
     created_at: str
     updated_at: str
+
+
+class MicCheckOut(ApiModel):
+    report: QualityReport
+    suggested: ToneCorrection | None  # the correction a bright or thin microphone needs
 
 
 class VoiceSessionService:
@@ -90,14 +98,19 @@ class VoiceSessionService:
     def candidate_dir(self, session_id: str, index: int) -> Path:
         return self.folder(session_id) / "candidates" / str(index)
 
+    def corrected_path(self, session_id: str, number: int) -> Path:
+        return self.folder(session_id) / "corrected" / f"{number:03d}.flac"
+
     # -- sessions -----------------------------------------------------------
-    def create(self) -> VoiceSessionOut:
+    def create(self, tone: ToneCorrection | None = None) -> VoiceSessionOut:
         session_id = new_id()
         (self.folder(session_id) / "takes").mkdir(parents=True)
         now = utc_now()
+        tone_json = tone.model_dump_json(by_alias=True) if tone else None
         with self._db.connect() as conn:
             conn.execute(
-                "INSERT INTO voice_sessions (id, created_at, updated_at) VALUES (?, ?, ?)", (session_id, now, now)
+                "INSERT INTO voice_sessions (id, tone_json, created_at, updated_at) VALUES (?, ?, ?, ?)",
+                (session_id, tone_json, now, now),
             )
         log.info("voice session created", extra={"session_id": session_id})
         return self.get(session_id)
@@ -123,6 +136,7 @@ class VoiceSessionService:
             required_speech_s=self._settings.min_studio_speech_s,
             candidates=candidates,
             build_job_id=building.id if building else None,
+            tone=ToneCorrection.model_validate_json(row["tone_json"]) if row["tone_json"] else None,
             created_at=row["created_at"],
             updated_at=row["updated_at"],
         )
@@ -144,7 +158,17 @@ class VoiceSessionService:
             )
 
     def usable_takes(self, session_id: str) -> list[tuple[TakeOut, Path]]:
-        return [(t, self.take_path(session_id, t.number)) for t in self.get(session_id).takes if t.quality.ok]
+        """The takes that passed, with the audio to build from: the tone-corrected copy when there is a correction."""
+        session = self.get(session_id)
+        usable = [take for take in session.takes if take.quality.ok]
+        if session.tone is None:
+            return [(take, self.take_path(session_id, take.number)) for take in usable]
+        return [(take, self._corrected(session_id, take.number, session.tone)) for take in usable]
+
+    def build_audio(self, session_id: str, number: int) -> Path:
+        """The audio a voice was built from: the corrected copy if there is one, otherwise the take."""
+        corrected = self.corrected_path(session_id, number)
+        return corrected if corrected.is_file() else self.take_path(session_id, number)
 
     # -- takes --------------------------------------------------------------
     def put_take(self, session_id: str, number: int, upload: Path, prompt_id: str | None) -> TakeOut:
@@ -182,9 +206,15 @@ class VoiceSessionService:
         log.info("recording imported", extra={"session_id": session_id, "takes": len(pieces)})
         return self.get(session_id)
 
-    def check_microphone(self, upload: Path) -> QualityReport:
+    def check_microphone(self, upload: Path) -> MicCheckOut:
         samples, rate = decode_recording(upload, MAX_CHECK_S)
-        return analyze(samples, rate, CHECK_RULES)
+        report = analyze(samples, rate, CHECK_RULES)
+        return MicCheckOut(report=report, suggested=suggest_tone(report))
+
+    def preview_tone(self, upload: Path, tone: ToneCorrection) -> bytes:
+        """A microphone check recording with ``tone`` applied, as WAV, to compare with the original."""
+        samples, rate = decode_recording(upload, MAX_CHECK_S)
+        return encode_wav(apply_tone(samples, rate, tone.treble_db, tone.bass_db), rate)
 
     # -- internals ----------------------------------------------------------
     def _ensure_idle(self, session_id: str) -> None:
@@ -210,9 +240,18 @@ class VoiceSessionService:
             ).fetchone()
         return _take(row)
 
+    def _corrected(self, session_id: str, number: int, tone: ToneCorrection) -> Path:
+        path = self.corrected_path(session_id, number)
+        if not path.is_file():
+            samples, rate = read_audio(self.take_path(session_id, number))
+            path.parent.mkdir(parents=True, exist_ok=True)
+            sf.write(str(path), apply_tone(samples, rate, tone.treble_db, tone.bass_db), rate, subtype="PCM_24")
+        return path
+
     def _changed(self, session_id: str) -> None:
-        """Takes changed: candidates built from the old takes no longer apply."""
+        """Takes changed: candidates (and corrected copies) made from the old takes no longer apply."""
         shutil.rmtree(self.folder(session_id) / "candidates", ignore_errors=True)
+        shutil.rmtree(self.folder(session_id) / "corrected", ignore_errors=True)
         with self._db.connect() as conn:
             conn.execute(
                 "UPDATE voice_sessions SET candidates_json = NULL, updated_at = ? WHERE id = ?", (utc_now(), session_id)

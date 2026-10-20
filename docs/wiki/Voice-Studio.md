@@ -70,9 +70,12 @@ microphone if you can. The [recording guide](https://github.com/carsonmcrae/loca
 covers microphone, Windows and room setup.
 
 1. **Before you start.** How the voice is built, microphone and room setup, and what is stored.
-2. **Microphone.** Choose your microphone and press **Check microphone**: stay quiet for two seconds,
-   then read the line on screen. The check reports level, background noise, clipping and whether the
-   microphone sounds thin or tinny, with fixes.
+2. **Microphone.** Voice Studio picks the input that looks like a USB or XLR microphone (you can choose
+   another). Press **Check microphone**, stay quiet for two seconds, then read the line on screen. The
+   check reports level, background noise, clipping and the microphone's tone, and **Play your
+   recording** lets you hear it. If the microphone sounds bright or thin, **Correct the tone
+   automatically** is switched on, and **Play it corrected** lets you compare. Your takes are kept as
+   recorded; the voice is built from corrected copies.
 3. **Record.** Read 48 short passages in six styles (narration, storytelling, conversation, questions,
    numbers and names, calm). Press **Record**, read the passage, then **Stop**. Each take is recorded
    losslessly (browser noise suppression, echo cancellation and auto-gain are off), checked and saved
@@ -111,9 +114,12 @@ Your browser shows instant checks; the local server then repeats them, and its r
 | Clipping         | Distorted audio           | A few clipped peaks                     |
 | Background noise | A lot of background noise | Some audible noise                      |
 | Pauses           | None                      | More than half the recording is silence |
-| Brightness       | None                      | The microphone sounds thin or tinny     |
+| Tone: bright     | None                      | Vowels carry harsh 4–8 kHz energy       |
+| Tone: thin       | None                      | Vowels have little low end              |
 
-A studio take only needs 3 seconds of speech, and the microphone check 2. Each problem comes with a
+Tone is measured on vowels only: "s" and "sh" sounds are naturally bright and are left out, so a good
+microphone close to the mouth isn't flagged. Studio takes skip the tone checks, since the microphone
+check covers them. A studio take only needs 3 seconds of speech, and the microphone check 2. Each problem comes with a
 plain-language fix, such as moving closer to the microphone.
 
 ## Consent and responsible use

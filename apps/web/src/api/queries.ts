@@ -6,7 +6,7 @@
  * Does NOT belong: Presentation or playback state.
  */
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { api } from './client';
+import { api, apiBlob } from './client';
 import type {
   Delivery,
   DocumentDetail,
@@ -14,11 +14,13 @@ import type {
   EngineInfo,
   ExportRequest,
   JobOut,
+  MicCheck,
   Preferences,
   QualityReport,
   SectionContent,
   SystemInfo,
   SessionTake,
+  ToneCorrection,
   VoiceInfo,
   VoiceProfile,
   VoiceSession,
@@ -270,7 +272,16 @@ export function useVoiceSession(id: string | null) {
 }
 
 export function checkMicrophone(wav: Blob) {
-  return api<QualityReport>('/api/voice-sessions/microphone-check', { method: 'POST', body: wav });
+  return api<MicCheck>('/api/voice-sessions/microphone-check', { method: 'POST', body: wav });
+}
+
+/** A microphone check recording with a tone correction applied, to compare with the original. */
+export function previewTone(wav: Blob, tone: ToneCorrection) {
+  return apiBlob('/api/voice-sessions/tone-preview', {
+    method: 'POST',
+    query: { trebleDb: tone.trebleDb, bassDb: tone.bassDb },
+    body: wav,
+  });
 }
 
 /** A session mutation that refreshes that session and the session list when it succeeds. */
@@ -290,7 +301,8 @@ function useSessionMutation<Input extends { sessionId: string }, Result>(
 export function useCreateSession() {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: () => api<VoiceSession>('/api/voice-sessions', { method: 'POST' }),
+    mutationFn: (tone: ToneCorrection | null) =>
+      api<VoiceSession>('/api/voice-sessions', { method: 'POST', json: { tone } }),
     onSuccess: () => client.invalidateQueries({ queryKey: keys.sessions, exact: true }),
   });
 }

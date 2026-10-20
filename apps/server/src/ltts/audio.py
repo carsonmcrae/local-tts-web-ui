@@ -1,8 +1,8 @@
 """Purpose: Small, dependency-light audio utilities shared by synthesis, export and voice profiles.
 
 Scope: Natural pauses after segments (by boundary type), click-free fades, peak normalisation,
-silence trimming, splitting a long recording into takes at pauses, mono conversion, and WAV
-encode/decode through soundfile (libsndfile).
+silence trimming, splitting a long recording into takes at pauses, gentle shelving tone correction,
+mono conversion, and WAV encode/decode through soundfile (libsndfile).
 Does NOT belong: Engine inference or recording-quality analysis (``voices/quality.py``).
 """
 
@@ -112,6 +112,24 @@ def split_at_pauses(
     runs = _join_runs(_voiced_runs(voiced, round(gap_s / frame_s)), round(min_s / frame_s), round(max_s / frame_s))
     pad = round(0.15 / frame_s)
     return [samples[max(0, (start - pad) * frame) : (end + pad) * frame] for start, end in runs]
+
+
+TREBLE_SHELF_HZ = 4_000.0
+BASS_SHELF_HZ = 250.0
+
+
+def apply_tone(samples: Float32Array, sample_rate: int, treble_db: float, bass_db: float) -> Float32Array:
+    """Shelving EQ as a smooth, zero-phase gain curve: ``treble_db`` above ~4 kHz, ``bass_db`` below ~250 Hz.
+
+    The result is scaled down if the boost would clip.
+    """
+    if not treble_db and not bass_db:
+        return samples
+    freqs = np.maximum(np.fft.rfftfreq(len(samples), 1 / sample_rate), 1.0)
+    gain_db = treble_db / (1 + (TREBLE_SHELF_HZ / freqs) ** 4) + bass_db / (1 + (freqs / BASS_SHELF_HZ) ** 4)
+    shaped = np.fft.irfft(np.fft.rfft(samples) * 10 ** (gain_db / 20), n=len(samples)).astype(np.float32)
+    peak = float(np.max(np.abs(shaped))) if shaped.size else 0.0
+    return shaped * np.float32(0.99 / peak) if peak > 0.99 else shaped
 
 
 def encode_wav(samples: Float32Array, sample_rate: int) -> bytes:

@@ -1,6 +1,7 @@
 /**
  * Purpose: Build the studio voice from the session's takes.
- * Scope: An install prompt while the cloning engine is missing; otherwise starting the build job (or
+ * Scope: An install prompt while the cloning engine is missing; otherwise the session's tone
+ *   correction, if any, and starting the build job (or
  *   following one already running), its progress with cancel, failure and cancel messages, and moving
  *   on to the results when a build finishes.
  * Does NOT belong: Choosing a result (CandidatePicker) or recording.
@@ -15,6 +16,7 @@ import { Button } from '@/components/ui/Button';
 import { Banner } from '@/components/ui/Feedback';
 import { EnginePanel } from '@/features/engines/EngineSetup';
 import { JobProgress } from '@/features/jobs/JobProgress';
+import { describeTone } from './tone';
 
 export function BuildStep({
   session,
@@ -53,6 +55,12 @@ export function BuildStep({
         tests a few voices from your best takes. This takes a minute or two with a GPU, longer on a
         CPU. Reading with other custom voices pauses while it runs.
       </p>
+      {session.tone ? (
+        <p className="text-sm leading-relaxed text-muted">
+          Tone correction is on: the voice is built from copies of your takes with the{' '}
+          {describeTone(session.tone)}. Your recordings are kept as recorded.
+        </p>
+      ) : null}
       {running && job.data ? (
         <JobProgress job={job.data} label="Building your voice" />
       ) : (

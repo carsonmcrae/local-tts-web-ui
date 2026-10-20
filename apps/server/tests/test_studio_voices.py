@@ -4,13 +4,15 @@ Scope: A build needs enough usable speech and an installed cloning engine; the b
 takes, uses the session identity, ranks and auditions candidates best first; samples are served; a
 session can't change while it builds and a build can be canceled; finishing needs consent and a built
 candidate, creates a studio profile that owns the takes and voice file, and removes the session; the
-profile's delivery is part of its cache revision and changing it purges old audio; ranking leaves
-out atypical, short and bright takes first.
+profile's delivery is part of its cache revision and changing it purges old audio; a tone correction is
+built from corrected copies of the takes; profiles saved
+before the brightness metric existed still load; ranking leaves out atypical, short and bright takes first.
 Does NOT belong: Takes, imports and the microphone check (test_voice_sessions.py).
 """
 
 from __future__ import annotations
 
+import json
 import threading
 from collections.abc import Sequence
 from pathlib import Path
@@ -135,6 +137,37 @@ def test_quick_voices_keep_their_original_cache_revision(client: TestClient, ser
     assert revision == profile["createdAt"] and spec.conditioning_path is None
     steady = client.patch(f"/api/voice-profiles/{profile['id']}", json={"delivery": "steady"}).json()
     assert steady["delivery"] == "steady" and services.voices.resolve(profile["id"])[2].endswith("|steady")
+
+
+def test_a_tone_correction_is_built_from_corrected_copies_of_the_takes(
+    client: TestClient, services: Services, engines: dict[str, FakeEngine]
+) -> None:
+    created = client.post("/api/voice-sessions", json={"tone": {"trebleDb": -4.5, "bassDb": 0}})
+    session_id = created.json()["id"]
+    assert created.json()["tone"] == {"trebleDb": -4.5, "bassDb": 0.0}
+    for number in (1, 2, 3):
+        client.put(f"/api/voice-sessions/{session_id}/takes/{number}", content=wav_bytes(speech_like(12)))
+    corrected = services.voice_sessions.corrected_path(session_id, 1)
+    job = client.post(f"/api/voice-sessions/{session_id}/build").json()
+    assert wait_job(client, job["id"])["status"] == "succeeded"
+    assert corrected.is_file() and services.voice_sessions.take_path(session_id, 1).is_file()  # originals kept
+    assert services.voice_sessions.build_audio(session_id, 1) == corrected
+    again = client.post(f"/api/voice-sessions/{session_id}/build").json()
+    assert wait_job(client, again["id"])["status"] == "succeeded"  # reuses the corrected copies
+    client.put(f"/api/voice-sessions/{session_id}/takes/4", content=wav_bytes(speech_like(12)))
+    assert not corrected.exists()  # new takes: the corrected copies are made again at the next build
+    assert services.voice_sessions.build_audio(session_id, 1) == services.voice_sessions.take_path(session_id, 1)
+
+
+def test_profiles_saved_before_the_brightness_metric_still_load(client: TestClient, services: Services) -> None:
+    params = {"name": "Older", "consent": "true"}
+    profile = client.post("/api/voice-profiles", params=params, content=wav_bytes(speech_like(12))).json()
+    with services.db.connect() as conn:
+        stored = json.loads(conn.execute("SELECT quality_json FROM voice_profiles").fetchone()[0])
+        older = json.dumps({key: value for key, value in stored.items() if key != "brightnessDb"})
+        conn.execute("UPDATE voice_profiles SET quality_json = ? WHERE id = ?", (older, profile["id"]))
+    assert client.get("/api/voice-profiles").json()[0]["quality"]["brightnessDb"] is None
+    assert client.get("/api/voices").status_code == 200
 
 
 def test_finish_needs_a_built_candidate(client: TestClient) -> None:

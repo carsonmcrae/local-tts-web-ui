@@ -20,6 +20,9 @@ class DocumentType(StrEnum):
     PDF = "pdf"
     DOCX = "docx"
     EPUB = "epub"
+    HTML = "html"
+    FB2 = "fb2"
+    MOBI = "mobi"
     PASTE = "paste"
 
 
@@ -46,6 +49,9 @@ class Extraction:
     sections: list[ExtractedSection]
     page_count: int | None = None
     warnings: list[str] = field(default_factory=list)
+    # Book metadata some formats carry (FB2 title-info, MOBI EXTH). Not stored yet.
+    author: str | None = None
+    language: str | None = None
 
 
 @dataclass(slots=True, frozen=True)

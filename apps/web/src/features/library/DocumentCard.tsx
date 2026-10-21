@@ -6,7 +6,7 @@
  *   open/continue link and delete (with confirmation).
  * Does NOT belong: Data fetching beyond the delete mutation.
  */
-import { BookText, FileText, FileType2, Hash, Trash2 } from 'lucide-react';
+import { BookText, FileText, FileType2, Globe, Hash, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router';
 import { useDeleteDocument } from '@/api/queries';
@@ -23,7 +23,14 @@ import {
   pluralize,
 } from '@/lib/format';
 
-const ICONS = { pdf: FileType2, epub: BookText, md: Hash } as const;
+const ICONS = {
+  pdf: FileType2,
+  epub: BookText,
+  fb2: BookText,
+  mobi: BookText,
+  md: Hash,
+  html: Globe,
+} as const;
 
 export function documentFacts(doc: DocumentSummary): string[] {
   return [

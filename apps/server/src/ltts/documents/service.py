@@ -3,20 +3,23 @@
 """Purpose: Orchestrate document ingestion from a saved upload or pasted text to stored segments.
 
 Scope: Enforces document-count and concurrency limits, verifies the real file type, runs the
-sandboxed extractor, segments the result and persists it. Temporary files are always removed.
+sandboxed extractor, segments the result and persists it. Web pages are fetched (``url_import``)
+and then read like an uploaded HTML file. Temporary files are always removed.
 Does NOT belong: HTTP concerns (``router.py``) or parsing (``extract_*``).
 """
 
 from __future__ import annotations
 
+import codecs
 import hashlib
 import json
 import logging
 import threading
 from pathlib import Path
 
-from ltts.common import MB, new_id
+from ltts.common import MB, ensure_free_space, new_id
 from ltts.config import Settings
+from ltts.documents.extract_html import decode_html
 from ltts.documents.extract_text import text_to_extraction
 from ltts.documents.extractors import extract
 from ltts.documents.normalize import clean_inline, word_count
@@ -26,6 +29,7 @@ from ltts.documents.schemas import MAX_TITLE_CHARS, DocumentDetail
 from ltts.documents.segmenter import segment_extraction
 from ltts.documents.sniff import detect_type
 from ltts.documents.structures import DocumentType, Extraction, ExtractionLimits
+from ltts.documents.url_import import fetch_page
 from ltts.errors import BusyError, ConflictError, DocumentExtractionError
 
 log = logging.getLogger("ltts.documents")
@@ -88,6 +92,25 @@ class DocumentService:
             doc_type = detect_type(path, label)
             extraction = self._run_extraction(path, doc_type, Path(label).stem)
             return self._store(extraction, doc_type, label, size, sha256)
+        finally:
+            path.unlink(missing_ok=True)
+
+    def import_web_page(self, url: str) -> DocumentDetail:
+        """Fetch a public web page and add its readable text, read in the sandbox like an upload."""
+        self._check_capacity()
+        page = fetch_page(url, max_bytes=self._settings.max_upload_bytes)
+        tmp_dir = self._settings.path("tmp")
+        # Decoded here with the charset the site sent, then handed over as UTF-8 marked by a byte-order mark.
+        data = codecs.BOM_UTF8 + decode_html(page.body, page.charset).encode("utf-8")
+        ensure_free_space(tmp_dir, len(data), self._settings.min_free_disk_mb)
+        path = tmp_dir / f"{new_id()}.page"
+        try:
+            path.write_bytes(data)
+            extraction = self._run_extraction(path, DocumentType.HTML, page.host)
+            label = page.address[:MAX_TITLE_CHARS]
+            return self._store(
+                extraction, DocumentType.HTML, label, len(page.body), hashlib.sha256(page.body).hexdigest()
+            )
         finally:
             path.unlink(missing_ok=True)
 

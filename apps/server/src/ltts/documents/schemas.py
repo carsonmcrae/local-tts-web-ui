@@ -2,7 +2,7 @@
 # Copyright (c) 2026 Carson McRae
 """Purpose: Wire-format models for the documents API.
 
-Scope: Library summaries, document detail with sections, section contents, paste requests,
+Scope: Library summaries, document detail with sections, section contents, paste and web page requests,
 section corrections (title and where it starts), search results and reading-progress updates. ``estimated_seconds``
 is a character-rate estimate until real audio exists.
 Does NOT belong: Internal extraction structures (``types.py``).
@@ -74,6 +74,10 @@ class SectionContent(ApiModel):
 class PasteTextRequest(ApiModel):
     text: str = Field(min_length=1, max_length=2_000_000)
     title: str | None = Field(default=None, max_length=MAX_TITLE_CHARS)
+
+
+class WebPageRequest(ApiModel):
+    url: str = Field(min_length=1, max_length=2_048)
 
 
 class SearchHit(ApiModel):

@@ -34,7 +34,7 @@ def _inline_text(token: Token) -> str:
     return clean_inline("".join(parts))
 
 
-class _SectionBuilder:
+class SectionBuilder:
     """Accumulates blocks; H1/H2 headings start a new section."""
 
     def __init__(self, title: str) -> None:
@@ -55,7 +55,7 @@ class _SectionBuilder:
 
 def markdown_to_extraction(source: str, title: str | None) -> Extraction:
     tokens = MarkdownIt("commonmark", {"html": False}).parse(source)
-    builder = _SectionBuilder(title or "Document")
+    builder = SectionBuilder(title or "Document")
     pending_heading: int | None = None
     for token in tokens:
         if token.type == "heading_open":

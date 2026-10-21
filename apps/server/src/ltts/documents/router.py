@@ -2,7 +2,8 @@
 # Copyright (c) 2026 Carson McRae
 """Purpose: HTTP endpoints for the document library.
 
-Scope: Raw-body uploads (no multipart parser), pasted text, library listing, document detail,
+Scope: Raw-body uploads (no multipart parser), pasted text, web pages by link (from this computer
+only, see ``require_local_client``), library listing, document detail,
 section contents and corrections (rename, move a section's start), search, bookmarks with notes,
 reading progress and deletion.
 Blocking work runs in the thread pool.
@@ -11,6 +12,7 @@ Does NOT belong: Ingestion rules (``service.py``) or audio (``synthesis``).
 
 from __future__ import annotations
 
+import ipaddress
 from typing import Annotated
 
 from fastapi import APIRouter, Path, Query, Request, Response
@@ -27,7 +29,9 @@ from ltts.documents.schemas import (
     SearchResults,
     SectionContent,
     SectionUpdate,
+    WebPageRequest,
 )
+from ltts.errors import ForbiddenError
 
 router = APIRouter(prefix="/api/documents", tags=["documents"])
 DocumentId = Annotated[str, Path(pattern=r"^[0-9a-f]{32}$")]
@@ -57,6 +61,29 @@ async def upload_document(
 @router.post("/text", status_code=201)
 def paste_text(body: PasteTextRequest, services: ServicesDep) -> DocumentDetail:
     return services.document_service.ingest_text(body.text, body.title)
+
+
+def require_local_client(request: Request) -> None:
+    """The one place that decides who may import web pages: for now, only this computer's own browser.
+
+    Fetching makes the server reach out to the internet, so a network (LAN) client is refused until
+    permissions for it exist.
+    """
+    host = request.client.host if request.client else ""
+    try:
+        address = ipaddress.ip_address(host)
+    except ValueError:
+        address = None
+    if isinstance(address, ipaddress.IPv6Address) and address.ipv4_mapped:
+        address = address.ipv4_mapped
+    if address is None or not address.is_loopback:
+        raise ForbiddenError("Web pages can only be imported from this computer for now.", code="local_only")
+
+
+@router.post("/url", status_code=201)
+async def import_web_page(body: WebPageRequest, request: Request, services: ServicesDep) -> DocumentDetail:
+    require_local_client(request)
+    return await run_in_threadpool(services.document_service.import_web_page, body.url)
 
 
 @router.get("/{document_id}")

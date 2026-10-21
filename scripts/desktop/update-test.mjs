@@ -202,7 +202,7 @@ async function main() {
     const deadline = Date.now() + 240_000;
     while (Date.now() < deadline && installedVersion() !== NEW) await sleep(1000);
     check(installedVersion() === NEW, `the verified update installed ${NEW}`);
-    const reopened = await serverOrigin(240_000);
+    const reopened = await serverOrigin(240_000, origin);
     check(isRunning(), 'TTSNative reopened after the update');
     const documents = await (await fetch(`${reopened}/api/documents`)).text();
     check(documents.includes(document.id), 'the document is still there after the update');

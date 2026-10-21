@@ -4,12 +4,13 @@
 /**
  * Purpose: Start the installed TTSNative with WebView2's debugging port open, so a test can drive its window.
  * Scope: Ends any running copy first (one without the port would take the single instance), starts the
- *   app with WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS, waits for its server and checks that the port answers.
- *   When WebView2 ignores the variable (seen on GitHub's Windows runners), starts again with Microsoft's
- *   documented registry override (HKCU\Software\Policies\Microsoft\Edge\WebView2\AdditionalBrowserArguments,
- *   read only when the variable is absent), which `removeDebugOverride` takes away again. Finds the app's
- *   page over CDP. When the port never opens, prints the browser process's switches so the cause shows.
- *   TTSNATIVE_WEBVIEW_DEBUG=registry skips the variable, to test that route by hand.
+ *   app with `--remote-debugging-port=N` (which the app passes through to WebView2), checks that the port
+ *   answers and takes the server's origin from the window's own address. Falls back to
+ *   WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS and then to Microsoft's registry override
+ *   (HKCU\Software\Policies\Microsoft\Edge\WebView2\AdditionalBrowserArguments, read only when the
+ *   variable is absent; `removeDebugOverride` takes it away again); GitHub's Windows runners ignore both.
+ *   Finds the app's page over CDP. When the port never opens, prints the browser process's switches.
+ *   TTSNATIVE_WEBVIEW_DEBUG=argument|variable|registry tries one route only, to test it by hand.
  * Does NOT belong: What the tests check (persistence-test.mjs, update-test.mjs) or installing (smoke-test.mjs).
  */
 import { execFileSync, spawn, spawnSync } from 'node:child_process';
@@ -49,17 +50,27 @@ export async function endApp() {
   await sleep(2000); // WebView2's browser process leaves a moment after its host
 }
 
-/** The server's origin once it answers, on the first free port the app tries. @param {number} timeoutMs */
-export async function serverOrigin(timeoutMs) {
+/** @param {string} origin */
+const healthy = (origin) =>
+  fetch(`${origin}/api/health`, { signal: AbortSignal.timeout(1500) })
+    .then((response) => response.ok)
+    .catch(() => false);
+
+/**
+ * The server's origin once it answers, without the window's help (after an update reopened the app):
+ * the origin it used before, which the app takes again when free, else the first port that answers.
+ * On a developer's PC another server in the range could answer first; the tests take the origin from
+ * the window (`launchForDebugging`) whenever they can.
+ * @param {number} timeoutMs
+ * @param {string} [preferred]
+ */
+export async function serverOrigin(timeoutMs, preferred) {
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
+    if (preferred && (await healthy(preferred))) return preferred;
     for (let port = PORTS.first; port <= PORTS.last; port += 1) {
-      const ok = await fetch(`http://127.0.0.1:${port}/api/health`, {
-        signal: AbortSignal.timeout(1500),
-      })
-        .then((response) => response.ok)
-        .catch(() => false);
-      if (ok) return `http://127.0.0.1:${port}`;
+      const origin = `http://127.0.0.1:${port}`;
+      if (origin !== preferred && (await healthy(origin))) return origin;
     }
     await sleep(1000);
   }
@@ -116,32 +127,45 @@ export function removeDebugOverride() {
  * @param {number} port
  */
 export async function launchForDebugging(exe, port) {
-  const routes =
-    process.env.TTSNATIVE_WEBVIEW_DEBUG === 'registry' ? ['registry'] : ['variable', 'registry'];
+  const forced = process.env.TTSNATIVE_WEBVIEW_DEBUG;
+  const routes = forced ? [forced] : ['argument', 'variable', 'registry'];
   for (const route of routes) {
     await endApp();
     const env = { ...process.env };
     delete env.WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS;
-    if (route === 'variable')
+    const args = [];
+    // The app passes Chromium's own switch through to WebView2; the two overrides WebView2 documents
+    // stay as fallbacks, although GitHub's Windows runners ignore both.
+    if (route === 'argument') args.push(`--remote-debugging-port=${port}`);
+    else if (route === 'variable')
       env.WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS = `--remote-debugging-port=${port}`;
     else setDebugOverride(port);
-    spawn(exe, [], { detached: true, stdio: 'ignore', env }).unref();
-    const origin = await serverOrigin(240_000);
-    if (await portAnswers(port, 30_000)) return origin;
+    spawn(exe, args, { detached: true, stdio: 'ignore', env }).unref();
+    if (await portAnswers(port, 120_000)) {
+      // The window leaves the start-up page for the server's address once the server is ready, so
+      // its address is the one to trust (another server in the port range may answer on a developer's PC).
+      const page = await appPage(port, 'http://127.0.0.1:', 240_000);
+      const origin = new URL(page.url()).origin;
+      await page.context().browser()?.close();
+      if (await healthy(origin)) return origin;
+      throw new Error(`FAILED: the window shows ${origin} but its server does not answer`);
+    }
     console.log(
-      `(WebView2 did not open port ${port} through the ${route === 'variable' ? 'environment variable' : 'registry override'}; browser switches: ${browserSwitches().join(' ')})`,
+      `(WebView2 did not open port ${port} through the ${route}; browser switches: ${browserSwitches().join(' ')})`,
     );
   }
   throw new Error('FAILED: the app window could not be reached through WebView2');
 }
 
 /**
- * The app's page, through the debugging port (it can appear a little after the server answers).
+ * The app's page on the server's origin, through the debugging port (it can appear a little after the
+ * server answers).
  * @param {number} port
  * @param {string} origin
+ * @param {number} [timeoutMs]
  */
-export async function appPage(port, origin) {
-  const deadline = Date.now() + 90_000;
+export async function appPage(port, origin, timeoutMs = 90_000) {
+  const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
     const browser = await chromium.connectOverCDP(`http://127.0.0.1:${port}`).catch(() => null);
     const page = browser

@@ -75,6 +75,8 @@ fn open_folder(app: AppHandle, which: String) -> Result<(), String> {
     let folder = match which.as_str() {
         "data" => state.paths.data(),
         "logs" => state.paths.logs(),
+        // The licences of everything the installer ships, opened in the system's text editor.
+        "notices" => state.paths.runtime.join("THIRD-PARTY-NOTICES.txt"),
         _ => return Err("Unknown folder.".into()),
     };
     app.opener()
@@ -133,10 +135,32 @@ fn focus_main(app: &AppHandle) {
     }
 }
 
+/// WebView2's switches: wry's own (no "mini menu", no SmartScreen prompt, autoplay) and, when the app was
+/// started with Chromium's `--remote-debugging-port=N`, a debugging port on 127.0.0.1 for the tests that
+/// drive the window (WebView2's environment-variable and registry overrides are ignored on GitHub's
+/// Windows runners). Anyone able to start the app with arguments can already act as that user.
+#[cfg(windows)]
+fn browser_args() -> String {
+    let mut args = String::from(
+        "--disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection --autoplay-policy=no-user-gesture-required",
+    );
+    let port = std::env::args().find_map(|arg| {
+        arg.strip_prefix("--remote-debugging-port=")
+            .and_then(|value| value.parse::<u16>().ok())
+    });
+    if let Some(port) = port {
+        args.push_str(&format!(" --remote-debugging-port={port}"));
+    }
+    args
+}
+
 fn create_window(app: &AppHandle) -> tauri::Result<()> {
     let navigation = app.clone();
     let popups = app.clone();
-    WebviewWindowBuilder::new(app, "main", WebviewUrl::App("index.html".into()))
+    let builder = WebviewWindowBuilder::new(app, "main", WebviewUrl::App("index.html".into()));
+    #[cfg(windows)]
+    let builder = builder.additional_browser_args(&browser_args());
+    builder
         .title("TTSNative")
         .inner_size(1280.0, 860.0)
         .min_inner_size(420.0, 560.0)

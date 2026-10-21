@@ -32,6 +32,9 @@ The installer is written to `dist/desktop/TTSNative-Setup-<version>.exe`. Withou
 `TAURI_SIGNING_PRIVATE_KEY` it has no update signature: fine for testing, never offered as an update.
 CI builds and smoke-tests it on every pull request that touches the app (the **Desktop** workflow).
 
+Started with `--remote-debugging-port=N`, the app opens WebView2's debugging port on 127.0.0.1 so a
+test (or a browser's DevTools) can drive its window; `scripts/desktop/webview-debugging.mjs` uses it.
+
 To run the shell against a runtime you built, use a debug build:
 `TTSNATIVE_RUNTIME_DIR=<repo>/apps/desktop/runtime cargo run` in `src-tauri` (release builds always use
 the runtime next to the executable).

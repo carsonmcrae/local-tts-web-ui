@@ -19,6 +19,8 @@ bump: minor
 
 - Chatterbox worker: virtualenv 21.14.7 for CVE-2026-113725 (security exception; unreachable, as
   virtualenv is never run).
+- uv 0.13.4 (security exception for GHSA-hq85-5cpj-mr62: a compromised root CA removed from uv's
+  bundled store), verified against the published checksums; the installer bundles it.
 - apps/desktop: Tauri 2 shell (single instance, window state, navigation allowlist, kill-on-close Job
   Object for the server, loopback port from 8770), splash screen and per-user NSIS installer with
   hooks; runtime assembled by scripts/desktop/build-runtime.mjs (python-build-standalone 3.12 via the

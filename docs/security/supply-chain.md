@@ -177,13 +177,20 @@ known advisories.
   0.23.46, `rustls-webpki` 0.103.16, `webpki-root-certs` 1.0.10). cargo-deny checks the Windows build in CI
   (`apps/desktop/src-tauri/deny.toml`); the remaining RustSec notices (`glib`, `proc-macro-error`,
   `zbus_names`, `zvariant`) are Linux-only and not compiled for Windows.
-- **uv 0.12.21 (GHSA-hq85-5cpj-mr62, critical, published 2026-10-20):** uv's bundled root store still
-  trusts the emSign ECC Root CA - G3 (the same compromise certifi 2026.10.19 fixes). The shipped uv runs
-  only when someone installs the optional voice-cloning engine; package and Python downloads are pinned by
-  hash, so a forged certificate could at most observe or block that download, not change it. The fix,
-  uv 0.13.4, is inside the cool-down and a minor-version upgrade of the bootstrap for every developer;
-  **pending the maintainer's decision** to take it through a security exception (update
-  `scripts/toolchain.json`, run the clean-install check, rebuild the installer).
+- **uv 0.13.4 for GHSA-hq85-5cpj-mr62 (high, published 2026-10-20; security exception approved by the
+  maintainer on 2026-10-21):** uv 0.12.21's bundled root store still trusted the emSign ECC Root CA - G3
+  (the same compromise certifi 2026.10.19 fixes). The shipped uv runs only when someone installs the
+  optional voice-cloning engine, and package and Python downloads are pinned by hash, so a forged
+  certificate could at most observe or block that download, not change it; the fix is taken anyway. uv
+  0.13.4 (released 2026-10-20, the version the advisory names as patched) was inside the 14-day cool-down
+  and is a minor-version upgrade of the bootstrap for every developer. Before pinning it in
+  `scripts/toolchain.json`, all six official binaries were downloaded from the GitHub release and their
+  SHA-256 compared with the `.sha256` files published beside them and recomputed locally (all matched).
+  0.13.0's breaking changes (default Python 3.15, hashes required in constraints files, stricter tar
+  extraction) do not affect the scripts here: the Python version is pinned, no constraints files are used,
+  and the runtime build and clean-install check were repeated with the new version. The cool-down would
+  have covered this release on 2026-11-03; nothing needs removing afterwards, since the bootstrap is a
+  plain pin.
 - **virtualenv 21.14.5 (CVE-2026-113725, in the voice-cloning environment through pre-commit):** its bash
   `activate` script could run commands from an environment name; TTSNative never uses virtualenv (uv
   builds the environment), but the fixed 21.14.7 (2026-10-12) comes in through a security exception

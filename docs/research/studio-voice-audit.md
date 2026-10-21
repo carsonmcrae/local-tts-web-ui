@@ -219,6 +219,36 @@ The owner's notes, checked:
 - **An inner thought read like quoted speech.** Unquoted sentences are read as narration, and
   inner monologue isn't detected. A sentence can be given the calm style by hand.
 
+### Questions and exclamations with the original Chatterbox (blind, 2026-10-21)
+
+The original Chatterbox 0.5B (MIT, pinned revision `5bb1f6e`, safetensors only, verified against the
+published checksums) keeps an expression control (`exaggeration`) that Turbo dropped. It was built like
+voice C:
+
+- the same take for its sound;
+- the session's averaged speaker;
+- the same question and exclamation takes for its rhythm.
+
+It read three questions and three exclamations, against Turbo. The owner rated them blind:
+
+| Voice                                    | Likeness | Naturalness | Best (of 6) |
+| ---------------------------------------- | -------- | ----------- | ----------- |
+| Original, exaggeration 0.7, cfg 0.3 (O7) | 3.67     | 3.33        | 4           |
+| Original, exaggeration 0.5, cfg 0.5 (O5) | 3.83     | 3.00        | 1           |
+| Turbo, as the app reads them today       | 3.67     | 2.17        | 1           |
+
+- **Naturalness:** the original model sounded more natural on these lines and no less like the
+  owner. O5 was better than Turbo on 4 items and worse on none (p = 0.125, six items).
+- **Pitch range:** it moved more (exclamations 3.4 st against 2.8), but questions rose less at the
+  end.
+- **Where it fell short** (the owner's notes):
+  - none of the voices sounded truly excited on "That's the best news I've heard all year!";
+  - O7 was the most expressive on "Look, the snow is finally falling!" but didn't fit the sentence;
+  - on one question O7's inflection was better but it sounded less like the owner.
+- **What's next:** a promising direction, not a decision. Mixing engines inside one voice would
+  change the decoder between sentences, so the next test is the whole voice: the ten-item panel,
+  long passage included, with generation speed measured. Nothing is in the app.
+
 ## Fine-tuning (`feat/voice-tune`), reviewed
 
 - **What it changes.**

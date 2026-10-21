@@ -16,6 +16,18 @@ All notable changes to this project are documented here. The format follows
   unless allowed, and web pages always refused. Limits on input length, body size, requests a
   minute, one request at a time and time per request. A **Speech API in use** sign shows while a
   program uses it. See [the guide](docs/guides/local-speech-api.md).
+- **Phones and tablets (LAN mode)** (optional, off by default and after every restart): read and
+  listen on other devices on the same Wi-Fi. Turn it on in **Settings → Phones and tablets**, which
+  first says what a paired device can and can't do, then pair each device once with a QR code or an
+  eight-character code (five minutes, used once). Paired devices can read, listen, change reading
+  settings, add documents and run exports, but this computer's own settings, voices, engines and
+  deleting documents stay here. Remove one or all devices at any time; turning it off stops at once.
+  Plain HTTP on your network, nothing opened on the router. See
+  [Other Devices](docs/wiki/Other-Devices.md).
+- **Installable app and an offline notice** (on this computer): a web app manifest and a careful
+  service worker that keeps only the app shell (never documents, audio or API answers), so the app
+  opens without the server and says it can't reach it. A **Reconnecting…** bar appears while the
+  server doesn't answer and goes away by itself.
 - **Audiobook exports you can pause and resume.** Exports save each sentence as it is made, so a
   paused, interrupted (even by a crash or restart) or failed export carries on with only the missing
   sentences. A new **Exports** page lists them with Resume, Cancel, Download and Delete.

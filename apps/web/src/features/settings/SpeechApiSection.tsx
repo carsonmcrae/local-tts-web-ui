@@ -8,17 +8,14 @@
  *   failures are reported in a toast.
  * Does NOT belong: The pieces themselves (SpeechApiParts.tsx) or the server's checks.
  */
-import { ChevronRight } from 'lucide-react';
-import { useId, useState } from 'react';
-import { useLocation } from 'react-router';
 import { describeError } from '@/api/client';
 import { useSaveSpeechApi, useSpeechApi } from '@/api/speechApiQueries';
 import type { SpeechApiSettingsInput, SpeechApiStatus } from '@/api/types';
 import { Badge, Banner, Skeleton } from '@/components/ui/Feedback';
 import { Switch } from '@/components/ui/Field';
-import { Section } from '@/components/ui/Layout';
 import { useToast } from '@/components/ui/Toast';
 import { HOMEPAGE } from '@/lib/provenance';
+import { CollapsibleSection, useSectionOpen } from './CollapsibleSection';
 import {
   AllowedVoices,
   CurlExample,
@@ -87,41 +84,22 @@ function SpeechApiPanel({ status, now }: Readonly<{ status: SpeechApiStatus; now
 
 export function SpeechApiSection() {
   const status = useSpeechApi();
-  const { hash } = useLocation();
-  const [open, setOpen] = useState(hash === '#speech-api'); // opened by a link to it, such as the in-use sign
-  const regionId = useId();
+  const [open, setOpen] = useSectionOpen('speech-api');
   const enabled = Boolean(status.data?.enabled);
   return (
-    <Section
+    <CollapsibleSection
       id="speech-api"
       title="Local speech API"
       description="For advanced users: let other programs on this computer read text aloud with TTSNative voices."
-      actions={<Badge tone={enabled ? 'success' : 'neutral'}>{enabled ? 'On' : 'Off'}</Badge>}
+      badge={<Badge tone={enabled ? 'success' : 'neutral'}>{enabled ? 'On' : 'Off'}</Badge>}
+      toggleLabel="Speech API settings"
+      summary={summary(status.data)}
+      open={open}
+      onOpenChange={setOpen}
     >
-      <button
-        type="button"
-        onClick={() => setOpen(!open)}
-        aria-expanded={open}
-        aria-controls={open ? regionId : undefined}
-        className="group flex min-h-11 w-full items-start gap-2 rounded-[var(--radius-md)] py-1 text-left focus-visible:outline-2 focus-visible:outline-offset-2"
-      >
-        <ChevronRight
-          size={18}
-          aria-hidden="true"
-          className="mt-px shrink-0 text-muted transition-transform group-aria-expanded:rotate-90"
-        />
-        <span className="flex flex-col">
-          <span className="text-sm font-medium">Speech API settings</span>
-          <span className="text-[13px] text-muted">{summary(status.data)}</span>
-        </span>
-      </button>
-      {open ? (
-        <div id={regionId} className="mt-4 flex flex-col gap-6 border-t border-line pt-4">
-          {status.isPending ? <Skeleton className="h-40" /> : null}
-          {status.isError ? <Banner tone="error">{describeError(status.error)}</Banner> : null}
-          {status.data ? <SpeechApiPanel status={status.data} now={status.dataUpdatedAt} /> : null}
-        </div>
-      ) : null}
-    </Section>
+      {status.isPending ? <Skeleton className="h-40" /> : null}
+      {status.isError ? <Banner tone="error">{describeError(status.error)}</Banner> : null}
+      {status.data ? <SpeechApiPanel status={status.data} now={status.dataUpdatedAt} /> : null}
+    </CollapsibleSection>
   );
 }

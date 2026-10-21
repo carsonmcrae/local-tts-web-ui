@@ -1,8 +1,8 @@
 # Settings and models
 
-**Settings** has nine sections: **Appearance**, **Playback**, **Pronunciation**, **Engines &
-models**, **Storage**, **Audiobookshelf**, **Local speech API**, **Privacy** and **About**. On wide
-screens, an index on the left jumps between them.
+**Settings** has ten sections: **Appearance**, **Playback**, **Pronunciation**, **Engines &
+models**, **Storage**, **Phones and tablets**, **Audiobookshelf**, **Local speech API**, **Privacy**
+and **About**. On wide screens, an index on the left jumps between them.
 
 ## Appearance
 
@@ -75,6 +75,13 @@ The audio cache holds generated speech so that sentences you've heard play insta
 a limit (2 GB by default, `LTTS_AUDIO_CACHE_MAX_MB`); older audio is removed automatically when it's
 full. **Clear audio cache** deletes all generated audio after you confirm. Documents, voices and models
 are kept, and audio is generated again as you listen.
+
+## Phones and tablets
+
+**LAN mode**, off until you switch it on, lets phones and tablets on the same Wi-Fi read and listen.
+The section says what a paired device can and can't do before the switch, then shows the address to
+open, a QR code and a one-time pairing code, the paired devices (each can be removed) and **Turn off
+LAN mode**. It turns itself off when TTSNative restarts. See [Other Devices](Other-Devices).
 
 ## Local speech API
 

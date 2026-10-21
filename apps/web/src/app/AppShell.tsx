@@ -3,8 +3,8 @@
 /**
  * Purpose: Application chrome shared by every route.
  * Scope: Skip link, desktop sidebar (with privacy note, engine status and the speech API in-use
- *   sign), phone tab bar (the same sign on Settings), the routed page area, and the docked player
- *   that persists across navigation.
+ *   sign), phone tab bar (the same sign on Settings), the reconnect banner, the routed page area,
+ *   and the docked player that persists across navigation.
  * Does NOT belong: Page content or player logic.
  */
 import { AudioLines, BookHeadphones, BookOpen, Mic, Settings, ShieldCheck } from 'lucide-react';
@@ -14,6 +14,7 @@ import { useEngines } from '@/api/queries';
 import type { EngineInfo } from '@/api/types';
 import { cn } from '@/lib/cn';
 import { PlayerBar } from '@/features/player/PlayerBar';
+import { ConnectionBanner } from './ConnectionBanner';
 import { SpeechApiIndicator } from './SpeechApiIndicator';
 
 const NAV: readonly { to: string; label: string; icon: ReactNode }[] = [
@@ -102,6 +103,7 @@ export function AppShell() {
         </div>
       </aside>
       <div className="flex min-w-0 flex-1 flex-col">
+        <ConnectionBanner />
         <main
           id="main"
           tabIndex={-1}

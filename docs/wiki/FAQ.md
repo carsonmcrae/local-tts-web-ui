@@ -82,5 +82,6 @@ Other dependencies have their own licences; see the
 
 ## Can I use it on my phone?
 
-Yes, on the same trusted Wi-Fi network, by starting the server in network mode. Recording isn't
-available over plain HTTP, but you can import a recording. See [Other Devices](Other-Devices).
+Yes, on the same trusted Wi-Fi network: turn on LAN mode in **Settings → Phones and tablets** and
+pair the phone with the code shown there. Recording isn't available over plain HTTP, but you can
+import a recording. See [Other Devices](Other-Devices).

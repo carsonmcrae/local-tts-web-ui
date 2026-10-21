@@ -11,6 +11,7 @@ import { useLocation } from 'react-router';
 import { PageHeader } from '@/components/ui/Layout';
 import { PronunciationSection } from '@/features/pronunciation/PronunciationSection';
 import { AudiobookshelfSection } from './AudiobookshelfSection';
+import { LanSection } from './LanSection';
 import { AppearanceSection, PlaybackSection } from './PreferenceSections';
 import { SpeechApiSection } from './SpeechApiSection';
 import { AboutSection, EnginesSection, PrivacySection, StorageSection } from './SystemSections';
@@ -21,6 +22,7 @@ const INDEX = [
   ['pronunciation', 'Pronunciation'],
   ['engines', 'Engines & models'],
   ['storage', 'Storage'],
+  ['lan', 'Phones & tablets'],
   ['audiobookshelf', 'Audiobookshelf'],
   ['speech-api', 'Speech API'],
   ['privacy', 'Privacy'],
@@ -57,7 +59,7 @@ export default function SettingsPage() {
       <div className="min-w-0 flex-1">
         <PageHeader
           title="Settings"
-          description="Preferences, pronunciation, engines, storage, Audiobookshelf, the speech API and privacy."
+          description="Preferences, pronunciation, engines, storage, phones and tablets, Audiobookshelf, the speech API and privacy."
         />
         <div className="flex flex-col gap-8">
           <AppearanceSection />
@@ -65,6 +67,7 @@ export default function SettingsPage() {
           <PronunciationSection />
           <EnginesSection />
           <StorageSection />
+          <LanSection />
           <AudiobookshelfSection />
           <SpeechApiSection />
           <PrivacySection />

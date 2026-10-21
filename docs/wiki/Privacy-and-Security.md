@@ -44,8 +44,9 @@ and [supply chain](https://github.com/carsonmcrae/ttsnative/blob/main/docs/secur
 
 ## How the app protects you
 
-- **Local only.** The server binds to `127.0.0.1`. Exposing it to a network needs an explicit
-  `--allow-network` flag and an access token.
+- **Local only.** The server binds to `127.0.0.1`. Phones and tablets can only reach it while LAN
+  mode is on, and can only use your library after pairing with a code from this computer; the older
+  network mode needs an explicit `--allow-network` flag and an access token.
 - **Other websites can't use it.** Requests from other sites, requests with an unexpected `Host`
   header, and state-changing requests without the app's own header are rejected. Responses carry a
   strict Content Security Policy.
@@ -60,10 +61,13 @@ and [supply chain](https://github.com/carsonmcrae/ttsnative/blob/main/docs/secur
 
 ## Network mode
 
-[Network mode](Other-Devices) is off unless you start the server with `--allow-network`. When it's on:
+[LAN mode](Other-Devices) is off unless you switch it on in **Settings → Phones and tablets**, and off
+again after every restart; paired devices can read and listen, but can't change LAN, speech API or
+Audiobookshelf settings, record or manage voices, install engines or delete documents. The older
+network mode is off unless you start the server with `--allow-network`. When either is on:
 
-- traffic uses plain HTTP: the token protects access to your library, but not the privacy of the
-  traffic on your network;
+- traffic uses plain HTTP: pairing (or the token) protects access to your library, but not the
+  privacy of the traffic on your network;
 - browsers block the microphone on non-HTTPS pages;
 - use it only on networks you trust, and never expose the server to the internet.
 

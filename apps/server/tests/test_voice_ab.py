@@ -5,7 +5,8 @@
 Scope: Every sentence is read by both voices, shuffled into X and Y by the seed (repeatably), with a
 key, measurements and similarity per clip; the listening page shows sentence text only as escaped
 text and runs nothing but its own small script; scoring unblinds answers (including missing or
-malformed ones) and averages similarity per voice; the command line scores a folder.
+malformed ones) and averages similarity per voice; the command line reads the sentences with the
+app's own engines (closing them afterwards) and scores a folder.
 Does NOT belong: Measuring speaker similarity with the real cloning engine (needs the model).
 """
 
@@ -20,7 +21,10 @@ from pathlib import Path
 import numpy as np
 import pytest
 
+from conftest import FakeEngine, speech_like, wav_bytes
+from ltts import container
 from ltts.cli import main
+from ltts.config import Settings
 from ltts.voices.ab_test import DEFAULT_SENTENCES, compare, score
 
 RATE = 24_000
@@ -94,6 +98,51 @@ def test_scoring_unblinds_the_answers(tmp_path: Path, capsys: pytest.CaptureFixt
     answers.write_text(json.dumps({"answers": {"1": a_side["1"]}}), "utf-8")
     assert main(["voice-ab", "score", str(tmp_path), str(answers)]) == 0
     assert "A (voice:a): preferred 1 times" in capsys.readouterr().out
+
+
+class ClosingEngine(FakeEngine):
+    def __init__(self, engine_id: str, *, cloning: bool = False) -> None:
+        super().__init__(engine_id, cloning=cloning)
+        self.closed = 0
+
+    def close(self) -> None:
+        self.closed += 1
+
+
+def test_the_command_reads_the_sentences_with_the_apps_engines_and_closes_them(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    monkeypatch.setenv("LTTS_DATA_DIR", str(tmp_path / "data"))
+    engines = [ClosingEngine("kokoro"), ClosingEngine("chatterbox", cloning=True)]
+    wired = container.build_services
+
+    def with_fake_engines(settings: Settings) -> container.Services:
+        return wired(settings, isolate_extraction=False, engine_factory=lambda _s, _m: list(engines))
+
+    monkeypatch.setattr(container, "build_services", with_fake_engines)
+    sentences = tmp_path / "sentences.txt"
+    sentences.write_text("The first line.\n\n   Is this the second?  \n", encoding="utf-8")
+    reference = tmp_path / "me.wav"
+    reference.write_bytes(wav_bytes(speech_like(2)))
+    out = tmp_path / "comparison"
+    argv = ["voice-ab", "compare", "kokoro:alpha", "chatterbox:alpha", "--sentences", str(sentences), "--out", str(out)]
+    assert main([*argv, "--reference", str(reference), "--seed", "2", "--pace", "1.1"]) == 0
+    printed = capsys.readouterr().out
+    assert f"Wrote 4 clips to {out}." in printed and f"ltts voice-ab score {out} answers.json" in printed
+    key = json.loads((out / "key.json").read_text("utf-8"))
+    assert (key["A"], key["B"]) == ("kokoro:alpha", "chatterbox:alpha") and len(key["pairs"]) == 2
+    for engine in engines:  # each voice read both sentences at the asked pace, then its engine was closed
+        assert [(call[0], call[2]) for call in engine.calls] == [("The first line.", 1.1), ("Is this the second?", 1.1)]
+        assert engine.closed == 1
+    with (out / "metrics.csv").open(encoding="utf-8") as handle:
+        rows = list(csv.DictReader(handle))
+    assert len(rows) == 4 and all(0 < float(row["similarity"]) <= 1 for row in rows)  # measured against me.wav
+    # Without a reference or a folder of its own, nothing is measured and the comparison lands in the data dir.
+    assert main(["voice-ab", "compare", "kokoro:alpha", "chatterbox:alpha", "--sentences", str(sentences)]) == 0
+    folders = list((tmp_path / "data" / "comparisons").iterdir())
+    assert len(folders) == 1 and (folders[0] / "listen.html").is_file()
+    with (folders[0] / "metrics.csv").open(encoding="utf-8") as handle:
+        assert all(row["similarity"] == "" for row in csv.DictReader(handle))
 
 
 def test_the_default_sentences_are_not_in_the_recording_script() -> None:

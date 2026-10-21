@@ -97,3 +97,5 @@ def test_the_command_makes_and_scores_a_panel(tmp_path: Path, capsys: pytest.Cap
     assert main(["voice-panel", "score", str(folder), str(answers), "--pair", "C:A"]) == 0
     assert "C vs A" in capsys.readouterr().out
     assert main(["voice-panel", "score", str(folder)]) == 2
+    assert main(["voice-panel", "make", str(tmp_path / "unmade"), "--items", str(items), *voices[:1]]) == 2
+    assert "at least two --voice" in capsys.readouterr().out and not (tmp_path / "unmade").exists()

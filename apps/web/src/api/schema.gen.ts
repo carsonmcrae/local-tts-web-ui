@@ -2518,9 +2518,14 @@ export type components = {
     };
     /**
      * StyleCoverage
-     * @description How many usable takes can teach one speaking style (narration, question, lively, dialogue, calm).
+     * @description How many clean takes can teach one speaking style (narration, question, lively, dialogue, calm).
      */
     StyleCoverage: {
+      /**
+       * Needed
+       * @default 3
+       */
+      needed: number;
       /** Style */
       style: string;
       /** Takes */
@@ -2758,6 +2763,8 @@ export type components = {
       requiredSpeechS: number;
       /** Styles */
       styles: components['schemas']['StyleCoverage'][];
+      /** Suggested */
+      suggested: string[];
       /** Takes */
       takes: components['schemas']['TakeOut'][];
       /**

@@ -123,7 +123,7 @@ describe('Studio voice wizard', () => {
     await user.click(within(dialog).getByRole('button', { name: 'Stop' }));
     await user.click(within(dialog).getByRole('button', { name: 'Next passage' }));
     await recordTake(user, dialog, tick);
-    expect(await within(dialog).findByText(/You can build your voice now/)).toBeInTheDocument();
+    expect(await within(dialog).findByText(/so you can build now/)).toBeInTheDocument();
 
     await user.click(within(dialog).getByRole('button', { name: /Continue/ }));
     expect(within(dialog).getByText(/measures all 2 usable takes/)).toBeInTheDocument();

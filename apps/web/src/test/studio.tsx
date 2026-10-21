@@ -74,7 +74,8 @@ export const studioSession = (overrides: Partial<VoiceSession> = {}): VoiceSessi
   const complete = (overrides.usableSpeechS ?? 0) >= (overrides.requiredSpeechS ?? 20);
   return {
     id: ID, takes: [], usableSpeechS: 0, requiredSpeechS: 20, minimumSpeechS: 45, canBuild: complete, complete,
-    tier: complete ? 'complete' : 'starting', styles: STYLES.map((style) => ({ style, takes: 0 })),
+    tier: complete ? 'complete' : 'starting', styles: STYLES.map((style) => ({ style, takes: 0, needed: 3 })),
+    suggested: complete ? [] : ['foundation'],
     candidates: [], buildJobId: null, cleanup: null, createdAt: '2026-10-20T10:00:00+00:00',
     updatedAt: '2026-10-20T10:00:00+00:00', ...overrides,
   };

@@ -1,24 +1,24 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 Carson McRae
 /**
- * Purpose: How far a studio session has come, without nagging.
- * Scope: The three voice tiers (Foundation: an early voice; Developing: half way; Complete: the full
- *   voice) with the current one marked, the usable speech so far, which speaking styles the takes
- *   can teach (narration, questions, lively lines, dialogue, calm) with one gentle pointer to the
- *   passages that would add a missing one, and what building early means for the voice.
+ * Purpose: How far a studio session has come, measured by what the voice will actually use.
+ * Scope: The three voice tiers (Foundation: a working voice; Developing: its sound has settled;
+ *   Complete: every speaking style has the takes it uses, so more passages wouldn't change it) with
+ *   the current one marked, each style's takes out of three, the passage that would help most next
+ *   (with a way to go to it), and what building early means. No model is trained, and it says so.
  * Does NOT belong: Recording, the passages or building (SessionRecorder, PassageParts, BuildStep).
  */
 import { Check, Minus } from 'lucide-react';
 import type { VoiceSession } from '@/api/types';
 import { Banner, ProgressBar } from '@/components/ui/Feedback';
 import { cn } from '@/lib/cn';
-import { FOUNDATION_ID } from './passages';
+import { FOUNDATION_ID, PASSAGES } from './passages';
 
 const minutes = (seconds: number) => (seconds / 60).toFixed(1);
 const TIERS = [
-  { id: 'foundation', label: 'Foundation', detail: 'an early voice' },
-  { id: 'developing', label: 'Developing', detail: 'half way there' },
-  { id: 'complete', label: 'Complete', detail: 'the full voice' },
+  { id: 'foundation', label: 'Foundation', detail: 'a working voice' },
+  { id: 'developing', label: 'Developing', detail: 'its sound has settled' },
+  { id: 'complete', label: 'Complete', detail: 'every style it uses' },
 ] as const;
 const STYLES: Readonly<Record<string, { label: string; passages: string }>> = {
   narration: { label: 'Narration', passages: 'the foundation and narration passages' },
@@ -59,56 +59,83 @@ function TierSteps({ tier }: Readonly<{ tier: VoiceSession['tier'] }>) {
 
 function StyleCoverage({ session }: Readonly<{ session: VoiceSession }>) {
   if (!session.takes.some((take) => take.quality.ok)) return null; // nothing to say before the first take
-  const missing = session.styles.find((style) => style.takes === 0);
   return (
     <div className="flex flex-col gap-1.5 text-[13px]">
       <p className="text-muted">Speaking styles your takes can teach:</p>
       <ul className="flex flex-wrap gap-1.5" aria-label="Speaking styles">
-        {session.styles.map(({ style, takes }) => (
+        {session.styles.map(({ style, takes, needed }) => (
           <li
             key={style}
             className={cn(
               'flex items-center gap-1 rounded-full border px-2.5 py-0.5',
-              takes > 0 ? 'text-fg border-success/50' : 'border-line text-muted',
+              takes >= needed ? 'text-fg border-success/50' : 'border-line text-muted',
             )}
           >
-            {takes > 0 ? <Check size={12} aria-hidden /> : <Minus size={12} aria-hidden />}
-            {STYLES[style]?.label ?? style}
-            <span className="sr-only">{takes > 0 ? ', covered' : ', not yet'}</span>
+            {takes >= needed ? <Check size={12} aria-hidden /> : <Minus size={12} aria-hidden />}
+            {STYLES[style]?.label ?? style} {Math.min(takes, needed)}/{needed}
+            <span className="sr-only">
+              {takes >= needed ? ', has all it uses' : ', needs more'}
+            </span>
           </li>
         ))}
       </ul>
-      {missing && STYLES[missing.style] ? (
-        <p className="text-muted">
-          Optional: {STYLES[missing.style]?.passages} would teach{' '}
-          {STYLES[missing.style]?.label.toLowerCase()}.
-        </p>
-      ) : null}
     </div>
   );
 }
 
-export function SpeechProgress({ session }: Readonly<{ session: VoiceSession }>) {
+function NextPassage({
+  session,
+  onJump,
+}: Readonly<{ session: VoiceSession; onJump?: (index: number) => void }>) {
+  const index = PASSAGES.findIndex((passage) => passage.id === session.suggested[0]);
+  const passage = PASSAGES[index];
+  if (!passage) return null;
+  return (
+    <p className="flex flex-wrap items-center gap-2 text-[13px] text-muted">
+      <span>
+        Most useful next: <span className="text-fg">{passage.style}</span> (“
+        {passage.text.split(' ').slice(0, 6).join(' ')}…”)
+      </span>
+      {onJump ? (
+        <button
+          type="button"
+          className="min-h-11 rounded-[var(--radius-md)] px-2 font-medium text-accent-text underline-offset-2 hover:underline"
+          onClick={() => onJump(index)}
+        >
+          Go to it
+        </button>
+      ) : null}
+    </p>
+  );
+}
+
+export function SpeechProgress({
+  session,
+  onJump,
+}: Readonly<{ session: VoiceSession; onJump?: (index: number) => void }>) {
   const foundation = session.takes.some(
     (take) => take.promptId === FOUNDATION_ID && take.quality.ok,
   );
-  let advice = 'Keep reading; every good take counts.';
+  const needed = session.styles.reduce((sum, style) => sum + style.needed, 0);
+  const have = session.styles.reduce((sum, style) => sum + Math.min(style.takes, style.needed), 0);
+  let advice = 'Keep reading the suggested passages; each one adds something the voice will use.';
   if (session.complete)
     advice =
-      'You can build your voice now. Keep going for a better result: 10 minutes or more is ideal.';
+      'Your voice has everything it uses: its sound and three takes of every speaking style. More passages won’t change it, so you can build now.';
   else if (!foundation)
-    advice += ' Short on time? Record the foundation passage and you can build an early version.';
+    advice = 'Start with the foundation passage: with it you can build an early version.';
   else if (!session.canBuild)
-    advice += ` Record a little more (${session.minimumSpeechS.toFixed(0)} seconds in all) to build an early version.`;
+    advice = `Record a little more (${session.minimumSpeechS.toFixed(0)} seconds in all) to build an early version.`;
   return (
     <div className="flex flex-col gap-3">
       <TierSteps tier={session.tier} />
-      <ProgressBar value={session.usableSpeechS / session.requiredSpeechS} label="Usable speech" />
+      <ProgressBar value={needed ? have / needed : 0} label="What your voice uses" />
       <p className="text-[13px] text-muted">
-        {minutes(session.usableSpeechS)} of {minutes(session.requiredSpeechS)} minutes of usable
-        speech. {session.canBuild && !session.complete ? null : advice}
+        {minutes(session.usableSpeechS)} minutes of usable speech.{' '}
+        {session.canBuild && !session.complete ? null : advice}
       </p>
       <StyleCoverage session={session} />
+      {session.complete ? null : <NextPassage session={session} onJump={onJump} />}
       {session.canBuild && !session.complete ? <EarlyVoiceNote /> : null}
     </div>
   );
@@ -119,15 +146,15 @@ export function EarlyVoiceNote({ building = false }: Readonly<{ building?: boole
   if (building)
     return (
       <Banner tone="warning" title="This will be an early version of your voice">
-        Your session isn’t complete, so questions, lively lines and some words will sound less like
-        you. Go back, record more passages and build again at any time.
+        Some speaking styles don’t have their three takes yet, so questions or lively lines may
+        sound less like you. Go back, record the suggested passages and build again at any time.
       </Banner>
     );
   return (
     <Banner tone="warning" title="You can build an early version now">
-      It won’t be complete: with less to learn from, questions, lively lines and some words will
-      sound less like you. Continue now, or keep recording (5 minutes in all) for a complete voice.
-      You can come back to this session and add passages later.
+      It won’t be complete: some speaking styles have fewer than three takes, so questions or lively
+      lines may sound less like you. Continue now, or record the suggested passages (about 15 in
+      all) for a complete voice. You can come back to this session and add passages later.
     </Banner>
   );
 }

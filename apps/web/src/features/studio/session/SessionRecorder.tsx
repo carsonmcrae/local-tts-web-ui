@@ -119,7 +119,7 @@ export function SessionRecorder({
       {session.takes.some((item) => item.source === 'import') ? (
         <p className="text-[13px] text-muted">Imported takes count towards your speech too.</p>
       ) : null}
-      <SpeechProgress session={session} />
+      <SpeechProgress session={session} onJump={busy ? undefined : setIndex} />
       <ImportRecording session={session} />
     </div>
   );

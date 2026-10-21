@@ -17,6 +17,7 @@ from fastapi.testclient import TestClient
 
 from conftest import speech_like, wav_bytes
 from ltts.container import Services
+from ltts.voices.styles import prompt_for_number
 
 
 def session(client: TestClient) -> str:
@@ -62,24 +63,31 @@ def test_restoring_needs_an_earlier_take(client: TestClient) -> None:
 
 
 def test_a_session_moves_through_its_tiers(client: TestClient, services: Services) -> None:
-    services.settings.min_studio_speech_s = 40.0
+    """Tiers follow what the voice uses: the foundation, a settled sound, then every style's three takes."""
+    services.settings.min_studio_speech_s = 10_000.0  # only the passages decide here
     session_id = session(client)
     current = client.get(f"/api/voice-sessions/{session_id}").json()
-    assert current["tier"] == "starting"
-    assert {s["style"]: s["takes"] for s in current["styles"]} == {
-        "narration": 0, "question": 0, "lively": 0, "dialogue": 0, "calm": 0,
+    assert current["tier"] == "starting" and current["suggested"] == ["foundation", "narration-1", "narration-2"]
+    assert {s["style"]: (s["takes"], s["needed"]) for s in current["styles"]} == {
+        "narration": (0, 3), "question": (0, 3), "lively": (0, 3), "dialogue": (0, 3), "calm": (0, 3),
     }  # fmt: skip
     record(client, session_id, 1, 12, "narration-1")
     record(client, session_id, 17, 12, "conversation-1")
     current = client.get(f"/api/voice-sessions/{session_id}").json()
-    assert current["tier"] == "starting"  # no foundation passage, and not complete
+    assert current["tier"] == "starting" and current["suggested"][0] == "foundation"  # no foundation passage yet
     assert {s["style"]: s["takes"] for s in current["styles"]} == {
         "narration": 1, "question": 1, "lively": 0, "dialogue": 1, "calm": 1,
     }  # fmt: skip
     record(client, session_id, 49, 60, "foundation")  # the longer passage that allows an early voice
-    usable = client.get(f"/api/voice-sessions/{session_id}").json()["usableSpeechS"]
-    tiers = {}
-    for required in (usable * 3, usable * 1.5, usable):
-        services.settings.min_studio_speech_s = required
-        tiers[required] = client.get(f"/api/voice-sessions/{session_id}").json()["tier"]
-    assert list(tiers.values()) == ["foundation", "developing", "complete"]
+    current = client.get(f"/api/voice-sessions/{session_id}").json()
+    assert current["tier"] == "foundation" and current["canBuild"] and not current["complete"]
+    numbers = {prompt_for_number(n): n for n in range(1, 50)}
+    seen = []
+    while current["suggested"] and len(current["takes"]) < 30:  # follow the advice until nothing more helps
+        pid = current["suggested"][0]
+        record(client, session_id, numbers[pid], 12, pid)
+        current = client.get(f"/api/voice-sessions/{session_id}").json()
+        seen.append(current["tier"])
+    assert "developing" in seen and current["tier"] == "complete" and current["complete"]
+    assert all(s["takes"] >= s["needed"] for s in current["styles"]) and current["suggested"] == []
+    assert len(current["takes"]) <= 16  # far fewer than the 49 passages

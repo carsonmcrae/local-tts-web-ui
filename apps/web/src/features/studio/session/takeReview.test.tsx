@@ -64,25 +64,41 @@ describe('Reviewing a take', () => {
 });
 
 describe('Session progress', () => {
-  it('marks the current tier and the styles the takes can teach, with one optional pointer', async () => {
+  it('marks the tier, each style out of three, and the passage that would help most', async () => {
     const styles = [
-      { style: 'narration', takes: 2 }, { style: 'question', takes: 0 }, { style: 'lively', takes: 1 },
-      { style: 'dialogue', takes: 0 }, { style: 'calm', takes: 1 },
+      { style: 'narration', takes: 3, needed: 3 }, { style: 'question', takes: 0, needed: 3 },
+      { style: 'lively', takes: 1, needed: 3 }, { style: 'dialogue', takes: 0, needed: 3 },
+      { style: 'calm', takes: 1, needed: 3 },
     ];
     studioApi(studioSession({
       takes: [foundationTake(), take(1, 'narration-1')], usableSpeechS: 62, requiredSpeechS: 300,
-      canBuild: true, tier: 'foundation', styles,
+      canBuild: true, tier: 'foundation', styles, suggested: ['questions-and-surprise-2'],
     })); // prettier-ignore
-    const { dialog } = await resumeStudioSession();
+    const { user, dialog } = await resumeStudioSession();
     const tiers = await within(dialog).findByRole('list', { name: 'Your voice so far' });
     const steps = within(tiers).getAllByRole('listitem');
     expect(steps.map((step) => step.getAttribute('aria-current'))).toEqual(['step', null, null]);
     expect(steps[0]).toHaveTextContent('Foundation, reached');
     expect(steps[2]).toHaveTextContent('Complete, not yet');
+    expect(steps[2]).toHaveTextContent('every style it uses');
     const covered = within(dialog).getByRole('list', { name: 'Speaking styles' });
-    expect(within(covered).getByText('Questions').parentElement).toHaveTextContent('Questions, not yet');
-    expect(within(covered).getByText('Narration').parentElement).toHaveTextContent('Narration, covered');
-    expect(within(dialog).getByText(/Optional: the questions and surprise passages would teach questions/)).toBeInTheDocument();
+    expect(within(covered).getByText(/Questions/)).toHaveTextContent('Questions 0/3, needs more');
+    expect(within(covered).getByText(/Narration/)).toHaveTextContent('Narration 3/3, has all it uses');
+    expect(within(dialog).getByText(/Most useful next/)).toHaveTextContent('Questions and surprise');
+    await user.click(within(dialog).getByRole('button', { name: 'Go to it' }));
+    expect(within(dialog).getByText(/^Have you ever wondered why the/)).toBeInTheDocument();
+  }); // prettier-ignore
+
+  it('says when more passages would not change the voice', async () => {
+    const styles = ['narration', 'question', 'lively', 'dialogue', 'calm'].map((style) => ({ style, takes: 3, needed: 3 }));
+    studioApi(studioSession({
+      takes: [foundationTake(), take(1, 'narration-1')], usableSpeechS: 150, requiredSpeechS: 300,
+      canBuild: true, complete: true, tier: 'complete', styles, suggested: [],
+    })); // prettier-ignore
+    const { dialog } = await resumeStudioSession();
+    expect(await within(dialog).findByText(/More passages won’t change it/)).toBeInTheDocument();
+    expect(within(dialog).queryByText(/Most useful next/)).not.toBeInTheDocument();
+    expect(within(dialog).queryByText('You can build an early version now')).not.toBeInTheDocument();
   }); // prettier-ignore
 
   it('keeps quiet about styles before the first good take', async () => {

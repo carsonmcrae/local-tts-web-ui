@@ -49,9 +49,7 @@ describe('Studio recorder guidance', () => {
     expect(within(dialog).getByText(/Passage 3 of 48/)).toBeInTheDocument();
     expect(within(dialog).getByText('A bit noisy.')).toBeInTheDocument();
     expect(within(dialog).getByText('Recorded · 12 s')).toBeInTheDocument();
-    expect(
-      within(dialog).getByText(/Short on time\? Record the foundation passage/),
-    ).toBeInTheDocument();
+    expect(within(dialog).getByText(/Start with the foundation passage/)).toBeInTheDocument();
     expect(within(dialog).getByRole('button', { name: /Continue/ })).toBeDisabled();
   });
 

@@ -33,7 +33,7 @@ from ltts.jobs import JobManager
 from ltts.voices.cleanup import Cleanup, RecordingCheck, apply_cleanup, suggest_cleanup
 from ltts.voices.profiles import decode_recording
 from ltts.voices.quality import CHECK_RULES, QualityReport, analyze
-from ltts.voices.styles import STYLE_SOURCES, teaches
+from ltts.voices.session_progress import StyleCoverage, Tier, coverage, covered, settled, suggestions, tier
 from ltts.voices.take_checks import context_for, judge_take
 
 log = logging.getLogger("ltts.voices.sessions")
@@ -45,10 +45,7 @@ IMPORT_FIRST = 101  # takes 1-100 belong to the recorded passages, so an import 
 FOUNDATION_PROMPT = "foundation"  # the longer passage that lets a session be built early
 MIN_FOUNDATION_SPEECH_S = 30.0
 MIN_EARLY_SPEECH_S = 45.0
-STYLE_SNR_DB = 12.0  # a take noisier than this never teaches a style (``styles.style_prompts``)
 TakeSource = Literal["recording", "import"]
-# starting: not enough to build yet; foundation: an early voice; developing: half way; complete: the full voice
-Tier = Literal["starting", "foundation", "developing", "complete"]
 _UPSERT_TAKE = (
     "INSERT OR REPLACE INTO voice_takes (session_id, number, prompt_id, source, duration_s, quality_json, created_at)"
     " VALUES (?, ?, ?, ?, ?, ?, ?)"
@@ -83,23 +80,17 @@ class CandidateOut(ApiModel):
     samples: int
 
 
-class StyleCoverage(ApiModel):
-    """How many usable takes can teach one speaking style (narration, question, lively, dialogue, calm)."""
-
-    style: str
-    takes: int
-
-
 class VoiceSessionOut(ApiModel):
     id: str
     takes: list[TakeOut]
-    tier: Tier
+    tier: Tier  # see ``session_progress``: tiers follow what the voice will actually use
     styles: list[StyleCoverage]
+    suggested: list[str]  # the passages (ids) that would add most to the voice next
     usable_speech_s: float
-    required_speech_s: float  # for a complete voice
+    required_speech_s: float  # enough to build without the passages' styles (for imported recordings)
     minimum_speech_s: float  # for an early build, with the foundation passage
-    can_build: bool  # complete, or the foundation passage and the minimum are recorded
-    complete: bool
+    can_build: bool  # complete, the speech an import needs, or the foundation passage and the minimum
+    complete: bool  # every speaking style has the takes it uses: more passages wouldn't change the voice
     candidates: list[CandidateOut]
     build_job_id: str | None  # the running voice-build job, if any
     cleanup: Cleanup | None  # applied to copies of the takes when building
@@ -164,17 +155,20 @@ class VoiceSessionService:
         candidates = [CandidateOut.model_validate(c) for c in json.loads(row["candidates_json"] or "[]")]
         building = self._jobs.find_active(BUILD_JOB, session_id)
         usable = round(sum(t.quality.speech_s for t in takes if t.quality.ok), 1)
-        complete = usable >= self._settings.min_studio_speech_s
+        styles = coverage(takes)
+        complete = covered(styles) and settled(takes)
         foundation = any(
             t.prompt_id == FOUNDATION_PROMPT and t.quality.ok and t.quality.speech_s >= MIN_FOUNDATION_SPEECH_S
             for t in takes
         )
-        can_build = complete or (foundation and usable >= MIN_EARLY_SPEECH_S)
+        enough = usable >= self._settings.min_studio_speech_s
+        can_build = complete or enough or (foundation and usable >= MIN_EARLY_SPEECH_S)
         return VoiceSessionOut(
             id=session_id,
             takes=takes,
-            tier=_tier(usable, self._settings.min_studio_speech_s, can_build),
-            styles=_coverage(takes),
+            tier=tier(takes, can_build),
+            styles=styles,
+            suggested=suggestions(takes),
             usable_speech_s=usable,
             required_speech_s=self._settings.min_studio_speech_s,
             minimum_speech_s=MIN_EARLY_SPEECH_S,
@@ -374,23 +368,6 @@ class VoiceSessionService:
 
 
 _KEPT = ("prompt_id", "source", "duration_s", "quality_json", "created_at")  # what a previous take keeps
-
-
-def _tier(usable_s: float, required_s: float, can_build: bool) -> Tier:
-    if usable_s >= required_s:
-        return "complete"
-    if not can_build:
-        return "starting"
-    return "developing" if usable_s >= required_s / 2 else "foundation"
-
-
-def _coverage(takes: list[TakeOut]) -> list[StyleCoverage]:
-    """For each speaking style, the usable takes (clean enough) whose passages can teach it."""
-    usable = [take for take in takes if take.quality.ok and take.quality.snr_db >= STYLE_SNR_DB]
-    return [
-        StyleCoverage(style=style, takes=sum(teaches(take.prompt_id, style) for take in usable))
-        for style in STYLE_SOURCES
-    ]
 
 
 def _take(row: sqlite3.Row) -> TakeOut:

@@ -3,8 +3,9 @@
 """Purpose: Tests for naming a recording's background: hum, rumble, hiss, clicks and other voices.
 
 Scope: Synthetic readings (bursts of a voice-like sound with pauses) over each kind of background, at
-24 and 48 kHz, plus a clean room and backgrounds too quiet to hear, which must name nothing; and how
-the take verdict words its advice for each kind.
+24 and 48 kHz, plus a clean room and backgrounds too quiet to hear, which must name nothing; the guards
+for too little audio to judge (hiss, clicks, a cut-off); and how the take verdict words its advice for
+each kind.
 Does NOT belong: Measuring loudness or SNR (test_take_checks.py) or noise reduction (test_cleanup*).
 """
 
@@ -15,7 +16,7 @@ from collections.abc import Callable
 import numpy as np
 import pytest
 
-from ltts.voices.background import classify
+from ltts.voices.background import _clicks, _flat, classify
 from ltts.voices.quality import QualityReport
 from ltts.voices.take_checks import TakeContext, cut_off, judge_take
 
@@ -121,6 +122,12 @@ def test_short_or_silent_recordings_name_nothing() -> None:
     assert classify(np.zeros(24_000 * 3, dtype=np.float32), 24_000) == []
 
 
+def test_too_little_audio_to_judge_names_no_hiss_or_clicks() -> None:
+    freqs = np.linspace(0, 12_000, 25)  # 500 Hz bins: fewer than eight of them between 2.5 and 6 kHz
+    assert not _flat(np.ones(25), freqs, 2_500, 6_000)
+    assert not _clicks(np.zeros(int(0.1 * 24_000), dtype=np.float32), 24_000)  # 100 ms: too few frames
+
+
 def verdict(rate: int, background: np.ndarray) -> QualityReport:
     recording = (reading(rate) + background).astype(np.float32)
     return judge_take(recording, rate, TakeContext(), recorded=recording)
@@ -151,6 +158,7 @@ def test_a_take_cut_off_mid_word_is_pointed_out() -> None:
     assert cut_off(whole, rate) is None  # starts and ends in a pause
     assert cut_off(whole[: int(10.55 * rate)], rate) == "end"  # Stop pressed while reading
     assert cut_off(whole[int(0.6 * rate) :], rate) == "start"
+    assert cut_off(whole[: int(0.3 * rate)], rate) is None  # too short to tell
     stopped = whole[: int(10.55 * rate)]
     assert "cut_off" in [issue.code for issue in judge_take(stopped, rate, TakeContext(), recorded=stopped).issues]
     assert "cut_off" not in [issue.code for issue in judge_take(stopped, rate, TakeContext()).issues]

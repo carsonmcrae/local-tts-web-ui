@@ -4,14 +4,16 @@
 
 Scope: Which style a sentence is read in; which takes teach each style; take numbers mapped back to
 passages; the build job making styles that move into the finished profile and change its cache
-revision; building styles for a studio voice saved before they existed (and refusing other voices);
-trimming, pause shortening, loudness and the plausibility of a clip's length.
+revision, and a styled sentence reaching the engine; building styles for a studio voice saved before they
+existed (and refusing other voices), one rebuild at a time and only from usable takes, even when the
+styles folder is gone; trimming, pause shortening, loudness and the plausibility of a clip's length.
 Does NOT belong: The worker's token extraction (needs the model) or the rest of the build.
 """
 
 from __future__ import annotations
 
 import shutil
+import threading
 from pathlib import Path
 from typing import Any
 
@@ -105,6 +107,9 @@ def test_the_build_makes_styles_that_move_into_the_profile(
     assert profile["styles"] == ["calm", "dialogue", "lively", "narration", "question"]
     _, spec, revision = services.voices.resolve(profile["id"])
     assert dict(spec.styles)["question"].name == "question.safetensors" and "styles-" in revision
+    doc = client.post("/api/documents/text", json={"text": "Are you coming tonight?"}).json()
+    read = client.get(f"/api/documents/{doc['id']}/segments/0/audio", params={"voice": profile["voiceId"]})
+    assert read.status_code == 200 and engines["chatterbox"].specs[-1].style == "question"  # part of its cache key
 
 
 def test_a_saved_studio_voice_learns_its_styles_from_its_takes(
@@ -143,6 +148,40 @@ def test_a_saved_studio_voice_learns_its_styles_from_its_takes(
     assert client.post(f"/api/voice-profiles/{profile['id']}/styles").json()["error"]["code"] == "not_studio"
     shutil.rmtree(services.voices.previous_styles_dir(profile["id"]))
     assert client.post(url).json()["error"]["code"] == "no_previous_styles"
+
+
+def test_a_styles_rebuild_runs_once_at_a_time_and_needs_usable_takes(
+    client: TestClient, services: Services, engines: dict[str, FakeEngine], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    profile = saved_studio_voice(client, (2, 18, 26))
+    url = f"/api/voice-profiles/{profile['id']}/styles"
+    gate = threading.Event()
+    build_style = engines["chatterbox"].build_style
+    monkeypatch.setattr(
+        engines["chatterbox"], "build_style", lambda prompts, output: (gate.wait(5), build_style(prompts, output))[1]
+    )
+    first = client.post(url).json()
+    assert client.post(url).json()["id"] == first["id"]  # one rebuild at a time
+    gate.set()
+    assert wait_job(client, first["id"])["status"] == "succeeded"
+    for take in services.voices.takes_dir(profile["id"]).glob("*.flac"):
+        take.unlink()
+    job = wait_job(client, client.post(url).json()["id"])
+    assert job["status"] == "failed" and job["errorCode"] == "no_takes"
+
+
+def test_styles_are_rebuilt_and_restored_even_when_their_folder_is_gone(client: TestClient, services: Services) -> None:
+    profile = saved_studio_voice(client, (2, 18, 26))
+    styles = services.voices.styles_dir(profile["id"])
+    shutil.rmtree(styles)  # a voice saved before styles existed has no styles folder at all
+    job = wait_job(client, client.post(f"/api/voice-profiles/{profile['id']}/styles").json()["id"])
+    assert job["status"] == "succeeded" and len(job["result"]["styles"]) == 5
+    refreshed = client.get("/api/voice-profiles").json()[0]
+    assert refreshed["hasPreviousStyles"] is True and services.voices.previous_styles_dir(profile["id"]).is_dir()
+    shutil.rmtree(styles)
+    back = client.post(f"/api/voice-profiles/{profile['id']}/styles/restore").json()
+    assert back["styles"] == [] and back["hasPreviousStyles"] is True  # going forward again means having none
+    assert not list(services.voices.previous_styles_dir(profile["id"]).iterdir())
 
 
 def test_polish_trims_shortens_pauses_and_levels_the_speech() -> None:

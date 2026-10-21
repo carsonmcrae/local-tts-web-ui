@@ -4,7 +4,8 @@
 
 Scope: Recording a passage again keeps the take it replaced, which can be played and brought back
 (and the newer one then becomes the previous take); deleting a take removes both; a session's tier
-(starting, foundation, developing, complete) and the speaking styles its usable takes can teach.
+(starting, foundation, developing, complete) and the speaking styles its usable takes can teach; the
+suggestions never ask for a passage already read, even for a style short of takes.
 Does NOT belong: The take verdict (test_take_checks.py) or building the voice (test_studio_voices.py).
 """
 
@@ -12,12 +13,16 @@ from __future__ import annotations
 
 from typing import Any
 
+import pytest
 import soundfile as sf
 from fastapi.testclient import TestClient
 
 from conftest import speech_like, wav_bytes
 from ltts.container import Services
-from ltts.voices.styles import prompt_for_number
+from ltts.voices.quality import QualityReport
+from ltts.voices.session_progress import suggestions
+from ltts.voices.sessions import TakeOut
+from ltts.voices.styles import STYLE_SOURCES, prompt_for_number
 
 
 def session(client: TestClient) -> str:
@@ -134,3 +139,19 @@ def test_a_complete_voice_needs_one_take_long_and_clean_enough_for_its_sound(cli
     record(client, session_id, 49, 60, "foundation")
     current = client.get(f"/api/voice-sessions/{session_id}").json()
     assert current["advice"] is None and current["tier"] == "complete" and current["suggested"] == []
+
+
+def read(prompt_id: str) -> TakeOut:
+    """A clean take of ``prompt_id``, as the session keeps it."""
+    quality = QualityReport(duration_s=12, speech_s=10, rms_dbfs=-20, peak_dbfs=-3, clipping_ratio=0, pause_ratio=0.1,
+                            snr_db=30, ok=True, issues=[])  # fmt: skip
+    return TakeOut(number=1, prompt_id=prompt_id, source="recording", duration_s=12, quality=quality, created_at="")
+
+
+def test_a_style_short_of_takes_never_asks_for_a_passage_already_read(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setitem(STYLE_SOURCES, "dialogue", ("conversation-1", "conversation-2"))  # fewer passages than takes
+    questions = [f"questions-and-surprise-{n}" for n in (1, 2, 3, 4, 5, 8)]
+    passages = ["foundation", "narration-1", "narration-2", *questions, "conversation-1", "conversation-2"]
+    suggested = suggestions([read(pid) for pid in passages])
+    assert suggested[0] == "calm-and-reflective-1" and len(suggested) == 3
+    assert not any(pid.startswith("conversation") for pid in suggested)  # dialogue has nothing left to ask for

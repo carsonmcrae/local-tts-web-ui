@@ -4,10 +4,11 @@
 
 Scope: A copied device cookie (tied to the paired address, expiring, the refused attempt shown on
 the computer, pairing again replacing the entry), the Host and same-site checks, the small body limit
-before pairing, the per-device limit on costly work, every API route a paired device can reach, no
-pairing code or token in logs or responses, which network adapters are offered, turning itself off
-when the network changes, and stopping with an answer still being sent. Real sockets are only ever
-opened on a loopback address.
+before pairing (an unreadable length counts as none), the speech API answering for itself on the LAN
+listener, the per-device limit on costly work, every API route a paired device can reach, no pairing
+code or token in logs or responses, which network adapters are offered, turning itself off when the
+network changes, and stopping with an answer still being sent. Real sockets are only ever opened on a
+loopback address.
 Does NOT belong: Pairing and the basic rules (test_lan_mode.py).
 """
 
@@ -167,8 +168,16 @@ def test_an_unpaired_device_can_only_send_a_few_kilobytes(client: TestClient, la
     big = stranger.post("/api/lan/pair", content=b"{" + b" " * 10_000 + b"}",
                         headers={"Content-Type": "application/json"})  # fmt: skip
     assert big.status_code == 413
+    unreadable = stranger.get("/api/lan/device", headers={"Content-Length": "a few"})
+    assert unreadable.status_code == 200  # a length that isn't a number counts as none
     device = paired(client, lan)  # once paired, ordinary uploads are allowed again
     assert device.post("/api/documents/text", json={"text": "x" * 20_000}).status_code == 201
+
+
+def test_the_speech_api_answers_for_itself_on_the_lan_listener(client: TestClient, lan: Services) -> None:
+    stranger = phone(client)
+    assert stranger.get("/v1/models").status_code == 404  # switched off, it hides; never "pair this device first"
+    assert stranger.get("/api/voices").json()["error"]["code"] == "device_not_paired"
 
 
 def test_costly_work_from_one_device_is_limited(client: TestClient, lan: Services) -> None:

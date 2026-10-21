@@ -6,7 +6,7 @@ Scope: FFMETADATA escaping and the exact ffmpeg command (no shell, a copied cove
 through a stand-in ffmpeg (with subtitles too) and, when this machine has ffmpeg, a real one checked
 with ffprobe; a clear failure without ffmpeg, when ffmpeg fails or when the run is stopped; a
 read-along EPUB whose package, navigation, chapters and SMIL timings are valid XML and agree with each
-other (with hostile text escaped); and the audiobook details and cover endpoints (JPEG/PNG only,
+other (with hostile text escaped, and without an author or cover); and the audiobook details and cover endpoints (JPEG/PNG only,
 size-limited, viewed, removed by hand and with the document).
 Does NOT belong: Resuming exports (test_resumable_exports.py).
 """
@@ -193,15 +193,19 @@ def test_a_real_m4b_has_chapters_tags_and_cover(client: TestClient, tmp_path: Pa
     assert report["format"]["tags"]["genre"] == "Audiobook"
 
 
+def read_along(client: TestClient, doc_id: str) -> zipfile.ZipFile:
+    """The document's read-along EPUB, once its export has finished."""
+    body = {"documentId": doc_id, "voiceId": "kokoro:alpha", "format": "epub"}
+    job = wait_job(client, client.post("/api/exports", json=body).json()["id"])
+    assert job["status"] == "succeeded", job
+    return zipfile.ZipFile(io.BytesIO(client.get(f"/api/exports/{job['id']}/download").content))
+
+
 def test_a_read_along_epub_is_valid_and_synchronised(client: TestClient) -> None:
     doc_id = document(client)
     client.put(f"/api/documents/{doc_id}/details", json={"author": "A. Writer"})
     client.put(f"/api/documents/{doc_id}/cover", content=PNG)
-    body = {"documentId": doc_id, "voiceId": "kokoro:alpha", "format": "epub"}
-    job = wait_job(client, client.post("/api/exports", json=body).json()["id"])
-    assert job["status"] == "succeeded", job
-    content = client.get(f"/api/exports/{job['id']}/download").content
-    book = zipfile.ZipFile(io.BytesIO(content))
+    book = read_along(client, doc_id)
     first = book.infolist()[0]
     assert first.filename == "mimetype" and first.compress_type == zipfile.ZIP_STORED
     assert book.read("mimetype") == b"application/epub+zip"
@@ -223,6 +227,13 @@ def test_a_read_along_epub_is_valid_and_synchronised(client: TestClient) -> None
         assert target is not None and audio is not None
         assert f'id="{target.get("src", "").split("#")[1]}"' in chapter
         assert audio.get("clipBegin", "") < audio.get("clipEnd", "")
+
+
+def test_a_read_along_epub_without_an_author_or_cover_leaves_them_out(client: TestClient) -> None:
+    book = read_along(client, document(client))
+    opf = book.read("OEBPS/package.opf").decode("utf-8")
+    assert "<dc:creator>" not in opf and "cover-image" not in opf
+    assert not any(name.startswith("OEBPS/images/") for name in book.namelist())
 
 
 def test_details_and_cover_endpoints(client: TestClient, services: Services, tmp_path: Path) -> None:

@@ -4,8 +4,9 @@
 
 Scope: The preview describes a package (name, styles, size, versions, that it is a real person's
 voice) after the same checks as an import, and saves nothing; files from a newer format version get a
-clear message; entries that appear twice, manifests nested absurdly deep or of another format, and
-text with control or direction-reversing characters are handled; an import never replaces a voice.
+clear message; entries that appear twice or are marked encrypted, damaged entries, manifests nested
+absurdly deep or of another format, packages missing their recording or built voice, and text with
+control or direction-reversing characters are handled; an import never replaces a voice.
 Does NOT belong: The round trip and the per-file checks (test_voice_sharing.py).
 """
 
@@ -13,6 +14,7 @@ from __future__ import annotations
 
 import io
 import json
+import struct
 import warnings
 import zipfile
 from pathlib import Path
@@ -101,3 +103,44 @@ def test_text_is_shown_plainly_and_an_import_never_replaces_a_voice(
     assert len({first["id"], second["id"]}) == 2
     named = import_package(client, package, name=f"Gift{reverse}").json()
     assert named["name"] == "Gift"
+
+
+def flagged_encrypted(package: bytes) -> bytes:
+    """The package with its first entry marked encrypted in the central directory, as a protected ZIP is."""
+    flags = package.index(bytes.fromhex("504b0102")) + 8
+    return package[:flags] + struct.pack("<H", 1) + package[flags + 2 :]
+
+
+def damaged(package: bytes, name: str) -> bytes:
+    """The package stored uncompressed, with one byte of ``name`` flipped so its checksum no longer matches."""
+    stored = repack(package, {})
+    info = zipfile.ZipFile(io.BytesIO(stored)).getinfo(name)
+    name_len, extra_len = struct.unpack("<HH", stored[info.header_offset + 26 : info.header_offset + 30])
+    at = info.header_offset + 30 + name_len + extra_len + 100
+    return stored[:at] + bytes([stored[at] ^ 0xFF]) + stored[at + 1 :]
+
+
+def refusal(client: TestClient, package: bytes) -> str:
+    response = import_package(client, package)
+    assert response.status_code == 415 and code(response) == "invalid_voice_file"
+    message: str = response.json()["error"]["message"]
+    return message
+
+
+def test_encrypted_or_damaged_entries_are_refused(client: TestClient, services: Services, tmp_path: Path) -> None:
+    package = export(client, studio_profile(services, tmp_path))
+    assert "is encrypted" in refusal(client, flagged_encrypted(package))
+    assert "is damaged" in refusal(client, damaged(package, "reference.wav"))
+
+
+def test_a_package_must_hold_its_recording_and_built_voice(
+    client: TestClient, services: Services, tmp_path: Path
+) -> None:
+    package = export(client, studio_profile(services, tmp_path))
+    files = manifest(package)["files"]
+
+    def without(name: str) -> bytes:
+        return with_manifest(repack(package, {name: None}), files={k: v for k, v in files.items() if k != name})
+
+    assert "no reference recording" in refusal(client, without("reference.wav"))
+    assert "built voice is missing" in refusal(client, without("voice.safetensors"))

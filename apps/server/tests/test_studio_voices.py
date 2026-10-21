@@ -5,7 +5,8 @@
 Scope: A build needs enough usable speech and an installed cloning engine; the build job measures
 takes, uses the session identity, ranks and auditions candidates best first; samples are served; a
 session can't change while it builds and a build can be canceled; finishing needs consent and a built
-candidate, creates a studio profile that owns the takes and voice file, and removes the session; the
+candidate, creates a studio profile that owns the takes and voice file (and styles only when the session
+made some), and removes the session; the
 profile's delivery is part of its cache revision and changing it purges old audio; a tone correction is
 built from corrected copies of the takes; profiles saved
 before the brightness metric existed still load; ranking leaves out atypical, short and bright takes first.
@@ -15,6 +16,7 @@ Does NOT belong: Takes, imports and the microphone check (test_voice_sessions.py
 from __future__ import annotations
 
 import json
+import shutil
 import threading
 from collections.abc import Sequence
 from pathlib import Path
@@ -97,6 +99,7 @@ def test_build_choose_and_finish_a_studio_voice(
 
     choice = {"candidate": best["index"], "name": " Studio me ", "consent": False, "delivery": "expressive"}
     assert error(client.post(f"{base}/finish", json=choice)) == "consent_required"
+    shutil.rmtree(services.voice_sessions.styles_dir(session_id))  # a session built before styles has no such folder
     created = client.post(f"{base}/finish", json={**choice, "consent": True})
     assert created.status_code == 201
     profile = created.json()
@@ -109,6 +112,7 @@ def test_build_choose_and_finish_a_studio_voice(
     assert "session recordings" in profile["stores"]
     folder = services.voices.root / profile["id"]
     assert (folder / "takes" / "004.flac").is_file() and len(list(folder.glob("voice-*.safetensors"))) == 1
+    assert profile["styles"] == [] and not (folder / "styles").exists()
     assert error(client.get(base)) == "session_not_found" and not services.voice_sessions.folder(session_id).exists()
     listed = next(v for v in client.get("/api/voices").json() if v["id"] == profile["voiceId"])
     assert listed["description"].startswith("Studio voice built from 1 min")

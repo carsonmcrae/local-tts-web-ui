@@ -7,7 +7,8 @@ letters); a document's rule winning over the library's for the same word in that
 the scoped API (duplicates per scope, limits per scope, moving a rule, unknown documents, rules
 deleted with their document); playback, takes, exports and voice previews saying the same thing
 while the document's text never changes; the preview (as written and respelled, at preview priority,
-length caps, rate limit, local to this computer); and an older dictionary migrating as library rules.
+length caps, rate limit, local to this computer); an older dictionary migrating as library rules; and
+only the most recently used documents keeping a compiled matcher in memory.
 Does NOT belong: Whole-word matching basics and the library-only API (test_reader_features.py).
 """
 
@@ -208,3 +209,18 @@ def test_an_older_dictionary_becomes_library_rules(tmp_path: Path, monkeypatch: 
     assert [(r.word, r.document_id) for r in rules.list_all()] == [("quinoa", None)]
     assert rules.apply("Quinoa, please.") == "keen-wah, please."
     assert rules.apply("Quinoa, please.", "b" * 32) == "keen-wah, please."  # a document without rules of its own
+
+
+def test_only_the_most_recently_used_documents_keep_a_compiled_matcher(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(store, "MATCHERS_KEPT", 2)
+    database = Database(tmp_path / "rules.db")
+    database.migrate()
+    rules = PronunciationStore(database)
+    first, second, third = "a" * 32, "b" * 32, "c" * 32
+    for document_id in (first, second, third):
+        assert rules.apply("Quinoa, please.", document_id) == "Quinoa, please."
+    assert list(rules._matchers) == [second, third]  # the first document's matcher made room
+    rules.apply("Quinoa, please.", second)
+    assert list(rules._matchers) == [third, second]  # using one again keeps it the longest

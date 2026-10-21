@@ -4,7 +4,8 @@
 
 Scope: Creating a blend (two to four different built-in Kokoro voices, weights normalized), seeing it
 in the voice list, reading with it (the engine gets the mix), refusing cloned or unknown voices and
-repeated parts, and deleting it (its audio and the documents' uses of it go too).
+repeated parts, keeping at most a fixed number of blends, and deleting one (its audio and the documents'
+uses of it go too).
 Does NOT belong: Mixing the style vectors themselves (test_engine_runtime.py).
 """
 
@@ -17,6 +18,7 @@ from fastapi.testclient import TestClient
 
 from conftest import FakeEngine
 from ltts.engines.base import VoiceInfo
+from ltts.voices import blends as blends_module
 from speech_api_support import program, speak, switch_on
 
 URL = "/api/voice-profiles/blends"
@@ -71,6 +73,16 @@ def test_only_built_in_kokoro_voices_blend(client: TestClient, two_voices: FakeE
     zero = [{"voiceId": "kokoro:alpha", "weight": 0}, {"voiceId": "kokoro:bravo", "weight": 1}]
     assert client.post(URL, json={"name": "No", "parts": zero}).status_code == 422
     assert client.get(URL).json() == []
+
+
+def test_a_fixed_number_of_blends_can_be_kept(
+    client: TestClient, two_voices: FakeEngine, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(blends_module, "MAX_BLENDS", 1)
+    assert blend(client).status_code == 201
+    full = blend(client, name="One too many")
+    assert full.status_code == 409 and full.json()["error"]["code"] == "blend_limit"
+    assert len(client.get(URL).json()) == 1
 
 
 def test_deleting_a_blend_forgets_it_everywhere(client: TestClient, two_voices: FakeEngine) -> None:

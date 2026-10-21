@@ -4,9 +4,10 @@
 
 Scope: Exporting needs an explicit confirmation and never includes the session takes; a studio and
 a quick voice survive the round trip (as shared profiles, with their styles and where they came
-from); importing needs consent and rejects anything that isn't exactly a voice package: not a ZIP,
-unexpected or oversized files, a manifest that doesn't match, changed files, and safetensors files
-with the wrong format, parts, types, shapes or byte ranges.
+from); a voice whose files are gone can't be shared; importing needs consent and rejects anything that
+isn't exactly a voice package: not a ZIP, unexpected or oversized files, no manifest or one that doesn't
+match or validate, changed files, and safetensors files with the wrong format, parts, types, shapes,
+sizes or byte ranges (a header that isn't a table, malformed parts, data with gaps).
 Does NOT belong: Building voices (test_studio_voices.py) or their styles (test_voice_styles.py).
 """
 
@@ -42,6 +43,12 @@ CONDITIONING_TENSORS = {
 _SIZES = {"F32": 4, "I64": 8}
 
 
+def raw_safetensors(header: dict[str, Any], data_bytes: int) -> bytes:
+    """``header`` as a safetensors file, followed by ``data_bytes`` zero bytes (whatever the header claims)."""
+    encoded = json.dumps(header).encode()
+    return struct.pack("<Q", len(encoded)) + encoded + bytes(data_bytes)
+
+
 def safetensors_bytes(tensors: dict[str, tuple[str, list[int]]], meta: dict[str, str]) -> bytes:
     """A valid safetensors file (zero-filled tensors), written by hand as the format specifies."""
     header: dict[str, Any] = {"__metadata__": meta}
@@ -50,8 +57,7 @@ def safetensors_bytes(tensors: dict[str, tuple[str, list[int]]], meta: dict[str,
         size = int(np.prod(shape)) * _SIZES[dtype]
         header[name] = {"dtype": dtype, "shape": shape, "data_offsets": [offset, offset + size]}
         offset += size
-    encoded = json.dumps(header).encode()
-    return struct.pack("<Q", len(encoded)) + encoded + bytes(offset)
+    return raw_safetensors(header, offset)
 
 
 CONDITIONING_FILE = safetensors_bytes(CONDITIONING_TENSORS, {"format": "ltts-chatterbox-conditioning", "version": "1"})
@@ -150,6 +156,9 @@ def test_a_studio_voice_round_trips_without_its_takes(client: TestClient, servic
     assert spec.conditioning_path is not None and dict(spec.styles)["question"].is_file()
     listed = next(v for v in client.get("/api/voices").json() if v["id"] == shared["voiceId"])
     assert listed["description"].startswith("Shared studio voice")
+    services.voices.reference_path(profile_id).unlink()  # a voice whose files are gone can't be shared
+    gone = client.get(f"/api/voice-profiles/{profile_id}/export", params={"confirm": "true"})
+    assert gone.status_code == 404 and code(gone) == "voice_not_found"
 
 
 def test_a_quick_voice_round_trips_as_its_reference(client: TestClient) -> None:
@@ -170,6 +179,8 @@ def test_a_quick_voice_round_trips_as_its_reference(client: TestClient) -> None:
         ({"reference.wav": None}, "match its manifest"),
         ({"styles/question.safetensors": STYLE_FILE + b"x"}, "damaged or was changed"),
         ({"manifest.json": b"{not json"}, "manifest isn't valid"),
+        ({"manifest.json": b'{"format": "ttsnative-voice", "version": 1}'}, "manifest isn't valid"),
+        ({"manifest.json": None}, "has no manifest"),
         ({"voice.safetensors": b"x" * (17 * 1024 * 1024)}, "too large"),
     ],
 )
@@ -213,3 +224,26 @@ def test_safetensors_files_must_match_exactly_what_the_app_writes(tmp_path: Path
     assert "wrong shape" in rejected(
         safetensors_bytes(huge, {"format": "ltts-chatterbox-style", "version": "1"}), STYLE
     )
+
+
+def style_part(info: object, data_bytes: int = 0) -> bytes:
+    """A style file whose one tensor is described by ``info`` exactly as given, however malformed."""
+    meta = {"format": "ltts-chatterbox-style", "version": "1"}
+    return raw_safetensors({"__metadata__": meta, "t3.cond_prompt_speech_tokens": info}, data_bytes)
+
+
+def test_every_part_of_a_safetensors_file_must_tile_its_data(tmp_path: Path) -> None:
+    path = tmp_path / "question.safetensors"
+    tokens = {"dtype": "I64", "shape": [1, 375]}
+    for data, why in [
+        (struct.pack("<Q", 2) + b"[]", "can't be read"),  # a header that isn't a table of parts
+        (style_part(["I64"]), "is malformed"),
+        (style_part({**tokens, "shape": [8_192, 8_192], "data_offsets": [0, 8_192 * 8_192 * 8]}), "is too large"),
+        (style_part({**tokens, "data_offsets": [0]}), "is malformed"),
+        (style_part({**tokens, "data_offsets": [0, 10]}), "doesn't match its size"),
+        (style_part({**tokens, "data_offsets": [8, 3_008]}, 3_008), "gaps or overlaps"),
+    ]:
+        path.write_bytes(data)
+        with pytest.raises(UnsupportedDocumentError) as caught:
+            check_safetensors(path, STYLE)
+        assert why in caught.value.message, why

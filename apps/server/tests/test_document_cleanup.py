@@ -194,6 +194,7 @@ BODY = [
     "The war ended.1 Nobody expected it.",
     "The treaty was signed,2 and peace held.",
     "Trade came back.3 Ships sailed.",
+    "Fig.2 shows the border, and lot.9 of the maps is lost.",  # a reference word, and a number no note has
 ]
 NOTES = ["1. Smith, page 4.", "2. Jones, page 9.", "3. Brown, page 2."]
 

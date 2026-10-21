@@ -6,7 +6,8 @@ Scope: Every effect keeps the speech loudness, stays below -1 dBFS and is repeat
 narrows the band and the hall adds a tail. The styling API sets and clears fields, checks sentences
 and voices, and changes its revision. Synthesis reads a styled sentence with its voice, effect (its
 own cache entry) and sound (only for an engine that performs it), quoted dialogue with the dialogue
-voice, exports follow the same plan, and deleting a voice hands its sentences back.
+voice (and, without the styling store, every sentence plainly), exports follow the same plan, and
+deleting a voice hands its sentences back.
 Does NOT belong: The reader UI or the engines themselves.
 """
 
@@ -23,6 +24,7 @@ from conftest import SAMPLE_RATE, FakeEngine, speech_like, wait_job, wav_bytes
 from ltts.container import Services
 from ltts.documents import styling as styling_module
 from ltts.effects import EFFECTS, apply_effect
+from ltts.synthesis.service import SpokenPlan, SynthesisService
 
 TEXT = 'The ferry left at dawn. "Is anyone there?" she called. Nobody answered.'
 
@@ -36,6 +38,13 @@ def band_share(samples: np.ndarray, low: float, high: float) -> float:
     power = np.abs(np.fft.rfft(samples)) ** 2
     freqs = np.fft.rfftfreq(samples.size, 1 / SAMPLE_RATE)
     return float(power[(freqs >= low) & (freqs < high)].sum() / power.sum())
+
+
+def test_without_the_styling_store_every_sentence_is_read_plainly(services: Services) -> None:
+    plain = SynthesisService(services.engines, services.audio_cache, services.document_repo)
+    plan = plain.plan_segment("doc", 0, '"Is anyone there?" she called.', "kokoro:alpha")
+    assert isinstance(plan, SpokenPlan) and plan.document_id == "doc"  # the document's pronunciations still apply
+    assert (plan.voice_id, plan.style, plan.parts) == ("kokoro:alpha", None, ())
 
 
 @pytest.mark.parametrize("effect", EFFECTS)

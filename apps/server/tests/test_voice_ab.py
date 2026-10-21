@@ -5,7 +5,7 @@
 Scope: Every sentence is read by both voices, shuffled into X and Y by the seed (repeatably), with a
 key, measurements and similarity per clip; the listening page shows sentence text only as escaped
 text and runs nothing but its own small script; scoring unblinds answers (including missing or
-malformed ones) and averages similarity per voice; the command line reads the sentences with the
+malformed ones) and averages similarity per voice, said in the summary; the command line reads the sentences with the
 app's own engines (closing them afterwards) and scores a folder.
 Does NOT belong: Measuring speaker similarity with the real cloning engine (needs the model).
 """
@@ -82,6 +82,11 @@ def test_similarity_is_measured_per_clip_when_available(tmp_path: Path) -> None:
     assert [row["similarity"] for row in rows] == [0.91, 0.72, 0.91, 0.72]
     with (tmp_path / "metrics.csv").open(encoding="utf-8") as handle:
         assert [row["similarity"] for row in csv.DictReader(handle)] == ["0.91", "0.72", "0.91", "0.72"]
+    answers = tmp_path / "answers.json"
+    answers.write_text(json.dumps({"answers": {"1": "X"}}), "utf-8")
+    result = score(tmp_path, answers)
+    assert set(result.similarity.values()) <= {0.91, 0.72, 0.815}  # each voice's mean over its own clips
+    assert result.summary().count("Mean speaker similarity") == 2
 
 
 def test_scoring_unblinds_the_answers(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:

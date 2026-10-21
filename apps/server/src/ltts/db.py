@@ -197,6 +197,15 @@ MIGRATIONS: tuple[str, ...] = (
     """
     ALTER TABLE voice_takes ADD COLUMN previous_json TEXT;
     """,
+    # voice blends: a voice mixed from built-in Kokoro voices
+    """
+    CREATE TABLE voice_blends (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        parts_json TEXT NOT NULL,
+        created_at TEXT NOT NULL
+    );
+    """,
 )
 
 

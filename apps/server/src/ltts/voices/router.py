@@ -26,6 +26,7 @@ from ltts.container import ServicesDep
 from ltts.engines.base import Delivery
 from ltts.errors import ConflictError
 from ltts.jobs import JobOut
+from ltts.voices.blends import BlendIn, BlendOut
 from ltts.voices.cleanup import MAX_BASS_BOOST_DB, MAX_TREBLE_CUT_DB, Cleanup, RecordingCheck
 from ltts.voices.profiles import CONSENT_STATEMENT, VoiceProfileOut
 from ltts.voices.sharing import MAX_PACKAGE_BYTES, VoicePreview, package_name
@@ -64,6 +65,24 @@ async def receive_upload(request: Request, services: ServicesDep, max_bytes: int
     target = tmp / f"{new_id()}.audio"
     await save_request_body(request, target, max_bytes)
     return target
+
+
+# Declared before the routes with a profile id, which would otherwise match "blends".
+@router.get("/blends")
+def list_blends(services: ServicesDep) -> list[BlendOut]:
+    return services.blends.list_all()
+
+
+@router.post("/blends", status_code=201)
+def create_blend(body: BlendIn, services: ServicesDep) -> BlendOut:
+    """Mix two to four built-in Kokoro voices into a new voice (weights are normalized)."""
+    return services.blends.create(body)
+
+
+@router.delete("/blends/{blend_id}", status_code=204)
+def delete_blend(blend_id: ProfileId, services: ServicesDep) -> Response:
+    services.blends.delete(blend_id)
+    return Response(status_code=204)
 
 
 @router.get("/consent")

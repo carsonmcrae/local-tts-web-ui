@@ -97,6 +97,7 @@ class VoiceSpec:
     style: str | None = None  # the style this sentence is read in (decided by the planner)
     take: int = 0  # another take of the same sentence (a different seed); 0 is the first
     steady: bool = False  # read evenly whatever the delivery (headings, lists, announcements)
+    blend: tuple[tuple[str, float], ...] = ()  # built-in voice keys and weights mixed into one (Kokoro)
 
 
 @dataclass(slots=True)

@@ -129,7 +129,8 @@ show as the error message.
 
 ## Voices
 
-While the API is on, every **built-in voice** of an installed engine can be used. A **custom
+While the API is on, every **built-in voice** of an installed engine can be used, and so can a
+**voice blend** (`blend:…`, a mix of built-in voices, which copies no one). A **custom
 voice** (one you made in Voice Studio or imported, with an id like `custom:…`) can't, until you tick
 **Allow <name>** under **Custom voices programs may use**. Only allow a voice that is yours, or whose
 speaker agreed to this: any program with the token can make it say anything, so never use it to pass

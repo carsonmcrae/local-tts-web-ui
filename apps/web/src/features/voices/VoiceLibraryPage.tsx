@@ -4,7 +4,8 @@
  * Purpose: Browse, compare and choose voices.
  * Scope: Search and filters (language, gender, built-in/custom), a shared comparison passage so
  *   every preview says the same thing, voice cards with previews, and setting the reading voice
- *   (applied to the player immediately and saved as the default).
+ *   (applied to the player immediately and saved as the default); blending built-in voices into a
+ *   new one (BlendVoices).
  * Does NOT belong: Creating custom voices (Voice Studio).
  */
 import { AudioLines, Mic, Search } from 'lucide-react';
@@ -21,6 +22,7 @@ import { PageHeader } from '@/components/ui/Layout';
 import { useToast } from '@/components/ui/Toast';
 import { DefaultVoicesBanner } from '@/features/engines/EngineSetup';
 import { useReadingVoice } from '@/features/player/useReadingVoice';
+import { BlendVoices } from './BlendVoices';
 import { useVoicePreview } from './useVoicePreview';
 import { VoiceCard } from './VoiceCard';
 
@@ -107,9 +109,12 @@ export default function VoiceLibraryPage() {
         title="Voices"
         description="Preview and compare voices on the same passage. Everything is generated on this computer."
         actions={
-          <Link to="/studio" className={buttonClasses('secondary')}>
-            <Mic size={16} /> Create your own voice
-          </Link>
+          <div className="flex flex-wrap items-start gap-2">
+            <BlendVoices voices={all} />
+            <Link to="/studio" className={buttonClasses('secondary')}>
+              <Mic size={16} /> Create your own voice
+            </Link>
+          </div>
         }
       />
       <DefaultVoicesBanner />

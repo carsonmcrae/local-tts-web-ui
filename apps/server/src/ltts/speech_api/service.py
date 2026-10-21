@@ -2,8 +2,8 @@
 # Copyright (c) 2026 Carson McRae
 """Purpose: Turn one speech API request into audio with TTSNative's own voices.
 
-Scope: The models and voices a client may use (every built-in voice of an installed engine, and only
-the custom voices the owner allowed; any other kind of voice is refused), checking a requested model
+Scope: The models and voices a client may use (every built-in voice of an installed engine, blends of
+them, and only the custom voices the owner allowed; any other kind of voice is refused), checking a requested model
 and voice, cleaning the input and splitting it with the document segmenter, rendering each sentence
 through the synthesis service (cache, pronunciation dictionary and engine queues included, at preview
 priority so reading in the app comes first), joining the sentences and encoding them. One request is
@@ -41,6 +41,7 @@ MODEL = "ttsnative"
 OPENAI_MODELS = ("tts-1", "tts-1-hd", "gpt-4o-mini-tts")  # accepted so OpenAI clients work unchanged
 MAX_SENTENCES = 200
 CUSTOM_PREFIX = "custom:"  # cloned voices: only those the owner allowed
+BLEND_PREFIX = "blend:"  # mixes of built-in voices, which copy no one: allowed like them
 CONTENT_TYPES = {
     "mp3": "audio/mpeg",
     "opus": "audio/ogg",
@@ -115,7 +116,8 @@ class SpeechApi:
         return [
             voice
             for voice in self._engines.voices()
-            if voice.available and (voice.category == "built-in" or voice.id in allowed)
+            if voice.available
+            and (voice.category == "built-in" or voice.id.startswith(BLEND_PREFIX) or voice.id in allowed)
         ]
 
     def check(self, config: SpeechApiConfig, request: SpeechRequest) -> None:
@@ -139,7 +141,9 @@ class SpeechApi:
                 "Unknown voice. Use a TTSNative voice id such as kokoro:af_heart; GET /v1/voices lists them.",
                 code="voice_not_found",
             ) from exc
-        built_in = any(voice.id == request.voice and voice.category == "built-in" for voice in engine.voices())
+        built_in = request.voice.startswith(BLEND_PREFIX) or any(
+            voice.id == request.voice and voice.category == "built-in" for voice in engine.voices()
+        )
         if not (built_in or allowed):
             raise refused
         if request.model in engines and engine.id != request.model:

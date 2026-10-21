@@ -972,6 +972,44 @@ export type paths = {
     patch?: never;
     trace?: never;
   };
+  '/api/voice-profiles/blends': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List Blends */
+    get: operations['list_blends_api_voice_profiles_blends_get'];
+    put?: never;
+    /**
+     * Create Blend
+     * @description Mix two to four built-in Kokoro voices into a new voice (weights are normalized).
+     */
+    post: operations['create_blend_api_voice_profiles_blends_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/voice-profiles/blends/{blend_id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /** Delete Blend */
+    delete: operations['delete_blend_api_voice_profiles_blends__blend_id__delete'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/voice-profiles/cleanup-preview': {
     parameters: {
       query?: never;
@@ -1319,6 +1357,33 @@ export type components = {
       libraryId?: string | null;
       /** Url */
       url?: string | null;
+    };
+    /** BlendIn */
+    BlendIn: {
+      /** Name */
+      name: string;
+      /** Parts */
+      parts: components['schemas']['BlendPart'][];
+    };
+    /** BlendOut */
+    BlendOut: {
+      /** Createdat */
+      createdAt: string;
+      /** Id */
+      id: string;
+      /** Name */
+      name: string;
+      /** Parts */
+      parts: components['schemas']['BlendPart'][];
+      /** Voiceid */
+      voiceId: string;
+    };
+    /** BlendPart */
+    BlendPart: {
+      /** Voiceid */
+      voiceId: string;
+      /** Weight */
+      weight: number;
     };
     /** BookmarkIn */
     BookmarkIn: {
@@ -4591,6 +4656,88 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['RecordingCheck'];
+        };
+      };
+    };
+  };
+  list_blends_api_voice_profiles_blends_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['BlendOut'][];
+        };
+      };
+    };
+  };
+  create_blend_api_voice_profiles_blends_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['BlendIn'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['BlendOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  delete_blend_api_voice_profiles_blends__blend_id__delete: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        blend_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
         };
       };
     };

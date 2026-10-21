@@ -54,6 +54,18 @@ Grades are a guide, but your ears decide. To compare voices fairly:
 Previews are generated on your computer at your speaking pace from **Settings → Playback**. Playing
 the same preview again reuses the audio already generated.
 
+## Blending voices
+
+**Blend voices** (top of the Voices page, once the built-in voices are installed) mixes two to four
+built-in voices into a new one. Choose the voices and how much of the mix each one gets; the blend then
+appears in the voice list like any other voice, to preview, read with or give to a character.
+
+- Only built-in Kokoro voices can be blended. Each is described by a set of numbers, and a blend is
+  their weighted average. Cloned voices copy one person's recording and can't be mixed.
+- A blend reads with the first voice's accent and pronunciation rules, whatever the others are.
+- A blend can't be changed once made (so audio made with it stays right); make a new one instead.
+  Delete blends under **Your blends**: sentences set to read with one go back to the reading voice.
+
 ## Setting the reading voice
 
 There are three ways to choose the voice the reader uses:

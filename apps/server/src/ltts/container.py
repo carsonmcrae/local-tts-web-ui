@@ -36,6 +36,7 @@ from ltts.speech_api.service import SpeechApi
 from ltts.speech_api.store import SpeechApiStore
 from ltts.synthesis.cache import AudioCache
 from ltts.synthesis.service import SynthesisService
+from ltts.voices.blends import BLEND_ENGINE, PREFIX, BlendStore
 from ltts.voices.profiles import CLONING_ENGINE, VoiceProfileService
 from ltts.voices.sessions import VoiceSessionService
 from ltts.voices.sharing import VoiceSharing
@@ -62,6 +63,7 @@ class Services:
     audio_cache: AudioCache
     synthesis: SynthesisService
     voices: VoiceProfileService
+    blends: BlendStore
     voice_sessions: VoiceSessionService
     studio: StudioService
     voice_sharing: VoiceSharing
@@ -111,6 +113,8 @@ def build_services(
 
     voices = VoiceProfileService(settings, db, purge_voice)
     registry.attach_custom_voices(voices.resolve, lambda: voices.as_voices(lambda: registry.is_ready(CLONING_ENGINE)))
+    blends = BlendStore(db, lambda: registry.get(BLEND_ENGINE).voices(), cache.purge_voice)
+    registry.attach_voices(PREFIX, blends.resolve, lambda: blends.as_voices(lambda: registry.is_ready(BLEND_ENGINE)))
     sessions = VoiceSessionService(settings, db, jobs)
     studio = StudioService(sessions, voices, jobs, lambda: registry.voice_builder(CLONING_ENGINE))
     marks = MarkHooks(voice_finder(lambda: [(v.id, v.name) for v in registry.voices()]), styling.annotate)
@@ -125,6 +129,7 @@ def build_services(
         audio_cache=cache,
         synthesis=synthesis,
         voices=voices,
+        blends=blends,
         voice_sessions=sessions,
         studio=studio,
         voice_sharing=VoiceSharing(settings, voices),

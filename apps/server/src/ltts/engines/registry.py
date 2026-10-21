@@ -2,9 +2,10 @@
 # Copyright (c) 2026 Carson McRae
 """Purpose: Wire engines together and resolve any voice id to an engine plus voice specification.
 
-Scope: Holds the engine instances, maps ``engine:key`` and ``custom:<profile>`` voice ids, merges
-built-in and custom voices for the library, runs engine install, update and repair jobs, explains
-damaged model files when a voice is used, and hands out the cloning engine for building studio voices.
+Scope: Holds the engine instances, maps ``engine:key`` voice ids and the ones attached from outside the
+engines (``custom:<profile>``, ``blend:<id>``), merges built-in and custom voices for the library, runs
+engine install, update and repair jobs, explains damaged model files when a voice is used, and hands out
+the cloning engine for building studio voices.
 Does NOT belong: Engine internals, caching or HTTP.
 """
 
@@ -34,12 +35,14 @@ class EngineRegistry:
     def __init__(self, engines: list[Engine], jobs: JobManager):
         self._engines = {engine.id: engine for engine in engines}
         self._jobs = jobs
-        self._custom_resolver: CustomVoiceResolver | None = None
-        self._custom_lister: CustomVoiceLister | None = None
+        self._attached: dict[str, tuple[CustomVoiceResolver, CustomVoiceLister]] = {}
 
     def attach_custom_voices(self, resolver: CustomVoiceResolver, lister: CustomVoiceLister) -> None:
-        self._custom_resolver = resolver
-        self._custom_lister = lister
+        self.attach_voices("custom", resolver, lister)
+
+    def attach_voices(self, prefix: str, resolver: CustomVoiceResolver, lister: CustomVoiceLister) -> None:
+        """Voices that live outside the engines, addressed as ``<prefix>:<key>`` (custom voices, blends)."""
+        self._attached[prefix] = (resolver, lister)
 
     def get(self, engine_id: str) -> Engine:
         try:
@@ -77,17 +80,17 @@ class EngineRegistry:
 
     def voices(self) -> list[VoiceInfo]:
         voices = [voice for engine in self._engines.values() for voice in engine.voices()]
-        if self._custom_lister is not None:
-            voices.extend(self._custom_lister())
+        for _, lister in self._attached.values():
+            voices.extend(lister())
         return voices
 
     def resolve(self, voice_id: str) -> ResolvedVoice:
         prefix, _, key = voice_id.partition(":")
-        if prefix == "custom":
-            if self._custom_resolver is None:
-                raise NotFoundError("Custom voices are unavailable.", code="voice_not_found")
-            engine_id, spec, revision = self._custom_resolver(key)
+        if prefix in self._attached:
+            engine_id, spec, revision = self._attached[prefix][0](key)
             engine = self.get(engine_id)
+        elif prefix in ("custom", "blend"):
+            raise NotFoundError("That voice doesn't exist.", code="voice_not_found")
         else:
             engine = self.get(prefix)
             known = {voice.id for voice in engine.voices()}

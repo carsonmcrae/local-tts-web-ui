@@ -91,7 +91,7 @@ covers microphone, Windows and room setup.
    next** passage (**Go to it** jumps there):
    - **Foundation:** the foundation passage plus 45 seconds of speech in all. You can build a working
      voice, but questions and lively lines may sound less like you.
-   - **Developing:** eight clean takes. The sound of your voice has settled; more takes hardly move it.
+   - **Developing:** twelve clean takes. The sound of your voice has settled; more takes hardly move it.
    - **Complete:** every speaking style (narration, questions, lively lines, dialogue, calm) has its
      three takes. That is about 15 passages, 2–3 minutes of speech. More passages won't change the
      voice, so the session says you can build.

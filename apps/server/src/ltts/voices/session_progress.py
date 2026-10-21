@@ -4,7 +4,7 @@
 
 Scope: A studio voice (Chatterbox Turbo, zero-shot: no model is trained) takes its sound from one take,
 its rhythm per speaking style from up to three takes of matching passages, and two embeddings averaged
-over every take, which settle after about eight clean takes (docs/research/studio-voice-audit.md). So
+over every take, which settle after about twelve clean takes (docs/research/studio-voice-audit.md). So
 the tier is: starting (not enough to build), foundation (an early voice can be built), developing (the
 averaged sound has settled) or complete (every speaking style has its three takes: more passages would
 not change the voice). Also each style's coverage, and the passages that would help most next.
@@ -20,7 +20,7 @@ from ltts.common import ApiModel
 from ltts.voices.quality import QualityReport
 from ltts.voices.styles import FOUNDATION_NUMBER, PROMPTS_PER_STYLE, STYLE_SOURCES, prompt_for_number, teaches
 
-SETTLED_TAKES = 8  # clean takes after which the averaged speaker hardly moves (0.994 of 42 takes' average)
+SETTLED_TAKES = 12  # clean takes after which the averaged speaker hardly moves (0.997 of a 42-take average)
 STYLE_SNR_DB = 12.0  # a take noisier than this never teaches a style (``styles.style_prompts``)
 SUGGESTIONS = 3
 # starting: not enough to build yet; foundation: an early voice; developing: its sound has settled;

@@ -81,13 +81,29 @@ def test_a_session_moves_through_its_tiers(client: TestClient, services: Service
     record(client, session_id, 49, 60, "foundation")  # the longer passage that allows an early voice
     current = client.get(f"/api/voice-sessions/{session_id}").json()
     assert current["tier"] == "foundation" and current["canBuild"] and not current["complete"]
+    for number in range(33, 43):  # the numbers passages and two calm ones: a settled sound, few styles
+        record(client, session_id, number, 12, prompt_for_number(number))
+    current = client.get(f"/api/voice-sessions/{session_id}").json()
+    assert current["tier"] == "developing" and current["suggested"][0] == "questions-and-surprise-2"
+    current = follow_suggestions(client, session_id)
+    assert current["tier"] == "complete" and current["complete"] and current["suggested"] == []
+    assert all(s["takes"] >= s["needed"] for s in current["styles"])
+
+
+def test_following_the_suggestions_needs_far_fewer_than_all_the_passages(client: TestClient) -> None:
+    session_id = session(client)
+    record(client, session_id, 49, 60, "foundation")
+    current = follow_suggestions(client, session_id)
+    assert current["tier"] == "complete" and current["suggested"] == []
+    assert 12 <= len(current["takes"]) <= 16  # of 49
+
+
+def follow_suggestions(client: TestClient, session_id: str) -> Any:
+    """Record the most useful next passage until nothing more would change the voice."""
     numbers = {prompt_for_number(n): n for n in range(1, 50)}
-    seen = []
-    while current["suggested"] and len(current["takes"]) < 30:  # follow the advice until nothing more helps
+    current = client.get(f"/api/voice-sessions/{session_id}").json()
+    while current["suggested"] and len(current["takes"]) < 49:
         pid = current["suggested"][0]
         record(client, session_id, numbers[pid], 12, pid)
         current = client.get(f"/api/voice-sessions/{session_id}").json()
-        seen.append(current["tier"])
-    assert "developing" in seen and current["tier"] == "complete" and current["complete"]
-    assert all(s["takes"] >= s["needed"] for s in current["styles"]) and current["suggested"] == []
-    assert len(current["takes"]) <= 16  # far fewer than the 49 passages
+    return current

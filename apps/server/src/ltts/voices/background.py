@@ -53,10 +53,8 @@ def _hum(power: npt.NDArray[np.float64], freqs: npt.NDArray[np.float64]) -> bool
     """Narrow peaks at the mains frequency's multiples, well above the spectrum just beside them."""
     for base in (50.0, 60.0):
         ratios: list[float] = []
-        for harmonic in range(1, 9):
+        for harmonic in range(1, 9):  # up to 400 Hz (50 Hz mains) or 480 Hz (60 Hz)
             centre = base * harmonic
-            if centre > 480:
-                break
             distance = np.abs(freqs - centre)
             peak, around = power[distance <= 2.5], power[(distance >= 14) & (distance <= 24)]
             if peak.size and around.size:

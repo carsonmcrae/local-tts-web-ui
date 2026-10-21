@@ -69,8 +69,8 @@ export function CreateVoiceChooser({
           meta="About 15–20 minutes · pause any time"
           onChoose={() => onChoose('studio')}
         >
-          A guided session with a good microphone. The app builds the voice from your best takes for
-          the most faithful result.
+          A guided session with a good microphone. Clean takes and your own speaking styles give the
+          most faithful result; more passages on their own don’t.
         </Option>
       </div>
     </Dialog>

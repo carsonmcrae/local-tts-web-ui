@@ -142,8 +142,8 @@ and gives each speaking style three takes of its own. No model is trained to bui
 only for what the voice uses and stops when more passages wouldn't change it; measured, a complete session
 scores the same as an early one built from about a dozen takes
 ([studio voice audit](docs/research/studio-voice-audit.md)). A studio voice can optionally be
-**fine-tuned** on its takes afterwards (experimental; a few minutes on an NVIDIA GPU), and you keep the
-result only if you prefer it by ear. Recordings are stored only on this computer. You must confirm the voice
+**fine-tuned** on its takes afterwards (experimental; a few minutes on an NVIDIA GPU); in a blind test it
+didn't sound clearly better, so you keep the result only if you prefer it by ear. Recordings are stored only on this computer. You must confirm the voice
 is yours or that the speaker gave permission; generated audio carries Resemble AI's inaudible Perth
 watermark.
 

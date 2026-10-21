@@ -111,8 +111,8 @@ covers microphone, Windows and room setup.
    takes at its pauses; an import with 5 minutes of speech can be built without the passages' styles.
 
 4. **Build.** Press **Build my voice**. The app measures every take, averages your voice across the
-   session, builds and tests five voices from your best takes, and learns your [speaking
-   styles](#expression). This takes a minute or two with a GPU, longer on a CPU, and needs the
+   session, builds and tests five voices from your best takes, and builds your [speaking
+   styles](#expression) from the matching takes. This takes a minute or two with a GPU, longer on a CPU, and needs the
    voice-cloning engine (this step offers to install it).
 5. **Choose.** Listen to the samples of the three best voices, each with a match score, and pick the
    one that sounds most like the speaker.

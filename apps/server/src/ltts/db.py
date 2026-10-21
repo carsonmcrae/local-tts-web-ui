@@ -152,6 +152,18 @@ MIGRATIONS: tuple[str, ...] = (
         dialogue_voice_id TEXT
     );
     """,
+    """
+    CREATE TABLE document_details (
+        document_id TEXT PRIMARY KEY REFERENCES documents(id) ON DELETE CASCADE,
+        author TEXT,
+        narrator TEXT,
+        description TEXT
+    );
+    CREATE TABLE integrations (
+        name TEXT PRIMARY KEY,
+        config_json TEXT NOT NULL
+    );
+    """,
 )
 
 

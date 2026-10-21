@@ -4,7 +4,9 @@
 
 Scope: Runs each job on its own daemon thread, de-duplicates identical active jobs, throttles
 progress writes to SQLite, maps failures to stable error codes, and marks jobs that were running
-when the server stopped as ``interrupted`` so the UI can offer a resume.
+when the server stopped as ``interrupted`` so the UI can offer a resume. A job can be paused (it
+stops at its next check, like a cancel, but is recorded as ``paused``) and a stopped job can be
+restarted under the same id, so its progress and history carry on.
 Does NOT belong: What a job does — callers pass the work function.
 """
 
@@ -33,9 +35,11 @@ class JobStatus(StrEnum):
     FAILED = "failed"
     CANCELED = "canceled"
     INTERRUPTED = "interrupted"
+    PAUSED = "paused"
 
 
 ACTIVE = {JobStatus.QUEUED, JobStatus.RUNNING}
+STOPPED = {JobStatus.FAILED, JobStatus.CANCELED, JobStatus.INTERRUPTED, JobStatus.PAUSED}
 
 
 class JobOut(ApiModel):
@@ -112,6 +116,7 @@ class JobManager:
         self._db = db
         self._lock = threading.Lock()
         self._cancel: dict[str, threading.Event] = {}
+        self._pausing: set[str] = set()
 
     def recover(self) -> int:
         with self._db.connect() as conn:
@@ -174,6 +179,19 @@ class JobManager:
         thread.start()
         return self.get(job_id)
 
+    def restart(self, job_id: str, work: JobFn) -> JobOut:
+        """Run a stopped job again under the same id (its payload and progress are kept)."""
+        with self._lock:
+            job = self.get(job_id)
+            if job.status not in STOPPED:
+                return job
+            self._write(job_id, status=JobStatus.QUEUED, message="Waiting to start…")
+            cancel = threading.Event()
+            self._cancel[job_id] = cancel
+        thread = threading.Thread(target=self._run, args=(job_id, work, cancel), name=f"job-{job.kind}", daemon=True)
+        thread.start()
+        return self.get(job_id)
+
     def _run(self, job_id: str, work: JobFn, cancel: threading.Event) -> None:
         context = JobContext(self, job_id, cancel)
         self._write(job_id, status=JobStatus.RUNNING, message="Starting…")
@@ -181,7 +199,10 @@ class JobManager:
             result = work(context)
             self._write(job_id, status=JobStatus.SUCCEEDED, progress=1.0, message="Done", result=result or {})
         except JobCanceledError:
-            self._write(job_id, status=JobStatus.CANCELED, message="Canceled")
+            if job_id in self._pausing:
+                self._write(job_id, status=JobStatus.PAUSED, message="Paused")
+            else:
+                self._write(job_id, status=JobStatus.CANCELED, message="Canceled")
         except AppError as exc:
             self._write(job_id, status=JobStatus.FAILED, message=exc.message, error_code=exc.code)
         except Exception:
@@ -194,6 +215,7 @@ class JobManager:
             )
         finally:
             self._cancel.pop(job_id, None)
+            self._pausing.discard(job_id)
 
     def get(self, job_id: str) -> JobOut:
         with self._db.connect() as conn:
@@ -217,3 +239,19 @@ class JobManager:
         if event is not None:
             event.set()
         return self.get(job_id)
+
+    def pause(self, job_id: str) -> JobOut:
+        """Stop a running job at its next check and record it as paused, ready to be restarted."""
+        event = self._cancel.get(job_id)
+        if event is not None:
+            self._pausing.add(job_id)
+            event.set()
+        return self.get(job_id)
+
+    def pausing(self, job_id: str) -> bool:
+        """Whether a stop requested for this job is a pause (its work is kept) rather than a cancel."""
+        return job_id in self._pausing
+
+    def mark(self, job_id: str, status: JobStatus, message: str) -> None:
+        """Record a stopped job's status, such as a paused job that is then canceled."""
+        self._write(job_id, status=status, message=message)

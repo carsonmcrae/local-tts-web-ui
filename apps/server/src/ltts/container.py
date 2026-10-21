@@ -18,14 +18,17 @@ from fastapi import Depends, Request
 from ltts.common import MB
 from ltts.db import Database
 from ltts.documents.bookmarks import BookmarkStore
+from ltts.documents.details import DocumentDetailsStore
 from ltts.documents.repository import DocumentRepository
 from ltts.documents.service import DocumentService
 from ltts.documents.styling import StylingStore
 from ltts.engines.registry import EngineRegistry
+from ltts.exports.audiobookshelf import Audiobookshelf
 from ltts.exports.service import ExportService
 from ltts.jobs import JobManager
 from ltts.modelstore.store import ModelStore
 from ltts.pronunciation.store import PronunciationStore
+from ltts.secrets import SecretStore
 from ltts.synthesis.cache import AudioCache
 from ltts.synthesis.service import SynthesisService
 from ltts.voices.profiles import CLONING_ENGINE, VoiceProfileService
@@ -62,6 +65,8 @@ class Services:
     pronunciations: PronunciationStore
     bookmarks: BookmarkStore
     styling: StylingStore
+    details: DocumentDetailsStore
+    audiobookshelf: Audiobookshelf
 
 
 def build_services(
@@ -86,6 +91,7 @@ def build_services(
     cache = AudioCache(settings.path("cache", "audio"), db, settings.audio_cache_max_mb * MB)
     pronunciations = PronunciationStore(db)
     styling = StylingStore(db)
+    details = DocumentDetailsStore(settings, db)
     synthesis = SynthesisService(registry, cache, documents, pronunciations.apply, styling)
     voices = VoiceProfileService(settings, db, cache.purge_voice)
     registry.attach_custom_voices(voices.resolve, lambda: voices.as_voices(lambda: registry.is_ready(CLONING_ENGINE)))
@@ -105,11 +111,13 @@ def build_services(
         voice_sessions=sessions,
         studio=studio,
         voice_sharing=VoiceSharing(settings, voices),
-        exports=ExportService(settings, jobs, documents, synthesis),
+        exports=ExportService(settings, jobs, documents, synthesis, details),
         preferences=PreferenceStore(db),
         pronunciations=pronunciations,
         bookmarks=BookmarkStore(db),
         styling=styling,
+        details=details,
+        audiobookshelf=Audiobookshelf(db, SecretStore(settings.path("secrets"))),
     )
 
 

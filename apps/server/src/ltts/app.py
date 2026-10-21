@@ -39,7 +39,8 @@ def _housekeeping(services: Services) -> None:
     shutil.rmtree(tmp, ignore_errors=True)
     tmp.mkdir(parents=True, exist_ok=True)
     services.audio_cache.evict()
-    log.info("startup housekeeping done", extra={"interrupted_jobs": interrupted})
+    orphans = services.exports.clean_orphans()
+    log.info("startup housekeeping done", extra={"interrupted_jobs": interrupted, "removed_exports": orphans})
 
 
 def _warm_up(services: Services) -> None:
@@ -98,10 +99,12 @@ def create_app(
     app.state.services = services
     install_error_handlers(app)
 
+    from ltts.documents.details_router import router as details_router
     from ltts.documents.router import router as documents_router
     from ltts.documents.styling_router import router as styling_router
     from ltts.engines.router import router as engines_router
     from ltts.exports.router import router as exports_router
+    from ltts.integrations_router import router as integrations_router
     from ltts.preferences import router as preferences_router
     from ltts.pronunciation.router import router as pronunciation_router
     from ltts.synthesis.router import router as audio_router
@@ -111,7 +114,7 @@ def create_app(
 
     for router in (system_router, documents_router, audio_router, engines_router, voices_router,
                    voice_sessions_router, exports_router, preferences_router, pronunciation_router,
-                   styling_router):  # fmt: skip
+                   styling_router, details_router, integrations_router):  # fmt: skip
         app.include_router(router)
     if static_dir is not None:
         _mount_static(app, static_dir)

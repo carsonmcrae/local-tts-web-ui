@@ -119,4 +119,5 @@ def save_progress(document_id: DocumentId, body: ProgressUpdate, services: Servi
 @router.delete("/{document_id}", status_code=204)
 def delete_document(document_id: DocumentId, services: ServicesDep) -> Response:
     services.document_repo.delete(document_id)
+    services.details.remove_cover(document_id)
     return Response(status_code=204)

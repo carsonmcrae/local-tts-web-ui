@@ -20,7 +20,7 @@ import time
 from collections.abc import Awaitable, Callable
 from concurrent.futures import Future
 
-from ltts.audio import encode_wav, finalize_segment
+from ltts.audio import Float32Array, encode_wav, finalize_segment, read_audio
 from ltts.documents.normalize import speech_text
 from ltts.documents.repository import DocumentRepository
 from ltts.documents.styling import SegmentPlan, Sound, StylingStore
@@ -119,6 +119,22 @@ class SynthesisService:
         after the sound to make first (only for an engine that performs it rather than reading it out)."""
         spoken = speech_text(self._pronounce(text)) or "."
         return f"[{sound}] {spoken}" if sound and voice.engine.id in SOUND_ENGINES else spoken
+
+    def key_for(self, voice: str | SegmentPlan, text: str, boundary: str, pace: float) -> str:
+        """The cache key a render would use; it changes whenever the audio would (text, voice, styling, engine)."""
+        plan = voice if isinstance(voice, SegmentPlan) else SegmentPlan(voice)
+        resolved = self._registry.resolve(plan.voice_id)
+        return self._key(resolved, self._spoken(text, resolved, plan.sound), boundary, pace, plan.effect)
+
+    def read(self, audio: CachedAudio) -> tuple[Float32Array, int]:
+        """A rendered clip's samples (exports keep their own copy, so cache eviction can't lose them)."""
+        return read_audio(audio.path)
+
+    def language_of(self, voice_id: str) -> str:
+        """A voice's language as a BCP 47 tag, such as ``en-US``."""
+        code = self._registry.resolve(voice_id).spec.language_code or "en"
+        language, _, region = code.partition("-")
+        return f"{language}-{region.upper()}" if region else language
 
     def plan_segment(self, document_id: str, index: int, text: str, voice_id: str) -> SegmentPlan:
         """Which voice reads a document sentence, with which effect and sound (none without styling)."""

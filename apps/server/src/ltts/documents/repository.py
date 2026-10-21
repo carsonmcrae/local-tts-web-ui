@@ -121,20 +121,13 @@ class DocumentRepository:
             ).fetchall()
         if not rows:
             raise NotFoundError("That section does not exist.", code="section_not_found")
-        return SectionContent(
-            section_index=section_index,
-            segments=[
-                SegmentOut(
-                    index=r["idx"],
-                    section_index=r["section_idx"],
-                    paragraph_index=r["paragraph_idx"],
-                    kind=r["kind"],
-                    boundary=r["boundary"],
-                    text=r["text"],
-                )
-                for r in rows
-            ],
-        )
+        return SectionContent(section_index=section_index, segments=[_segment(r) for r in rows])
+
+    def segments_detail(self, document_id: str) -> list[SegmentOut]:
+        """Every segment of a document, in order, with its paragraph and kind."""
+        with self._db.connect() as conn:
+            rows = conn.execute("SELECT * FROM segments WHERE document_id = ? ORDER BY idx", (document_id,)).fetchall()
+        return [_segment(r) for r in rows]
 
     def update_section(
         self, document_id: str, section_index: int, title: str | None, start_segment: int | None
@@ -233,3 +226,14 @@ def _move_start(
         (document_id, old - 1),
     )
     conn.execute("UPDATE segments SET boundary = 'section' WHERE document_id = ? AND idx = ?", (document_id, start - 1))
+
+
+def _segment(r: sqlite3.Row) -> SegmentOut:
+    return SegmentOut(
+        index=r["idx"],
+        section_index=r["section_idx"],
+        paragraph_index=r["paragraph_idx"],
+        kind=r["kind"],
+        boundary=r["boundary"],
+        text=r["text"],
+    )

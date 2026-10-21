@@ -1,196 +1,318 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2026 Carson McRae
-"""Purpose: Build downloadable audiobooks from a document as a cancellable background job.
+"""Purpose: Build audiobooks from a document as a background job that survives pauses, crashes and failures.
 
-Scope: Synthesises every segment in the chosen chapter range at export priority (so live playback
-stays responsive), streams audio into WAV or MP3 via libsndfile with title, album and track tags,
-optionally writes one file per chapter into a ZIP with an M3U playlist, optionally
-adds sentence-timed subtitles (SRT) next to each audio file, and reports progress. Because each
-segment is cached, a canceled or interrupted export resumes quickly instead of starting over.
-Does NOT belong: HTTP (``router.py``) or synthesis internals.
+Scope: Synthesises every sentence in the chosen chapter range at export priority (so live playback
+stays responsive) and saves each one as it finishes (``workspace.py``). A paused, failed, canceled
+or interrupted export (the app closed or crashed) resumes under the same job, generating only the
+sentences whose saved audio no longer matches, so a crash ten hours into a twenty-hour book costs
+one sentence, not ten hours. Only one export runs at a time; others wait their turn. When every
+sentence is saved, the parts become WAV or MP3 (one file or one per chapter, optional SRT), an M4B
+audiobook with chapters (``m4b.py``) or a read-along EPUB (``epub.py``), and the parts are removed.
+Canceling discards the parts; deleting removes everything.
+Does NOT belong: HTTP (``router.py``), synthesis internals or the output formats themselves.
 """
 
 from __future__ import annotations
 
 import logging
-import re
-import shutil
-import zipfile
-from dataclasses import dataclass, field
+import threading
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any
 
-import soundfile as sf
-
-from ltts.audio import PAUSE_SECONDS, Float32Array, read_audio
-from ltts.common import ApiModel
+from ltts.audio import Float32Array
 from ltts.config import Settings
+from ltts.documents.details import DocumentDetailsStore
 from ltts.documents.repository import DocumentRepository
 from ltts.errors import ConflictError, NotFoundError
-from ltts.jobs import JobContext, JobManager, JobOut, JobStatus
+from ltts.exports.assemble import Assembled, Layout, Row, assemble, package, safe_filename
+from ltts.exports.audiobookshelf import Audiobookshelf
+from ltts.exports.epub import EpubChapter, Sentence, write_epub
+from ltts.exports.m4b import Book, write_m4b
+from ltts.exports.models import ExportOut, ExportRequest
+from ltts.exports.workspace import ExportWorkspace
+from ltts.jobs import STOPPED, JobCanceledError, JobContext, JobManager, JobOut, JobStatus
 from ltts.synthesis.scheduler import PRIORITY_EXPORT
 from ltts.synthesis.service import SynthesisService
 
 log = logging.getLogger("ltts.exports")
-_SUBTYPES = {"wav": ("WAV", "PCM_16"), "mp3": ("MP3", "MPEG_LAYER_III")}
-
-
-class ExportRequest(ApiModel):
-    document_id: str
-    voice_id: str
-    pace: float = 1.0
-    format: Literal["wav", "mp3"] = "mp3"
-    layout: Literal["single", "chapters"] = "single"
-    first_section: int | None = None
-    last_section: int | None = None
-    captions: bool = False  # sentence-timed SRT subtitles next to each audio file
-
-
-def safe_filename(title: str, fallback: str = "audio") -> str:
-    cleaned = re.sub(r"[^\w\- ]+", "", title, flags=re.UNICODE).strip()
-    return re.sub(r"\s+", " ", cleaned)[:80] or fallback
-
-
-def srt_time(seconds: float) -> str:
-    """``HH:MM:SS,mmm`` as SubRip subtitles write it."""
-    millis = round(seconds * 1000)
-    hours, rest = divmod(millis, 3_600_000)
-    minutes, rest = divmod(rest, 60_000)
-    return f"{hours:02d}:{minutes:02d}:{rest // 1000:02d},{rest % 1000:03d}"
-
-
-@dataclass
-class _Track:
-    """One output audio file, its running length and the subtitle cue for each sentence in it."""
-
-    path: Path
-    handle: sf.SoundFile
-    seconds: float = 0.0
-    cues: list[tuple[float, float, str]] = field(default_factory=list)
-
-    def add(self, samples: Float32Array, rate: int, text: str, boundary: str) -> None:
-        self.handle.write(samples)
-        length = len(samples) / rate
-        # The cue ends where the sentence does, before the pause that follows it.
-        spoken = max(length - PAUSE_SECONDS.get(boundary, 0.3), 0.1)
-        self.cues.append((self.seconds, self.seconds + spoken, " ".join(text.split())))
-        self.seconds += length
-
-    def write_captions(self) -> Path:
-        path = self.path.with_suffix(".srt")
-        blocks = [f"{n}\n{srt_time(a)} --> {srt_time(b)}\n{text}\n" for n, (a, b, text) in enumerate(self.cues, 1)]
-        path.write_text("\n".join(blocks), encoding="utf-8", newline="\r\n")  # SubRip's usual line ends
-        return path
-
-
-def _naming(layout: str, title: str, chapter: str, section: int) -> tuple[str, dict[str, str]]:
-    """A track's file name (without extension) and tags: the whole book, or one chapter of it."""
-    if layout != "chapters":
-        return safe_filename(title), {"title": title, "album": title}
-    name = f"{section + 1:02d} - {safe_filename(chapter, 'Chapter')}"
-    return name, {"title": chapter or title, "album": title, "tracknumber": str(section + 1)}
-
-
-def _open_track(path: Path, rate: int, audio_format: str, tags: dict[str, str]) -> _Track:
-    fmt, subtype = _SUBTYPES[audio_format]
-    handle = sf.SoundFile(str(path), "w", rate, 1, subtype, format=fmt)
-    # Tags describe the user's document only; set before any audio, as WAV writes them into its header.
-    for name, value in tags.items():
-        setattr(handle, name, value)
-    return _Track(path, handle)
+KIND = "export"
+_LABELS = {"mp3": "MP3", "wav": "WAV"}
 
 
 class ExportService:
     def __init__(
-        self, settings: Settings, jobs: JobManager, documents: DocumentRepository, synthesis: SynthesisService
+        self,
+        settings: Settings,
+        jobs: JobManager,
+        documents: DocumentRepository,
+        synthesis: SynthesisService,
+        details: DocumentDetailsStore,
     ):
         self._settings = settings
         self._jobs = jobs
         self._documents = documents
         self._synthesis = synthesis
+        self._details = details
+        self._turn = threading.Lock()  # one export synthesises at a time
 
     def folder(self, job_id: str) -> Path:
         return self._settings.path("exports", job_id)
 
+    # -- lifecycle -------------------------------------------------------------
     def start(self, request: ExportRequest) -> JobOut:
         detail = self._documents.get(request.document_id)
         self._synthesis.cached_or_none(request.voice_id, ".", "sentence", request.pace)  # validates voice early
         payload = request.model_dump(by_alias=True)
         payload["title"] = detail.title
-        return self._jobs.submit("export", payload, lambda ctx: self._run(ctx, request, detail.title))
+        return self._jobs.submit(KIND, payload, lambda ctx: self._run(ctx, request, detail.title))
+
+    def _stopped(self, job_id: str) -> JobOut:
+        job = self._jobs.get(job_id)
+        if job.kind != KIND:
+            raise NotFoundError("That export doesn't exist.", code="export_not_found")
+        return job
 
     def resume(self, job_id: str) -> JobOut:
-        job = self._jobs.get(job_id)
-        if job.kind != "export" or job.status not in (
-            JobStatus.CANCELED,
-            JobStatus.INTERRUPTED,
-            JobStatus.FAILED,
-        ):
+        """Carry on a paused, failed, canceled or interrupted export; saved sentences are reused."""
+        job = self._stopped(job_id)
+        if job.status not in STOPPED:
             raise ConflictError("Only stopped exports can be resumed.", code="not_resumable")
-        return self.start(ExportRequest.model_validate(job.payload))
+        request = ExportRequest.model_validate(job.payload)
+        title = str(job.payload.get("title") or "audio")
+        return self._jobs.restart(job_id, lambda ctx: self._run(ctx, request, title))
+
+    def pause(self, job_id: str) -> JobOut:
+        self._stopped(job_id)
+        return self._jobs.pause(job_id)
+
+    def cancel(self, job_id: str) -> JobOut:
+        """Stop the export and discard its saved sentences (a paused export is canceled at once)."""
+        job = self._stopped(job_id)
+        if job.status in STOPPED:
+            self._jobs.mark(job_id, JobStatus.CANCELED, "Canceled")
+        else:
+            self._jobs.cancel(job_id)
+        ExportWorkspace(self.folder(job_id)).clear_parts()
+        return self._jobs.get(job_id)
+
+    def recent(self) -> list[ExportOut]:
+        """Recent exports with what each one has saved, newest first."""
+        return [self._describe(job) for job in self._jobs.list_recent(kind=KIND, limit=20)]
+
+    def describe(self, job_id: str) -> ExportOut:
+        return self._describe(self._stopped(job_id))
+
+    def _describe(self, job: JobOut) -> ExportOut:
+        workspace = ExportWorkspace(self._settings.resolved_data_dir / "exports" / job.id)
+        request = ExportRequest.model_validate(job.payload)
+        try:
+            total = len(self._rows(request))
+        except NotFoundError:
+            total = 0
+        return ExportOut(
+            job=job,
+            title=str(job.payload.get("title") or ""),
+            format=request.format,
+            sentences=total,
+            saved_sentences=len(workspace.existing()),
+            working_bytes=workspace.bytes_used(),
+        )
 
     def output(self, job_id: str) -> tuple[Path, str]:
         job = self._jobs.get(job_id)
-        if job.kind != "export" or job.status != JobStatus.SUCCEEDED or not job.result:
+        if job.kind != KIND or job.status != JobStatus.SUCCEEDED or not job.result:
             raise NotFoundError("This export isn't ready.", code="export_not_ready")
         path = self.folder(job_id) / str(job.result["filename"])
         if not path.is_file():
             raise NotFoundError("The exported file was removed.", code="export_missing")
         return path, str(job.result["filename"])
 
+    def send_to_audiobookshelf(self, job_id: str, shelf: Audiobookshelf) -> JobOut:
+        """Upload a finished single-file export (and the document's cover) as a background job."""
+        path, _ = self.output(job_id)
+        shelf.ready()
+        if path.suffix.lower() not in (".m4b", ".mp3", ".wav"):
+            raise ConflictError(
+                "Export one M4B or MP3 file to send it to Audiobookshelf.", code="audiobookshelf_format"
+            )
+        job = self._jobs.get(job_id)
+        request = ExportRequest.model_validate(job.payload)
+        title = str(job.payload.get("title") or path.stem)
+        author = self._details.get(request.document_id).author
+        cover = self._details.cover(request.document_id)
+
+        def work(ctx: JobContext) -> dict[str, Any]:
+            ctx.update(0.1, "Sending to Audiobookshelf…", force=True)
+            files = [path]
+            staged = None
+            if cover is not None:
+                staged = self.folder(ctx.job_id) / f"cover{cover.path.suffix}"
+                staged.write_bytes(cover.path.read_bytes())
+                files.append(staged)
+            try:
+                shelf.upload(files, title, author)
+            finally:
+                if staged is not None:
+                    staged.unlink(missing_ok=True)
+            return {"sent": path.name}
+
+        return self._jobs.submit("audiobookshelf", {"exportId": job_id, "title": title}, work, key=job_id)
+
     def delete(self, job_id: str) -> None:
-        shutil.rmtree(self._settings.resolved_data_dir / "exports" / job_id, ignore_errors=True)
+        if self._jobs.get(job_id).status in (JobStatus.QUEUED, JobStatus.RUNNING):
+            raise ConflictError("Pause or cancel the export before deleting it.", code="export_running")
+        ExportWorkspace(self._settings.resolved_data_dir / "exports" / job_id).remove()
+
+    def clean_orphans(self) -> int:
+        """Remove export folders whose job no longer exists or was canceled (startup housekeeping)."""
+        root = self._settings.resolved_data_dir / "exports"
+        if not root.is_dir():
+            return 0
+        removed = 0
+        for folder in root.iterdir():
+            try:
+                job = self._jobs.get(folder.name)
+            except NotFoundError:
+                job = None
+            if job is None or job.status == JobStatus.CANCELED:
+                ExportWorkspace(folder).remove()
+                removed += 1
+        return removed
+
+    # -- the job ---------------------------------------------------------------
+    def _rows(self, req: ExportRequest) -> list[Row]:
+        return [
+            Row(index, section, text, boundary)
+            for index, section, text, boundary in self._documents.all_segments(req.document_id)
+            if (req.first_section is None or section >= req.first_section)
+            and (req.last_section is None or section <= req.last_section)
+        ]
 
     def _run(self, ctx: JobContext, req: ExportRequest, title: str) -> dict[str, Any]:
-        rows = [
-            r for r in self._documents.all_segments(req.document_id)
-            if (req.first_section is None or r[1] >= req.first_section)
-            and (req.last_section is None or r[1] <= req.last_section)
-        ]  # fmt: skip
+        ctx.update(0.0, "Waiting for another export to finish…", force=True)
+        try:
+            with self._turn:
+                return self._export(ctx, req, title)
+        except JobCanceledError:
+            if not self._jobs.pausing(ctx.job_id):
+                ExportWorkspace(self.folder(ctx.job_id)).clear_parts()  # canceled: nothing is kept
+            raise
+
+    def _export(self, ctx: JobContext, req: ExportRequest, title: str) -> dict[str, Any]:
+        rows = self._rows(req)
         if not rows:
             raise ConflictError("There's nothing to export in that range.", code="empty_export")
-        detail = self._documents.get(req.document_id)
-        titles = {s.index: s.title for s in detail.sections}
-        folder = self.folder(ctx.job_id)
-        base = safe_filename(title)
-        tracks: dict[int, _Track] = {}
-        duration = 0.0
-        try:
-            for done, (index, section, text, boundary) in enumerate(rows):
-                ctx.check()
-                plan = self._synthesis.plan_segment(req.document_id, index, text, req.voice_id)
-                audio = self._synthesis.render_blocking(
-                    plan, text, boundary, req.pace, PRIORITY_EXPORT, lambda: ctx.canceled
-                )
-                samples, rate = read_audio(audio.path)
-                key = section if req.layout == "chapters" else -1
-                if key not in tracks:
-                    name, tags = _naming(req.layout, title, titles.get(section, ""), section)
-                    tracks[key] = _open_track(folder / f"{name}.{req.format}", rate, req.format, tags)
-                tracks[key].add(samples, rate, text, boundary)
-                duration += audio.duration_s
-                ctx.update((done + 1) / len(rows), f"Generated {done + 1} of {len(rows)} passages")
-                log.debug("export progress", extra={"job_id": ctx.job_id, "segment": index})
-        finally:
-            for track in tracks.values():
-                track.handle.close()
-        files = [track.path for track in tracks.values()]
-        captions = [track.write_captions() for track in tracks.values()] if req.captions else []
-        return self._finish(folder, base, req, files, captions, duration)
+        workspace = ExportWorkspace(self.folder(ctx.job_id))
+        keys = self._synthesise(ctx, req, rows, workspace)
+        ctx.update(0.97, "Putting the audiobook together…", force=True)
+        result = self._build(ctx, req, title, rows, keys, workspace)
+        workspace.clear_parts()
+        return result
 
-    def _finish(
-        self, folder: Path, base: str, req: ExportRequest, files: list[Path], captions: list[Path], duration: float
+    def _synthesise(
+        self, ctx: JobContext, req: ExportRequest, rows: list[Row], workspace: ExportWorkspace
+    ) -> dict[int, str]:
+        """Make sure every sentence is saved with its current audio; returns each sentence's key."""
+        keys: dict[int, str] = {}
+        reused = 0
+        for done, row in enumerate(rows):
+            ctx.check()
+            plan = self._synthesis.plan_segment(req.document_id, row.index, row.text, req.voice_id)
+            key = self._synthesis.key_for(plan, row.text, row.boundary, req.pace)
+            keys[row.index] = key
+            if workspace.has(row.index, key):
+                reused += 1
+            else:
+                audio = self._synthesis.render_blocking(
+                    plan, row.text, row.boundary, req.pace, PRIORITY_EXPORT, lambda: ctx.canceled
+                )
+                samples, rate = self._synthesis.read(audio)
+                workspace.save(row.index, key, samples, rate)
+            ctx.update(0.96 * (done + 1) / len(rows), _progress(done + 1, len(rows), reused))
+        return keys
+
+    def _build(
+        self,
+        ctx: JobContext,
+        req: ExportRequest,
+        title: str,
+        rows: list[Row],
+        keys: dict[int, str],
+        workspace: ExportWorkspace,
     ) -> dict[str, Any]:
-        if req.layout == "single" and not captions:
-            target = files[0]
+        folder = self.folder(ctx.job_id)
+        for old in folder.iterdir():
+            if old.is_file():
+                old.unlink()  # a previous, unfinished assembly
+        base = safe_filename(title)
+        titles = {s.index: s.title for s in self._documents.get(req.document_id).sections}
+
+        def audio(row: Row) -> tuple[Float32Array, int]:
+            return workspace.read(workspace.part(row.index, keys[row.index]))
+
+        audio_format = {"m4b": "wav", "epub": "mp3"}.get(req.format, req.format)
+        per_chapter = req.layout == "chapters" or req.format == "epub"
+        built = assemble(rows, audio, folder, Layout(title, titles, audio_format, per_chapter), ctx.check)
+        if req.format == "m4b":
+            target = self._m4b(ctx, req, title, base, built)
+        elif req.format == "epub":
+            target = self._epub(req, title, base, rows, built)
         else:
-            kind = "chapters" if req.layout == "chapters" else "with subtitles"
-            target = folder / f"{base} ({req.format.upper()} {kind}).zip"
-            playlist = "#EXTM3U\n" + "".join(f"{p.name}\n" for p in files)
-            with zipfile.ZipFile(target, "w", compression=zipfile.ZIP_STORED) as archive:
-                for path in [*files, *captions]:
-                    archive.write(path, arcname=path.name)
-                    path.unlink()
-                if req.layout == "chapters":
-                    archive.writestr(f"{base}.m3u", playlist)
-        return {"filename": target.name, "sizeBytes": target.stat().st_size, "durationS": round(duration, 1)}
+            captions = [track.write_captions() for track in built.tracks] if req.captions else []
+            label = f"{_LABELS[req.format]} {'chapters' if per_chapter else 'with subtitles'}"
+            files = [track.path for track in built.tracks] + captions
+            target = package(folder, base, label, files, playlist=per_chapter)
+        return {"filename": target.name, "sizeBytes": target.stat().st_size, "durationS": round(built.duration, 1)}
+
+    def _m4b(self, ctx: JobContext, req: ExportRequest, title: str, base: str, built: Assembled) -> Path:
+        details = self._details.get(req.document_id)
+        cover = self._details.cover(req.document_id) if req.use_cover else None
+        tags = {
+            "title": title, "album": title, "artist": details.author or "", "album_artist": details.author or "",
+            "composer": details.narrator or "", "genre": "Audiobook", "description": details.description or "",
+            "synopsis": details.description or "", "media_type": "2",  # 2 marks the file as an audiobook
+        }  # fmt: skip
+        wav = built.tracks[0].path
+        output = self.folder(ctx.job_id) / f"{base}.m4b"
+        timeout = max(600.0, built.duration)  # encoding is far faster than real time
+        book = Book(tags, built.chapters, cover.path if cover else None)
+        write_m4b(wav, output, book, lambda: ctx.canceled, timeout)
+        wav.unlink(missing_ok=True)
+        if req.captions:
+            captions = built.tracks[0].write_captions()
+            return package(self.folder(ctx.job_id), base, "M4B with subtitles", [output, captions], playlist=False)
+        return output
+
+    def _epub(self, req: ExportRequest, title: str, base: str, rows: list[Row], built: Assembled) -> Path:
+        segments = {s.index: s for s in self._documents.segments_detail(req.document_id)}
+        chapters = []
+        for track in built.tracks:
+            sentences = [
+                Sentence(
+                    row.index, segments[row.index].paragraph_index, segments[row.index].kind == "heading", row.text
+                )
+                for row in rows
+                if row.section == track.section
+            ]
+            chapter_title = next((c.title for c in built.chapters if c.section == track.section), title)
+            chapters.append(EpubChapter(chapter_title, sentences, track.path, track.cues, track.seconds))
+        details = self._details.get(req.document_id)
+        cover = self._details.cover(req.document_id) if req.use_cover else None
+        output = built.tracks[0].path.parent / f"{base} (read-along).epub"
+        write_epub(
+            output,
+            chapters,
+            title=title,
+            author=details.author,
+            language=self._synthesis.language_of(req.voice_id),
+            cover=(cover.path.read_bytes(), cover.media_type) if cover else None,
+        )
+        for track in built.tracks:
+            track.path.unlink(missing_ok=True)
+        return output
+
+
+def _progress(done: int, total: int, reused: int) -> str:
+    kept = f" ({reused} kept from before)" if reused else ""
+    return f"Generated {done} of {total} sentences{kept}"

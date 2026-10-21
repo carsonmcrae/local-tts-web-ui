@@ -118,6 +118,43 @@ export type paths = {
     patch?: never;
     trace?: never;
   };
+  '/api/documents/{document_id}/cover': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get Cover */
+    get: operations['get_cover_api_documents__document_id__cover_get'];
+    /** Upload Cover */
+    put: operations['upload_cover_api_documents__document_id__cover_put'];
+    post?: never;
+    /** Delete Cover */
+    delete: operations['delete_cover_api_documents__document_id__cover_delete'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/documents/{document_id}/details': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get Details */
+    get: operations['get_details_api_documents__document_id__details_get'];
+    /** Update Details */
+    put: operations['update_details_api_documents__document_id__details_put'];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/documents/{document_id}/progress': {
     parameters: {
       query?: never;
@@ -334,7 +371,8 @@ export type paths = {
       path?: never;
       cookie?: never;
     };
-    get?: never;
+    /** List Exports */
+    get: operations['list_exports_api_exports_get'];
     put?: never;
     /** Start Export */
     post: operations['start_export_api_exports_post'];
@@ -351,11 +389,46 @@ export type paths = {
       path?: never;
       cookie?: never;
     };
-    get?: never;
+    /** Get Export */
+    get: operations['get_export_api_exports__job_id__get'];
     put?: never;
     post?: never;
     /** Delete Export */
     delete: operations['delete_export_api_exports__job_id__delete'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/exports/{job_id}/audiobookshelf': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Send To Audiobookshelf */
+    post: operations['send_to_audiobookshelf_api_exports__job_id__audiobookshelf_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/exports/{job_id}/cancel': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Cancel Export */
+    post: operations['cancel_export_api_exports__job_id__cancel_post'];
+    delete?: never;
     options?: never;
     head?: never;
     patch?: never;
@@ -372,6 +445,23 @@ export type paths = {
     get: operations['download_export_api_exports__job_id__download_get'];
     put?: never;
     post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/exports/{job_id}/pause': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Pause Export */
+    post: operations['pause_export_api_exports__job_id__pause_post'];
     delete?: never;
     options?: never;
     head?: never;
@@ -406,6 +496,45 @@ export type paths = {
     get: operations['health_api_health_get'];
     put?: never;
     post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/integrations/audiobookshelf': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get Audiobookshelf */
+    get: operations['get_audiobookshelf_api_integrations_audiobookshelf_get'];
+    /** Save Audiobookshelf */
+    put: operations['save_audiobookshelf_api_integrations_audiobookshelf_put'];
+    post?: never;
+    /** Forget Audiobookshelf */
+    delete: operations['forget_audiobookshelf_api_integrations_audiobookshelf_delete'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/integrations/audiobookshelf/test': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Test Audiobookshelf
+     * @description Check the address and key by listing the libraries and folders the key can upload to.
+     */
+    post: operations['test_audiobookshelf_api_integrations_audiobookshelf_test_post'];
     delete?: never;
     options?: never;
     head?: never;
@@ -912,6 +1041,49 @@ export type paths = {
 export type webhooks = Record<string, never>;
 export type components = {
   schemas: {
+    /** AbsFolder */
+    AbsFolder: {
+      /** Id */
+      id: string;
+      /** Path */
+      path: string;
+    };
+    /** AbsLibrary */
+    AbsLibrary: {
+      /** Folders */
+      folders: components['schemas']['AbsFolder'][];
+      /** Id */
+      id: string;
+      /** Name */
+      name: string;
+    };
+    /** AbsSettingsIn */
+    AbsSettingsIn: {
+      /** Apikey */
+      apiKey?: string | null;
+      /** Folderid */
+      folderId?: string | null;
+      /** Libraryid */
+      libraryId?: string | null;
+      /** Url */
+      url: string;
+    };
+    /** AbsSettingsOut */
+    AbsSettingsOut: {
+      /** Configured */
+      configured: boolean;
+      /** Folderid */
+      folderId?: string | null;
+      /**
+       * Haskey
+       * @default false
+       */
+      hasKey: boolean;
+      /** Libraryid */
+      libraryId?: string | null;
+      /** Url */
+      url?: string | null;
+    };
     /** BookmarkIn */
     BookmarkIn: {
       /**
@@ -993,6 +1165,29 @@ export type components = {
     ConsentInfo: {
       /** Statement */
       statement: string;
+    };
+    /** DetailsIn */
+    DetailsIn: {
+      /** Author */
+      author?: string | null;
+      /** Description */
+      description?: string | null;
+      /** Narrator */
+      narrator?: string | null;
+    };
+    /** DetailsOut */
+    DetailsOut: {
+      /** Author */
+      author?: string | null;
+      /** Description */
+      description?: string | null;
+      /**
+       * Hascover
+       * @default false
+       */
+      hasCover: boolean;
+      /** Narrator */
+      narrator?: string | null;
     };
     /** DocumentDetail */
     DocumentDetail: {
@@ -1133,6 +1328,26 @@ export type components = {
        */
       updateAvailable: boolean;
     };
+    /**
+     * ExportOut
+     * @description An export job with what its working folder already holds.
+     */
+    ExportOut: {
+      /**
+       * Format
+       * @enum {string}
+       */
+      format: 'wav' | 'mp3' | 'm4b' | 'epub';
+      job: components['schemas']['JobOut'];
+      /** Savedsentences */
+      savedSentences: number;
+      /** Sentences */
+      sentences: number;
+      /** Title */
+      title: string;
+      /** Workingbytes */
+      workingBytes: number;
+    };
     /** ExportRequest */
     ExportRequest: {
       /**
@@ -1149,7 +1364,7 @@ export type components = {
        * @default mp3
        * @enum {string}
        */
-      format: 'wav' | 'mp3';
+      format: 'wav' | 'mp3' | 'm4b' | 'epub';
       /** Lastsection */
       lastSection?: number | null;
       /**
@@ -1163,6 +1378,11 @@ export type components = {
        * @default 1
        */
       pace: number;
+      /**
+       * Usecover
+       * @default true
+       */
+      useCover: boolean;
       /** Voiceid */
       voiceId: string;
     };
@@ -1252,7 +1472,8 @@ export type components = {
      * JobStatus
      * @enum {string}
      */
-    JobStatus: 'queued' | 'running' | 'succeeded' | 'failed' | 'canceled' | 'interrupted';
+    JobStatus:
+      'queued' | 'running' | 'succeeded' | 'failed' | 'canceled' | 'interrupted' | 'paused';
     /** NoteUpdate */
     NoteUpdate: {
       /** Note */
@@ -2013,6 +2234,161 @@ export interface operations {
       };
     };
   };
+  get_cover_api_documents__document_id__cover_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        document_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  upload_cover_api_documents__document_id__cover_put: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        document_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DetailsOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  delete_cover_api_documents__document_id__cover_delete: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        document_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  get_details_api_documents__document_id__details_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        document_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DetailsOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  update_details_api_documents__document_id__details_put: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        document_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['DetailsIn'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DetailsOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
   save_progress_api_documents__document_id__progress_put: {
     parameters: {
       query?: never;
@@ -2457,6 +2833,26 @@ export interface operations {
       };
     };
   };
+  list_exports_api_exports_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ExportOut'][];
+        };
+      };
+    };
+  };
   start_export_api_exports_post: {
     parameters: {
       query?: never;
@@ -2477,6 +2873,37 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['JobOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  get_export_api_exports__job_id__get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        job_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ExportOut'];
         };
       };
       /** @description Validation Error */
@@ -2519,6 +2946,68 @@ export interface operations {
       };
     };
   };
+  send_to_audiobookshelf_api_exports__job_id__audiobookshelf_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        job_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      202: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['JobOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  cancel_export_api_exports__job_id__cancel_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        job_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      202: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['JobOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
   download_export_api_exports__job_id__download_get: {
     parameters: {
       query?: never;
@@ -2536,6 +3025,37 @@ export interface operations {
           [name: string]: unknown;
         };
         content?: never;
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  pause_export_api_exports__job_id__pause_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        job_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      202: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['JobOut'];
+        };
       };
       /** @description Validation Error */
       422: {
@@ -2595,6 +3115,97 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['Health'];
+        };
+      };
+    };
+  };
+  get_audiobookshelf_api_integrations_audiobookshelf_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['AbsSettingsOut'];
+        };
+      };
+    };
+  };
+  save_audiobookshelf_api_integrations_audiobookshelf_put: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['AbsSettingsIn'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['AbsSettingsOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  forget_audiobookshelf_api_integrations_audiobookshelf_delete: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  test_audiobookshelf_api_integrations_audiobookshelf_test_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['AbsLibrary'][];
         };
       };
     };

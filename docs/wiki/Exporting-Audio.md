@@ -32,7 +32,7 @@ change it.
 ## Running, pausing and resuming
 
 Press **Start export**. A progress bar shows how many sentences are done. Exports run at a lower
-priority than live playback, so you can keep listening while one runs, and one export runs at a time.
+priority than live playback, so you can keep listening while one runs.
 
 - **Pause** stops after the current sentence and keeps everything made so far. **Resume** carries on
   with only the missing sentences.
@@ -43,10 +43,43 @@ priority than live playback, so you can keep listening while one runs, and one e
   sentence is made again when you resume.
 - Skipped sentences (page furniture the [cleanup](Reading-Documents#headers-page-numbers-and-footnote-markers)
   found, or ones you skip) are left out, just as playback leaves them out.
-- **Cancel export** (it asks first) stops and discards the sentences made so far.
+- **Cancel export** (it asks first) stops and discards the sentences made so far. Everything it made is
+  removed as soon as it stops.
 
 The **Exports** page (in the navigation) lists every export: the ones ready to resume first, then those
 in progress, then earlier ones, with **Download**, **Send to Audiobookshelf** and **Delete file**.
+
+## One at a time, and a short queue
+
+One export is made at a time. Start more and they wait their turn, in order: their card says
+**Waiting**, its place in line (**Next in line**, **2nd in line**) and how many exports are ahead.
+Up to four can wait. With one being made and four waiting, the queue is full: a new export, or a
+**Resume**, is refused with a note saying so, and the Exports page explains why. To make room, wait
+for one to finish, or pause or cancel one (a waiting export stops at once). These limits are the same
+for everyone using the app, this computer and paired phones and tablets alike.
+
+Building or fine-tuning a studio voice uses the same engine. Only one of those runs at a time, and an
+export can run beside it, more slowly. The Exports page says so while that happens.
+
+## Disk space
+
+Before an export starts or resumes, TTSNative estimates the space it needs: the sentences it saves
+along the way plus the finished files. It refuses the export if that would leave less than the space
+it always keeps free (500 MB unless you change `LTTS_MIN_FREE_DISK_MB`), counting what the waiting
+exports still need too. The Exports page warns when the disk is nearly full. While an export runs it
+checks again every few sentences. If space runs out it stops as **Failed** with a note, keeping what it
+made: free up space, then press **Resume**. WAV and M4B need the most room. MP3, or fewer chapters,
+need less.
+
+## After a crash, and exports left unfinished
+
+When TTSNative starts after a crash or a forced close, exports that were running are marked
+**Interrupted**. Their saved sentences are kept for **Resume**. Half-built files and temporary files
+are removed, and so is anything left by canceled exports.
+
+Stopped exports are never deleted for you, however long they wait. An export left for two weeks or more
+shows a reminder of the space its saved sentences use, so you can resume it or cancel it to free the
+space.
 
 ## M4B and ffmpeg
 

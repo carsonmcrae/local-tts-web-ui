@@ -3,7 +3,7 @@
 TTSNative follows [Semantic Versioning](https://semver.org/): **major** for changes that break data,
 setup or behaviour people rely on, **minor** for anything new, **patch** for fixes, security fixes and
 maintenance. The design behind this guide is in
-[desktop-and-releases.md](../architecture/desktop-and-releases.md) (ADR-15 to ADR-17).
+[desktop-and-releases.md](../architecture/desktop-and-releases.md) (ADR-19 to ADR-21).
 
 ## The flow
 

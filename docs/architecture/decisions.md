@@ -128,7 +128,7 @@ when a choice changes the stack, a trust boundary, data storage or the setup exp
   the app, so the page says so. Revisit when a small (under ~50 MB) model with a licence-clean
   phonemiser can be self-hosted within Pages' limits.
 
-## ADR-15: A Tauri window around the existing UI and server, with a bundled Python
+## ADR-19: A Tauri window around the existing UI and server, with a bundled Python
 
 - **Context:** People without developer tools should install TTSNative like any Windows app. The React
   UI and the FastAPI server already work well together on loopback, and the reader must not be
@@ -147,7 +147,7 @@ when a choice changes the stack, a trust boundary, data storage or the setup exp
   cloning stays an on-demand download. Windows only for now; the modules are separate so other
   platforms can follow.
 
-## ADR-16: Updates only from GitHub Releases, verified and confirmed
+## ADR-20: Updates only from GitHub Releases, verified and confirmed
 
 - **Context:** Installed copies should learn about new versions without a cloud service, without
   telemetry and without trusting anything but the project's own releases.
@@ -160,7 +160,7 @@ when a choice changes the stack, a trust boundary, data storage or the setup exp
 - **Consequences:** One new network connection, documented in the privacy summary. The updater's
   private key must be kept safe and backed up: without it installed copies can't verify updates.
 
-## ADR-17: Change files decide the version; people approve the notes
+## ADR-21: Change files decide the version; people approve the notes
 
 - **Context:** Several branches are often in flight. Editing one version number or one `Unreleased`
   section on each branch caused conflicts and let a merge silently skip its release impact.

@@ -9,7 +9,7 @@
 > which the app, the website and GitHub all show.
 
 This document records the audit, the decisions and their trade-offs. The ADRs in
-[decisions.md](decisions.md) (ADR-15 to ADR-17) summarise them, and
+[decisions.md](decisions.md) (ADR-19 to ADR-21) summarise them, and
 [release-process.md](../guides/release-process.md) is the maintainer's checklist.
 
 ## 1. What existed (audit, 2026-10-21)

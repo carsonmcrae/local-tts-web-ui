@@ -222,6 +222,11 @@ MIGRATIONS: tuple[str, ...] = (
     ALTER TABLE lan_devices ADD COLUMN refused_address TEXT;
     ALTER TABLE lan_devices ADD COLUMN refused_at TEXT;
     """,
+    # a pronunciation can be for one document instead of every one (deleted with that document)
+    """
+    ALTER TABLE pronunciations ADD COLUMN document_id TEXT REFERENCES documents(id) ON DELETE CASCADE;
+    CREATE INDEX pronunciations_by_document ON pronunciations(document_id);
+    """,
 )
 
 

@@ -5,8 +5,8 @@
 Scope: Plans a document sentence with ``documents.styling``: its voice (its own, its character's,
 the dialogue voice or the reader's), effect, sound, speaking style, take and pause, and narration and
 quoted speech voiced separately where the cast asks for it. It then rewrites display text into speech
-text (the sentence's own pronunciations, the dictionary, normalisation) and builds a render job
-(``render.py``). The job waits on the right engine's queue at the right priority, and the result is
+text (the sentence's own pronunciations, its document's and the library's, normalisation) and builds a
+render job (``render.py``). The job waits on the right engine's queue at the right priority, and the result is
 cached by a key that changes whenever the sound would. Offers a blocking API for export jobs and an
 async one that stops waiting (and releases queued work) when the HTTP client disconnects, plus
 candidate takes of one sentence, and which sentences are skipped (left out of exports and playback).
@@ -22,6 +22,7 @@ import threading
 import time
 from collections.abc import Awaitable, Callable
 from concurrent.futures import Future
+from dataclasses import dataclass, fields
 
 from ltts.audio import Float32Array, encode_wav, read_audio
 from ltts.documents.casting import CastingStore
@@ -43,6 +44,15 @@ class ClientGoneError(Exception):
     """The requester disconnected before audio was ready."""
 
 
+@dataclass(frozen=True, slots=True)
+class SpokenPlan(SegmentPlan):
+    """A plan that also says whose pronunciations apply: a document sentence's document's as well as the
+    library's, or none (``dictionary=False``) to hear a word exactly as written."""
+
+    document_id: str | None = None
+    dictionary: bool = True
+
+
 def _constant(value: str) -> Callable[[re.Match[str]], str]:
     return lambda _match: value
 
@@ -60,14 +70,14 @@ class SynthesisService:
         registry: EngineRegistry,
         cache: AudioCache,
         documents: DocumentRepository,
-        pronounce: Callable[[str], str] = lambda text: text,
+        pronounce: Callable[[str, str | None], str] = lambda text, _document_id: text,
         styling: StylingStore | None = None,
         casting: CastingStore | None = None,
     ):
         self._registry = registry
         self._cache = cache
         self._documents = documents
-        self._pronounce = pronounce  # the pronunciation dictionary, applied before normalising
+        self._pronounce = pronounce  # the pronunciation dictionary (text, document), applied before normalising
         self._styling = styling
         self._casting = casting
         self._schedulers: dict[str, EngineScheduler] = {}
@@ -81,11 +91,13 @@ class SynthesisService:
 
     # -- planning --------------------------------------------------------------
     def plan_segment(self, document_id: str, index: int, text: str, voice_id: str) -> SegmentPlan:
-        """Which voices read a document sentence, and how (a plain plan without styling)."""
-        if self._styling is None:
-            return SegmentPlan(voice_id)
-        characters = self._casting.voices(document_id) if self._casting else None
-        return self._styling.plan(document_id, index, text, voice_id, characters)
+        """Which voices read a document sentence, and how (a plain plan without styling), with the
+        document's own pronunciations."""
+        plan = SegmentPlan(voice_id)
+        if self._styling is not None:
+            characters = self._casting.voices(document_id) if self._casting else None
+            plan = self._styling.plan(document_id, index, text, voice_id, characters)
+        return SpokenPlan(**{field.name: getattr(plan, field.name) for field in fields(plan)}, document_id=document_id)
 
     def skipped(self, document_id: str) -> set[int]:
         """The sentences of a document that are never read (the cleanup's finds, or skipped by hand)."""
@@ -95,7 +107,11 @@ class SynthesisService:
         """What the engine is asked to say: the sentence's and the dictionary's pronunciations, speech
         normalisation, then the sound to make first (only for an engine that performs it)."""
         written = _replace(text, plan.replacements) if plan and plan.replacements else text
-        spoken = speech_text(self._pronounce(written)) or "."
+        if not isinstance(plan, SpokenPlan):
+            written = self._pronounce(written, None)
+        elif plan.dictionary:
+            written = self._pronounce(written, plan.document_id)
+        spoken = speech_text(written) or "."
         return f"[{sound}] {spoken}" if sound and voice.engine.id in SOUND_ENGINES else spoken
 
     def job(self, voice: str | SegmentPlan, text: str, boundary: str, pace: float) -> RenderJob:

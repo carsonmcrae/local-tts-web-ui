@@ -185,17 +185,17 @@ against the idle figures in [performance.md](../guides/performance.md) (Kokoro r
 the first sentence after the model loaded; peak memory is the benchmark process with every service and
 the engine's worker, so it is above the server's usual footprint.
 
-| Voice                              | Engine, device   | Load      | First sentence | Median sentence | RTF  | Peak RSS | Same text twice                                   |
-| ---------------------------------- | ---------------- | --------- | -------------- | --------------- | ---- | -------- | ------------------------------------------------- |
-| Kokoro af_heart (default, grade A) | Kokoro, CPU      | 1.5 s     | 1.9 s          | 1.09 s          | 0.31 | 968 MB   | Length differs by a few ms; samples differ        |
-| Kokoro af_bella (A-)               | Kokoro, CPU      | loaded    | 2.1 s          | 0.85 s          | 0.26 | 1.3 GB   | same                                              |
-| Kokoro af_nicole (B-)              | Kokoro, CPU      | loaded    | 2.7 s          | 1.47 s          | 0.30 | 1.5 GB   | same                                              |
-| Kokoro bf_emma (B-)                | Kokoro, CPU      | loaded    | 4.0 s          | 1.45 s          | 0.39 | 1.5 GB   | same                                              |
-| Kokoro bm_george (C)               | Kokoro, CPU      | loaded    | 4.1 s          | 1.18 s          | 0.31 | 1.5 GB   | same                                              |
-| Kokoro am_michael (C+)             | Kokoro, CPU      | loaded    | 3.9 s          | 1.26 s          | 0.34 | 1.5 GB   | same                                              |
-| Kokoro am_fenrir (C+)              | Kokoro, CPU      | loaded    | 1.9 s          | 0.94 s          | 0.30 | 1.5 GB   | Same length; samples differ (max 0.87 full scale) |
-| Chatterbox default                 | Chatterbox, CUDA | _(run B)_ |                |                 |      |          |                                                   |
-| Owner's studio voice (local only)  | Chatterbox, CUDA | _(run B)_ |                |                 |      |          |                                                   |
+| Voice                              | Engine, device   | Load   | First sentence | Median sentence | RTF  | Peak RSS           | Same text twice                                       |
+| ---------------------------------- | ---------------- | ------ | -------------- | --------------- | ---- | ------------------ | ----------------------------------------------------- |
+| Kokoro af_heart (default, grade A) | Kokoro, CPU      | 1.5 s  | 1.9 s          | 1.09 s          | 0.31 | 968 MB             | Length differs by a few ms; samples differ            |
+| Kokoro af_bella (A-)               | Kokoro, CPU      | loaded | 2.1 s          | 0.85 s          | 0.26 | 1.3 GB             | same                                                  |
+| Kokoro af_nicole (B-)              | Kokoro, CPU      | loaded | 2.7 s          | 1.47 s          | 0.30 | 1.5 GB             | same                                                  |
+| Kokoro bf_emma (B-)                | Kokoro, CPU      | loaded | 4.0 s          | 1.45 s          | 0.39 | 1.5 GB             | same                                                  |
+| Kokoro bm_george (C)               | Kokoro, CPU      | loaded | 4.1 s          | 1.18 s          | 0.31 | 1.5 GB             | same                                                  |
+| Kokoro am_michael (C+)             | Kokoro, CPU      | loaded | 3.9 s          | 1.26 s          | 0.34 | 1.5 GB             | same                                                  |
+| Kokoro am_fenrir (C+)              | Kokoro, CPU      | loaded | 1.9 s          | 0.94 s          | 0.30 | 1.5 GB             | Same length; samples differ (max 0.87 full scale)     |
+| Chatterbox default                 | Chatterbox, CUDA | 36 s   | 4.8 s          | 2.61 s          | 0.81 | 2.6 GB (+4 GB GPU) | Same length; samples differ by at most 0.005 (seeded) |
+| Owner's studio voice (local only)  | Chatterbox, CUDA | loaded | 5.9 s          | 2.49 s          | 0.74 | 2.7 GB (+4 GB GPU) | Same length; samples differ by at most 0.005 (seeded) |
 
 What the numbers say:
 
@@ -207,6 +207,12 @@ What the numbers say:
   (three direct runs of one sentence, same length), and kokoro-onnx places its pauses from the audio it
   detects, so a whole passage can differ in length by a few milliseconds. This is inaudible, and the app
   caches every sentence, so playback, exports and highlighting never see two versions of one sentence.
+- **Chatterbox Turbo on the GPU generated at 0.74–0.81 of real time under load** (0.58 when idle, per
+  performance.md): fast enough for continuous reading on an RTX 3080, with a 36-second first load and
+  2.5-second sentences, and about 4 GB of GPU memory. Every passage rendered; the seeded, retried
+  sentences came out the same length both times with sample differences under 0.005. On a CPU it
+  would be several times slower than real time, which is why any voice built on it stays an
+  optional, GPU-recommended install, never the default.
 - **Peak memory** rose from 968 MB with one voice to 1.5 GB with the clips of seven voices held by the
   benchmark process; the server itself was measured at about 700 MB before.
 

@@ -35,7 +35,7 @@ MAX_SAY_AS_CHARS = 200
 PREVIEWS_PER_MINUTE = 30
 MATCHERS_KEPT = 32  # documents whose compiled rules stay in memory
 DOCUMENT_ID = r"^[0-9a-f]{32}$"
-_HYPHENATED = re.compile(r"\w+(?:-\w+)+")
+_TOKEN = re.compile(r"[\w-]+")  # one character class: linear, so no respelling can make matching slow
 _RULES = (
     "SELECT p.id, p.word, p.say_as, p.match_case, p.document_id, p.created_at, d.title "
     "FROM pronunciations AS p LEFT JOIN documents AS d ON d.id = p.document_id "
@@ -91,11 +91,25 @@ def _syllable(piece: str) -> str:
     return piece.lower() if len(piece) > 1 and piece.isupper() else piece
 
 
+def _hyphenated(token: str) -> str:
+    """Lower the capitalised syllables of every run of two or more pieces joined by single hyphens."""
+    out: list[str] = []
+    run: list[str] = []
+    for piece in [*token.split("-"), ""]:  # the sentinel ends the last run
+        if piece:
+            run.append(piece)
+            continue
+        out.extend([_syllable(part) for part in run] if len(run) > 1 else run)
+        out.append(piece)
+        run = []
+    return "-".join(out[:-1])
+
+
 def spoken_respelling(say_as: str) -> str:
     """What the voice is given for a respelling. In a hyphenated respelling ("NYOH-kee") the capitals mark
     the stressed syllable for the reader, so that syllable is given as part of the word; a voice would
     otherwise spell it out letter by letter. Anything else, such as "U S A", is given as written."""
-    return _HYPHENATED.sub(lambda match: "-".join(_syllable(piece) for piece in match.group(0).split("-")), say_as)
+    return _TOKEN.sub(lambda match: _hyphenated(match.group(0)), say_as)
 
 
 def compile_rules(*layers: Sequence[PronunciationOut]) -> Callable[[str], str]:

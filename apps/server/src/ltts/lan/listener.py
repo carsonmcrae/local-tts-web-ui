@@ -56,12 +56,15 @@ class LanListener:
         return self._server is not None and self._task is not None and not self._task.done()
 
     async def start(self, address: str, port: int) -> None:
-        if address not in {choice.address for choice in network_addresses()}:
+        # The socket is bound to the address as this computer reports it, chosen by the request but never
+        # taken from it, so no client-sent string reaches bind() (and 0.0.0.0 is never among those addresses).
+        choice = next((found for found in network_addresses() if found.address == address), None)
+        if choice is None:
             raise ConflictError("That address isn't one of this computer's network addresses.", code="lan_address")
         await self.stop()
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         try:
-            sock.bind((address, port))
+            sock.bind((choice.address, port))
             sock.listen(64)
         except OSError as exc:
             sock.close()
@@ -82,7 +85,7 @@ class LanListener:
             server.should_exit = True
             sock.close()
             raise ConflictError("The network listener didn't start.", code="lan_not_started")
-        self._server, self._task, self.address, self.port = server, task, address, sock.getsockname()[1]
+        self._server, self._task, self.address, self.port = server, task, choice.address, sock.getsockname()[1]
         log.info("lan listener started", extra={"port": port})
 
     async def stop(self) -> None:

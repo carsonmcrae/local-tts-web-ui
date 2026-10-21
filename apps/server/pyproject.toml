@@ -48,6 +48,8 @@ dev = [
   "watchfiles>=1.3,<2",
   "types-psutil",
   "types-defusedxml",
+  # Starlette's TestClient prefers httpx2 and deprecates running on httpx (the app itself keeps httpx).
+  "httpx2>=2.13,<3",
 ]
 
 [build-system]

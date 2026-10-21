@@ -168,6 +168,15 @@ rule to new resolutions through `min-release-age=14` in `.npmrc` (npm 11.10 or n
 4. Run `npm run security` and `npm run licenses`; review any new install scripts with
    `npm query ':attr(scripts, [install])'` before considering them.
 
+The root `package.json` has two npm `overrides` for peer ranges that lag behind:
+
+- `openapi-typescript` uses the project's TypeScript.
+- `eslint-plugin-jsx-a11y` uses the project's ESLint. Its latest release (6.10.2, October 2024) declares
+  ESLint 9 at most, and ESLint 10 support is still an open pull request upstream (jsx-eslint/eslint-plugin-jsx-a11y#1081).
+  That pull request changes no rule code, and a probe file with known violations reports the same
+  accessibility and hooks errors on ESLint 9.39.5 and 10.12.0. Remove the override once a release
+  declares ESLint 10.
+
 ## Updating a model
 
 Model changes need a provenance review: confirm the source repository and licence, take the size and

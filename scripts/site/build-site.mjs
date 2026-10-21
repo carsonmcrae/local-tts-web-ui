@@ -106,11 +106,11 @@ async function main() {
     copyFileSync(path.join(media, file), path.join(out, 'media', file));
   }
   // Only the screenshots the pages use: docs/images also holds ones meant for the README.
-  const pages = ['index.html', '404.html'].map((page) =>
+  const sources = ['index.html', '404.html'].map((page) =>
     readFileSync(path.join(out, page), 'utf8'),
   );
   const wanted = new Set(
-    pages.flatMap((html) => [...html.matchAll(/images\/([\w.-]+)/g)].map((m) => String(m[1]))),
+    sources.flatMap((html) => [...html.matchAll(/images\/([\w.-]+)/g)].map((m) => String(m[1]))),
   );
   mkdirSync(path.join(out, 'images'), { recursive: true });
   for (const file of wanted) {

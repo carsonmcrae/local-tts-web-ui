@@ -121,7 +121,17 @@ export function ExportDialog({
     const [firstSection, lastSection] = bounds();
     setErrorMessage(null);
     start.mutate(
-      { documentId, voiceId, pace, format, layout, firstSection, lastSection, captions },
+      {
+        documentId,
+        voiceId,
+        pace,
+        format,
+        layout,
+        firstSection,
+        lastSection,
+        captions,
+        useCover: true,
+      },
       {
         onSuccess: (created) => setJobId(created.id),
         onError: (error) => setErrorMessage(describeError(error)),

@@ -14,7 +14,7 @@ export interface MusicChoice {
   volume: number;
 }
 
-export const DEFAULT_MUSIC_VOLUME = 10;
+const DEFAULT_MUSIC_VOLUME = 10;
 const STORAGE_KEY = 'ltts.music';
 
 export function clampVolume(volume: number): number {

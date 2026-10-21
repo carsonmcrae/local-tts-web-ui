@@ -7,7 +7,7 @@ also inside other work, without asking and without giving credit. We credit ever
 Each file here is an edited excerpt: trimmed, blended at the end so it loops without a seam, matched
 in loudness to sit below the narration, and encoded as Opus in WebM. How each was made, and the
 SHA-256 of the original download, is recorded in `apps/web/src/features/music/library.json` in the
-source repository, and `node scripts/media/music-library.mjs` rebuilds the files from the originals.
+source repository, and `npm run music:build` rebuilds the files from the originals.
 
 Licences were checked on each source page on the date shown. If you believe a track is listed
 wrongly, please open an issue at https://github.com/carsonmcrae/ttsnative/issues.

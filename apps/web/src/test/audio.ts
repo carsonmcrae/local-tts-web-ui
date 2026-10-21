@@ -20,7 +20,7 @@ import type {
 
 type ParamEvent = { type: 'set' | 'ramp' | 'cancel'; value: number; time: number };
 
-export class FakeParam implements ParamLike {
+class FakeParam implements ParamLike {
   value: number;
   readonly events: ParamEvent[] = [];
   constructor(value: number) {

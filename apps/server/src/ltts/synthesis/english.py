@@ -73,8 +73,7 @@ Rule = tuple[re.Pattern[str], "str | Callable[[re.Match[str]], str]"]
 
 
 def _two_digits(value: int) -> str:
-    if value < 10:
-        return _ONES[value]
+    """10 to 99 as words (a year's halves; a low half under 10 is read "oh" plus the digit by the caller)."""
     if value < 20:
         return _TEENS[value - 10]
     tens, ones = divmod(value, 10)

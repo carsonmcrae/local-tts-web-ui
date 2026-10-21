@@ -206,6 +206,16 @@ MIGRATIONS: tuple[str, ...] = (
         created_at TEXT NOT NULL
     );
     """,
+    # phones and tablets paired for LAN mode (only a hash of each device's token)
+    """
+    CREATE TABLE lan_devices (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        token_hash TEXT NOT NULL UNIQUE,
+        created_at TEXT NOT NULL,
+        last_seen_at TEXT
+    );
+    """,
 )
 
 

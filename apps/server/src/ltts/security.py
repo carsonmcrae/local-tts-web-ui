@@ -6,8 +6,10 @@ Scope: Pure ASGI middleware that (1) rejects unexpected Host headers (DNS rebind
 cross-site requests via Sec-Fetch-Site and a required custom header on state-changing methods
 (CSRF; no CORS is ever enabled so browsers cannot satisfy the pre-flight), (3) requires an access
 token for non-loopback clients when network mode is explicitly enabled (except on the speech API,
-``/v1``, which checks its own token and network permission), (4) caps request bodies, and (5) adds
-security headers including a strict Content-Security-Policy.
+``/v1``, which checks its own token and network permission), (4) in LAN mode, accepts the network
+address only on the LAN listener and there requires the page's own Origin for changes, a paired
+device for the API and keeps this computer's own operations off it (``lan/policy.py``), (5) caps
+request bodies, and (6) adds security headers including a strict Content-Security-Policy.
 Does NOT belong: Upload content validation (documents/voices) or authentication of local users —
 on loopback the machine's user is trusted.
 """
@@ -22,6 +24,8 @@ from typing import Any
 from urllib.parse import parse_qs
 
 from ltts.config import LOOPBACK_HOSTS, Settings
+from ltts.lan.policy import LOCAL_ONLY, open_to_unpaired, refused_remotely
+from ltts.lan.service import COOKIE, LanService
 
 Scope = MutableMapping[str, Any]
 Message = MutableMapping[str, Any]
@@ -74,10 +78,19 @@ def _host_name(raw: str) -> str:
     return raw.rsplit(":", 1)[0] if raw.count(":") == 1 else raw
 
 
+def _cookie(headers: dict[bytes, bytes], wanted: str) -> str:
+    for part in headers.get(b"cookie", b"").decode("latin-1").split(";"):
+        name, _, value = part.strip().partition("=")
+        if name == wanted:
+            return value
+    return ""
+
+
 class SecurityMiddleware:
-    def __init__(self, app: ASGIApp, settings: Settings):
+    def __init__(self, app: ASGIApp, settings: Settings, lan: LanService | None = None):
         self.app = app
         self.settings = settings
+        self.lan = lan
         self.allowed_hosts = {*LOOPBACK_HOSTS, *settings.extra_allowed_hosts}
         if settings.allow_network:
             # Network mode accepts this machine's own addresses but still rejects foreign names,
@@ -110,7 +123,8 @@ class SecurityMiddleware:
 
     def _check(self, scope: Scope, headers: dict[bytes, bytes]) -> tuple[int, str, str] | None:
         host = _host_name(headers.get(b"host", b"").decode("latin-1"))
-        if host not in self.allowed_hosts:
+        on_lan = self.lan is not None and self.lan.serving(scope)
+        if host not in self.allowed_hosts and not (on_lan and self.lan is not None and host in self.lan.hosts()):
             return 421, "invalid_host", "Unexpected Host header."
         site = headers.get(b"sec-fetch-site", b"").decode()
         if site == "cross-site":
@@ -118,20 +132,37 @@ class SecurityMiddleware:
         path: str = scope["path"]
         if path.startswith("/api/") and scope["method"] not in SAFE_METHODS and CLIENT_HEADER not in headers:
             return 403, "missing_client_header", "Requests must come from the TTSNative app."
+        if on_lan:
+            return self._check_device(scope, headers)
         client = scope.get("client")
         remote = not _is_loopback(client[0] if client else None)
         if self.settings.allow_network and remote and not path.startswith(SPEECH_API_PREFIX):
             return self._check_token(headers, scope.get("query_string", b""))
         return None
 
+    def _check_device(self, scope: Scope, headers: dict[bytes, bytes]) -> tuple[int, str, str] | None:
+        """A request on the LAN listener: the page's own Origin for changes, then a paired device."""
+        assert self.lan is not None  # noqa: S101 - only called for requests on the LAN listener
+        method, path = scope["method"], scope["path"]
+        if path.startswith(SPEECH_API_PREFIX):
+            return None  # its own token and network permission (speech_api/guard.py)
+        if method not in SAFE_METHODS and headers.get(b"origin", b"").decode("latin-1") != self.lan.origin():
+            return 403, "origin_mismatch", "Changes must come from this app's own page."
+        device = self.lan.device(_cookie(headers, COOKIE))
+        scope.setdefault("state", {})["lan_device"] = device
+        if device is None:
+            if open_to_unpaired(method, path):
+                return None
+            return 401, "device_not_paired", "Pair this device first: open the pairing link shown on the computer."
+        if refused_remotely(method, path):
+            return 403, "not_allowed_remotely", LOCAL_ONLY
+        return None
+
     def _check_token(self, headers: dict[bytes, bytes], query: bytes) -> tuple[int, str, str] | None:
         token = self.settings.access_token
         supplied = headers.get(b"authorization", b"").decode().removeprefix("Bearer ").strip()
         if not supplied:
-            for part in headers.get(b"cookie", b"").decode().split(";"):
-                name, _, value = part.strip().partition("=")
-                if name == "ltts_token":
-                    supplied = value
+            supplied = _cookie(headers, "ltts_token")
         if not supplied:
             supplied = (parse_qs(query.decode("latin-1")).get("token") or [""])[0]
         if not token or not hmac.compare_digest(supplied.encode(), token.encode()):

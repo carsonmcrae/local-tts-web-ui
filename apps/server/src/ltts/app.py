@@ -82,6 +82,7 @@ def create_app(
         if settings.warm_up_engines:
             threading.Thread(target=_warm_up, args=(services,), name="warm-up", daemon=True).start()
         yield
+        await services.lan.disable()  # stop listening on the network before anything else goes
         for engine in services.engines.all():
             engine.close()
 
@@ -105,6 +106,7 @@ def create_app(
     from ltts.engines.router import router as engines_router
     from ltts.exports.router import router as exports_router
     from ltts.integrations_router import router as integrations_router
+    from ltts.lan.router import router as lan_router
     from ltts.preferences import router as preferences_router
     from ltts.pronunciation.router import router as pronunciation_router
     from ltts.speech_api.router import router as speech_api_router
@@ -117,9 +119,10 @@ def create_app(
     for router in (system_router, documents_router, audio_router, engines_router, voices_router,
                    voice_sessions_router, exports_router, preferences_router, pronunciation_router,
                    styling_router, details_router, integrations_router, speech_api_settings_router,
-                   speech_api_router):  # fmt: skip
+                   speech_api_router, lan_router):  # fmt: skip
         app.include_router(router)
     if static_dir is not None:
         _mount_static(app, static_dir)
-    app.add_middleware(SecurityMiddleware, settings=settings)
+    app.add_middleware(SecurityMiddleware, settings=settings, lan=services.lan)
+    services.lan.attach(app)  # LAN mode serves this same app, with the same checks
     return app

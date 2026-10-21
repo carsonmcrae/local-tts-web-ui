@@ -29,6 +29,7 @@ from ltts.engines.registry import EngineRegistry
 from ltts.exports.audiobookshelf import Audiobookshelf
 from ltts.exports.service import ExportService
 from ltts.jobs import JobManager
+from ltts.lan.service import LanService
 from ltts.modelstore.store import ModelStore
 from ltts.pronunciation.store import PronunciationStore
 from ltts.secrets import SecretStore
@@ -64,6 +65,7 @@ class Services:
     synthesis: SynthesisService
     voices: VoiceProfileService
     blends: BlendStore
+    lan: LanService
     voice_sessions: VoiceSessionService
     studio: StudioService
     voice_sharing: VoiceSharing
@@ -130,6 +132,7 @@ def build_services(
         synthesis=synthesis,
         voices=voices,
         blends=blends,
+        lan=LanService(db),
         voice_sessions=sessions,
         studio=studio,
         voice_sharing=VoiceSharing(settings, voices),

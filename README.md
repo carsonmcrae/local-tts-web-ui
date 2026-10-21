@@ -41,13 +41,16 @@ TTSNative is free and open source (MIT). It was called **Local TTS** until versi
 
 ## Features
 
-- **Reader** — PDF, DOCX, EPUB, Markdown, TXT or pasted text. Sentence-by-sentence read-along, chapter and
-  page navigation, resume where you left off, keyboard shortcuts and lock-screen media controls.
+- **Reader** — PDF, DOCX, EPUB, MOBI, FB2, HTML, Markdown, TXT, a web page by its address or pasted text
+  (with optional speech marks such as `{pause 2s}`). Sentence-by-sentence read-along, chapter and page
+  navigation, resume where you left off, keyboard shortcuts and lock-screen media controls.
 - **Study and listening aids** — search inside a document, bookmarks with notes (exported as Markdown), a
   sleep timer, adjustable text size, spacing and typeface, a searchable and sortable library, and a fix for
   chapters that start in the wrong place.
 - **Characters and effects** — select text to read it in another voice or accent, as a loudspeaker
-  announcement, a phone call or a radio broadcast, or choose one voice for all dialogue; exports sound the same.
+  announcement, a phone call or a radio broadcast, give each character a voice (reusable cast presets), or
+  choose one voice for all dialogue while the narration keeps yours; exports sound the same. Blend built-in
+  voices into new ones.
 - **Pronunciation dictionary** — teach every voice how to say character names and unusual words; only the
   sentences that contain a changed word are regenerated.
 - **Starts instantly, even for whole books** — sentences are generated just ahead of you and cached, so
@@ -60,12 +63,15 @@ TTSNative is free and open source (MIT). It was called **Local TTS** until versi
   for questions, dialogue and lively lines. Takes you can play back, checks that explain what went wrong
   (completeness and background noise as advice), explicit consent, a delivery setting, sharing as a `.ttsvoice`
   file and one-click permanent deletion.
-- **Export** — WAV or MP3, the whole document or selected chapters, one file or one per chapter, tagged with
-  titles and track numbers, with optional sentence-timed subtitles (SRT).
+- **Export** — WAV, MP3, M4B audiobooks with chapters and a cover, or read-along EPUB 3; the whole document or
+  selected chapters, one file or one per chapter, with optional sentence-timed subtitles (SRT). Long exports
+  pause, resume and survive a restart, and can be sent to your Audiobookshelf server.
 - **Private by design** — binds to `127.0.0.1`, works offline after setup, and never sends documents or
   recordings anywhere.
-- Light and dark themes, responsive layout for phones and tablets, accessible controls (WCAG 2.2 AA target,
-  axe-checked).
+- **Phones and tablets (optional)** — pair a phone on the same Wi-Fi to read and listen from it; the computer
+  does the reading.
+- Light and dark themes, high contrast, wider letter spacing, responsive layout for phones and tablets,
+  accessible controls (WCAG 2.2 AA target, axe-checked).
 
 ## Quick start
 
@@ -103,6 +109,9 @@ Nothing is installed system-wide. To remove everything, delete the folder.
 | DOCX          | Headings become chapters; tables are read row by row. Macros and embedded objects are ignored.                                                                                                  |
 | EPUB 2/3      | Chapters from the table of contents. Scripts and styles are ignored.                                                                                                                            |
 | Markdown, TXT | Headings / "Chapter N" lines become sections; UTF-8, UTF-16 and Windows-1252 text.                                                                                                              |
+| MOBI          | Kindle MOBI (PalmDOC). DRM-protected books are refused, never unlocked; KF8/AZW3 isn't supported yet.                                                                                           |
+| FB2           | FictionBook, also zipped (`.fb2.zip`); sections, authors and footnotes.                                                                                                                         |
+| HTML, web     | Saved pages, or a public page by its address: the main text only, without menus, scripts or hidden parts.                                                                                       |
 
 Limits (configurable): 25 MB per file, 2 million characters, 2,000 PDF pages.
 
@@ -150,7 +159,8 @@ or that the speaker gave permission; generated audio carries Resemble AI's inaud
 No telemetry, analytics or accounts (ONNX Runtime's default telemetry is switched off). Documents,
 recordings and generated audio stay in the `data/` folder. The only network requests are the downloads
 you start (setup and optional engines) from GitHub, PyPI, npm and Hugging Face, using pinned URLs with
-checksums; like any download, those hosts see your IP address. After that the app works fully offline. See [SECURITY.md](SECURITY.md) and the
+checksums (like any download, those hosts see your IP address), a web page you choose to import, and an
+export you choose to send to your own Audiobookshelf server. After that the app works fully offline. See [SECURITY.md](SECURITY.md) and the
 [threat model](docs/security/threat-model.md).
 
 ## Screenshots
@@ -200,7 +210,6 @@ See [CONTRIBUTING.md](CONTRIBUTING.md), [testing](docs/guides/testing.md),
 - OCR for scanned PDFs (optional, to keep setup light)
 - Multilingual voice cloning (Chatterbox Multilingual) and a lighter CPU cloning option
 - Better English pronunciation with the misaki G2P used to train Kokoro
-- M4B audiobook export with chapter markers
 
 ## Responsible use
 

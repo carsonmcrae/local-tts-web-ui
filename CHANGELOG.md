@@ -16,6 +16,44 @@ All notable changes to this project are documented here. The format follows
   unless allowed, and web pages always refused. Limits on input length, body size, requests a
   minute, one request at a time and time per request. A **Speech API in use** sign shows while a
   program uses it. See [the guide](docs/guides/local-speech-api.md).
+- **Audiobook exports you can pause and resume.** Exports save each sentence as it is made, so a
+  paused, interrupted (even by a crash or restart) or failed export carries on with only the missing
+  sentences. A new **Exports** page lists them with Resume, Cancel, Download and Delete.
+- **M4B audiobooks** with chapters, title, author, narrator, description and a cover (made with your
+  own ffmpeg; the app says how to get it if it's missing), and **read-along EPUB 3** books whose text
+  is highlighted as the audio plays (Media Overlays).
+- **Send to Audiobookshelf** (optional): set your server address, API key (stored encrypted on
+  Windows, never shown again), library and folder in Settings, then send a finished export.
+- **More documents:** HTML pages, FB2 (and `.fb2.zip`) and MOBI books (DRM-protected books are
+  refused, never unlocked), and **Import a web page** by its address: only public http(s) addresses,
+  every redirect re-checked, connections pinned to the checked address, size and time limits.
+- **Speech marks** (optional, when pasting text): `{pause 2s}`, `{voice Sam}…{/voice}`,
+  `{effect radio}…{/effect}`, `{style calm}…{/style}`, `{sound laugh}` and `{say Kael = Kay-el}`
+  become sentence settings; the stored text never contains them, and unknown marks are listed.
+- **Characters, takes, styles and pauses in the reader.** Quoted speech is read in the dialogue voice
+  while the narration keeps the reading voice; characters named by dialogue tags ("…," said Mira) can
+  each get a voice, saved as reusable cast presets. Studio voices can read a sentence in another
+  speaking style, try other takes of it and keep the best, and any sentence can get a longer or
+  shorter pause after it. New effects: **Quiet** (an aside or near-whisper) and **Memory** (a
+  flashback).
+- **Voice blends:** mix two to four built-in voices into a new one on the Voices page.
+- **Phones and tablets (LAN mode, optional):** turn it on in Settings to use the app from a phone on
+  the same Wi-Fi. Pair each device with a short-lived code or QR code, remove devices at any time, and
+  turn it off at once; settings, voice recording and other changes to this computer stay on the
+  computer. Plain HTTP, so only on networks you trust.
+- **Better studio takes:** the background is named when it matters (a hum, a low rumble, hiss,
+  clicks or other voices), a take cut off mid-word is pointed out, recording a passage again keeps
+  the previous take to compare and restore, the session shows its tier (Foundation, Developing,
+  Complete) and which speaking styles your takes can teach, and microphone problems (blocked,
+  unplugged mid-take, not responding, no sound) say what happened and what to do.
+- **A voice file preview:** choosing a `.ttsvoice` file shows its name, description, creator,
+  styles, size and app version after checking it completely, before anything is imported; a file
+  from a newer TTSNative says so. An import never replaces one of your voices. The format is
+  documented in [docs/reference/ttsvoice-format.md](docs/reference/ttsvoice-format.md).
+- **Blind A/B voice comparisons** for quality work: `ltts voice-ab compare` and `ltts voice-ab score`
+  (see [voice quality research](docs/research/voice-quality.md)).
+- **Accessibility:** a high-contrast option (also following the system setting), wider letter and
+  word spacing for the reading text, and support for Windows high-contrast themes.
 - **Expressive studio voices.** A studio voice keeps a speaking style for questions, lively lines,
   dialogue and narration, learnt from your takes of the matching passages, and reads each sentence
   in the style its punctuation asks for (the sound of the voice stays the same). Voices built

@@ -56,7 +56,9 @@ A paired device may:
 Sensitive operations stay on the computer. A paired device may not (`403 not_allowed_remotely`):
 
 - change LAN, speech API or integration settings;
-- record, build, import, export, play back or delete voices and their recordings;
+- record, build, import, export, rename, play back or delete voices and their recordings, or change
+  their delivery, expression or fine-tune (the Voice Studio page on a phone only lists voices to
+  choose for reading);
 - install engines, cancel the computer's jobs or clear caches;
 - import web pages (the server would fetch them);
 - delete documents;

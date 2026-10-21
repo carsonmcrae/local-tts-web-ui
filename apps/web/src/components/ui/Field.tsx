@@ -3,7 +3,7 @@
 /**
  * Purpose: Labelled form controls with consistent styling and accessible hints/errors.
  * Scope: `Field` (label + hint + error wiring via ids), `Input`, `Textarea`, `Select` (native, for
- *   reliable mobile behaviour), `Checkbox` and `Switch` (Radix).
+ *   reliable mobile behaviour), `Checkbox` and `Switch` (Radix; also a bare `SwitchControl`).
  * Does NOT belong: Form state management.
  */
 import { Check } from 'lucide-react';
@@ -133,14 +133,38 @@ export function Switch({ checked, onCheckedChange, label, description }: Readonl
         </label>
         {description ? <p className="text-[13px] text-muted">{description}</p> : null}
       </div>
-      <RadixSwitch.Root
-        id={id}
-        checked={checked}
-        onCheckedChange={onCheckedChange}
-        className="relative h-6 w-11 shrink-0 rounded-full bg-surface-3 transition-colors data-[state=checked]:bg-accent"
-      >
-        <RadixSwitch.Thumb className="block size-5 translate-x-0.5 rounded-full bg-white shadow-soft transition-transform data-[state=checked]:translate-x-[22px]" />
-      </RadixSwitch.Root>
+      <SwitchControl id={id} checked={checked} onCheckedChange={onCheckedChange} />
     </div>
+  );
+}
+
+interface SwitchControlProps {
+  checked: boolean;
+  onCheckedChange: (checked: boolean) => void;
+  id?: string;
+  /** The accessible name when no <label> points at the switch. */
+  label?: string;
+  describedBy?: string;
+}
+
+/** The switch alone, for layouts that place its label themselves (e.g. a mixer channel). */
+export function SwitchControl({
+  checked,
+  onCheckedChange,
+  id,
+  label,
+  describedBy,
+}: Readonly<SwitchControlProps>) {
+  return (
+    <RadixSwitch.Root
+      id={id}
+      checked={checked}
+      onCheckedChange={onCheckedChange}
+      aria-label={label}
+      aria-describedby={describedBy}
+      className="relative h-6 w-11 shrink-0 rounded-full bg-surface-3 transition-colors data-[state=checked]:bg-accent"
+    >
+      <RadixSwitch.Thumb className="block size-5 translate-x-0.5 rounded-full bg-white shadow-soft transition-transform data-[state=checked]:translate-x-[22px]" />
+    </RadixSwitch.Root>
   );
 }

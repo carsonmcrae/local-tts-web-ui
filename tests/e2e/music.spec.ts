@@ -58,10 +58,10 @@ async function watchMusic(page: Page) {
 async function musicPanel(page: Page) {
   await page
     .getByRole('region', { name: 'Audio player' })
-    .getByRole('button', { name: /^Background music/ })
+    .getByRole('button', { name: /^Audio mixer/ })
     .filter({ visible: true })
     .click();
-  return page.getByRole('dialog', { name: 'Background music' });
+  return page.getByRole('dialog', { name: 'Audio mixer' });
 }
 
 test.describe('background music', () => {

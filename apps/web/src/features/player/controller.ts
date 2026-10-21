@@ -42,6 +42,8 @@ export interface PlayerState {
   currentTime: number;
   duration: number;
   sleep: SleepTimer | null;
+  /** Narration loudness, 0–1 (the audio mixer's narration channel). */
+  volume: number;
 }
 
 interface SegmentAudio {
@@ -116,6 +118,7 @@ export class PlaybackController {
       currentTime: 0,
       duration: 0,
       sleep: null,
+      volume: 1,
       ...initial,
     };
     deps.media.addEventListener('ended', () => this.onEnded());
@@ -221,7 +224,9 @@ export class PlaybackController {
 
   /** Narration loudness, 0–1, on top of the device volume (background music has its own). */
   setVolume(volume: number): void {
-    this.deps.media.volume = Math.min(Math.max(volume, 0), 1);
+    const level = Math.min(Math.max(volume, 0), 1);
+    this.deps.media.volume = level;
+    this.set({ volume: level });
   }
 
   setVoice(voiceId: string): Promise<void> {

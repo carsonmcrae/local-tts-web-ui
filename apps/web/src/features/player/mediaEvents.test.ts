@@ -76,6 +76,7 @@ describe('PlaybackController and its audio element', () => {
     const { audio, controller } = start();
     controller.setVolume(0.85);
     expect(audio.volume).toBe(0.85);
+    expect(controller.getState().volume).toBe(0.85);
     controller.setVolume(3);
     expect(audio.volume).toBe(1);
     controller.setVolume(-1);

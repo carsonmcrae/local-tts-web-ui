@@ -12,8 +12,8 @@
 import type { PlayerState } from '@/features/player/controller';
 import type { EngineEvents, MusicTarget } from './engine';
 import type { MusicTrack } from './library';
+import { clampVolume } from '@/lib/deviceSettings';
 import type { MusicChoice } from './preferences';
-import { clampVolume } from './preferences';
 
 export interface MusicEngineLike {
   play(target: MusicTarget | null, fade: number): void;

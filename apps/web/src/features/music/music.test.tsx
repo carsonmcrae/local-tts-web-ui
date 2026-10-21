@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 Carson McRae
 /**
- * Purpose: Tests for the background-music controls inside the real player and reader.
+ * Purpose: Tests for the background-music channel of the audio mixer, in the real player and reader.
  * Scope: Off by default; turning it on and off without touching the narration; following pause and
  *   resume; the separate music volume; the library (categories, preview, choosing a track, credits);
  *   tracks that fail to load and browsers without Web Audio; the choice remembered while "on" is
@@ -89,9 +89,9 @@ async function openReader() {
   const player = await screen.findByRole('region', { name: 'Audio player' });
   const press = (name: string) => user.click(within(player).getByRole('button', { name }));
   const openMusic = async () => {
-    const [button] = within(player).getAllByRole('button', { name: /^Background music/ });
+    const [button] = within(player).getAllByRole('button', { name: /^Audio mixer/ });
     await user.click(button as HTMLElement);
-    return screen.findByRole('dialog', { name: 'Background music' });
+    return screen.findByRole('dialog', { name: 'Audio mixer' });
   };
   /** Opens the music panel and flips the switch; returns the panel. */
   const toggleMusic = async () => {
@@ -108,7 +108,7 @@ async function openReader() {
   return { ...view, user, player, press, openMusic, toggleMusic, openLibrary, waitForPlaying };
 }
 
-describe('Background music', () => {
+describe('Background music in the audio mixer', () => {
   it('is off until turned on, and never interrupts the narration', async () => {
     music();
     const { user, player, press, openMusic, waitForPlaying, media } = await openReader();
@@ -117,14 +117,14 @@ describe('Background music', () => {
     const panel = await openMusic();
     const toggle = within(panel).getByRole('switch', { name: 'Background music' });
     expect(toggle).not.toBeChecked();
-    expect(within(panel).getByText(/Off again for the next one/)).toBeInTheDocument();
+    expect(within(panel).getByText(/off again for the next one/)).toBeInTheDocument();
     expect(contexts).toHaveLength(0);
     const narration = { play: media.play.mock.calls.length, pause: media.pause.mock.calls.length };
 
     await user.click(toggle);
     await waitForPlaying(1);
     expect(within(panel).getByText('Playing under the narration.')).toBeInTheDocument();
-    const highlighted = { name: 'Background music on: Harbour Lights. Change' };
+    const highlighted = { name: 'Audio mixer. Background music on: Harbour Lights' };
     expect(within(player).getAllByRole('button', highlighted)).toHaveLength(2);
     await user.click(toggle);
     await waitForPlaying(0);
@@ -252,11 +252,12 @@ describe('Background music', () => {
     );
   });
 
-  it('offers no music control when the build has no tracks', async () => {
+  it('offers no music channel when the build has no tracks', async () => {
     tracks.length = 0;
     music();
-    const { player } = await openReader();
-    expect(within(player).queryByRole('button', { name: /Background music/ })).toBeNull();
+    const panel = await (await openReader()).openMusic();
+    expect(within(panel).getByRole('slider', { name: 'Narration volume' })).toBeInTheDocument();
+    expect(within(panel).queryByRole('switch')).toBeNull();
   });
 
   it('must be used inside the player', () => {
@@ -264,5 +265,60 @@ describe('Background music', () => {
     expect(() => renderHook(() => useMusic())).toThrow(
       'useMusic must be used inside <MusicProvider>',
     );
+  });
+});
+
+describe('Narration in the audio mixer', () => {
+  it('starts at full volume and changes only the narration, saved on this device', async () => {
+    music();
+    const { user, media, toggleMusic, press } = await openReader();
+    await press('Play');
+    const panel = await toggleMusic();
+    await waitFor(() => expect(contexts[0]?.playing).toHaveLength(1));
+    const narration = within(panel).getByRole('slider', { name: 'Narration volume' });
+    expect(narration).toHaveAttribute('aria-valuetext', '100%');
+    const masterBefore = contexts[0]?.gains[0]?.gain.events.length;
+    act(() => narration.focus());
+    await user.keyboard('{ArrowLeft}{ArrowLeft}{ArrowLeft}{ArrowLeft}{ArrowLeft}');
+    expect(media).toMatchObject({ volume: 0.95 });
+    expect(localStorage.getItem('ltts.narrationVolume')).toBe('95');
+    expect(contexts[0]?.gains[0]?.gain.events.length).toBe(masterBefore); // music untouched
+    const musicSlider = within(panel).getByRole('slider', { name: 'Music volume' });
+    act(() => musicSlider.focus());
+    await user.keyboard('{ArrowRight}');
+    expect(media).toMatchObject({ volume: 0.95 }); // and the music slider leaves the narration alone
+  });
+
+  it('applies the level saved on this device when the app starts', async () => {
+    localStorage.setItem('ltts.narrationVolume', '40');
+    music();
+    const { media, openMusic } = await openReader();
+    expect(media).toMatchObject({ volume: 0.4 });
+    const panel = await openMusic();
+    expect(within(panel).getByRole('slider', { name: 'Narration volume' })).toHaveAttribute(
+      'aria-valuenow',
+      '40',
+    );
+  });
+
+  it('explains when the device sets the narration level itself', async () => {
+    vi.stubGlobal(
+      'Audio',
+      class {
+        get volume() {
+          return 1;
+        }
+        set volume(_level: number) {
+          // iPhone: the page can't change an audio element's volume.
+        }
+      },
+    );
+    music();
+    const panel = await (await openReader()).openMusic();
+    const narration = within(panel).getByRole('slider', { name: 'Narration volume' });
+    expect(narration).toHaveAttribute('data-disabled');
+    expect(
+      within(panel).getByText(/sets the narration level with its own volume buttons/),
+    ).toBeInTheDocument();
   });
 });

@@ -46,6 +46,7 @@ class FakePlayer {
     currentTime: 0,
     duration: 0,
     sleep: null,
+    volume: 1,
   };
   private readonly listeners = new Set<(state: PlayerState) => void>();
   getState = () => this.state;

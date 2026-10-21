@@ -4,8 +4,8 @@
  * Purpose: Expose one app-wide PlaybackController to React and keep it in sync with preferences.
  * Scope: Creates the controller with real fetch/audio dependencies (or injected ones for tests),
  *   subscribes via useSyncExternalStore, applies saved voice/rate/pace once, debounces progress
- *   saves, wires the Media Session API (lock-screen and hardware media keys) and hosts the
- *   background music, which follows this player.
+ *   saves, applies this device's narration volume, wires the Media Session API (lock-screen and
+ *   hardware media keys) and hosts the background music, which follows this player.
  * Does NOT belong: Player UI (PlayerBar), keyboard shortcuts (useShortcuts) or music rules
  *   (features/music).
  */
@@ -22,6 +22,7 @@ import {
 } from 'react';
 import { ApiError, api, describeError, prepareAudio } from '@/api/client';
 import { keys, usePreferences } from '@/api/queries';
+import { readNarrationVolume } from '@/features/mixer/narration';
 import { MusicProvider } from '@/features/music/MusicProvider';
 import type { MediaLike, PlayerState } from './controller';
 import { PlaybackController } from './controller';
@@ -114,13 +115,16 @@ export function PlayerProvider({
   media,
 }: Readonly<{ children: ReactNode; media?: MediaLike }>) {
   const queryClient = useQueryClient();
-  const [controller] = useState(() =>
-    createController(media ?? new Audio(), (documentId) => {
+  const [controller] = useState(() => {
+    const created = createController(media ?? new Audio(), (documentId) => {
       // Refresh only the library list and this document's summary — never cached section text.
       void queryClient.invalidateQueries({ queryKey: keys.documents, exact: true });
       void queryClient.invalidateQueries({ queryKey: keys.document(documentId), exact: true });
-    }),
-  );
+    });
+    // The narration level chosen in the audio mixer on this device.
+    created.setVolume(readNarrationVolume() / 100);
+    return created;
+  });
   const state = useSyncExternalStore(
     (listener) => controller.subscribe(listener),
     () => controller.getState(),

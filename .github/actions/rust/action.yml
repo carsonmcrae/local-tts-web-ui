@@ -29,6 +29,9 @@ runs:
       working-directory: apps/desktop/src-tauri
       shell: bash
       run: rustup toolchain install && rustc --version
+    # The paths name what Cargo reuses (downloaded crates, compiled dependencies, fingerprints) rather than
+    # the whole target folder: the cache action archives a listed folder with everything in it, which would
+    # carry the copied runtime and the built installer from target/release along.
     - name: Cache keys and paths
       if: inputs.save != 'now'
       shell: bash
@@ -44,11 +47,13 @@ runs:
           echo "DESKTOP_RUNTIME_CACHE_PREFIX=$RUNTIME_PREFIX"
           echo "DESKTOP_RUNTIME_CACHE_KEY=$RUNTIME_PREFIX$RUNTIME_FILES"
           echo "DESKTOP_CARGO_CACHE_PATHS<<PATHS"
-          echo "~/.cargo/registry"
-          echo "~/.cargo/git"
-          echo "apps/desktop/src-tauri/target"
-          echo "!apps/desktop/src-tauri/target/release/bundle"
-          echo "!apps/desktop/src-tauri/target/release/runtime"
+          echo "~/.cargo/registry/index"
+          echo "~/.cargo/registry/cache"
+          echo "~/.cargo/git/db"
+          echo "apps/desktop/src-tauri/target/debug"
+          echo "apps/desktop/src-tauri/target/release/build"
+          echo "apps/desktop/src-tauri/target/release/deps"
+          echo "apps/desktop/src-tauri/target/release/.fingerprint"
           echo "PATHS"
         } >> "$GITHUB_ENV"
     - name: Cargo cache (saved when the job passes)

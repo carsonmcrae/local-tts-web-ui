@@ -24,6 +24,9 @@ __pycache__/
 
 # Build and test output
 dist/
+apps/desktop/runtime/
+apps/desktop/src-tauri/target/
+apps/desktop/src-tauri/gen/
 coverage/
 htmlcov/
 .coverage

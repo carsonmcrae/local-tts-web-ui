@@ -15,7 +15,7 @@ import shutil
 import subprocess
 import sys
 
-from ltts.common import ApiModel
+from ltts.common import NO_CONSOLE_WINDOW, ApiModel
 
 
 class GpuInfo(ApiModel):
@@ -37,6 +37,7 @@ def detect_gpus() -> tuple[GpuInfo, ...]:
                 text=True,
                 timeout=5,
                 check=True,
+                creationflags=NO_CONSOLE_WINDOW,
             ).stdout
             for line in out.strip().splitlines():
                 name, _, memory = line.partition(",")

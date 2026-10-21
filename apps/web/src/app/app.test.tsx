@@ -3,8 +3,8 @@
 /**
  * Purpose: Tests for the application root: lazy routes and the shell's engine status.
  * Scope: Opening a document by URL through the real router (lazy page with a loading state), moving
- *   between the main sections with the navigation, and the sidebar status while the default voices
- *   are installing.
+ *   between the main sections with the navigation, the sidebar status while the default voices are
+ *   installing, and the sidebar's version link.
  * Does NOT belong: Page behaviour (feature tests) or the not-found/offline cases (flows.test.tsx).
  */
 import { render, screen, within } from '@testing-library/react';
@@ -71,6 +71,8 @@ describe('App', () => {
     const user = userEvent.setup();
     render(<App />);
     const [nav] = await screen.findAllByRole('navigation', { name: 'Main' });
+    // Source comments must never reach the page (the shell's layout note once did).
+    expect(document.body).not.toHaveTextContent(/overflow-clip|\/\/ /);
     const go = async (link: string, heading: string) => {
       await user.click(within(nav as HTMLElement).getByRole('link', { name: link }));
       expect(await screen.findByRole('heading', { level: 1, name: heading })).toBeInTheDocument();
@@ -79,5 +81,10 @@ describe('App', () => {
     await go('Voice Studio', 'Voice Studio');
     await go('Settings', 'Settings');
     await go('Library', 'Library');
+    // The sidebar shows the version this copy runs and leads to About.
+    const version = screen.getByRole('link', { name: 'Version test' });
+    expect(version).toHaveAttribute('href', '/settings#about');
+    await user.click(version);
+    expect(await screen.findByRole('heading', { level: 1, name: 'Settings' })).toBeInTheDocument();
   });
 });

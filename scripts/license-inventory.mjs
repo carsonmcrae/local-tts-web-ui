@@ -19,9 +19,9 @@ import { resolveUv, uvEnv } from './lib/uv.mjs';
 /** Copyleft components that are acceptable, and why. Keep this list short and justified. */
 const ALLOWED_COPYLEFT = {
   phonemizer:
-    'GPL-3.0 phonemiser used by kokoro-onnx; installed as a separate package, not distributed with this repo.',
+    'GPL-3.0 phonemiser used by kokoro-onnx; the Windows installer ships it with its licence and a source offer.',
   'espeakng-loader':
-    'Ships the GPL-3.0 espeak-ng library used for phonemisation; installed by uv, not redistributed.',
+    'Ships the GPL-3.0 espeak-ng library; the Windows installer ships its licence and each release its source.',
 };
 /** Packages whose metadata omits a license, with the license from their upstream LICENSE file. */
 const METADATA_OVERRIDES = {

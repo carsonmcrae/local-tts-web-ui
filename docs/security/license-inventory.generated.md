@@ -77,6 +77,7 @@ Runtime dependencies only (development tooling is not distributed). Model weight
 | @remix-run/route-pattern@0.22.1 | MIT |  |
 | @tanstack/query-core@5.104.1 | MIT |  |
 | @tanstack/react-query@5.104.1 | MIT |  |
+| @tauri-apps/api@2.12.1 | Apache-2.0 OR MIT |  |
 | aria-hidden@1.2.6 | MIT |  |
 | clsx@2.1.1 | MIT |  |
 | cookie-es@3.1.1 | MIT |  |
@@ -110,7 +111,7 @@ Runtime dependencies only (development tooling is not distributed). Model weight
 | cloudpickle==3.1.2 | BSD License |  |
 | defusedxml==0.7.1 | Python Software Foundation License |  |
 | dlinfo==2.0.0 | MIT |  |
-| espeakng-loader==0.2.4 | MIT wrapper bundling espeak-ng (GPL-3.0) | Ships the GPL-3.0 espeak-ng library used for phonemisation; installed by uv, not redistributed. |
+| espeakng-loader==0.2.4 | MIT wrapper bundling espeak-ng (GPL-3.0) | Ships the GPL-3.0 espeak-ng library; the Windows installer ships its licence and each release its source. |
 | fastapi==0.142.2 | MIT |  |
 | flatbuffers==25.12.19 | Apache Software License |  |
 | h11==0.16.0 | MIT License |  |
@@ -126,7 +127,7 @@ Runtime dependencies only (development tooling is not distributed). Model weight
 | onnxruntime==1.30.0 | MIT License |  |
 | opentelemetry-api==1.45.0 | Apache-2.0 |  |
 | packaging==26.3 | Apache-2.0 OR BSD-2-Clause |  |
-| phonemizer==3.4.0 | GNU General Public License v3 or later (GPLv3+) | GPL-3.0 phonemiser used by kokoro-onnx; installed as a separate package, not distributed with this repo. |
+| phonemizer==3.4.0 | GNU General Public License v3 or later (GPLv3+) | GPL-3.0 phonemiser used by kokoro-onnx; the Windows installer ships it with its licence and a source offer. |
 | protobuf==7.36.2 | 3-Clause BSD License |  |
 | psutil==7.2.2 | BSD-3-Clause |  |
 | pycparser==3.0 | BSD-3-Clause |  |

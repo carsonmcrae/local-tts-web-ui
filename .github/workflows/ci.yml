@@ -1,7 +1,8 @@
 # Purpose: Fast quality gate for every pull request and push to main.
-# Scope: Web format/lint/types/tests/build; server lint/types/tests on Linux, Windows and macOS via the
-#   real bootstrap (pinned uv download + locked Python env, no models); API contract; security audits;
-#   one aggregate "validate" job for branch protection.
+# Scope: Web format/lint/types/tests/build; release tooling tests; every pull request's release impact
+#   (a change file, no hand-edited version, finished notes for a release); server lint/types/tests on
+#   Linux, Windows and macOS via the real bootstrap (pinned uv download + locked Python env, no models);
+#   API contract; security audits; one aggregate "validate" job for branch protection.
 # Does NOT belong: Real-model inference and Playwright journeys (inference.yml — too heavy for every PR).
 name: CI
 
@@ -34,6 +35,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/node-deps
       - run: npm run format:check
+      - run: npm run test:scripts
       - run: npm run lint:web
       - run: npm run lint:repo
       - name: Unused files, exports and dependencies (Knip)
@@ -45,6 +47,25 @@ jobs:
       - run: npm run build
       - name: Website builds with no broken local links
         run: npm run site:build
+
+  release-impact:
+    name: Release impact (change file, version, notes)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0 # the base commit and the release tags
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+      - name: Change files, version and release notes
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+        run: |
+          if [ -n "$BASE" ]; then node scripts/check-changes.mjs --base "$BASE"; else node scripts/check-changes.mjs; fi
+          node scripts/check-version.mjs
+      - name: Next release (job summary)
+        run: node scripts/release/status.mjs --markdown >> "$GITHUB_STEP_SUMMARY"
 
   server:
     name: Server (${{ matrix.os }})
@@ -89,19 +110,25 @@ jobs:
       - name: npm audit + pip-audit
         run: npm run security
       - name: Gitleaks (checksum-verified download)
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
         run: |
           curl -sSfL -o gitleaks.tgz https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_x64.tar.gz
           echo "551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb  gitleaks.tgz" | sha256sum --check
           tar -xzf gitleaks.tgz gitleaks
-          ./gitleaks git --redact --no-banner --config .gitleaks.toml .
+          # A pull request is judged on its own commits (gitleaks would otherwise read every branch the
+          # checkout fetched, so an unrelated branch could fail it); a push to main scans the whole history.
+          if [ -n "$BASE" ]; then range="$BASE..HEAD"; else range=""; fi
+          ./gitleaks git --redact --no-banner --config .gitleaks.toml ${range:+--log-opts="$range"} .
 
   validate:
     name: Validate
     if: always()
-    needs: [web, server, contract, security]
+    needs: [web, release-impact, server, contract, security]
     runs-on: ubuntu-24.04
     steps:
       - name: All required jobs passed
         run: |
           [ "${{ needs.web.result }}" = success ] && [ "${{ needs.server.result }}" = success ] \
-            && [ "${{ needs.contract.result }}" = success ] && [ "${{ needs.security.result }}" = success ]
+            && [ "${{ needs.contract.result }}" = success ] && [ "${{ needs.security.result }}" = success ] \
+            && [ "${{ needs.release-impact.result }}" = success ]

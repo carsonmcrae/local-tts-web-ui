@@ -19,7 +19,7 @@ from fastapi import APIRouter
 
 from ltts import __version__
 from ltts.common import ApiModel
-from ltts.container import ServicesDep
+from ltts.container import Services, ServicesDep
 from ltts.hardware import GpuInfo, detect_gpus
 from ltts.onnx import onnxruntime
 
@@ -69,9 +69,14 @@ def _folder_bytes(path: Path) -> int:
     return sum(p.stat().st_size for p in path.rglob("*") if p.is_file())
 
 
+def app_version(services: Services) -> str:
+    """The version to report: the desktop app's build version when it set one."""
+    return services.settings.build_version or __version__
+
+
 @router.get("/health")
-def health() -> Health:
-    return Health(status="ok", version=__version__)
+def health(services: ServicesDep) -> Health:
+    return Health(status="ok", version=app_version(services))
 
 
 @router.get("/system")
@@ -83,7 +88,7 @@ def system_info(services: ServicesDep) -> SystemInfo:
     cache = services.audio_cache.stats()
     db_files = [settings.database_path, Path(f"{settings.database_path}-wal")]
     return SystemInfo(
-        version=__version__,
+        version=app_version(services),
         python=platform.python_version(),
         platform=f"{platform.system()} {platform.release()}",
         machine=platform.machine(),

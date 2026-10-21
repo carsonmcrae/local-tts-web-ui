@@ -127,3 +127,51 @@ when a choice changes the stack, a trust boundary, data storage or the setup exp
   anywhere unless the visitor picks an online voice (which is labelled). It sounds different from
   the app, so the page says so. Revisit when a small (under ~50 MB) model with a licence-clean
   phonemiser can be self-hosted within Pages' limits.
+
+## ADR-19: A Tauri window around the existing UI and server, with a bundled Python
+
+- **Context:** People without developer tools should install TTSNative like any Windows app. The React
+  UI and the FastAPI server already work well together on loopback, and the reader must not be
+  rewritten. (ADR-11 to ADR-14 are reserved by work in progress on other branches.)
+- **Decision:** A Tauri 2 shell opens a window on the bundled server's loopback origin and owns the
+  server's lifetime (no console, kill-on-close Job Object, clean stop through stdin, single instance,
+  navigation limited to its own origin). The runtime is python-build-standalone installed by the pinned
+  uv with the locked, hash-checked packages, byte-compiled, plus the default Kokoro model. A per-user NSIS
+  installer keeps the program and the user's data in separate folders. Details and the options weighed:
+  [desktop-and-releases.md](desktop-and-releases.md).
+- **Alternatives:** Electron (bundles a browser for nothing we need); PyInstaller or Nuitka (packers that
+  antivirus tools often flag); the python.org embeddable zip (3.12 binaries stop at 3.12.10); Inno Setup
+  (Tauri's updater can't drive it).
+- **Consequences:** Every existing server protection still applies, because the page is served by the
+  same server as in a browser. The installer is a few hundred megabytes because of the model; voice
+  cloning stays an on-demand download. Windows only for now; the modules are separate so other
+  platforms can follow.
+
+## ADR-20: Updates only from GitHub Releases, verified and confirmed
+
+- **Context:** Installed copies should learn about new versions without a cloud service, without
+  telemetry and without trusting anything but the project's own releases.
+- **Decision:** Tauri's updater reads `latest.json` from the latest GitHub Release (never drafts or
+  pre-releases), offers only a newer SemVer version, downloads it, verifies its minisign signature
+  against the public key built into the app, and installs only after the user confirms twice (notice,
+  then _Install and restart_). Checks happen at most every 12 hours and can be turned off; _Remind me
+  later_ lasts three days per version. Authenticode signing is added when a certificate exists and is
+  never a substitute for the updater signature.
+- **Consequences:** One new network connection, documented in the privacy summary. The updater's
+  private key must be kept safe and backed up: without it installed copies can't verify updates.
+
+## ADR-21: Change files decide the version; people approve the notes
+
+- **Context:** Several branches are often in flight. Editing one version number or one `Unreleased`
+  section on each branch caused conflicts and let a merge silently skip its release impact.
+- **Decision:** Every pull request adds a `.changes/*.md` file with its bump (major, minor, patch or
+  none) and its notes for users and for developers; CI requires it and refuses hand-edited versions.
+  `npm run release:prepare` computes the next version from the files on `main`, writes it everywhere,
+  drafts plain-language notes in `docs/releases/` and the dated developer changelog, and consumes the
+  files; CI rejects the draft until a person rewrites it. Pushing the tag publishes.
+- **Alternatives:** Changesets (npm-only versions, no separate user-facing notes); bumping the version
+  on every merge (bot commits on protected `main`, and a release for every merge); per-branch version
+  numbers (collisions, as seen in another project).
+- **Consequences:** Version advancement and publication are separate: `main` always knows its next
+  version, and users only see reviewed releases. The app, the website and GitHub Releases show the same
+  notes, and the history works offline.

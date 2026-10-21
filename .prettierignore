@@ -14,3 +14,6 @@ apps/web/src/api/schema.gen.ts
 CHANGELOG.md
 tests/fixtures/documents
 docs/security/license-inventory.generated.md
+apps/desktop/runtime
+apps/desktop/src-tauri/target
+apps/desktop/src-tauri/gen

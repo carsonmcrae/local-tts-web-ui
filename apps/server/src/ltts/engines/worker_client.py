@@ -20,6 +20,7 @@ import time
 from pathlib import Path
 from typing import Any
 
+from ltts.common import NO_CONSOLE_WINDOW
 from ltts.errors import SynthesisError
 
 log = logging.getLogger("ltts.worker")
@@ -65,6 +66,7 @@ class WorkerClient:
             text=True,
             encoding="utf-8",
             bufsize=1,
+            creationflags=NO_CONSOLE_WINDOW,
         )
         proc = self._proc
         threading.Thread(target=self._read_stdout, args=(proc,), daemon=True).start()

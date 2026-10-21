@@ -1,39 +1,39 @@
 {
   "//": "Purpose: Pinned, checksum-verified toolchain downloads used by scripts/lib/uv.mjs. Scope: The uv binary only (uv then provisions Python 3.12 with its own verified downloads). Does NOT belong: Model artifacts (apps/server/src/ltts/modelstore/manifest.json) or npm/Python dependency pins (lockfiles).",
   "uv": {
-    "version": "0.12.21",
+    "version": "0.13.4",
     "minimumSystemVersion": "0.9.0",
-    "releaseBaseUrl": "https://github.com/astral-sh/uv/releases/download/0.12.21",
+    "releaseBaseUrl": "https://github.com/astral-sh/uv/releases/download/0.13.4",
     "artifacts": {
       "win32-x64": {
         "file": "uv-x86_64-pc-windows-msvc.zip",
-        "size": 17992232,
-        "sha256": "5d223efa0bf00208c3853246af09420419dfbd352536aa6bb8163d6170e23890"
+        "size": 15237259,
+        "sha256": "ccec7508a07d9933d7cb1261880633efcf1f30d6e6eddab21823f1dae6f23225"
       },
       "win32-arm64": {
         "file": "uv-aarch64-pc-windows-msvc.zip",
-        "size": 19274675,
-        "sha256": "93ed53b94e9cec000cacdfd18ca67bc4cb2b6a5f5ec041edd7f2a3dae365ce79"
+        "size": 15595599,
+        "sha256": "c4bc5a9534b2bb6a12fe29ea748445e1a6f9cb7bb275211c4fb74c52ecf317a5"
       },
       "darwin-x64": {
         "file": "uv-x86_64-apple-darwin.tar.gz",
-        "size": 20741769,
-        "sha256": "2b336763b396ec6afa20c5a8b083538ca7402445b868311979d740a4344c17d8"
+        "size": 17217446,
+        "sha256": "7be2dcd316122f4b3e5a0a7889f6248266c14425374e105ff7dc9779184603a6"
       },
       "darwin-arm64": {
         "file": "uv-aarch64-apple-darwin.tar.gz",
-        "size": 17001427,
-        "sha256": "b88bda573e566ef9bced66b155fe0408626fbbc053aee1c30ba686f0728c9447"
+        "size": 14326193,
+        "sha256": "e0b1d4743ce64c55d9f0f4a444afa6b81125680070ee04e853fcd0f6c1ebf8f1"
       },
       "linux-x64": {
         "file": "uv-x86_64-unknown-linux-gnu.tar.gz",
-        "size": 19782662,
-        "sha256": "23f02075b652bb1df64178cfae41b5caf160822e720e2663568f3f5d63bc52c0"
+        "size": 16653835,
+        "sha256": "2b428396f12572d4429cf210ca234dd599a33b3af0958a4d5ed569d63e3f344f"
       },
       "linux-arm64": {
         "file": "uv-aarch64-unknown-linux-gnu.tar.gz",
-        "size": 18943621,
-        "sha256": "030b69227b40af8c1981b7301793dc66e71ed3c796ea8688209dd268bd91ec51"
+        "size": 15769557,
+        "sha256": "1ae72b4718729e2ccc4f1ae2c6d1e531ca8467800e0546e9130b3886023a60ab"
       }
     }
   },

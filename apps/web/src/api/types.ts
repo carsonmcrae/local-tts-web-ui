@@ -50,3 +50,7 @@ export type CharacterAssignment = Schemas['CharacterAssignment'];
 export type CastPreset = Schemas['CastPresetOut'];
 export type SentenceTake = Schemas['SentenceTakeOut'];
 export type SpeakingStyle = NonNullable<SentenceStyle['style']>;
+export type SpeechApiStatus = Schemas['SpeechApiStatus'];
+export type SpeechApiSettingsInput = Schemas['SpeechApiSettingsIn'];
+export type SpeechApiToken = Schemas['SpeechApiToken'];
+export type SpeechApiActivity = Schemas['SpeechApiActivity'];

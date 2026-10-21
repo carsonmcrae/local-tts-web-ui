@@ -27,6 +27,9 @@ in the local database; the theme is stored per browser.
 | `LTTS_MIN_STUDIO_SPEECH_S` / `LTTS_MAX_SESSION_TAKES` / `LTTS_MAX_VOICE_IMPORT_S`              | 300 / 200 / 1,800 | Studio voices: usable speech needed to build, takes per session, and one imported recording's length              |
 | `LTTS_WARM_UP_ENGINES`                                                                         | true              | Load Kokoro at startup for a fast first sentence                                                                  |
 | `LTTS_CLONE_WORKER_IDLE_UNLOAD_S`                                                              | 600               | Free GPU/CPU memory after this much idle time                                                                     |
+| `LTTS_SPEECH_API_MAX_CHARS`                                                                    | 4,000             | [Local speech API](local-speech-api.md): characters per request (up to 20,000)                                    |
+| `LTTS_SPEECH_API_REQUESTS_PER_MINUTE`                                                          | 60                | Local speech API: requests a minute per token                                                                     |
+| `LTTS_SPEECH_API_TIMEOUT_S`                                                                    | 120               | Local speech API: seconds one request may take                                                                    |
 
 Bootstrap variables: `LTTS_SKIP_MODEL_DOWNLOAD`, `LTTS_NO_OPEN`, `LTTS_API_PORT`, `LTTS_WEB_PORT`,
 `LTTS_UV_PATH`, `LTTS_UV_PINNED_ONLY` (see `.env.example`).

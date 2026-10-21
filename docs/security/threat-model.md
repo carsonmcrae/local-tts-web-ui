@@ -16,6 +16,7 @@ local filesystem, and the integrity of installed model files and Python/npm depe
 3. **Internet → model store / package managers.** Downloads during setup and engine installation.
 4. **Server ↔ cloning worker.** A separate process with large third-party dependencies.
 5. **LAN (opt-in only).** Other devices when network mode is enabled.
+6. **Local programs ↔ speech API (opt-in only).** Scripts and tools on this computer calling `/v1`.
 
 ## Threats and mitigations
 
@@ -41,6 +42,7 @@ local filesystem, and the integrity of installed model files and Python/npm depe
 | Command injection                                         | Subprocesses use fixed argument lists (never a shell); tool paths are absolute (`taskkill`) or resolved once                                                                                                                                                                                                         | code review + lint rule                                |
 | Unwanted network exposure                                 | Loopback by default; the CLI refuses non-loopback binds without `--allow-network`, which requires a token (cookie set via a one-time link)                                                                                                                                                                           | `test_security.py`                                     |
 | Voice misuse / impersonation                              | Explicit consent statement required and recorded; output watermarked by Chatterbox (Perth); complete deletion, including a studio voice's session takes                                                                                                                                                              | `test_voices_exports_jobs.py`, `test_studio_voices.py` |
+| Other programs or web pages use the voices (speech API)   | Off by default (every `/v1` path answers 404); bearer token kept only as a SHA-256 hash, compared in constant time; loopback clients unless allowed; `Origin` or `Sec-Fetch-*` requests refused, no CORS headers; custom voices need explicit permission; strict schema; size, length, rate and concurrency limits   | `test_speech_api.py`, `test_speech_api_audio.py`       |
 | Slow or hostile patterns in user text (ReDoS)             | Pronunciation rules and searches are plain text: the server escapes every rule, matches whole words with one compiled pattern and caps rules (500) and lengths; search, and marking matches in the browser, are plain substring tests                                                                                | `test_reader_features.py`, `search.test.tsx`           |
 | Malicious studio voice files                              | Built voices are safetensors (tensors only, no pickle), checked for this app's format marker before loading, written and read only under `data/voices/`                                                                                                                                                              | `test_inference.py`                                    |
 

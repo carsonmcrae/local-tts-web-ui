@@ -1,7 +1,8 @@
 # Settings and models
 
-**Settings** has seven sections: **Appearance**, **Playback**, **Pronunciation**, **Engines &
-models**, **Storage**, **Privacy** and **About**. On wide screens, an index on the left jumps between them.
+**Settings** has nine sections: **Appearance**, **Playback**, **Pronunciation**, **Engines &
+models**, **Storage**, **Audiobookshelf**, **Local speech API**, **Privacy** and **About**. On wide
+screens, an index on the left jumps between them.
 
 ## Appearance
 
@@ -74,6 +75,18 @@ The audio cache holds generated speech so that sentences you've heard play insta
 a limit (2 GB by default, `LTTS_AUDIO_CACHE_MAX_MB`); older audio is removed automatically when it's
 full. **Clear audio cache** deletes all generated audio after you confirm. Documents, voices and models
 are kept, and audio is generated again as you listen.
+
+## Local speech API
+
+For advanced users: an optional, OpenAI-compatible endpoint (`/v1/audio/speech`) that lets
+scripts, screen readers and home automation on this computer read text aloud with TTSNative
+voices. It is **off** until you open **Speech API settings** and switch it on, and programs need a
+token, which is shown once (only a fingerprint of it is kept). Custom voices can't be used until
+you allow each one, web pages can never call it, and other devices are refused unless you allow
+them (which only matters in network mode). The section also shows when the API was last used, and
+the sidebar shows **Speech API in use** while a program is using it. See the
+[local speech API guide](https://github.com/carsonmcrae/ttsnative/blob/main/docs/guides/local-speech-api.md)
+for examples (curl, Python, the OpenAI SDK), limits and how it is protected.
 
 ## Privacy
 

@@ -2,8 +2,9 @@
 // Copyright (c) 2026 Carson McRae
 /**
  * Purpose: Application chrome shared by every route.
- * Scope: Skip link, desktop sidebar (with privacy note and engine status), phone tab bar, the routed
- *   page area, and the docked player that persists across navigation.
+ * Scope: Skip link, desktop sidebar (with privacy note, engine status and the speech API in-use
+ *   sign), phone tab bar (the same sign on Settings), the routed page area, and the docked player
+ *   that persists across navigation.
  * Does NOT belong: Page content or player logic.
  */
 import { AudioLines, BookHeadphones, BookOpen, Mic, Settings, ShieldCheck } from 'lucide-react';
@@ -13,6 +14,7 @@ import { useEngines } from '@/api/queries';
 import type { EngineInfo } from '@/api/types';
 import { cn } from '@/lib/cn';
 import { PlayerBar } from '@/features/player/PlayerBar';
+import { SpeechApiIndicator } from './SpeechApiIndicator';
 
 const NAV: readonly { to: string; label: string; icon: ReactNode }[] = [
   { to: '/library', label: 'Library', icon: <BookOpen size={19} /> },
@@ -96,6 +98,7 @@ export function AppShell() {
             Audiobookshelf.
           </div>
           <EngineStatus />
+          <SpeechApiIndicator variant="sidebar" />
         </div>
       </aside>
       <div className="flex min-w-0 flex-1 flex-col">
@@ -119,13 +122,14 @@ export function AppShell() {
               to={item.to}
               className={({ isActive }) =>
                 cn(
-                  'flex min-h-14 flex-col items-center justify-center gap-0.5 text-[11px] font-medium',
+                  'relative flex min-h-14 flex-col items-center justify-center gap-0.5 text-[11px] font-medium',
                   isActive ? 'text-accent-text' : 'text-muted',
                 )
               }
             >
               {item.icon}
               {item.label.replace('Voice Studio', 'Studio')}
+              {item.to === '/settings' ? <SpeechApiIndicator variant="tab" /> : null}
             </NavLink>
           ))}
         </nav>

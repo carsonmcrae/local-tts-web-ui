@@ -139,8 +139,9 @@ or that the speaker gave permission; generated audio carries Resemble AI's inaud
   settings, keyboard shortcuts, troubleshooting and FAQ.
 - **Reference ([docs/](docs/))**: [architecture](docs/architecture/overview.md),
   [configuration](docs/guides/configuration.md), [security](docs/security/threat-model.md),
-  [testing](docs/guides/testing.md), [releases](docs/guides/release-process.md) and
-  [the website's domain](docs/guides/custom-domain.md).
+  [testing](docs/guides/testing.md), [releases](docs/guides/release-process.md),
+  [the website's domain](docs/guides/custom-domain.md) and the optional
+  [local speech API](docs/guides/local-speech-api.md) for other programs on your computer.
 - **[Changelog](CHANGELOG.md)** and **[releases](https://github.com/carsonmcrae/ttsnative/releases)**: every release lists its changes and
   ships checksums, SBOMs and signed build provenance.
 

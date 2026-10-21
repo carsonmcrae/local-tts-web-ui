@@ -8,6 +8,14 @@ All notable changes to this project are documented here. The format follows
 
 ### Added
 
+- **Local speech API** (optional, off by default): an OpenAI-compatible `POST /v1/audio/speech`
+  with `GET /v1/models` and `GET /v1/voices`, so scripts, screen readers and home automation on
+  this computer can use TTSNative voices (MP3, WAV, FLAC, Ogg Opus or raw PCM). Set up in
+  **Settings → Local speech API**: a token shown once and stored only as a hash (revoke or replace it
+  at any time), custom voices refused until you allow each one, requests from other devices refused
+  unless allowed, and web pages always refused. Limits on input length, body size, requests a
+  minute, one request at a time and time per request. A **Speech API in use** sign shows while a
+  program uses it. See [the guide](docs/guides/local-speech-api.md).
 - **Expressive studio voices.** A studio voice keeps a speaking style for questions, lively lines,
   dialogue and narration, learnt from your takes of the matching passages, and reads each sentence
   in the style its punctuation asks for (the sound of the voice stays the same). Voices built

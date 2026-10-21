@@ -58,9 +58,9 @@ TTSNative is free and open source (MIT). It was called **Local TTS** until versi
 - **54 natural voices** (Kokoro-82M) across English (US/UK), Spanish, French, Hindi, Italian, Portuguese,
   Japanese and Mandarin, with quality grades and side-by-side comparison on your own passage.
 - **Voice Studio (optional)** — create a voice from a 10–20 second recording or an existing clip, or record a
-  guided studio session (lossless, a foundation passage plus 48 passages with reading hints, resumable, an early
-  version after about a minute) that the app builds into your most faithful voice, with its own speaking styles
-  for questions, dialogue and lively lines. Takes you can play back, checks that explain what went wrong
+  guided studio session (lossless, resumable, a foundation passage and about 15 suggested passages with reading
+  hints, an early version after about a minute) that the app builds into your most faithful voice, with its own
+  speaking styles for questions, dialogue and lively lines, and switches back if a rebuild sounds worse. Takes you can play back, checks that explain what went wrong
   (completeness and background noise as advice), explicit consent, a delivery setting, sharing as a `.ttsvoice`
   file and one-click permanent deletion.
 - **Export** — WAV, MP3, M4B audiobooks with chapters and a cover, or read-along EPUB 3; the whole document or
@@ -137,9 +137,11 @@ Limits (configurable): 25 MB per file, 2 million characters, 2,000 PDF pages.
 Chatterbox copies a voice at the moment it speaks from a **reference**: it takes the voice's sound from
 roughly the first 10 seconds and its speaking style from the first 15, so a clean recording matters more
 than a long one. A **quick voice** uses one 10–20 second clip. A **studio voice** comes from a longer guided
-session: the app averages the speaker across every take and builds the voice from the take you choose by
-ear. No model is trained — **fine-tuning** a model on 30+ minutes of audio can sound closer, but it needs
-hours of GPU time and isn't offered here. Recordings are stored only on this computer. You must confirm the voice is yours
+session: the app averages the speaker across the takes, builds the voice from the take you choose by ear
+and gives each speaking style three takes of its own. No model is trained, so the session asks only for what
+the voice uses and stops when more passages wouldn't change it; measured, a complete session scores the same
+as an early one built from about a dozen takes
+([studio voice audit](docs/research/studio-voice-audit.md)). Fine-tuning is being evaluated, not offered. Recordings are stored only on this computer. You must confirm the voice is yours
 or that the speaker gave permission; generated audio carries Resemble AI's inaudible Perth watermark.
 
 ## Documentation

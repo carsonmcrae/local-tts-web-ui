@@ -8,6 +8,39 @@ All notable changes to this project are documented here. The format follows
 
 ### Added
 
+- **A shorter, honest studio session.** The tiers now follow what a studio voice actually uses:
+  **Foundation** (a working voice), **Developing** (its sound has settled after twelve clean takes)
+  and **Complete** (every speaking style has its three takes). Each style shows its takes out of
+  three, the session suggests the **most useful next** passage (**Go to it**), and a complete
+  session says more passages won't change the voice: about 15 passages instead of 48. The intro
+  and docs say plainly that no model is trained. See the
+  [studio voice audit](docs/research/studio-voice-audit.md).
+- **Switch to the previous expression:** rebuilding a studio voice's speaking styles keeps the
+  ones from before, and you can switch back (and forward again).
+- **A blind listening panel** for comparing several voices: `ltts voice-panel make` and
+  `ltts voice-panel score` (ratings with 95 % intervals and a paired sign test).
+- **Local speech API:** OpenAI's voice names (alloy, nova, shimmer and the rest) read with fixed
+  built-in Kokoro voices (`GET /v1/voices` shows them as `openai_name`). Settings shows the exact
+  address to use with a Copy button and warns when TTSNative has moved to another port since a
+  program last used it; `npm run start` and `npm run dev` warn in the terminal too.
+- **Footnotes and citation markers in the cleanup.** PDF footnotes at the foot of a page (small
+  type below the text, starting with a number that marks a word on the page) are skipped like
+  running headers, and citation markers such as [12], [3, 4] or [5–7] are left unread; both can be
+  reviewed and read again.
+- **Listening times count what is read.** Library cards, the reader and the player count only what
+  is read aloud, and update when you skip a sentence, read one again or undo the cleanup.
+- **LAN mode, hardened.** A phone's pairing works only from the address it paired from and ends
+  after 30 days (or 14 days unused); the computer shows a refused use of a device's cookie, and the
+  phone says why it must pair again. Paired devices reach only an explicit list of features (voice
+  recordings, cancelling the computer's jobs and the data folder's path are no longer available to
+  them). LAN mode turns itself off when the computer's network changes or after it slept, the
+  address list hides virtual-machine and container adapters and labels VPNs, turning it off stops
+  at once (downloads included), unpaired devices may send only small requests, and costly work from
+  one device is limited. The sidebar shows when LAN mode is on. See
+  [HTTPS options for phones](docs/research/lan-https.md).
+- Research: [what a studio voice's recordings do](docs/research/studio-voice-audit.md), measured on
+  a real session, and [open speech engines compared](docs/research/engine-comparison.md) for
+  studio voices, with licences for code, weights and output checked separately.
 - **Local speech API** (optional, off by default): an OpenAI-compatible `POST /v1/audio/speech`
   with `GET /v1/models` and `GET /v1/voices`, so scripts, screen readers and home automation on
   this computer can use TTSNative voices (MP3, WAV, FLAC, Ogg Opus or raw PCM). Set up in
@@ -171,6 +204,19 @@ All notable changes to this project are documented here. The format follows
 
 ### Fixed
 
+- Numbers in brackets are no longer dropped from speech: `array[3]`, `x[i+1]`, `matrix[2][3]`,
+  `[0, 1]` and `list[-1]` are read as written, in the speech API too. In documents added before
+  this version, citation numbers like [12] are read until the document is added again.
+- Superscripts in equations (a² + b² = c², sin² x) are no longer taken for footnote markers.
+- Reading progress reaches 100 % at the last sentence that is read, even when the last page number
+  is skipped.
+- Local speech API: a request body that takes more than 30 seconds gets 408; a client that
+  disconnects no longer causes a server error or an extra sentence of work; and any voice made
+  from a recording is refused unless you allowed it, whatever its id.
+- The A/B comparison's default sentences are no longer taken from the studio recording script, so
+  a studio or fine-tuned voice is compared on text it has never read.
+- Privacy and the speech API section now say when LAN mode lets other devices in.
+- Library cards no longer push the page sideways on phones.
 - **Website on phones:** the install commands scroll sideways on narrow screens and can now be reached
   and scrolled with a keyboard (a labelled, focusable region). The phone tests now run axe.
 

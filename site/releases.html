@@ -1,0 +1,42 @@
+<!doctype html>
+<!--
+  Purpose: The website's release history: what changed in each published version of TTSNative.
+  Scope: A page shell; the build (scripts/site/build-site.mjs) fills in the reviewed, plain-language
+    notes from docs/releases/ for published releases, and the Windows download when one exists.
+  Does NOT belong: The notes themselves (docs/releases/) or the home page (index.html).
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Release history · TTSNative</title>
+    <meta
+      name="description"
+      content="What's new in each version of TTSNative, the free, private text-to-speech reader."
+    />
+    <link rel="canonical" href="%BASE_URL%/releases.html" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="sections.css" />
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to content</a>
+    <main id="main" class="wrap releases">
+      <p class="eyebrow"><a href="./">TTSNative</a></p>
+      <h1>Release history</h1>
+      <p class="lead">What changed in each version, newest first.</p>
+      <!-- if:download -->
+      <p class="actions">
+        <a class="btn primary" href="%WIN_URL%">Download TTSNative %WIN_VERSION% for Windows</a>
+        <a class="btn" href="./#download">Installation and requirements</a>
+      </p>
+      <!-- /if:download -->
+      <!-- release-history -->
+      <p class="fine">
+        Developer details for every version are in the
+        <a href="https://github.com/carsonmcrae/ttsnative/blob/main/CHANGELOG.md">changelog</a>.
+      </p>
+    </main>
+  </body>
+</html>

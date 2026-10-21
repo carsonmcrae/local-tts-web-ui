@@ -14,6 +14,7 @@
  * Does NOT belong: Building the installer (build.mjs) or the desktop shell (apps/desktop/src-tauri).
  */
 import { spawnSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import {
   copyFileSync,
   cpSync,
@@ -115,6 +116,8 @@ function installServer(uv, python) {
   step('Byte-compiling (nothing is written into the install folder at run time)…');
   run(python, [
     '-I',
+    '-X',
+    'utf8',
     '-m',
     'compileall',
     '-q',
@@ -131,7 +134,7 @@ function installModels(python) {
   const models = path.join(cache, 'models');
   for (const artifact of manifest.bundledModels) {
     step(`Model ${artifact} (downloaded once, SHA-256 verified)…`);
-    run(python, ['-I', '-m', 'ltts.cli', 'models', 'ensure', artifact], {
+    run(python, ['-I', '-X', 'utf8', '-m', 'ltts.cli', 'models', 'ensure', artifact], {
       LTTS_MODELS_DIR: models,
       LTTS_DATA_DIR: path.join(cache, 'data'),
     });
@@ -184,7 +187,33 @@ async function main() {
       'Third-party licences: python\\LICENSE.txt, the packages in python\\Lib\\site-packages\\*.dist-info,\r\n' +
       'web\\THIRD-PARTY-LICENSES.md and web\\FONT-LICENSES.txt. Kokoro model weights: Apache-2.0.\r\n',
   );
+  writeFileSync(
+    path.join(out, 'runtime-manifest.json'),
+    `${JSON.stringify(provenance(uv), null, 2)}\n`,
+  );
   ok(`Desktop runtime ready in apps/desktop/runtime (${formatBytes(folderBytes(out))})`);
+}
+
+/**
+ * What went into the runtime, for the release's records (the packages themselves are in the server SBOM).
+ * @param {string} uv
+ */
+function provenance(uv) {
+  const sha256 = (/** @type {string} */ file) =>
+    createHash('sha256').update(readFileSync(file)).digest('hex');
+  const models = JSON.parse(
+    readFileSync(path.join(serverDir, 'src', 'ltts', 'modelstore', 'manifest.json'), 'utf8'),
+  ).artifacts;
+  return {
+    python: {
+      version: manifest.python,
+      source: 'python-build-standalone, installed and verified by uv',
+    },
+    uv: { version: readToolchain().uv.version, sha256: sha256(uv) },
+    serverLockSha256: sha256(path.join(serverDir, 'uv.lock')),
+    workerLockSha256: sha256(path.join(repoRoot, 'apps', 'chatterbox-worker', 'uv.lock')),
+    models: manifest.bundledModels.map((id) => ({ id, files: models[id].files })),
+  };
 }
 
 try {

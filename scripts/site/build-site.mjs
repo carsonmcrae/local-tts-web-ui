@@ -5,9 +5,11 @@
  * Purpose: Assemble the TTSNative website for GitHub Pages (and for local preview and tests).
  * Scope: Copies site/, the videos and posters from docs/media and the screenshots from docs/images;
  *   drops sections whose files are missing (`<!-- requires: … -->` … `<!-- /requires -->`); fills in
- *   %BASE_URL% (the address Pages reports, so a custom domain is picked up automatically); writes
- *   sitemap.xml and robots.txt; and fails if a local link or in-page anchor points nowhere.
- *   Usage: `node scripts/site/build-site.mjs --out _site --base-url https://example.com`.
+ *   %BASE_URL% (the address Pages reports, so a custom domain is picked up automatically); adds the
+ *   Windows download and the release history (releases.mjs; with `--releases github` only published
+ *   releases and a verified installer, otherwise no installer is advertised); writes sitemap.xml and
+ *   robots.txt; and fails if a local link or in-page anchor points nowhere.
+ *   Usage: `node scripts/site/build-site.mjs --out _site --base-url https://example.com [--releases github]`.
  * Does NOT belong: The page content (site/) or deployment (.github/workflows/pages.yml).
  */
 import {
@@ -22,6 +24,8 @@ import {
 } from 'node:fs';
 import path from 'node:path';
 import { repoRoot } from '../lib/paths.mjs';
+import { readReleases } from '../lib/releases.mjs';
+import { fillDownload, githubReleases, renderHistory } from './releases.mjs';
 
 /** @param {string} name */
 function option(name) {
@@ -57,7 +61,17 @@ export function brokenLinks(/** @type {string} */ html, /** @type {string} */ ou
   });
 }
 
-function main() {
+/** Published release notes (drafts never) and the installer to advertise, if any. */
+async function releaseInfo() {
+  const finished = readReleases().releases.filter((release) => !release.draft);
+  if (!process.argv.includes('--releases') || option('--releases') !== 'github') {
+    return { releases: finished, installer: null };
+  }
+  const { published, installer } = await githubReleases();
+  return { releases: finished.filter((release) => published.has(release.version)), installer };
+}
+
+async function main() {
   const out = path.resolve(option('--out'));
   let base = option('--base-url');
   while (base.endsWith('/')) base = base.slice(0, -1);
@@ -73,17 +87,20 @@ function main() {
   }
   cpSync(path.join(repoRoot, 'docs', 'images'), path.join(out, 'images'), { recursive: true });
 
+  const { releases, installer } = await releaseInfo();
   const problems = [];
-  for (const page of ['index.html', '404.html']) {
+  for (const page of ['index.html', 'releases.html', '404.html']) {
     const file = path.join(out, page);
-    const html = applyRequirements(readFileSync(file, 'utf8'), out).replaceAll('%BASE_URL%', base);
+    const html = fillDownload(applyRequirements(readFileSync(file, 'utf8'), out), installer)
+      .replace('<!-- release-history -->', renderHistory(releases))
+      .replaceAll('%BASE_URL%', base);
     writeFileSync(file, html);
-    if (page === 'index.html')
+    if (page !== '404.html')
       problems.push(...brokenLinks(html, out).map((ref) => `${page}: ${ref}`));
   }
   writeFileSync(
     path.join(out, 'sitemap.xml'),
-    `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n  <url><loc>${base}/</loc></url>\n</urlset>\n`,
+    `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n  <url><loc>${base}/</loc></url>\n  <url><loc>${base}/releases.html</loc></url>\n</urlset>\n`,
   );
   writeFileSync(
     path.join(out, 'robots.txt'),
@@ -93,7 +110,9 @@ function main() {
     console.error(`Broken links:\n  ${problems.join('\n  ')}`);
     process.exit(1);
   }
-  console.log(`Site built in ${path.relative(repoRoot, out) || out} for ${base}`);
+  console.log(
+    `Site built in ${path.relative(repoRoot, out) || out} for ${base} (${releases.length} releases, ${installer ? `Windows installer ${installer.version}` : 'no Windows installer'})`,
+  );
 }
 
-main();
+await main();

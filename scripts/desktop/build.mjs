@@ -7,7 +7,9 @@
  *   and the app, builds the web UI, assembles the bundled runtime, runs `tauri build` (per-user NSIS
  *   installer) and copies the installer, its updater signature and a SHA-256 line to dist/desktop/.
  *   Without TAURI_SIGNING_PRIVATE_KEY the installer has no updater signature: fine for testing, but
- *   such a build can never be offered as an update. Windows only; needs Rust and the MSVC build tools.
+ *   such a build can never be offered as an update. TTSNATIVE_WINDOWS_SIGN_COMMAND (for example Azure
+ *   Artifact Signing) adds Authenticode signatures to the app and installer (`%1` is the file).
+ *   Windows only; needs Rust and the MSVC build tools.
  * Does NOT belong: What goes into the runtime (build-runtime.mjs) or publishing (release.yml).
  */
 import { spawnSync } from 'node:child_process';
@@ -58,7 +60,16 @@ function main() {
   const signed = Boolean(process.env.TAURI_SIGNING_PRIVATE_KEY);
   if (!signed) warn('TAURI_SIGNING_PRIVATE_KEY is not set: building without an updater signature.');
   rmSync(nsisDir, { recursive: true, force: true });
-  const override = { version, bundle: { createUpdaterArtifacts: signed } };
+  const signCommand = process.env.TTSNATIVE_WINDOWS_SIGN_COMMAND;
+  const override = {
+    version,
+    bundle: {
+      createUpdaterArtifacts: signed,
+      ...(signCommand ? { windows: { signCommand } } : {}),
+    },
+  };
+  if (!signCommand)
+    warn('No TTSNATIVE_WINDOWS_SIGN_COMMAND: the installer has no Authenticode signature.');
   node(
     [
       path.join(repoRoot, 'node_modules', '@tauri-apps', 'cli', 'tauri.js'),
@@ -83,6 +94,10 @@ function main() {
   const sha256 = createHash('sha256').update(readFileSync(target)).digest('hex');
   writeFileSync(`${target}.sha256`, `${sha256}  ${name}\n`);
   writeFileSync(path.join(outDir, 'version.txt'), version);
+  copyFileSync(
+    path.join(desktopDir, 'runtime', 'runtime-manifest.json'),
+    path.join(outDir, 'desktop-runtime-manifest.json'),
+  );
   ok(`${name}: ${(statSync(target).size / 1_048_576).toFixed(0)} MB, SHA-256 ${sha256}`);
 }
 

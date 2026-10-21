@@ -11,14 +11,15 @@
  *   (CI) to install first and uninstall afterwards.
  * Does NOT belong: The installer checks or updating (smoke-test.mjs, update-test.mjs).
  */
-import { execFileSync, spawn, spawnSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
-import { chromium } from '@playwright/test';
 import { repoRoot } from '../lib/paths.mjs';
+import { appPage, launchForDebugging, removeDebugOverride } from './webview-debugging.mjs';
 
 const exe = path.join(process.env.LOCALAPPDATA ?? '', 'TTSNative', 'TTSNative.exe');
+const DEBUG_PORT = 9334;
 const POWERSHELL = path.join(
   process.env.SystemRoot ?? 'C:/Windows',
   'System32',
@@ -55,51 +56,21 @@ async function api(url, init = {}) {
   return response.status === 204 ? null : response.json();
 }
 
-async function start() {
-  spawn(exe, [], {
-    detached: true,
-    stdio: 'ignore',
-    env: { ...process.env, WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS: '--remote-debugging-port=9334' },
-  }).unref();
-  for (let attempt = 0; attempt < 240; attempt += 1) {
-    for (let port = 8770; port < 8790; port += 1) {
-      const origin = `http://127.0.0.1:${port}`;
-      if (
-        await fetch(`${origin}/api/health`)
-          .then((r) => r.ok)
-          .catch(() => false)
-      )
-        return origin;
-    }
-    await sleep(500);
-  }
-  throw new Error('FAILED: the app did not start');
-}
+const start = () => launchForDebugging(exe, DEBUG_PORT);
 
 /** @param {string} origin */
 async function windowStorage(origin, /** @type {Record<string, string> | null} */ write = null) {
-  for (let attempt = 0; attempt < 90; attempt += 1) {
-    const browser = await chromium.connectOverCDP('http://127.0.0.1:9334').catch(() => null);
-    const page = browser
-      ?.contexts()
-      .flatMap((c) => c.pages())
-      .find((p) => p.url().startsWith(origin));
-    if (browser && page) {
-      const values = await page.evaluate(
-        ([keys, entries]) => {
-          if (entries)
-            for (const [key, value] of Object.entries(entries)) localStorage.setItem(key, value);
-          return Object.fromEntries(keys.map((key) => [key, localStorage.getItem(key)]));
-        },
-        /** @type {[string[], Record<string, string> | null]} */ ([Object.keys(STORAGE), write]),
-      );
-      await browser.close();
-      return values;
-    }
-    await browser?.close().catch(() => undefined);
-    await sleep(1000);
-  }
-  throw new Error('FAILED: the app window could not be reached');
+  const page = await appPage(DEBUG_PORT, origin);
+  const values = await page.evaluate(
+    ([keys, entries]) => {
+      if (entries)
+        for (const [key, value] of Object.entries(entries)) localStorage.setItem(key, value);
+      return Object.fromEntries(keys.map((key) => [key, localStorage.getItem(key)]));
+    },
+    /** @type {[string[], Record<string, string> | null]} */ ([Object.keys(STORAGE), write]),
+  );
+  await page.context().browser()?.close();
+  return values;
 }
 
 /** Everything a person did, as the app reports it. @param {string} origin */
@@ -230,4 +201,6 @@ try {
 } catch (error) {
   console.error(error instanceof Error ? error.message : error);
   process.exit(1);
+} finally {
+  removeDebugOverride();
 }

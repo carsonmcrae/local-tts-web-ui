@@ -12,18 +12,26 @@
  *   Usage: `node scripts/desktop/update-test.mjs`.
  * Does NOT belong: The installer smoke test (smoke-test.mjs) or release builds (build.mjs).
  */
-import { execFileSync, spawn, spawnSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import { copyFileSync, mkdtempSync, readFileSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
-import { chromium } from '@playwright/test';
 import { repoRoot } from '../lib/paths.mjs';
+import {
+  appPage,
+  endApp,
+  isRunning,
+  launchForDebugging,
+  removeDebugOverride,
+  serverOrigin,
+} from './webview-debugging.mjs';
 
 const OLD = '2.1.0-updatetest.1';
 const NEW = '2.1.0-updatetest.2';
 const PORT = 8799;
+const DEBUG_PORT = 9222;
 const NOTES =
   'An update made by the update test.\n\n## Fixed\n\n- The update test can see these notes.';
 const local = process.env.LOCALAPPDATA ?? '';
@@ -127,61 +135,10 @@ function updateServer(/** @type {string} */ installer, /** @type {string} */ wro
   return { state, close: () => server.close() };
 }
 
-async function serverOrigin(/** @type {number} */ timeoutMs) {
-  const deadline = Date.now() + timeoutMs;
-  while (Date.now() < deadline) {
-    for (let port = 8770; port < 8790; port += 1) {
-      const ok = await fetch(`http://127.0.0.1:${port}/api/health`, {
-        signal: AbortSignal.timeout(1500),
-      })
-        .then((response) => response.ok)
-        .catch(() => false);
-      if (ok) return `http://127.0.0.1:${port}`;
-    }
-    await sleep(1000);
-  }
-  throw new Error('FAILED: the app did not start its server');
-}
-
-/**
- * The app's page, through WebView2's debugging port (it can open a little after the server answers).
- * @param {string} origin
- */
-async function appPage(origin) {
-  const deadline = Date.now() + 90_000;
-  while (Date.now() < deadline) {
-    const browser = await chromium.connectOverCDP('http://127.0.0.1:9222').catch(() => null);
-    const page = browser
-      ?.contexts()
-      .flatMap((context) => context.pages())
-      .find((item) => item.url().startsWith(origin));
-    if (page) return page;
-    await browser?.close().catch(() => undefined);
-    await sleep(1000);
-  }
-  const webviews = spawnSync(
-    path.join(system32, 'WindowsPowerShell', 'v1.0', 'powershell.exe'),
-    [
-      '-NoProfile',
-      '-Command',
-      "Get-CimInstance Win32_Process -Filter \"Name='msedgewebview2.exe'\" | Where-Object { $_.CommandLine -match 'TTSNative' } | Select-Object -First 1 -ExpandProperty CommandLine",
-    ],
-    { encoding: 'utf8' },
-  ).stdout;
-  console.log(
-    `(TTSNative processes running: ${running()}; web view: ${webviews.trim() || 'none'})`,
-  );
-  throw new Error('FAILED: the app window could not be reached through WebView2');
-}
-
 const installedVersion = () =>
   /DisplayVersion\s+REG_SZ\s+(\S+)/.exec(
     execFileSync(REG, ['query', KEY], { encoding: 'utf8' }),
   )?.[1];
-const running = () =>
-  execFileSync(path.join(system32, 'tasklist.exe'), ['/FI', 'IMAGENAME eq TTSNative.exe'], {
-    encoding: 'utf8',
-  }).includes('TTSNative.exe');
 
 async function main() {
   const key = updateKey();
@@ -190,23 +147,7 @@ async function main() {
   const server = updateServer(newer, readFileSync(`${older}.sig`, 'utf8'));
   try {
     check(spawnSync(older, ['/S'], { stdio: 'inherit' }).status === 0, `installed ${OLD}`);
-    // A copy started without the debugging port would take the single instance; end it first.
-    if (running()) {
-      console.log('(the app was already running after the install; ending it)');
-      spawnSync(path.join(system32, 'taskkill.exe'), ['/IM', 'TTSNative.exe', '/F'], {
-        stdio: 'ignore',
-      });
-      await sleep(3000);
-    }
-    spawn(path.join(installDir, 'TTSNative.exe'), [], {
-      detached: true,
-      stdio: 'ignore',
-      env: {
-        ...process.env,
-        WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS: '--remote-debugging-port=9222',
-      },
-    }).unref();
-    const origin = await serverOrigin(240_000);
+    const origin = await launchForDebugging(path.join(installDir, 'TTSNative.exe'), DEBUG_PORT);
     const document = /** @type {{ id: string }} */ (
       await (
         await fetch(`${origin}/api/documents/text`, {
@@ -219,7 +160,7 @@ async function main() {
         })
       ).json()
     );
-    const page = await appPage(origin);
+    const page = await appPage(DEBUG_PORT, origin);
     const notice = page.getByRole('region', { name: 'Update available' });
     await notice.getByText(`TTSNative ${NEW} is available`).waitFor({ timeout: 60_000 });
     check(
@@ -234,7 +175,7 @@ async function main() {
       .getByText(/couldn.t be downloaded and verified/)
       .waitFor({ timeout: 120_000 });
     check(
-      running() && installedVersion() === OLD,
+      isRunning() && installedVersion() === OLD,
       'an update with a wrong signature is refused; the app keeps running',
     );
     server.state.mode = 'broken-download';
@@ -245,7 +186,7 @@ async function main() {
       .getByText(/couldn.t be downloaded and verified/)
       .waitFor({ timeout: 120_000 });
     check(
-      running() && installedVersion() === OLD,
+      isRunning() && installedVersion() === OLD,
       'an interrupted download is refused; the app keeps running',
     );
     server.state.mode = 'good';
@@ -262,14 +203,13 @@ async function main() {
     while (Date.now() < deadline && installedVersion() !== NEW) await sleep(1000);
     check(installedVersion() === NEW, `the verified update installed ${NEW}`);
     const reopened = await serverOrigin(240_000);
-    check(running(), 'TTSNative reopened after the update');
+    check(isRunning(), 'TTSNative reopened after the update');
     const documents = await (await fetch(`${reopened}/api/documents`)).text();
     check(documents.includes(document.id), 'the document is still there after the update');
   } finally {
     server.close();
-    spawnSync(path.join(system32, 'taskkill.exe'), ['/IM', 'TTSNative.exe', '/F'], {
-      stdio: 'ignore',
-    });
+    await endApp();
+    removeDebugOverride();
   }
 }
 

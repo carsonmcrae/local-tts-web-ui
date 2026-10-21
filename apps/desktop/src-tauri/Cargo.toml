@@ -1,7 +1,8 @@
 # Purpose: The TTSNative desktop shell: a Tauri 2 window that starts the bundled local server and shows
 #   the existing web UI, plus signed updates from GitHub Releases.
 # Scope: Rust crate manifest, exact pins for direct dependencies (each at least 14 days old when chosen,
-#   matching the repository's supply-chain cool-down) and the release profile.
+#   matching the repository's supply-chain cool-down; Cargo.lock holds transitive crates to the same
+#   rule where their ranges allow) and the release profile.
 # Does NOT belong: The product version (tauri.conf.json reads it from the root package.json; the copy
 #   below is kept in step by scripts/lib/version-files.mjs) or the bundled runtime (scripts/desktop/).
 
@@ -23,11 +24,12 @@ tauri-build = { version = "=2.7.1", features = [] }
 tauri = { version = "=2.12.1", features = [] }
 tauri-plugin-opener = "=2.7.0"
 tauri-plugin-single-instance = "=2.5.2"
-tauri-plugin-updater = "=2.13.1"
+# Without the default "zip" feature: updates are signed .exe installers, never zip archives.
+tauri-plugin-updater = { version = "=2.13.1", default-features = false, features = ["rustls-tls", "system-proxy"] }
 tauri-plugin-window-state = "=2.5.0"
-semver = "1.0.27"
-serde = { version = "1.0.228", features = ["derive"] }
-serde_json = "1.0.145"
+semver = "=1.0.28"
+serde = { version = "=1.0.229", features = ["derive"] }
+serde_json = "=1.0.151"
 
 [target.'cfg(windows)'.dependencies]
 win32job = "=2.0.3"

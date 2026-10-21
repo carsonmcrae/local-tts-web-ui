@@ -1,5 +1,6 @@
 # Purpose: Build and test the Windows desktop app on a clean Windows runner, for every change to it.
-# Scope: The desktop shell's formatting, lints and unit tests; then the full installer (web UI, bundled
+# Scope: The desktop shell's formatting, lints, unit tests and cargo-deny (advisories, licences,
+#   sources for the Windows build); then the full installer (web UI, bundled
 #   runtime with the verified Kokoro model, per-user NSIS installer) built WITHOUT the release updater
 #   key, an installer smoke test (silent install, speech, MP3 export, no console windows, restart,
 #   uninstall that keeps the user's data), everything a person did surviving a close and a crash
@@ -58,6 +59,13 @@ jobs:
             echo "::error::cargo fmt changed files; the rustfmt-patch artifact has the fix"
             exit 1
           fi
+      - name: Rust advisories, licences and sources (cargo-deny, Windows build)
+        working-directory: apps/desktop/src-tauri
+        run: |
+          curl -sSfL -o "$RUNNER_TEMP/cargo-deny.tgz" https://github.com/EmbarkStudios/cargo-deny/releases/download/0.20.2/cargo-deny-0.20.2-x86_64-pc-windows-msvc.tar.gz
+          echo "975a22143262fd27476d19ee00c7af67978426e40e1dee94eed6bbade1cf87dc  $RUNNER_TEMP/cargo-deny.tgz" | sha256sum --check
+          tar -xzf "$RUNNER_TEMP/cargo-deny.tgz" -C "$RUNNER_TEMP"
+          "$RUNNER_TEMP/cargo-deny-0.20.2-x86_64-pc-windows-msvc/cargo-deny.exe" --locked check
       - name: Lints and unit tests
         working-directory: apps/desktop/src-tauri
         run: |

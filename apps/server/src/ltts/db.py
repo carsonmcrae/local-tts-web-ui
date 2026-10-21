@@ -193,6 +193,10 @@ MIGRATIONS: tuple[str, ...] = (
         created_at TEXT NOT NULL
     );
     """,
+    # a take recorded again keeps the one it replaced, to compare them and restore the old one
+    """
+    ALTER TABLE voice_takes ADD COLUMN previous_json TEXT;
+    """,
 )
 
 

@@ -59,6 +59,8 @@ class QualityReport(ApiModel):
     coverage: float | None = None
     syllables_heard: int | None = None
     syllables_expected: int | None = None
+    # Session takes only: what the background sounds like (``background.classify``), when anything is named.
+    background: list[str] | None = None
     ok: bool
     issues: list[QualityIssue]
 

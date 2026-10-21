@@ -96,6 +96,11 @@ def _reads(prompt_id: str | None, source: str) -> bool:
     return prompt_id is not None and (prompt_id == source or prompt_id.startswith(f"{source}-"))
 
 
+def teaches(prompt_id: str | None, style: str) -> bool:
+    """Whether a take of this passage can teach ``style`` (from any of the style's passage groups)."""
+    return any(_reads(prompt_id, source) for source in STYLE_SOURCES[style])
+
+
 def style_prompts(takes: Sequence[StyleTake], style: str) -> list[Path]:
     """The takes that teach ``style``, best first: from its preferred passage group, then the next ones."""
     usable = [t for t in takes if t.typical and t.quality.ok and t.quality.snr_db >= 12 and t.prompt_id]

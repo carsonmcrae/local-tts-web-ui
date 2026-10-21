@@ -772,6 +772,62 @@ export type paths = {
     patch?: never;
     trace?: never;
   };
+  '/api/speech-api': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get Speech Api */
+    get: operations['get_speech_api_api_speech_api_get'];
+    /** Save Speech Api */
+    put: operations['save_speech_api_api_speech_api_put'];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/speech-api/activity': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Speech Api Activity
+     * @description Polled by the app shell: cheap, and says nothing beyond on/off and in use.
+     */
+    get: operations['speech_api_activity_api_speech_api_activity_get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/speech-api/token': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Create Token */
+    post: operations['create_token_api_speech_api_token_post'];
+    /** Revoke Token */
+    delete: operations['revoke_token_api_speech_api_token_delete'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/system': {
     parameters: {
       query?: never;
@@ -1106,6 +1162,40 @@ export type paths = {
     get: operations['take_audio_api_voice_sessions__session_id__takes__number__audio_get'];
     put?: never;
     post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/voice-sessions/{session_id}/takes/{number}/previous/audio': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Previous Take Audio */
+    get: operations['previous_take_audio_api_voice_sessions__session_id__takes__number__previous_audio_get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/voice-sessions/{session_id}/takes/{number}/restore': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Restore Take */
+    post: operations['restore_take_api_voice_sessions__session_id__takes__number__restore_post'];
     delete?: never;
     options?: never;
     head?: never;
@@ -1704,6 +1794,17 @@ export type components = {
       /** Text */
       text?: string | null;
     };
+    /**
+     * PreviousTakeOut
+     * @description The take a new recording of the same passage replaced, kept to compare with it and restore.
+     */
+    PreviousTakeOut: {
+      /** Createdat */
+      createdAt: string;
+      /** Durations */
+      durationS: number;
+      quality: components['schemas']['QualityReport'];
+    };
     /** ProfileUpdate */
     ProfileUpdate: {
       /** Delivery */
@@ -1760,6 +1861,8 @@ export type components = {
     };
     /** QualityReport */
     QualityReport: {
+      /** Background */
+      background?: string[] | null;
       /** Bodydb */
       bodyDb?: number | null;
       /** Brightnessdb */
@@ -1975,6 +2078,70 @@ export type components = {
     SessionCreate: {
       cleanup?: components['schemas']['Cleanup'] | null;
     };
+    /** SpeechApiActivity */
+    SpeechApiActivity: {
+      /** Active */
+      active: boolean;
+      /** Enabled */
+      enabled: boolean;
+    };
+    /** SpeechApiSettingsIn */
+    SpeechApiSettingsIn: {
+      /** Allowedvoices */
+      allowedVoices?: string[];
+      /**
+       * Allownetwork
+       * @default false
+       */
+      allowNetwork: boolean;
+      /** Enabled */
+      enabled: boolean;
+    };
+    /** SpeechApiStatus */
+    SpeechApiStatus: {
+      /** Allowedvoices */
+      allowedVoices: string[];
+      /** Allownetwork */
+      allowNetwork: boolean;
+      /** Enabled */
+      enabled: boolean;
+      /** Hastoken */
+      hasToken: boolean;
+      /** Maxinputchars */
+      maxInputChars: number;
+      /** Networkmode */
+      networkMode: boolean;
+      /** Port */
+      port: number | null;
+      /** Requestsperminute */
+      requestsPerMinute: number;
+      /** Tokencreatedat */
+      tokenCreatedAt: string | null;
+      usage: components['schemas']['SpeechApiUsage'];
+    };
+    /**
+     * SpeechApiToken
+     * @description A new token: the only time it is ever sent.
+     */
+    SpeechApiToken: {
+      /** Createdat */
+      createdAt: string;
+      /** Token */
+      token: string;
+    };
+    /** SpeechApiUsage */
+    SpeechApiUsage: {
+      /** Active */
+      active: boolean;
+      /** Inprogress */
+      inProgress: boolean;
+      /** Lastusedat */
+      lastUsedAt: string | null;
+      /** Lastvoiceid */
+      lastVoiceId: string | null;
+      /** Requests */
+      requests: number;
+    };
     /** StorageInfo */
     StorageInfo: {
       /** Audiocachebytes */
@@ -1995,6 +2162,16 @@ export type components = {
       totalBytes: number;
       /** Voicesbytes */
       voicesBytes: number;
+    };
+    /**
+     * StyleCoverage
+     * @description How many usable takes can teach one speaking style (narration, question, lively, dialogue, calm).
+     */
+    StyleCoverage: {
+      /** Style */
+      style: string;
+      /** Takes */
+      takes: number;
     };
     /** SystemInfo */
     SystemInfo: {
@@ -2037,6 +2214,7 @@ export type components = {
       durationS: number;
       /** Number */
       number: number;
+      previous?: components['schemas']['PreviousTakeOut'] | null;
       /** Promptid */
       promptId: string | null;
       quality: components['schemas']['QualityReport'];
@@ -2171,8 +2349,15 @@ export type components = {
       minimumSpeechS: number;
       /** Requiredspeechs */
       requiredSpeechS: number;
+      /** Styles */
+      styles: components['schemas']['StyleCoverage'][];
       /** Takes */
       takes: components['schemas']['TakeOut'][];
+      /**
+       * Tier
+       * @enum {string}
+       */
+      tier: 'starting' | 'foundation' | 'developing' | 'complete';
       /** Updatedat */
       updatedAt: string;
       /** Usablespeechs */
@@ -3960,6 +4145,117 @@ export interface operations {
       };
     };
   };
+  get_speech_api_api_speech_api_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['SpeechApiStatus'];
+        };
+      };
+    };
+  };
+  save_speech_api_api_speech_api_put: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['SpeechApiSettingsIn'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['SpeechApiStatus'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  speech_api_activity_api_speech_api_activity_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['SpeechApiActivity'];
+        };
+      };
+    };
+  };
+  create_token_api_speech_api_token_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['SpeechApiToken'];
+        };
+      };
+    };
+  };
+  revoke_token_api_speech_api_token_delete: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
   system_info_api_system_get: {
     parameters: {
       query?: never;
@@ -4645,6 +4941,70 @@ export interface operations {
         };
         content: {
           'audio/wav': unknown;
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  previous_take_audio_api_voice_sessions__session_id__takes__number__previous_audio_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        number: number;
+        session_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'audio/wav': unknown;
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  restore_take_api_voice_sessions__session_id__takes__number__restore_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        number: number;
+        session_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['TakeOut'];
         };
       };
       /** @description Validation Error */

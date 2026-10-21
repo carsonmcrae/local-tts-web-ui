@@ -343,6 +343,15 @@ export function useSaveTake() {
   );
 }
 
+/** Keep the take a re-recording replaced (the newer one is kept in its place, to switch back). */
+export function useRestoreTake() {
+  return useSessionMutation((input: { sessionId: string; number: number }) =>
+    api<SessionTake>(`/api/voice-sessions/${input.sessionId}/takes/${input.number}/restore`, {
+      method: 'POST',
+    }),
+  );
+}
+
 export function useImportRecording() {
   return useSessionMutation((input: { sessionId: string; file: Blob }) =>
     api<VoiceSession>(`/api/voice-sessions/${input.sessionId}/import`, {

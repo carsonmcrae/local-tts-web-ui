@@ -12,7 +12,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Banner, ProgressBar } from '@/components/ui/Feedback';
 import { formatClock } from '@/lib/format';
-import { explainMicrophoneError, MicRecorder } from '@/lib/audio/recorder';
+import { describeMicrophoneError, MicRecorder } from '@/lib/audio/recorder';
 import { decodeToClip } from '@/lib/audio/wav';
 import { LevelMeter } from './LevelMeter';
 import { SCRIPTS } from './script';
@@ -75,7 +75,7 @@ export function CaptureStep({
     try {
       await next.start();
     } catch (error) {
-      setErrorMessage(explainMicrophoneError(error).message);
+      setErrorMessage(describeMicrophoneError(error));
       return;
     }
     recorder.current = next;

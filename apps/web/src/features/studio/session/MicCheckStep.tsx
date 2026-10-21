@@ -141,7 +141,11 @@ export function MicCheckStep({
           </Button>
         )}
       </div>
-      {take.error ? <Banner tone="error">{take.error}</Banner> : null}
+      {take.error ? (
+        <Banner tone="error" title={take.error.message}>
+          {take.error.hint}
+        </Banner>
+      ) : null}
       {check.isError ? <Banner tone="error">{describeError(check.error)}</Banner> : null}
       {check.data && recording && !take.recording ? (
         <CheckResult

@@ -8,7 +8,8 @@ own pace and voice from earlier takes) and compares its background with the spea
 Then picks the issues that explain the take: one message for a take with no speech (instead of
 every measurement that follows from it), the quiet voice or the early stop for a short take, and for
 a full take its level, noise, completeness and pauses. Noise and an incomplete reading are advice
-and never block a take.
+and never block a take. The whole recording (before trimming) also shows a take that stopped, or
+started, mid-word, and what the background is (``background.py``), named in the advice about it.
 Does NOT belong: The measurements themselves (``quality.py``) or storing takes (``sessions.py``).
 """
 
@@ -20,8 +21,9 @@ from statistics import median
 
 import numpy as np
 
-from ltts.audio import Float32Array
+from ltts.audio import Float32Array, frame_rms_db
 from ltts.engines.cloned_speech import count_syllables
+from ltts.voices.background import Kind, classify
 from ltts.voices.quality import (
     LEVEL_RULES,
     MIN_TAKE_SPEECH_S,
@@ -39,6 +41,15 @@ DEFAULT_DETECTION = 1.0  # syllables heard per syllable read (0.86-1.21 on varie
 INCOMPLETE = 0.65  # below this share of the passage, the take most likely stopped early
 LOUDER_NOISE_DB = 6.0  # a background this much louder than the speaker's other takes is worth a retake
 CALIBRATION_TAKES = 3
+CUT_OFF_DB = 15.0  # a recording whose first or last 60 ms is this close to its speech level was cut mid-word
+# What each kind of background usually is, worded to be named in a sentence.
+HEARD: dict[Kind, str] = {
+    "hum": "a steady hum (mains electricity, a charger or a device nearby)",
+    "rumble": "a low rumble (air conditioning, a fan, a computer or traffic)",
+    "hiss": "hiss (a noisy microphone input, or its gain set very high)",
+    "clicks": "clicks or knocks between your words (the desk, a keyboard or mouth clicks)",
+    "voices": "other voices, a TV or music in the pauses",
+}
 
 
 def syllables_heard(samples: Float32Array, sample_rate: int) -> int:
@@ -164,24 +175,63 @@ def _short(values: dict[str, float | None], context: TakeContext) -> list[Qualit
     return issues + [issue for issue in rule_issues(values, LEVEL_RULES) if issue.code == "clipping"]
 
 
-def _noise(values: dict[str, float | None], context: TakeContext) -> list[QualityIssue]:
+def _named(kinds: Sequence[Kind]) -> str:
+    words = [HEARD[kind] for kind in kinds]
+    return words[0] if len(words) == 1 else f"{', '.join(words[:-1])} and {words[-1]}"
+
+
+def _noise(values: dict[str, float | None], context: TakeContext, kinds: Sequence[Kind]) -> list[QualityIssue]:
+    """Advice on steady noise, naming what it sounds like; and on clicks or voices in the pauses."""
     snr, noise = values["snr_db"] or 0.0, values["noise_dbfs"]
     louder = noise - context.noise_dbfs if noise is not None and context.noise_dbfs is not None else 0.0
+    steady = [kind for kind in kinds if kind in ("hum", "rumble", "hiss")]
+    sounds = f" It sounds like {_named(steady)}." if steady else ""
     if snr < 12:
         message = (
-            "There's a lot of background noise in this take, and the voice can copy it. Record it again somewhere "
-            "quieter if you can; it still counts."
+            f"There's a lot of background noise in this take, and the voice can copy it.{sounds} Record it again "
+            "somewhere quieter if you can; it still counts."
         )
     elif louder >= LOUDER_NOISE_DB:
+        guess = sounds or " A fan, traffic or voices?"
         message = (
-            f"The background was about {louder:.0f} dB louder than in your other takes (a fan, traffic or "
-            "voices?). Consider recording this one again; it still counts."
+            f"The background was about {louder:.0f} dB louder than in your other takes.{guess} Consider recording "
+            "this one again; it still counts."
         )
     elif snr < 20:
-        message = "Some background noise is audible; a quieter room gives cleaner results."
+        message = f"Some background noise is audible.{sounds} A quieter room gives cleaner results."
     else:
-        return []
-    return [_issue("noisy", "warning", message)]
+        message = ""
+    issues = [_issue("noisy", "warning", message)] if message else []
+    events = [kind for kind in kinds if kind in ("clicks", "voices")]
+    if events:
+        issues.append(
+            _issue(
+                "background",
+                "warning",
+                f"We heard {_named(events)}. The voice can copy them, so record this one again when it's quiet if "
+                "you can; it still counts.",
+            )
+        )
+    return issues
+
+
+def cut_off(recorded: Float32Array, sample_rate: int) -> str | None:
+    """Where a recording was cut mid-word: "end" (Stop pressed while reading), "start", or None."""
+    levels = frame_rms_db(recorded, sample_rate)  # 30 ms frames
+    if levels.size < 20:
+        return None
+    loud = levels > float(np.percentile(levels, 95)) - CUT_OFF_DB
+    if loud[-2:].all():
+        return "end"
+    return "start" if loud[:2].all() else None
+
+
+_CUT_OFF = {
+    "end": "The take ends mid-word, as if Stop was pressed while you were still reading. Pause for a moment after "
+    "the last word, then press Stop.",
+    "start": "The take starts mid-word: the reading began before the recording did. Press Record, wait a moment, "
+    "then start reading.",
+}
 
 
 def _completeness(coverage: float | None) -> list[QualityIssue]:
@@ -198,9 +248,11 @@ def _completeness(coverage: float | None) -> list[QualityIssue]:
 
 
 def judge_take(
-    samples: Float32Array, sample_rate: int, context: TakeContext, recorded_s: float | None = None
+    samples: Float32Array, sample_rate: int, context: TakeContext, recorded: Float32Array | None = None
 ) -> QualityReport:
-    """Measure a take (trimmed of silence; ``recorded_s`` is how long it ran) and report what explains it."""
+    """Measure a take (trimmed of silence; ``recorded`` is the whole recording) and report what explains it."""
+    whole = samples if recorded is None else recorded
+    recorded_s = round(len(whole) / sample_rate, 1)
     values = measure(samples, sample_rate)
     speech_s = values["speech_s"] or 0.0
     heard = syllables_heard(samples, sample_rate) if speech_s >= NO_SPEECH_S else 0
@@ -215,10 +267,13 @@ def judge_take(
     if speech_s < MIN_TAKE_SPEECH_S:
         return build_report(values, _short(values, context))
     pauses = (values["pause_ratio"] or 0.0) > 0.5 and (coverage is None or coverage >= INCOMPLETE)
+    kinds = classify(whole, sample_rate)
+    edge = cut_off(whole, sample_rate) if recorded is not None else None
     issues = [
         *rule_issues(values, LEVEL_RULES),
-        *_noise(values, context),
+        *_noise(values, context, kinds),
         *_completeness(coverage),
+        *([_issue("cut_off", "warning", _CUT_OFF[edge])] if edge else []),
         *(
             [
                 _issue(
@@ -232,4 +287,4 @@ def judge_take(
             else []
         ),
     ]
-    return build_report(values, issues)
+    return build_report(values, issues).model_copy(update={"background": list(kinds) or None})

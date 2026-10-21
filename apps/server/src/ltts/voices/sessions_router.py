@@ -4,7 +4,8 @@
 
 Scope: Check a microphone test clip (its quality and the cleanup it needs); create (with an optional
 cleanup: noise reduction, rumble filter, tone), list, read and delete draft sessions; save (raw WAV,
-FLAC or OGG body, with the passage it reads), play back or delete numbered takes; import a long
+FLAC or OGG body, with the passage it reads), play back or delete numbered takes, play back the take a
+re-recording replaced and restore it; import a long
 recording; start the voice build job; play a candidate's test samples; and finish a session into a
 voice profile (with explicit consent).
 Does NOT belong: Session storage and the build itself (``sessions.py``, ``studio.py``).
@@ -91,6 +92,21 @@ async def save_take(
 def take_audio(session_id: SessionId, number: TakeNumber, services: ServicesDep) -> Response:
     audio = services.voice_sessions.take_audio(session_id, number)
     return Response(content=audio, media_type="audio/wav", headers={"Cache-Control": "no-store"})
+
+
+@router.get(
+    "/{session_id}/takes/{number}/previous/audio",
+    response_class=Response,
+    responses={200: {"content": {"audio/wav": {}}}},
+)
+def previous_take_audio(session_id: SessionId, number: TakeNumber, services: ServicesDep) -> Response:
+    audio = services.voice_sessions.take_audio(session_id, number, previous=True)
+    return Response(content=audio, media_type="audio/wav", headers={"Cache-Control": "no-store"})
+
+
+@router.post("/{session_id}/takes/{number}/restore")
+def restore_take(session_id: SessionId, number: TakeNumber, services: ServicesDep) -> TakeOut:
+    return services.voice_sessions.restore_take(session_id, number)
 
 
 @router.delete("/{session_id}/takes/{number}", status_code=204)

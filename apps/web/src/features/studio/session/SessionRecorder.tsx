@@ -21,7 +21,9 @@ import { formatClock } from '@/lib/format';
 import { encodeWav } from '@/lib/audio/wav';
 import { LevelMeter } from '../LevelMeter';
 import { ImportRecording } from './ImportRecording';
-import { PassageCard, PassageStrip, SpeechProgress, TakeReview } from './PassageParts';
+import { PassageCard, PassageStrip } from './PassageParts';
+import { SpeechProgress } from './SessionProgress';
+import { TakeReview } from './TakeReview';
 import { FOUNDATION_ID, maxTakeSeconds, PASSAGES } from './passages';
 import { useTakeRecorder } from './useTakeRecorder';
 
@@ -107,7 +109,11 @@ export function SessionRecorder({
         )}
         {busy ? null : <TakeReview session={session} take={take} />}
       </div>
-      {recorder.error ? <Banner tone="error">{recorder.error}</Banner> : null}
+      {recorder.error ? (
+        <Banner tone="error" title={recorder.error.message}>
+          {recorder.error.hint}
+        </Banner>
+      ) : null}
       {save.isError ? <Banner tone="error">{describeError(save.error)}</Banner> : null}
       <PassageStrip session={session} index={index} disabled={busy} onJump={setIndex} />
       {session.takes.some((item) => item.source === 'import') ? (

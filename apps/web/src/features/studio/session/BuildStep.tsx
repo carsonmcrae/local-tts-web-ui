@@ -19,7 +19,7 @@ import { EnginePanel } from '@/features/engines/EngineSetup';
 import { JobProgress } from '@/features/jobs/JobProgress';
 import { useJobSucceeded } from '@/features/jobs/useJobSucceeded';
 import { describeCleanup } from '../cleanup';
-import { EarlyVoiceNote } from './PassageParts';
+import { EarlyVoiceNote } from './SessionProgress';
 
 export function BuildStep({
   session,

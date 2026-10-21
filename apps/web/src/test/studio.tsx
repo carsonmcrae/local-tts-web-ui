@@ -67,10 +67,13 @@ export const take = (number: number, promptId: string | null, speechS = 12): Ses
   createdAt: '2026-10-20T10:00:00+00:00',
 }); // prettier-ignore
 
+const STYLES = ['narration', 'question', 'lively', 'dialogue', 'calm'];
+
 export const studioSession = (overrides: Partial<VoiceSession> = {}): VoiceSession => {
   const complete = (overrides.usableSpeechS ?? 0) >= (overrides.requiredSpeechS ?? 20);
   return {
     id: ID, takes: [], usableSpeechS: 0, requiredSpeechS: 20, minimumSpeechS: 45, canBuild: complete, complete,
+    tier: complete ? 'complete' : 'starting', styles: STYLES.map((style) => ({ style, takes: 0 })),
     candidates: [], buildJobId: null, cleanup: null, createdAt: '2026-10-20T10:00:00+00:00',
     updatedAt: '2026-10-20T10:00:00+00:00', ...overrides,
   };

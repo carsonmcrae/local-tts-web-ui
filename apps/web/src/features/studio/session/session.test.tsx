@@ -104,7 +104,8 @@ describe('Studio voice wizard', () => {
 
     await user.click(within(dialog).getByRole('button', { name: /Continue/ }));
     expect(await within(dialog).findByText('Foundation passage')).toBeInTheDocument();
-    expect(within(dialog).getByText(/How to read it:/)).toBeInTheDocument();
+    expect(within(dialog).getByText('How to read it (a suggestion):')).toBeInTheDocument();
+    expect(within(dialog).getByText(/no need to exaggerate/)).toBeInTheDocument();
     const created = calls.find((c) => c.method === 'POST' && c.path === '/api/voice-sessions');
     expect(JSON.parse(String(created?.body))).toEqual({
       cleanup: { noiseReduction: 0.5, lowCut: false, trebleDb: -4.5, bassDb: 0 },

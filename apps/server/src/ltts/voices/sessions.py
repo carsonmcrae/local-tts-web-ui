@@ -2,15 +2,14 @@
 # Copyright (c) 2026 Carson McRae
 """Purpose: Draft studio recording sessions: their takes, imported recordings and a microphone check.
 
-Scope: A session is a folder ``data/voices/sessions/<id>/takes/NNN.flac`` (24-bit FLAC at the
-recording's own sample rate) plus rows in ``voice_sessions`` and ``voice_takes``. Saving a take
-judges it (``take_checks``) against its passage and the speaker's earlier takes; importing a long
-recording splits it into takes at pauses; takes can be played back; any change to the takes clears
-built candidates, and no change is allowed while a build is running. A session can be built once it
-has the required speech, or early from the longer foundation passage plus a little more. Also checks
-a short microphone test clip (with the cleanup it suggests: noise reduction, rumble filter, tone) and
-keeps the session's chosen cleanup, applied to cleaned-up copies of the takes for building while the
-originals stay untouched. Sessions stay local drafts until finished (``studio.py``) or deleted.
+Scope: A session is ``data/voices/sessions/<id>/takes/NNN.flac`` (24-bit FLAC at the input's rate) plus
+rows in ``voice_sessions``/``voice_takes``. Saving a take judges it (``take_checks``) against its passage
+and the speaker's other takes; recording a passage again keeps the take it replaces (``previous/``) to
+compare and restore; imports split at pauses; any change clears built candidates, and none is allowed
+while a build runs. A session builds once complete, or early from the foundation passage plus a little
+more; its tier and the speaking styles its takes can teach show how far along it is. Also checks a mic
+test clip (suggesting noise reduction, rumble filter, tone) and keeps the chosen cleanup, applied to
+copies of the takes for building. Sessions stay local drafts until finished (``studio.py``) or deleted.
 Does NOT belong: Building or auditioning voices (``studio.py``) or HTTP parsing (``sessions_router.py``).
 """
 
@@ -34,6 +33,7 @@ from ltts.jobs import JobManager
 from ltts.voices.cleanup import Cleanup, RecordingCheck, apply_cleanup, suggest_cleanup
 from ltts.voices.profiles import decode_recording
 from ltts.voices.quality import CHECK_RULES, QualityReport, analyze
+from ltts.voices.styles import STYLE_SOURCES, teaches
 from ltts.voices.take_checks import context_for, judge_take
 
 log = logging.getLogger("ltts.voices.sessions")
@@ -45,11 +45,22 @@ IMPORT_FIRST = 101  # takes 1-100 belong to the recorded passages, so an import 
 FOUNDATION_PROMPT = "foundation"  # the longer passage that lets a session be built early
 MIN_FOUNDATION_SPEECH_S = 30.0
 MIN_EARLY_SPEECH_S = 45.0
+STYLE_SNR_DB = 12.0  # a take noisier than this never teaches a style (``styles.style_prompts``)
 TakeSource = Literal["recording", "import"]
+# starting: not enough to build yet; foundation: an early voice; developing: half way; complete: the full voice
+Tier = Literal["starting", "foundation", "developing", "complete"]
 _UPSERT_TAKE = (
     "INSERT OR REPLACE INTO voice_takes (session_id, number, prompt_id, source, duration_s, quality_json, created_at)"
     " VALUES (?, ?, ?, ?, ?, ?, ?)"
 )
+
+
+class PreviousTakeOut(ApiModel):
+    """The take a new recording of the same passage replaced, kept to compare with it and restore."""
+
+    duration_s: float
+    quality: QualityReport
+    created_at: str
 
 
 class TakeOut(ApiModel):
@@ -59,6 +70,7 @@ class TakeOut(ApiModel):
     duration_s: float
     quality: QualityReport
     created_at: str
+    previous: PreviousTakeOut | None = None
 
 
 class CandidateOut(ApiModel):
@@ -71,9 +83,18 @@ class CandidateOut(ApiModel):
     samples: int
 
 
+class StyleCoverage(ApiModel):
+    """How many usable takes can teach one speaking style (narration, question, lively, dialogue, calm)."""
+
+    style: str
+    takes: int
+
+
 class VoiceSessionOut(ApiModel):
     id: str
     takes: list[TakeOut]
+    tier: Tier
+    styles: list[StyleCoverage]
     usable_speech_s: float
     required_speech_s: float  # for a complete voice
     minimum_speech_s: float  # for an early build, with the foundation passage
@@ -107,6 +128,9 @@ class VoiceSessionService:
 
     def styles_dir(self, session_id: str) -> Path:
         return self.folder(session_id) / "styles"
+
+    def previous_path(self, session_id: str, number: int) -> Path:
+        return self.folder(session_id) / "previous" / f"{number:03d}.flac"
 
     def corrected_path(self, session_id: str, number: int) -> Path:
         return self.folder(session_id) / "corrected" / f"{number:03d}.flac"
@@ -145,13 +169,16 @@ class VoiceSessionService:
             t.prompt_id == FOUNDATION_PROMPT and t.quality.ok and t.quality.speech_s >= MIN_FOUNDATION_SPEECH_S
             for t in takes
         )
+        can_build = complete or (foundation and usable >= MIN_EARLY_SPEECH_S)
         return VoiceSessionOut(
             id=session_id,
             takes=takes,
+            tier=_tier(usable, self._settings.min_studio_speech_s, can_build),
+            styles=_coverage(takes),
             usable_speech_s=usable,
             required_speech_s=self._settings.min_studio_speech_s,
             minimum_speech_s=MIN_EARLY_SPEECH_S,
-            can_build=complete or (foundation and usable >= MIN_EARLY_SPEECH_S),
+            can_build=can_build,
             complete=complete,
             candidates=candidates,
             build_job_id=building.id if building else None,
@@ -199,18 +226,48 @@ class VoiceSessionService:
         if number not in {t.number for t in session.takes} and len(session.takes) >= self._settings.max_session_takes:
             raise ConflictError("This session has reached its maximum number of takes.", code="take_limit")
         samples, rate = decode_recording(upload, MAX_TAKE_S)
+        replaced = self._row(session_id, number)
+        if replaced is not None:  # keep the take this one replaces, to compare and restore
+            self.previous_path(session_id, number).parent.mkdir(exist_ok=True)
+            shutil.copyfile(self.take_path(session_id, number), self.previous_path(session_id, number))
         take = self._store(session_id, number, (samples, rate), prompt_id, "recording", text)
+        if replaced is not None:
+            self._set_previous(session_id, number, replaced)
+            take = _take(self._row(session_id, number))
         self._changed(session_id)
         return take
 
-    def take_audio(self, session_id: str, number: int) -> bytes:
-        """A take as 16-bit WAV, to listen back to (every browser plays WAV)."""
+    def take_audio(self, session_id: str, number: int, *, previous: bool = False) -> bytes:
+        """A take (or the one it replaced) as 16-bit WAV, to listen back to (every browser plays WAV)."""
         session = self.get(session_id)
-        path = self.take_path(session_id, number)
-        if number not in {t.number for t in session.takes} or not path.is_file():
+        take = next((t for t in session.takes if t.number == number), None)
+        path = (self.previous_path if previous else self.take_path)(session_id, number)
+        if take is None or (previous and take.previous is None) or not path.is_file():
             raise NotFoundError("That take no longer exists.", code="take_not_found")
         samples, rate = read_audio(path)
         return encode_wav(samples, rate)
+
+    def restore_take(self, session_id: str, number: int) -> TakeOut:
+        """Bring back the take a re-recording replaced; the newer one becomes the previous take, so it can return."""
+        self.get(session_id)
+        self._ensure_idle(session_id)
+        row = self._row(session_id, number)
+        if row is None or not row["previous_json"]:
+            raise NotFoundError("There's no earlier take of this passage to bring back.", code="no_previous_take")
+        current, previous = self.take_path(session_id, number), self.previous_path(session_id, number)
+        swap = current.with_suffix(".swap")
+        current.replace(swap)
+        previous.replace(current)
+        swap.replace(previous)
+        earlier = json.loads(row["previous_json"])
+        with self._db.connect() as conn:
+            conn.execute(
+                "UPDATE voice_takes SET prompt_id = ?, source = ?, duration_s = ?, quality_json = ?, created_at = ?,"
+                " previous_json = ? WHERE session_id = ? AND number = ?",
+                (*(earlier[key] for key in _KEPT), json.dumps({key: row[key] for key in _KEPT}), session_id, number),
+            )
+        self._changed(session_id)
+        return _take(self._row(session_id, number))
 
     def delete_take(self, session_id: str, number: int) -> None:
         self.get(session_id)
@@ -220,6 +277,7 @@ class VoiceSessionService:
             if deleted.rowcount == 0:
                 raise NotFoundError("That take no longer exists.", code="take_not_found")
         self.take_path(session_id, number).unlink(missing_ok=True)
+        self.previous_path(session_id, number).unlink(missing_ok=True)
         self._changed(session_id)
 
     def import_recording(self, session_id: str, upload: Path) -> VoiceSessionOut:
@@ -260,7 +318,7 @@ class VoiceSessionService:
         trimmed = trim_silence(samples, rate)
         clip = trimmed if trimmed.size else samples
         context = context_for(self._earlier(session_id, number), text)
-        report = judge_take(clip, rate, context, recorded_s=round(len(samples) / rate, 1))
+        report = judge_take(clip, rate, context, recorded=samples)
         path = self.take_path(session_id, number)
         ensure_free_space(path.parent, TAKE_SPACE_BYTES, self._settings.min_free_disk_mb)
         sf.write(str(path), clip, rate, format="FLAC", subtype="PCM_24")
@@ -273,6 +331,20 @@ class VoiceSessionService:
                 "SELECT * FROM voice_takes WHERE session_id = ? AND number = ?", (session_id, number)
             ).fetchone()
         return _take(row)
+
+    def _row(self, session_id: str, number: int) -> sqlite3.Row:
+        with self._db.connect() as conn:
+            row: sqlite3.Row = conn.execute(
+                "SELECT * FROM voice_takes WHERE session_id = ? AND number = ?", (session_id, number)
+            ).fetchone()
+        return row
+
+    def _set_previous(self, session_id: str, number: int, replaced: sqlite3.Row) -> None:
+        with self._db.connect() as conn:
+            conn.execute(
+                "UPDATE voice_takes SET previous_json = ? WHERE session_id = ? AND number = ?",
+                (json.dumps({key: replaced[key] for key in _KEPT}), session_id, number),
+            )
 
     def _earlier(self, session_id: str, number: int) -> list[QualityReport]:
         """The verdicts of the session's other takes, which calibrate the next one to this speaker."""
@@ -301,7 +373,28 @@ class VoiceSessionService:
             )
 
 
+_KEPT = ("prompt_id", "source", "duration_s", "quality_json", "created_at")  # what a previous take keeps
+
+
+def _tier(usable_s: float, required_s: float, can_build: bool) -> Tier:
+    if usable_s >= required_s:
+        return "complete"
+    if not can_build:
+        return "starting"
+    return "developing" if usable_s >= required_s / 2 else "foundation"
+
+
+def _coverage(takes: list[TakeOut]) -> list[StyleCoverage]:
+    """For each speaking style, the usable takes (clean enough) whose passages can teach it."""
+    usable = [take for take in takes if take.quality.ok and take.quality.snr_db >= STYLE_SNR_DB]
+    return [
+        StyleCoverage(style=style, takes=sum(teaches(take.prompt_id, style) for take in usable))
+        for style in STYLE_SOURCES
+    ]
+
+
 def _take(row: sqlite3.Row) -> TakeOut:
+    earlier = json.loads(row["previous_json"]) if row["previous_json"] else None
     return TakeOut(
         number=row["number"],
         prompt_id=row["prompt_id"],
@@ -309,4 +402,11 @@ def _take(row: sqlite3.Row) -> TakeOut:
         duration_s=row["duration_s"],
         quality=QualityReport.model_validate(json.loads(row["quality_json"])),
         created_at=row["created_at"],
+        previous=PreviousTakeOut(
+            duration_s=earlier["duration_s"],
+            quality=QualityReport.model_validate(json.loads(earlier["quality_json"])),
+            created_at=earlier["created_at"],
+        )
+        if earlier
+        else None,
     )

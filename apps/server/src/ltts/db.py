@@ -216,6 +216,12 @@ MIGRATIONS: tuple[str, ...] = (
         last_seen_at TEXT
     );
     """,
+    # a paired device's cookie works only from the address it paired from; other attempts are kept
+    """
+    ALTER TABLE lan_devices ADD COLUMN address TEXT;
+    ALTER TABLE lan_devices ADD COLUMN refused_address TEXT;
+    ALTER TABLE lan_devices ADD COLUMN refused_at TEXT;
+    """,
 )
 
 

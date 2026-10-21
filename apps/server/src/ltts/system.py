@@ -15,7 +15,7 @@ import shutil
 from pathlib import Path
 
 import psutil
-from fastapi import APIRouter
+from fastapi import APIRouter, Request
 
 from ltts import __version__
 from ltts.common import ApiModel
@@ -32,7 +32,7 @@ class Health(ApiModel):
 
 
 class StorageInfo(ApiModel):
-    data_dir: str
+    data_dir: str  # its path, which phones and tablets in LAN mode aren't told
     free_bytes: int
     total_bytes: int
     models_bytes: int
@@ -76,7 +76,7 @@ def health() -> Health:
 
 
 @router.get("/system")
-def system_info(services: ServicesDep) -> SystemInfo:
+def system_info(request: Request, services: ServicesDep) -> SystemInfo:
     settings = services.settings
     data = settings.resolved_data_dir
     disk = shutil.disk_usage(data)
@@ -96,7 +96,7 @@ def system_info(services: ServicesDep) -> SystemInfo:
         network_exposed=not settings.is_loopback_only,
         lan_mode=services.lan.enabled,
         storage=StorageInfo(
-            data_dir=str(data),
+            data_dir="hidden on other devices" if services.lan.serving(request.scope) else str(data),
             free_bytes=disk.free,
             total_bytes=disk.total,
             models_bytes=_folder_bytes(settings.resolved_models_dir),

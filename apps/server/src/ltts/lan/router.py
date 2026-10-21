@@ -4,8 +4,9 @@
 
 Scope: From this computer: read LAN mode's state, turn it on (choosing an address) or off, show a new
 pairing code and its QR code, cancel it, and remove one paired device or all of them. From a device on
-the network: pair with a code (setting its device cookie) and ask whether it is paired. Which side may
-call what is enforced by ``security.py`` with ``policy.py``.
+the network: pair with a code (setting its device cookie, which replaces any earlier pairing of the
+same device) and ask whether it is paired, or why its cookie stopped working. Which side may call what
+is enforced by ``security.py`` with ``policy.py``.
 Does NOT belong: Pairing rules or listening (``devices.py``, ``listener.py``).
 """
 
@@ -19,7 +20,7 @@ from pydantic import Field
 from ltts.common import ApiModel
 from ltts.container import ServicesDep
 from ltts.errors import ConflictError
-from ltts.lan.devices import DeviceOut, PairingOut
+from ltts.lan.devices import DeviceOut, PairingOut, Refusal
 from ltts.lan.service import COOKIE, COOKIE_MAX_AGE_S, LanStatus
 
 router = APIRouter(prefix="/api/lan", tags=["lan"])
@@ -39,6 +40,7 @@ class PairRequest(ApiModel):
 class ThisDevice(ApiModel):
     paired: bool
     name: str | None = None
+    reason: Refusal | None = None  # why this device's cookie no longer works, if it has one
 
 
 @router.get("")
@@ -89,7 +91,7 @@ def pair_device(body: PairRequest, request: Request, response: Response, service
     if not services.lan.serving(request.scope):
         raise ConflictError("Pair from the phone or tablet, using the address shown on the computer.", code="not_lan")
     address = request.client.host if request.client else "unknown"
-    device, token = services.lan.pair(body.code, body.name.strip(), address)
+    device, token = services.lan.pair(body.code, body.name.strip(), address, request.cookies.get(COOKIE))
     response.set_cookie(COOKIE, token, max_age=COOKIE_MAX_AGE_S, path="/", httponly=True, samesite="strict")
     return device
 
@@ -97,4 +99,5 @@ def pair_device(body: PairRequest, request: Request, response: Response, service
 @router.get("/device")
 def this_device(request: Request) -> ThisDevice:
     device: DeviceOut | None = getattr(request.state, "lan_device", None)
-    return ThisDevice(paired=device is not None, name=device.name if device else None)
+    reason: Refusal | None = getattr(request.state, "lan_refusal", None)
+    return ThisDevice(paired=device is not None, name=device.name if device else None, reason=reason)

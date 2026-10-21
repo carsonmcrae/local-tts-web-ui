@@ -5,8 +5,12 @@
 Scope: A pairing code is eight characters from an alphabet without look-alikes (shown as XXXX-XXXX),
 valid for five minutes, used once, and dropped after ten wrong guesses; guesses are also limited per
 address. Pairing gives the device a random token (kept as an HttpOnly cookie on the device; only its
-SHA-256 is stored, in ``lan_devices``), which identifies it until it is removed. Removing a device,
-or all of them, takes effect on its next request.
+SHA-256 is stored, in ``lan_devices``). LAN traffic is plain HTTP, so anyone watching it can copy that
+cookie; to limit what a copy is worth, a token only works from the address the device paired from,
+for 30 days at most and until it goes unused for 14 days. A token used from another address is
+refused, and the attempt is kept so the computer can show it. Pairing again from a device that still
+has its old cookie replaces its old entry. Removing a device, or all of them, takes effect on its
+next request.
 Does NOT belong: Listening on the network (``listener.py``) or deciding what a device may do (``policy.py``).
 """
 
@@ -20,8 +24,9 @@ import threading
 import time
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
+from typing import Literal
 
-from ltts.common import ApiModel, new_id, utc_now
+from ltts.common import ApiModel, new_id
 from ltts.db import Database
 from ltts.errors import AppError, NotFoundError
 
@@ -31,8 +36,12 @@ CODE_TTL_S = 300.0
 MAX_WRONG_PER_CODE = 10
 MAX_TRIES_PER_MINUTE = 5  # per address
 MAX_DEVICES = 20
-SEEN_EVERY = timedelta(minutes=1)  # how often a device's last-seen time is written
+DEVICE_TTL = timedelta(days=30)  # from pairing; the cookie's own lifetime is the same
+IDLE_TTL = timedelta(days=14)  # unused for this long, a device must pair again
+SEEN_EVERY = timedelta(minutes=1)  # how often a device's last-seen time (or a refused attempt) is written
 TOKEN_PREFIX = "ttsd_"  # noqa: S105 - a marker that makes a leaked device token recognisable
+
+Refusal = Literal["expired", "address_changed"]
 
 
 class PairingFailedError(AppError):
@@ -45,11 +54,24 @@ class DeviceOut(ApiModel):
     name: str
     created_at: str
     last_seen_at: str | None
+    address: str | None  # the address it paired from; its cookie works only from there
+    expires_at: str  # 30 days after pairing, or 14 days after it was last used, whichever is sooner
+    expired: bool
+    refused_address: str | None = None  # the last other address its cookie was used from, and when
+    refused_at: str | None = None
 
 
 class PairingOut(ApiModel):
     code: str  # XXXX-XXXX
     expires_in_s: int
+
+
+@dataclass(frozen=True)
+class Recognised:
+    """Who a request's device cookie belongs to; for a refused cookie, why it no longer works."""
+
+    device: DeviceOut | None = None
+    refusal: Refusal | None = None
 
 
 @dataclass
@@ -95,7 +117,8 @@ class PairingCodes:
         guess = "".join(char for char in supplied.upper() if char in ALPHABET)
         with self._lock:
             now = self._now()
-            recent = [moment for moment in self._tries.get(address, []) if moment > now - 60]
+            self._tries = {key: kept for key, moments in self._tries.items() if (kept := _recent(moments, now))}
+            recent = self._tries.get(address, [])
             if len(recent) >= MAX_TRIES_PER_MINUTE:
                 raise PairingFailedError("Too many tries. Wait a minute, then try again.", code="pairing_rate_limited")
             self._tries[address] = [*recent, now]
@@ -110,26 +133,47 @@ class PairingCodes:
             self._current = None  # used once
 
 
+def _recent(moments: list[float], now: float) -> list[float]:
+    return [moment for moment in moments if moment > now - 60]
+
+
 def _hash(token: str) -> str:
     return hashlib.sha256(token.encode()).hexdigest()
+
+
+def _stamp(moment: datetime) -> str:
+    return moment.isoformat(timespec="seconds")
+
+
+def _expires(row: sqlite3.Row) -> datetime:
+    paired = datetime.fromisoformat(row["created_at"])
+    used = datetime.fromisoformat(row["last_seen_at"] or row["created_at"])
+    return min(paired + DEVICE_TTL, used + IDLE_TTL)
 
 
 class DeviceStore:
     def __init__(self, db: Database):
         self._db = db
 
-    def add(self, name: str) -> tuple[DeviceOut, str]:
-        """A new paired device and its token (returned once, never stored)."""
-        if len(self.list_all()) >= MAX_DEVICES:
-            raise PairingFailedError(
-                f"Up to {MAX_DEVICES} devices can be paired. Remove one first.", code="device_limit"
-            )
+    def add(self, name: str, address: str, replaces: str | None = None) -> tuple[DeviceOut, str]:
+        """A new paired device and its token (returned once, never stored), replacing the device that
+        sent ``replaces`` (its old token) and forgetting devices whose pairing has expired."""
         token = TOKEN_PREFIX + secrets.token_urlsafe(32)
         device_id = new_id()
+        now = datetime.now(UTC)
         with self._db.connect() as conn:
+            if replaces:
+                conn.execute("DELETE FROM lan_devices WHERE token_hash = ?", (_hash(replaces),))
+            rows = conn.execute("SELECT * FROM lan_devices").fetchall()
+            gone = [row["id"] for row in rows if _expires(row) <= now]
+            conn.executemany("DELETE FROM lan_devices WHERE id = ?", [(key,) for key in gone])
+            if len(rows) - len(gone) >= MAX_DEVICES:
+                raise PairingFailedError(
+                    f"Up to {MAX_DEVICES} devices can be paired. Remove one first.", code="device_limit"
+                )
             conn.execute(
-                "INSERT INTO lan_devices (id, name, token_hash, created_at) VALUES (?, ?, ?, ?)",
-                (device_id, name, _hash(token), utc_now()),
+                "INSERT INTO lan_devices (id, name, token_hash, created_at, address) VALUES (?, ?, ?, ?, ?)",
+                (device_id, name, _hash(token), _stamp(now), address),
             )
         return self.get(device_id), token
 
@@ -145,21 +189,32 @@ class DeviceStore:
             rows = conn.execute("SELECT * FROM lan_devices ORDER BY created_at").fetchall()
         return [_out(row) for row in rows]
 
-    def identify(self, token: str) -> DeviceOut | None:
-        """The device a token belongs to (recording that it was seen), or None."""
+    def identify(self, token: str, address: str) -> Recognised:
+        """The device a token belongs to, if it is still valid from this address (recording that it was seen)."""
         if not token.startswith(TOKEN_PREFIX) or len(token) > 100:
-            return None
+            return Recognised()
+        now = datetime.now(UTC)
         with self._db.connect() as conn:
             row = conn.execute("SELECT * FROM lan_devices WHERE token_hash = ?", (_hash(token),)).fetchone()
             if row is None:
-                return None
-            now = datetime.now(UTC)
-            if row["last_seen_at"] is None or row["last_seen_at"] < (now - SEEN_EVERY).isoformat(timespec="seconds"):
+                return Recognised()
+            if _expires(row) <= now:
+                return Recognised(refusal="expired")
+            if row["address"] not in (None, address):
+                if row["refused_address"] != address or row["refused_at"] < _stamp(now - SEEN_EVERY):
+                    conn.execute(
+                        "UPDATE lan_devices SET refused_address = ?, refused_at = ? WHERE id = ?",
+                        (address, _stamp(now), row["id"]),
+                    )
+                return Recognised(refusal="address_changed")
+            if row["address"] is None or row["last_seen_at"] is None or row["last_seen_at"] < _stamp(now - SEEN_EVERY):
+                # A device paired before addresses were kept is tied to the first one it is seen from.
                 conn.execute(
-                    "UPDATE lan_devices SET last_seen_at = ? WHERE id = ?",
-                    (now.isoformat(timespec="seconds"), row["id"]),
+                    "UPDATE lan_devices SET last_seen_at = ?, address = ? WHERE id = ?",
+                    (_stamp(now), address, row["id"]),
                 )
-        return _out(row)
+                row = conn.execute("SELECT * FROM lan_devices WHERE id = ?", (row["id"],)).fetchone()
+        return Recognised(device=_out(row))
 
     def remove(self, device_id: str) -> None:
         with self._db.connect() as conn:
@@ -172,4 +227,15 @@ class DeviceStore:
 
 
 def _out(row: sqlite3.Row) -> DeviceOut:
-    return DeviceOut(id=row["id"], name=row["name"], created_at=row["created_at"], last_seen_at=row["last_seen_at"])
+    expires = _expires(row)
+    return DeviceOut(
+        id=row["id"],
+        name=row["name"],
+        created_at=row["created_at"],
+        last_seen_at=row["last_seen_at"],
+        address=row["address"],
+        expires_at=_stamp(expires),
+        expired=expires <= datetime.now(UTC),
+        refused_address=row["refused_address"],
+        refused_at=row["refused_at"],
+    )

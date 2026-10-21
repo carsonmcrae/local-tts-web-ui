@@ -6,7 +6,8 @@ Scope: Pairing codes (expiry, single use, wrong guesses, a per-address limit), d
 hash stored, removal takes effect at once), the requests a device on the network may make before
 and after pairing, the Origin and Host checks there, what stays on this computer, and the management
 endpoints. A real listener is started and stopped on a loopback address (no firewall prompt).
-Does NOT belong: The speech API's own network permission (test_speech_api.py).
+Does NOT belong: Hardening against other devices on the network (test_lan_security.py) or the
+speech API's own network permission (test_speech_api.py).
 """
 
 from __future__ import annotations
@@ -19,45 +20,18 @@ import httpx
 import pytest
 from fastapi.testclient import TestClient
 
+from lan_support import ORIGIN, FakeListener, here, paired, phone
 from ltts.container import Services
 from ltts.lan import listener as listener_module
 from ltts.lan.devices import ALPHABET, PairingCodes, PairingFailedError
 from ltts.lan.listener import LanListener
 from ltts.lan.policy import open_to_unpaired, refused_remotely
 
-LAN_ADDRESS = "192.168.1.20"
-ORIGIN = f"http://{LAN_ADDRESS}:8765"
-
-
-class FakeListener:
-    """Stands in for the network listener: 'running' on the LAN address without a socket."""
-
-    running = True
-    address = LAN_ADDRESS
-    port = 8765
-
-    async def stop(self) -> None:
-        self.running = False
-
 
 @pytest.fixture
 def lan(services: Services) -> Services:
     services.lan.listener = FakeListener()  # type: ignore[assignment]
     return services
-
-
-def phone(client: TestClient) -> TestClient:
-    """A browser on a phone, reaching the app on the LAN address."""
-    return TestClient(client.app, base_url=ORIGIN, client=("192.168.1.50", 50000),
-                      headers={"X-LTTS-Client": "web", "Origin": ORIGIN})  # fmt: skip
-
-
-def paired(client: TestClient, services: Services) -> TestClient:
-    device = phone(client)
-    code = services.lan.codes.new().code
-    response = device.post("/api/lan/pair", json={"code": code, "name": "Kitchen tablet"})
-    assert response.status_code == 201, response.text
-    return device
 
 
 def test_pairing_codes_expire_work_once_and_resist_guessing() -> None:
@@ -99,11 +73,17 @@ def test_policy_keeps_this_computers_own_operations_off_the_network() -> None:
                          ("PUT", "/api/voice-sessions/" + "a" * 32 + "/takes/1"), ("POST", "/api/documents/url"),
                          ("POST", "/api/engines/kokoro/install"), ("DELETE", "/api/voice-profiles/" + "a" * 32),
                          ("POST", "/api/voice-profiles/import"), ("GET", "/api/voice-profiles/" + "a" * 32 + "/export"),
-                         ("DELETE", "/api/documents/" + "a" * 32), ("POST", "/api/system/shutdown")]:  # fmt: skip
+                         ("DELETE", "/api/documents/" + "a" * 32), ("POST", "/api/system/shutdown"),
+                         ("POST", "/api/system/cache/clear"), ("POST", "/api/jobs/" + "a" * 32 + "/cancel"),
+                         ("GET", "/api/voice-profiles/" + "a" * 32 + "/reference"), ("GET", "/api/openapi.json"),
+                         ("POST", "/api/voice-profiles/blends"), ("PATCH", "/api/voice-profiles/" + "a" * 32),
+                         ("GET", "/api/something-new"), ("POST", "/"), ("GET", "/api")]:  # fmt: skip
         assert refused_remotely(method, path), (method, path)
     for method, path in [("GET", "/api/documents"), ("POST", "/api/documents/text"), ("GET", "/api/voices"),
                          ("PUT", "/api/preferences"), ("POST", "/api/exports"), ("GET", "/api/voice-profiles"),
-                         ("PUT", "/api/documents/" + "a" * 32 + "/progress"), ("POST", "/api/lan/pair")]:  # fmt: skip
+                         ("PUT", "/api/documents/" + "a" * 32 + "/progress"), ("POST", "/api/lan/pair"),
+                         ("GET", "/api/voice-profiles/blends"), ("POST", "/api/voices/kokoro:af_heart/preview"),
+                         ("GET", "/api/system"), ("GET", "/library")]:  # fmt: skip
         assert not refused_remotely(method, path), (method, path)
 
 
@@ -111,13 +91,13 @@ def test_a_device_must_pair_before_it_can_use_the_api(client: TestClient, lan: S
     device = phone(client)
     refused = device.get("/api/documents")
     assert refused.status_code == 401 and refused.json()["error"]["code"] == "device_not_paired"
-    assert device.get("/api/lan/device").json() == {"paired": False, "name": None}
+    assert device.get("/api/lan/device").json() == {"paired": False, "name": None, "reason": None}
     wrong = device.post("/api/lan/pair", json={"code": "ZZZZ-ZZZZ"})
     assert wrong.status_code == 403 and wrong.json()["error"]["code"] == "pairing_failed"
     paired_device = paired(client, lan)
     cookie = paired_device.cookies.get("ltts_device")
     assert cookie and cookie.startswith("ttsd_")
-    assert paired_device.get("/api/lan/device").json() == {"paired": True, "name": "Kitchen tablet"}
+    assert paired_device.get("/api/lan/device").json() == {"paired": True, "name": "Kitchen tablet", "reason": None}
     assert paired_device.get("/api/documents").status_code == 200
     with sqlite3.connect(lan.settings.database_path) as conn:
         stored = conn.execute("SELECT token_hash FROM lan_devices").fetchone()[0]
@@ -183,7 +163,7 @@ def test_pairing_is_only_done_from_the_network_and_shows_a_qr_code(client: TestC
 
 
 def test_the_listener_serves_and_stops_at_once(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(listener_module, "network_addresses", lambda: ["127.0.0.1"])
+    monkeypatch.setattr(listener_module, "network_addresses", here)
 
     async def app(scope: dict[str, Any], receive: Any, send: Any) -> None:
         await send({"type": "http.response.start", "status": 200, "headers": [(b"content-type", b"text/plain")]})
@@ -206,7 +186,7 @@ def test_the_listener_serves_and_stops_at_once(monkeypatch: pytest.MonkeyPatch) 
 
 
 def test_the_listener_only_uses_this_computers_private_addresses(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(listener_module, "network_addresses", lambda: ["192.168.1.20"])
+    monkeypatch.setattr(listener_module, "network_addresses", lambda: here("192.168.1.20"))
     lan = LanListener(lambda: None)
     with pytest.raises(Exception) as refused:
         asyncio.run(lan.start("0.0.0.0", 8765))  # noqa: S104 - checking that it's refused

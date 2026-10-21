@@ -139,17 +139,25 @@ def build(model: Any, prompt: str, output: str, speaker_emb: list[float] | None,
     save_file(contiguous, output, {"format": FORMAT, "version": VERSION})
 
 
-def _shorten_pauses(wav16: np.ndarray, sample_rate: int) -> np.ndarray:
-    """The take without its silent edges, and with every pause inside it at most ``PAUSE_S`` long."""
-    frame = max(sample_rate // 50, 1)  # 20 ms
+def frame_levels(wav16: np.ndarray, sample_rate: int) -> tuple[np.ndarray, np.ndarray] | None:
+    """A take cut into 20 ms frames and each frame's level in dB, or None when it's shorter than a frame."""
+    frame = max(sample_rate // 50, 1)
     usable = len(wav16) - len(wav16) % frame
     if usable == 0:
-        return wav16
+        return None
     frames = wav16[:usable].reshape(-1, frame)
-    level = 20 * np.log10(np.sqrt(np.mean(frames**2, axis=1)) + 1e-9)
+    return frames, 20 * np.log10(np.sqrt(np.mean(frames**2, axis=1)) + 1e-9)
+
+
+def _shorten_pauses(wav16: np.ndarray, sample_rate: int) -> np.ndarray:
+    """The take without its silent edges, and with every pause inside it at most ``PAUSE_S`` long."""
+    framed = frame_levels(wav16, sample_rate)
+    if framed is None:
+        return wav16
+    frames, level = framed
     voiced = level > float(level.max()) - 40.0
     keep = np.zeros(len(voiced), dtype=bool)
-    longest = round(PAUSE_S * sample_rate / frame)
+    longest = round(PAUSE_S * sample_rate / frames.shape[1])
     run = 0
     for index, is_voiced in enumerate(voiced):
         run = 0 if is_voiced else run + 1

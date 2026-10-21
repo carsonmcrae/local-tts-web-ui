@@ -6,7 +6,7 @@ Scope: Isolated settings (temporary data dir), a deterministic ``FakeEngine`` (s
 length follows the text, so API/caching/export logic is testable without models; as a cloning engine
 it also fakes studio-voice measuring, building, auditioning and fine-tuning), the wired service
 container, a TestClient that sends the app's required client header, and shared helpers for
-speech-like recordings, WAV encoding and waiting for background jobs.
+speech-like recordings, WAV encoding, waiting for background jobs and saving a studio voice.
 Does NOT belong: Real-inference fixtures (see test_inference_*.py, marked ``inference``).
 """
 
@@ -230,3 +230,16 @@ def wait_job(client: TestClient, job_id: str) -> dict[str, Any]:
             return job
         time.sleep(0.05)
     raise AssertionError("job did not finish")
+
+
+def saved_studio_voice(client: TestClient, numbers: Sequence[int]) -> dict[str, Any]:
+    """A studio voice recorded, built and saved through the API, keeping a take of each passage number."""
+    session_id = client.post("/api/voice-sessions").json()["id"]
+    for number in numbers:
+        client.put(f"/api/voice-sessions/{session_id}/takes/{number}", content=wav_bytes(speech_like(12)))
+    wait_job(client, client.post(f"/api/voice-sessions/{session_id}/build").json()["id"])
+    best = client.get(f"/api/voice-sessions/{session_id}").json()["candidates"][0]["index"]
+    profile: dict[str, Any] = client.post(
+        f"/api/voice-sessions/{session_id}/finish", json={"candidate": best, "name": "Me", "consent": True}
+    ).json()
+    return profile

@@ -19,7 +19,7 @@ import numpy as np
 import pytest
 from fastapi.testclient import TestClient
 
-from conftest import FakeEngine, speech_like, wait_job, wav_bytes
+from conftest import FakeEngine, saved_studio_voice, speech_like, wait_job, wav_bytes
 from ltts.config import Settings
 from ltts.container import Services
 from ltts.engines.cloned_speech import TARGET_RMS_DBFS, acceptable, plausibility, polish, sentence_style
@@ -100,14 +100,7 @@ def test_the_build_makes_styles_that_move_into_the_profile(
 def test_a_saved_studio_voice_learns_its_styles_from_its_takes(
     client: TestClient, services: Services, engines: dict[str, FakeEngine]
 ) -> None:
-    session_id = client.post("/api/voice-sessions").json()["id"]
-    for number in (2, 18, 26):
-        client.put(f"/api/voice-sessions/{session_id}/takes/{number}", content=wav_bytes(speech_like(12)))
-    wait_job(client, client.post(f"/api/voice-sessions/{session_id}/build").json()["id"])
-    best = client.get(f"/api/voice-sessions/{session_id}").json()["candidates"][0]["index"]
-    profile = client.post(
-        f"/api/voice-sessions/{session_id}/finish", json={"candidate": best, "name": "Me", "consent": True}
-    ).json()
+    profile = saved_studio_voice(client, (2, 18, 26))
     assert profile["styles"] == []  # takes saved without their passage: as a voice from before styles
     _, _, before = services.voices.resolve(profile["id"])
 

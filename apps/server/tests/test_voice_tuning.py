@@ -22,7 +22,7 @@ import pytest
 import soundfile as sf
 from fastapi.testclient import TestClient
 
-from conftest import FakeEngine, speech_like, wait_job, wav_bytes
+from conftest import FakeEngine, saved_studio_voice, speech_like, wait_job, wav_bytes
 from ltts.config import REPO_ROOT, Settings
 from ltts.container import Services
 from ltts.errors import ConflictError
@@ -39,16 +39,8 @@ def settings(settings: Settings) -> Settings:
 
 
 def studio_voice(client: TestClient, numbers: range) -> str:
-    """A saved studio voice that kept a take of each passage in ``numbers``."""
-    session_id = client.post("/api/voice-sessions").json()["id"]
-    for number in numbers:
-        client.put(f"/api/voice-sessions/{session_id}/takes/{number}", content=wav_bytes(speech_like(12)))
-    wait_job(client, client.post(f"/api/voice-sessions/{session_id}/build").json()["id"])
-    best = client.get(f"/api/voice-sessions/{session_id}").json()["candidates"][0]["index"]
-    profile = client.post(
-        f"/api/voice-sessions/{session_id}/finish", json={"candidate": best, "name": "Me", "consent": True}
-    ).json()
-    return str(profile["id"])
+    """The id of a saved studio voice that kept a take of each passage in ``numbers``."""
+    return str(saved_studio_voice(client, numbers)["id"])
 
 
 def test_tuning_trains_on_known_passages_and_holds_out_the_last_of_each_group(tmp_path: Path) -> None:

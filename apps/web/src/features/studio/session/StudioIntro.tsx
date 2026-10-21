@@ -17,8 +17,9 @@ export function StudioIntro() {
         voice across them, then builds and tests a few voices from your best takes so you can pick
         the one that sounds most like you. When it speaks, the engine hears about 10 seconds of one
         take for the sound of your voice, plus three takes of each speaking style for its rhythm. No
-        model is trained, so the session stops asking once the voice has what it uses. Fine-tuning
-        it later, on an NVIDIA graphics card, learns from every take you recorded.
+        model is trained, so the session stops asking once the voice has what it uses. An
+        experimental fine-tune can be tried afterwards on an NVIDIA graphics card; in a blind test
+        it sounded no clearer than the voice without it, so it isn't a reason to record more.
       </Point>
       <Point icon={<Mic size={16} />} title="A good microphone makes the biggest difference">
         Use a USB or XLR microphone, a hand’s width from your mouth and aimed slightly to the side.

@@ -53,12 +53,10 @@ def _tidy(wav16: np.ndarray, sample_rate: int) -> np.ndarray:
     Speech is any 20 ms frame 30 % of the way from the noise floor to the loud end of the take (a
     fixed level below the peak would count breaths and room noise as speech).
     """
-    frame = max(sample_rate // 50, 1)
-    usable = len(wav16) - len(wav16) % frame
-    if usable == 0:
+    framed = studio.frame_levels(wav16, sample_rate)
+    if framed is None:
         return wav16
-    frames = wav16[:usable].reshape(-1, frame)
-    level = 20 * np.log10(np.sqrt(np.mean(frames**2, axis=1)) + 1e-9)
+    frames, level = framed
     floor, loud = np.percentile(level, [5, 90])
     voiced = level > floor + 0.3 * (loud - floor)
     indexes = np.nonzero(voiced)[0]
@@ -185,7 +183,7 @@ class Tuning:
             raise RuntimeError("Fine-tuning needs an NVIDIA graphics card (CUDA)")
         self.model = model
         seed = int(request.get("seed", 0))
-        self.rng = random.Random(seed)
+        self.rng = random.Random(seed)  # noqa: S311 (shuffling takes and prompts, not security)
         torch.manual_seed(seed)
         conds = studio.load_conditioning(request["conditioning"], "cpu")
         self.speaker = conds.t3.speaker_emb.float()
@@ -280,7 +278,6 @@ class Tuning:
     def _loss(self, prompt: Any, sample: dict[str, Any]) -> Any:
         """Next-token loss on a take's speech tokens, conditioned like ``T3.inference_turbo``."""
         import torch
-        import torch.nn.functional as F
         from chatterbox.models.t3.modules.cond_enc import T3Cond
 
         t3 = self.model.t3
@@ -298,7 +295,7 @@ class Tuning:
         hidden = t3.tfmr(inputs_embeds=embeds, use_cache=False).last_hidden_state
         logits = t3.speech_head(hidden[:, cond_emb.size(1) + text_emb.size(1) :])
         target = torch.cat([speech, torch.tensor([t3.hp.stop_speech_token], device=device)])
-        return F.cross_entropy(logits[0].float(), target)
+        return torch.nn.functional.cross_entropy(logits[0].float(), target)
 
     def _held_out_loss(self) -> float:
         """Mean loss per speech token on the held-out takes, under the voice's own prompt and two others."""
@@ -394,7 +391,7 @@ class Tuning:
 
         t3 = self.model.t3
         t3.tfmr._set_gradient_checkpointing(enable=False)
-        for index, block in enumerate(t3.tfmr.h):
+        for block in t3.tfmr.h:
             for target in TARGETS:
                 parent, name = target.split(".")
                 module = getattr(getattr(block, parent), name)

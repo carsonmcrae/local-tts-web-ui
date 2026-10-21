@@ -2,7 +2,8 @@
 # Scope: The desktop shell's formatting, lints and unit tests; then the full installer (web UI, bundled
 #   runtime with the verified Kokoro model, per-user NSIS installer) built WITHOUT the release updater
 #   key, an installer smoke test (silent install, speech, MP3 export, no console windows, restart,
-#   uninstall that keeps the user's data), the installer kept as a workflow artifact for manual testing,
+#   uninstall that keeps the user's data), everything a person did surviving a close and a crash
+#   (persistence-test.mjs), the installer kept as a workflow artifact for manual testing,
 #   and the update path between two builds signed with a throwaway key (scripts/desktop/update-test.mjs).
 #   Nothing is published, signed with the release key or attached to a release.
 # Does NOT belong: Publishing releases (release.yml) or the cross-platform server tests (ci.yml).
@@ -93,6 +94,10 @@ jobs:
         run: |
           version=$(cat dist/desktop/version.txt)
           node scripts/desktop/smoke-test.mjs "dist/desktop/TTSNative-Setup-$version.exe" "$version"
+      - name: Keeps documents, positions, bookmarks, settings and exports across a close and a crash
+        run: |
+          version=$(cat dist/desktop/version.txt)
+          node scripts/desktop/persistence-test.mjs --install "dist/desktop/TTSNative-Setup-$version.exe"
       - name: Keep the app's logs
         if: failure()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

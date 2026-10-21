@@ -12,6 +12,7 @@
  *   (ExportStatus).
  */
 import { BookHeadphones } from 'lucide-react';
+import { onThisComputer } from '@/features/lan/LanIndicator';
 import { Link } from 'react-router';
 import { describeError } from '@/api/client';
 import { useExportQueue, useExports } from '@/api/exportQueries';
@@ -50,8 +51,8 @@ function ExportCard({ item }: Readonly<{ item: ExportOut }>) {
         {stopped && item.stale ? (
           <p className="mt-2 text-sm text-muted">
             Not resumed since {formatRelativeDate(job.updatedAt)}. Its saved sentences take{' '}
-            {formatBytes(item.workingBytes)} on this computer: resume it to finish, or cancel it to
-            free the space.
+            {formatBytes(item.workingBytes)} on this computer: resume it to finish, or cancel it
+            {onThisComputer() ? '' : ' on the computer'} to free the space.
           </p>
         ) : null}
         <div className="mt-3">

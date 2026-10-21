@@ -19,6 +19,7 @@ import type { JobOut } from '@/api/types';
 import { Button, buttonClasses } from '@/components/ui/Button';
 import { ConfirmDialog } from '@/components/ui/Dialog';
 import { Banner, ProgressBar } from '@/components/ui/Feedback';
+import { onThisComputer } from '@/features/lan/LanIndicator';
 import { formatBytes, formatDuration, pluralize } from '@/lib/format';
 import { EXPORT_HELP_URL, exportResult, isSingleAudioFile, savedText, TOUCH } from './exportText';
 import { SendToShelf } from './SendToShelf';
@@ -103,7 +104,7 @@ function RunningExport({ job }: Readonly<{ job: JobOut }>) {
         >
           Pause
         </Button>
-        <CancelExport job={job} />
+        {onThisComputer() ? <CancelExport job={job} /> : null}
       </div>
       <Problem error={pause.error} />
     </div>
@@ -163,7 +164,7 @@ function StoppedExport({ job, saved, onResumed }: Readonly<ExportStatusProps>) {
         >
           Resume
         </Button>
-        <CancelExport job={job} saved={saved} />
+        {onThisComputer() ? <CancelExport job={job} saved={saved} /> : null}
       </Actions>
       <Problem error={resume.error} />
     </Banner>
@@ -222,8 +223,10 @@ function FinishedExport({ job, deletable, removed }: Readonly<ExportStatusProps>
         >
           <Download size={15} /> Download
         </a>
-        {isSingleAudioFile(result.filename) ? <SendToShelf exportId={job.id} /> : null}
-        {deletable ? <DeleteExport job={job} /> : null}
+        {onThisComputer() && isSingleAudioFile(result.filename) ? (
+          <SendToShelf exportId={job.id} />
+        ) : null}
+        {onThisComputer() && deletable ? <DeleteExport job={job} /> : null}
       </Actions>
     </Banner>
   );

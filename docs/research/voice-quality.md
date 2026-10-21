@@ -3,11 +3,13 @@
 > **In short:** Turbo takes a voice's rhythm and inflection almost entirely from a 15-second prompt
 > (its emotion conditioning is switched off), so one prompt made every sentence sound alike. TTSNative
 > now keeps a prompt per kind of sentence (questions, lively lines, dialogue, narration), fills each
-> prompt with 15 s of speech, seeds and retries implausible sentences, and levels loudness. The next
-> big step would be a LoRA fine-tune on the session (Apache-2.0 tooling exists; untested here).
+> prompt with 15 s of speech, seeds and retries implausible sentences, and levels loudness. A LoRA
+> fine-tune of T3 on the session, measured below, is now an optional step the owner keeps only after
+> comparing.
 
-Research date: 2026-10-20. Pages were only read; nothing was downloaded or run. Each finding is marked
-**verified** (read on the cited page) or **inference** (our reasoning).
+Research date: 2026-10-20. Pages were only read; nothing was downloaded or run, except the
+fine-tuning measurements, which used the already-installed engine. Each finding is marked
+**verified** (read on the cited page), **measured** (run here) or **inference** (our reasoning).
 
 ## What limits Turbo
 
@@ -87,24 +89,80 @@ about the first 10 s, T3 about 15 s of prompt tokens) plus, in TTSNative, short 
 session's job is to choose those well: it averages the speaker's identity over all takes, ranks the
 takes as prompts and builds speaking styles from passages that contain questions, exclamations and
 dialogue. More takes give more to choose from and a steadier identity, not a "trained" model; the app
-says so wherever the session is described.
+says so wherever the session is described. Fine-tuning (below) is a separate, optional step after the
+session, and it is the only thing in TTSNative that trains anything.
+
+## Fine-tuning T3 on the session (measured)
+
+The toolkit was read, not run.
+
+- **Verified**
+  ([gokhaneraslan/chatterbox-finetuning](https://github.com/gokhaneraslan/chatterbox-finetuning),
+  Apache-2.0):
+  - It trains T3 only, in full or LoRA mode. It recommends LoRA for Turbo because full fine-tunes can
+    hallucinate.
+  - It asks for 30+ minutes of 3–10 s segments.
+  - It runs on HF `Trainer` with `peft`, `accelerate` and `tensorboard`.
+  - It extends the vocabulary and trains the text embeddings (it targets new languages).
+  - Its Turbo training framing differs from how Turbo generates:
+    - it adds start/stop text tokens;
+    - it feeds no start-of-speech token;
+    - it masks the first 3 s of every target, because its prompt is cut from the target itself.
+- **Measured** (a copy of the owner's real session, RTX 3080 10 GB):
+  - **Data.** The session kept 48 takes, 7.6 minutes; six (the last of each passage group) were
+    held out.
+  - **Trainer.** TTSNative's own, using only the worker's locked packages. It is a rank-16 LoRA on
+    every block's attention and MLP projections, framed exactly like `inference_turbo`. Each take
+    is prompted by style-like prompts built from other takes.
+
+| Measure                        | Result                                                                                |
+| ------------------------------ | ------------------------------------------------------------------------------------- |
+| Peak VRAM                      | 2.9 GiB with gradient checkpointing (5.0 GiB without); the model alone is 2.6 GiB     |
+| Time                           | About 13 s an epoch; best epoch 4; about 75 s of training, about 2 min with loading   |
+| Held-out loss per speech token | 4.10 → 3.89 (−5 %, perplexity −19 %); three runs agreed (3.89–3.90)                   |
+| Adapter                        | 12.6 MB (bf16 safetensors)                                                            |
+| Synthesis                      | Merged into the weights: same speed as before; base audio bit-identical after restore |
+
+A/B on 12 new sentences × 2 seeds, same voice, style prompts and seed:
+
+| Measure                | Before | After | Owner's takes |
+| ---------------------- | ------ | ----- | ------------- |
+| Pitch range (st)       | 2.48   | 3.21  | about 3.4     |
+| Speaking rate (syll/s) | 4.85   | 4.66  | 4.04          |
+| Speaker similarity     | 0.913  | 0.916 | —             |
+
+- **By kind of sentence:** pitch range went up for narration, questions and dialogue, and down
+  slightly for lively lines.
+- **Paired comparisons:** of the 24, pitch was closer to the owner's takes in 14 and rate in 18.
+- **Failures:** no clip came out implausibly long or short.
+- **Inference:** the gain is real but modest, and single samples are noisy. So TTSNative offers the
+  fine-tune as an experimental step and keeps it only when the owner prefers it by ear (ADR-16).
+- **Splitting takes into sentences:** gave no further gain over whole takes.
+
+**Measured: the owner's blind listening test** (2026-10-21, the same 24 pairs, order shuffled):
+
+| Kind      | Fine-tuned | Current | Same   |
+| --------- | ---------- | ------- | ------ |
+| Dialogue  | 3          | 2       | 1      |
+| Lively    | 3          | 2       | 1      |
+| Narration | 0          | 1       | 5      |
+| Question  | 1          | 2       | 3      |
+| **All**   | **7**      | **7**   | **10** |
+
+- **Counted as preferences:** a tie, 7 to 7, so these pairs don't show an audible gain on 7.6 minutes
+  of data.
+- **Narration:** almost always sounded the same.
+- **The owner's overall impression:** the fine-tune sounded better, so it ships as an experimental,
+  opt-in step.
+- **What could make the gain clear:** more training speech, for example longer sessions or imported
+  recordings with local transcripts. That work is on a follow-up branch.
 
 ## Next steps
 
-1. **LoRA fine-tune of Turbo's T3 on the session (largest remaining gain, L).** There is one
-   verified toolkit:
-   - It is [gokhaneraslan/chatterbox-finetuning](https://github.com/gokhaneraslan/chatterbox-finetuning)
-     (Apache-2.0, 118★). It supports Turbo in full and LoRA modes and trains T3 only.
-   - It needs 30+ minutes of 3–10 s segments, which the studio session already provides.
-   - It warns that full Turbo fine-tunes can hallucinate, and recommends LoRA.
-   - It gives no VRAM figure. A fork reports batch 4 at 12 GB, and batch 2 with gradient accumulation
-     for less.
-   - **Inference:** it fits a 10 GB card with gradient checkpointing, but there is no published
-     evidence of the gain from 30 minutes.
-
-   Any training code must be reviewed and pinned like the worker's other dependencies.
-
-2. **Speech-recognition validation (M).** Use a small local Whisper model to re-generate sentences
+1. **Speech-recognition validation (M).** Use a small local Whisper model to re-generate sentences
    that drop or repeat words. It needs a model download, so it should be opt-in.
-3. **Short-sentence grouping (M).** Synthesise very short sentences together with a neighbour, then
+2. **Short-sentence grouping (M).** Synthesise very short sentences together with a neighbour, then
    split them by timing. This needs care to keep sentence highlighting exact.
+3. **More data for fine-tuning (S).** Imported recordings can't be fine-tuned on yet because they
+   have no text. A local transcript (the same Whisper model) would let longer sessions train on
+   everything they recorded.

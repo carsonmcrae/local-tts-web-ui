@@ -99,8 +99,9 @@ when a choice changes the stack, a trust boundary, data storage or the setup exp
   time. A per-voice delivery (sampling temperature and top-p) adds control over inflection.
 - **Alternatives:** Fine-tuning Chatterbox on the session. Rejected for now: hours of GPU time, a
   training stack in the worker and a large per-voice download, for a gain that a better reference
-  largely captures. The session's takes are kept so fine-tuning could be added later. Shipping voices
-  in the repository was ruled out: a published voice can be used by anyone to impersonate its speaker.
+  largely captures. The session's takes are kept so fine-tuning could be added later (it was
+  measured later and is now an optional step: ADR-16). Shipping voices in the repository was ruled
+  out: a published voice can be used by anyone to impersonate its speaker.
 - **Consequences:** Building needs the cloning engine and takes a minute or two on a GPU; the worker
   is busy meanwhile, so other custom voices wait. Sessions and studio voices take more disk (24-bit
   FLAC takes). A built voice's file name and delivery are part of its audio cache revision, so a
@@ -249,3 +250,60 @@ when a choice changes the stack, a trust boundary, data storage or the setup exp
   (rejected: executable plugins are out, see ADR-12).
 - **Consequences:** If accepted, a provider is added as a reviewed engine with tests that no text is
   sent without consent and that removing consent stops it immediately.
+
+## ADR-16: A studio voice can be fine-tuned, and the owner keeps it only after comparing
+
+- **Context:**
+  - Turbo has no emotion conditioning, so a voice's delivery comes from its T3 prompt (ADR-11).
+    Styles helped, but the owner still heard less of themselves than a full session should allow.
+  - ADR-9 deferred fine-tuning. Its reasons were hours of GPU time, a training stack in the worker
+    and a large per-voice download.
+  - A spike on a copy of a real 48-take session (7.6 min) measured all three
+    (docs/research/voice-quality.md):
+    - **GPU and time:** a LoRA on T3 peaks at 2.9 GiB of VRAM with gradient checkpointing and takes
+      about 13 s an epoch on an RTX 3080.
+    - **Size:** the adapter is 12.6 MB.
+    - **Dependencies:** it needs nothing beyond the worker's locked torch, transformers and
+      chatterbox.
+- **Decision:**
+  - **What is trained.** An optional, experimental **Fine-tune this voice** step (the `voice-tune`
+    job) for studio voices that kept their takes. It trains a rank-16 LoRA on the attention and MLP
+    projections of every T3 block:
+    - **Data:** whole takes of known passages, with their words taken from the recording script.
+      The server keeps a copy of `passages.json`, and a test keeps it equal to the web app's.
+    - **Framing:** exactly how `T3.inference_turbo` reads a sentence. Each take is prompted by the
+      voice's own prompt or a style-like prompt joined from three other takes, never itself.
+  - **When it stops.** The last take of each passage group is held out. The job trains one epoch per
+    worker call (so progress and cancel work), stops after two epochs without a better held-out
+    loss, and keeps the best epoch. If the loss dropped by less than 1 %, nothing is offered.
+  - **Comparing.** The owner hears three sentences read as the reader reads them (styles, seeding,
+    retries, polish), now and fine-tuned, and chooses **Keep** or **Discard**.
+  - **Where it lives.** A kept adapter is stored as `adapter-<id>.safetensors` (bf16, format and
+    shapes checked on load). Its name is part of the voice's cache revision. **Remove fine-tune**
+    deletes it, and the voice goes back to its earlier revision and audio.
+  - **How it is applied.** The worker merges the adapter into T3's weights (full speed) and restores
+    the originals exactly from a copy taken before the first merge. Base audio stays bit-identical.
+    While a voice trains, the adapter being trained is switched off for other voices, and a
+    fine-tuned voice is served through it unmerged.
+- **Alternatives:**
+  - **The chatterbox-finetuning toolkit (Apache-2.0).** Its ideas were used; its code wasn't:
+    - It brings `peft`, `accelerate` and `tensorboard` (plus pins such as `torch==2.6`).
+    - It extends the vocabulary and trains the text embeddings for new languages.
+    - Its Turbo framing differs from inference: start/stop text tokens, no start-of-speech token and
+      the first 3 s of every target masked.
+  - **Full fine-tuning.** The toolkit reports hallucinations on Turbo, and the weights would be
+    1.9 GB per voice.
+  - **An unmerged adapter at synthesis.** Measured 65 % slower per sentence.
+  - **Training automatically after a build.** Rejected: it costs minutes of GPU time, and the gain
+    needs a listening decision.
+- **Consequences:**
+  - **Hardware.** Fine-tuning needs an NVIDIA GPU; on other hardware the job explains that.
+  - **Memory.** The worker holds a 1.1 GiB host copy of the targeted weights once any adapter has
+    been used.
+  - **Data.** Imported takes (no text) aren't trained on. Voices need at least 12 known passages.
+  - **Sharing.** The adapter isn't part of a `.ttsvoice` package (ADR-12's exact file list): a
+    shared voice speaks without it.
+  - **Trust.** Profiles that say "No model is trained" now say so only until a fine-tune is kept.
+  - **Listening.** In the owner's blind test on the same 24 pairs, 7 went to the fine-tune, 7 to the
+    voice without it and 10 sounded the same. It ships as an experimental opt-in on the owner's
+    overall impression; more training speech is the follow-up.

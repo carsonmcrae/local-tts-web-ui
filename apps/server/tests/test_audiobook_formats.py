@@ -3,10 +3,11 @@
 """Purpose: Tests for audiobook outputs: M4B with chapters, read-along EPUB 3 and document covers.
 
 Scope: FFMETADATA escaping and the exact ffmpeg command (no shell, a copied cover); an M4B export
-through a stand-in ffmpeg and, when this machine has ffmpeg, a real one checked with ffprobe;
-a clear failure without ffmpeg; a read-along EPUB whose package, navigation, chapters and SMIL
-timings are valid XML and agree with each other (with hostile text escaped); and the audiobook
-details and cover endpoints (JPEG/PNG only, size-limited, removed with the document).
+through a stand-in ffmpeg (with subtitles too) and, when this machine has ffmpeg, a real one checked
+with ffprobe; a clear failure without ffmpeg, when ffmpeg fails or when the run is stopped; a
+read-along EPUB whose package, navigation, chapters and SMIL timings are valid XML and agree with each
+other (with hostile text escaped); and the audiobook details and cover endpoints (JPEG/PNG only,
+size-limited, viewed, removed by hand and with the document).
 Does NOT belong: Resuming exports (test_resumable_exports.py).
 """
 
@@ -18,6 +19,7 @@ import subprocess
 import sys
 import zipfile
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any
 
 import pytest
@@ -26,6 +28,8 @@ from fastapi.testclient import TestClient
 
 from conftest import wait_job
 from ltts.container import Services
+from ltts.documents.details import MAX_COVER_BYTES
+from ltts.errors import UnsupportedDocumentError
 from ltts.exports import m4b
 from ltts.exports.assemble import Chapter
 
@@ -65,6 +69,9 @@ def test_the_ffmpeg_command_is_fixed_and_copies_the_cover(tmp_path: Path) -> Non
 
 
 def test_find_ffmpeg_accepts_only_an_ffmpeg_file(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("LTTS_FFMPEG", raising=False)
+    monkeypatch.setattr(m4b.shutil, "which", lambda _name: None)
+    assert m4b.find_ffmpeg() is None  # nothing configured and nothing on the PATH
     monkeypatch.setenv("LTTS_FFMPEG", str(tmp_path / "missing" / "ffmpeg.exe"))
     assert m4b.find_ffmpeg() is None
     other = tmp_path / "notffmpeg.exe"
@@ -104,6 +111,51 @@ def test_an_m4b_export_through_ffmpeg(
     download = client.get(f"/api/exports/{job['id']}/download")
     assert download.headers["content-type"] == "audio/mp4"
     assert not list(services.exports.folder(job["id"]).glob("*.wav"))  # the working WAV is removed
+    body = {"documentId": doc_id, "voiceId": "kokoro:alpha", "format": "m4b", "captions": True}
+    subtitled = wait_job(client, client.post("/api/exports", json=body).json()["id"])
+    assert subtitled["status"] == "succeeded" and subtitled["result"]["filename"].endswith("(M4B with subtitles).zip")
+    with zipfile.ZipFile(services.exports.folder(subtitled["id"]) / subtitled["result"]["filename"]) as archive:
+        assert sorted(Path(name).suffix for name in archive.namelist()) == [".m4b", ".srt"]
+
+
+class FakeFfmpeg:
+    """Stands in for the ffmpeg process: still running, or finished with an exit code and an error."""
+
+    def __init__(self, returncode: int | None, stderr: bytes | None = None) -> None:
+        self.returncode = returncode
+        self.stderr = io.BytesIO(stderr) if stderr is not None else None
+        self.killed = False
+
+    def poll(self) -> int | None:
+        return self.returncode
+
+    def kill(self) -> None:
+        self.killed, self.returncode = True, -9
+
+    def wait(self) -> int | None:
+        return self.returncode
+
+
+def test_writing_an_m4b_can_be_stopped_and_says_what_ffmpeg_reported(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    processes: list[FakeFfmpeg] = []
+    answers = iter([FakeFfmpeg(None), FakeFfmpeg(1, b"Unknown encoder 'aac'")])
+
+    def popen(_args: list[str], **_options: Any) -> FakeFfmpeg:
+        processes.append(next(answers))
+        return processes[-1]
+
+    monkeypatch.setattr(m4b, "find_ffmpeg", lambda: Path("ffmpeg"))
+    monkeypatch.setattr(m4b, "subprocess", SimpleNamespace(Popen=popen, DEVNULL=-3, PIPE=-1))
+    book = m4b.Book({"title": "Ferry"}, [Chapter(0, "One", 0.0, 1.0)])
+    audio, output = tmp_path / "Ferry.wav", tmp_path / "Ferry.m4b"
+    with pytest.raises(m4b.FfmpegFailedError, match="was stopped"):
+        m4b.write_m4b(audio, output, book, lambda: True, timeout_s=600)  # the export was paused or canceled
+    assert processes[0].killed and not output.with_suffix(".ffmeta").exists()  # the chapter list is tidied away
+    with pytest.raises(m4b.FfmpegFailedError, match="Unknown encoder 'aac'"):
+        m4b.write_m4b(audio, output, book, lambda: False, timeout_s=600)
+    assert not processes[1].killed and not output.exists()
 
 
 def test_m4b_without_ffmpeg_fails_clearly(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -173,18 +225,28 @@ def test_a_read_along_epub_is_valid_and_synchronised(client: TestClient) -> None
         assert audio.get("clipBegin", "") < audio.get("clipEnd", "")
 
 
-def test_details_and_cover_endpoints(client: TestClient, services: Services) -> None:
+def test_details_and_cover_endpoints(client: TestClient, services: Services, tmp_path: Path) -> None:
     doc_id = document(client)
     url = f"/api/documents/{doc_id}"
     assert client.get(f"{url}/details").json() == {"author": None, "narrator": None, "description": None,
                                                     "hasCover": False}  # fmt: skip
     saved = client.put(f"{url}/details", json={"author": "  A. Writer ", "description": ""}).json()
     assert saved["author"] == "A. Writer" and saved["description"] is None
+    assert client.get(f"{url}/cover").json()["error"]["code"] == "cover_not_found"
+    big = tmp_path / "big.cover"
+    with big.open("wb") as handle:
+        handle.truncate(MAX_COVER_BYTES + 1)  # the store checks the size itself, whatever brought the file
+    with pytest.raises(UnsupportedDocumentError) as too_large:
+        services.details.set_cover(doc_id, big)
+    assert too_large.value.code == "cover_too_large"
     assert client.put(f"{url}/cover", content=b"GIF89a....").json()["error"]["code"] == "unsupported_cover"
     assert client.put(f"{url}/cover", content=b"\xff\xd8\xff" + b"0" * (5 * 1024 * 1024 + 10)).status_code == 413
     assert client.put(f"{url}/cover", content=PNG).json()["hasCover"] is True
     cover = client.get(f"{url}/cover")
     assert cover.headers["content-type"] == "image/png" and cover.content == PNG
+    assert client.delete(f"{url}/cover").status_code == 204  # removed by hand
+    assert client.get(f"{url}/details").json()["hasCover"] is False
+    client.put(f"{url}/cover", content=PNG)
     client.delete(url)
     assert services.details.cover(doc_id) is None
     assert client.get(f"/api/documents/{'0' * 32}/details").status_code == 404

@@ -6,7 +6,8 @@ Scope: Pausing keeps saved sentences and resuming under the same job generates o
 export interrupted by a crash resumes the same way; a sentence whose styling changed is generated
 again; a failing sentence fails the export and a retry carries on from it; canceling discards the
 saved sentences as soon as it stops; deleting a running export is refused; only one export runs at
-a time; and the export list reports saved sentences.
+a time; the export list reports saved sentences and copes with what went missing (another kind of job,
+a removed file, a document that is gone); and a wait abandoned without a stop fails the export.
 Does NOT belong: The output formats (test_audiobook_formats.py).
 """
 
@@ -14,6 +15,7 @@ from __future__ import annotations
 
 import threading
 import time
+from types import SimpleNamespace
 from typing import Any
 
 import numpy as np
@@ -24,6 +26,8 @@ from conftest import SAMPLE_RATE, FakeEngine, wait_job
 from export_support import document, hook, paused_export, request
 from ltts.container import Services
 from ltts.engines.base import AudioClip, VoiceSpec
+from ltts.errors import NotFoundError
+from ltts.exports.capacity import UPLOAD_KIND
 from ltts.jobs import JobStatus
 
 
@@ -158,7 +162,56 @@ def test_parts_are_atomic_and_keyed(tmp_path: Any, samples: np.ndarray) -> None:
     assert workspace.existing() == {7: "b" * 16}
     assert workspace.has(7, "b" * 64) and not workspace.has(7, "a" * 64)
     assert workspace.part(7, "b" * 64).seconds == pytest.approx(0.1)
+    used = workspace.bytes_used()
+
+    class Vanishing:
+        """A file a running export removed between being listed and being measured."""
+
+        def is_file(self) -> bool:
+            return True
+
+        def stat(self) -> Any:
+            raise FileNotFoundError
+
+    kept = workspace.part(7, "b" * 64).path
+    folder = workspace.folder
+    workspace.folder = SimpleNamespace(is_dir=lambda: True, rglob=lambda _pattern: [kept, Vanishing()])  # type: ignore[assignment]
+    assert workspace.bytes_used() == used > 0
+    workspace.folder = folder
     (workspace.parts_dir / "junk.txt").write_text("x")
     assert workspace.existing() == {7: "b" * 16}  # unrelated files are ignored
     workspace.remove()
     assert workspace.existing() == {} and workspace.bytes_used() == 0
+
+
+def test_the_list_and_download_cope_with_exports_whose_pieces_went_missing(
+    client: TestClient, services: Services, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    doc_id = document(client)
+    upload = wait_job(client, services.jobs.submit(UPLOAD_KIND, {}, lambda _ctx: None).id)
+    other = client.get(f"/api/exports/{upload['id']}")  # another kind of job isn't an export
+    assert other.status_code == 404 and other.json()["error"]["code"] == "export_not_found"
+    done = wait_job(client, client.post("/api/exports", json=request(doc_id)).json()["id"])
+    assert client.post(f"/api/exports/{done['id']}/cancel").json()["status"] == "succeeded"  # nothing to cancel
+    (services.exports.folder(done["id"]) / done["result"]["filename"]).unlink()
+    missing = client.get(f"/api/exports/{done['id']}/download")
+    assert missing.status_code == 404 and missing.json()["error"]["code"] == "export_missing"
+
+    def refused(_document_id: str) -> list[Any]:
+        raise NotFoundError("That document doesn't exist.", code="document_not_found")
+
+    assert client.delete(f"/api/documents/{doc_id}").status_code == 204
+    monkeypatch.setattr(services.document_repo, "all_segments", refused)  # a repository that refuses what is gone
+    listed = {item["job"]["id"]: item for item in client.get("/api/exports").json()}
+    assert listed[done["id"]]["sentences"] == 0 and listed[done["id"]]["title"] == "Trains"
+
+
+def test_a_wait_abandoned_without_a_stop_fails_the_export(
+    client: TestClient, services: Services, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def abandoned(*_args: Any, **_kwargs: Any) -> Any:
+        raise TimeoutError
+
+    monkeypatch.setattr(services.synthesis, "render_blocking", abandoned)
+    failed = wait_job(client, client.post("/api/exports", json=request(document(client))).json()["id"])
+    assert failed["status"] == "failed" and failed["errorCode"] == "internal_error"

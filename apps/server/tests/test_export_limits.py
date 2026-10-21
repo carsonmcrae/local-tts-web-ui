@@ -8,7 +8,8 @@ its queued sentence, records a stop rather than a failure, and tidies or removes
 studio voice job runs at a time, uploads queue too; on-demand renders are capped per engine (for any
 device) with room kept for playback, and abandoned requests don't pile up; an export needs room on
 the disk to start, resume and carry on; startup tidies what a crash left, keeps resumable work and
-notes the exports left for weeks.
+notes the exports left for weeks, and leaves running and recently stopped exports (and files that
+aren't an export's folder) alone.
 Does NOT belong: Resuming itself (test_resumable_exports.py) or the per-device LAN budget
 (test_lan_security.py).
 """
@@ -283,3 +284,22 @@ def test_startup_tidies_what_a_crash_left_and_keeps_resumable_work(
     assert listed[job_id]["stale"] is True and listed[finished["id"]]["stale"] is False
     client.post(f"/api/exports/{job_id}/resume")
     assert wait_job(client, job_id)["status"] == "succeeded"
+
+
+def test_startup_leaves_running_and_recently_stopped_exports_alone(
+    client: TestClient, services: Services, engines: dict[str, FakeEngine], caplog: pytest.LogCaptureFixture
+) -> None:
+    doc_id, paused = paused_export(client, services, engines["kokoro"], after=2)  # stopped just now: not stale
+    root = services.settings.resolved_data_dir / "exports"
+    (root / "notes.txt").write_text("not an export's folder", encoding="utf-8")
+    release = threading.Event()
+    hook(engines["kokoro"], lambda n, _t: release.wait(5) if n == 2 else None)
+    running = client.post("/api/exports", json=request(doc_id, pace=1.3)).json()
+    until(lambda: client.get(f"/api/exports/{running['id']}").json()["savedSentences"] == 1)
+    with caplog.at_level(logging.WARNING, logger="ltts.exports"):
+        assert services.exports.clean_orphans() == 0
+    assert not [record for record in caplog.records if record.name == "ltts.exports"]  # nothing stale to note
+    assert (root / "notes.txt").is_file() and services.exports.folder(running["id"]).is_dir()
+    assert len(list((services.exports.folder(paused) / "parts").glob("*.flac"))) == 2  # kept for a resume
+    release.set()
+    assert wait_job(client, running["id"])["status"] == "succeeded"

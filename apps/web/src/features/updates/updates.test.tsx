@@ -180,8 +180,10 @@ describe('in the desktop app', () => {
     ).not.toBeChecked();
     await user.click(screen.getByRole('button', { name: 'Open data folder' }));
     await user.click(screen.getByRole('button', { name: 'Open log folder' }));
+    await user.click(screen.getByRole('button', { name: 'Third-party notices' }));
     expect(tauri.invoke).toHaveBeenCalledWith('open_folder', { which: 'data' });
     expect(tauri.invoke).toHaveBeenCalledWith('open_folder', { which: 'logs' });
+    expect(tauri.invoke).toHaveBeenCalledWith('open_folder', { which: 'notices' });
   });
 
   it.each([

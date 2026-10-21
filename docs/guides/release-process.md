@@ -70,7 +70,27 @@ These need the repository owner; none of them is in the repository.
    update themselves any more.**
 2. **Approval.** In the `release` environment, add yourself as a required reviewer and limit it to tags
    matching `v*`. Each release build then waits for your approval before the signing key is used.
-3. **Windows code signing (Authenticode), when you're ready.** Without it, SmartScreen warns on download
+3. **Back the key up and know how to recover.** Every update an installed copy accepts must carry a
+   signature from this key; the public half is compiled into the app.
+   - Keep the key file and its password as two entries in your password manager, and a second copy
+     somewhere offline (an encrypted drive). GitHub's environment secret is write-only and is not a
+     backup. Keep the password apart from the key.
+   - Check a backup before trusting it: sign any file with it and verify the signature against the key in
+     the app. With the key file and its password in `TAURI_SIGNING_PRIVATE_KEY` and
+     `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` (set them in a shell, never on a command line or in a script
+     that is committed): `npx tauri signer sign <any file>` writes `<any file>.sig`, and
+     `node scripts/release/verify-update-signature.mjs <any file>` must print that it matches.
+   - **If the key is lost:** generate a new pair, replace `plugins.updater.pubkey`, and ship the next
+     version. Installed copies refuse updates signed with the new key (they show that the update couldn't
+     be verified), so that release's notes and the website must tell people to download the installer
+     once from ttsnative.com/download; the update check in the app then works again from the new version.
+   - **If the key leaks:** treat it as lost, rotate it the same way at once, and replace the GitHub
+     secret. A leaked key alone cannot push an update to anyone: the app only takes updates from this
+     repository's latest release, so keep the repository itself protected (two-factor authentication,
+     the rulesets on `main` and on `v*` tags, required review of the `release` environment).
+   - Never paste the key into a terminal that is being recorded, a chat, an issue, a script in the
+     repository or a CI log; the workflow passes it only through the environment secret.
+4. **Windows code signing (Authenticode), when you're ready.** Without it, SmartScreen warns on download
    and first run. Options in 2026:
    - **Azure Artifact Signing** (formerly Trusted Signing): about $10 a month; individuals in the US
      and Canada can verify their identity; no hardware token. Install its signing tool in the
@@ -120,6 +140,8 @@ archives pinned in `apps/desktop/third-party-sources.json`.
 - **When the release fails with a size or SHA-256 mismatch**, an upstream archive changed (GitHub can
   regenerate its tag and commit archives). Download it again, check that its extracted contents match
   the old archive, then update the size and hash in the manifest. Never skip the check.
+- **Never delete a release or its `ttsnative-X.Y.Z-third-party-sources.tar.gz`:** the installer's
+  written offer promises that source for at least three years after someone received the installer.
 
 ## Testing a Windows build
 

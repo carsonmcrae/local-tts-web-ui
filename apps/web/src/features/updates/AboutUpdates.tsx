@@ -8,7 +8,7 @@
  *   history work offline from the notes built into the app.
  * Does NOT belong: The rest of About (SystemSections) or update state (UpdatesProvider).
  */
-import { FolderOpen, History, RefreshCw, Sparkles } from 'lucide-react';
+import { FolderOpen, History, RefreshCw, ScrollText, Sparkles } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Feedback';
@@ -75,6 +75,13 @@ function DesktopControls() {
           onClick={() => void desktop.openFolder('logs')}
         >
           Open log folder
+        </Button>
+        <Button
+          variant="ghost"
+          icon={<ScrollText size={15} />}
+          onClick={() => void desktop.openFolder('notices')}
+        >
+          Third-party notices
         </Button>
       </div>
       <label className="flex items-center gap-2 text-sm">

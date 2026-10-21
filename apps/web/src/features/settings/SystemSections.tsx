@@ -196,7 +196,10 @@ export function AboutSection() {
                 : '…',
             ],
             ['Made by', `${PROJECT} by ${AUTHOR}`],
-            ['License', `${LICENSE}, ${COPYRIGHT}. Model licenses are listed with each engine.`],
+            [
+              'License',
+              `${LICENSE}, ${COPYRIGHT}. Model licenses are listed with each engine. The Windows app includes open-source components under their own licences, among them espeak-ng and phonemizer (GPL-3.0) and libsndfile, LAME, mpg123 and GNU libiconv (LGPL-2.1); every one is listed in its THIRD-PARTY-NOTICES.txt.`,
+            ],
           ] as const
         ).map(([label, value]) => (
           <div key={label} className="flex flex-col border-b border-line py-1.5">

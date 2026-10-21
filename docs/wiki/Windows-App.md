@@ -56,6 +56,14 @@ library across: quit both, copy everything inside `<your ttsnative folder>\data`
 voice cloning again from Settings if you use it (its environment is tied to the folder it was made in).
 Nothing is moved or deleted; your source copy keeps working.
 
+## Licences
+
+TTSNative is MIT-licensed. The installer also contains open-source components under their own
+licences, including espeak-ng and phonemizer (GPL-3.0) and libsndfile, LAME, mpg123 and GNU libiconv
+(LGPL-2.1). Every licence is listed in `THIRD-PARTY-NOTICES.txt` in `%LOCALAPPDATA%\TTSNative\runtime`
+(Settings → About opens it), and the source code of the GPL and LGPL parts is attached to each release
+on GitHub as `ttsnative-<version>-third-party-sources.tar.gz`.
+
 ## Uninstall
 
 Use **Settings → Apps → Installed apps → TTSNative → Uninstall**. Your documents and voices are kept

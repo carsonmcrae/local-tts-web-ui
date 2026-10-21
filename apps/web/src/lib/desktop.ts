@@ -45,7 +45,7 @@ export const desktop = {
   check: (manual: boolean) => invoke<CheckResult>('update_check', { manual }),
   snooze: (version: string) => invoke<void>('update_snooze', { version }),
   setAutoCheck: (enabled: boolean) => invoke<void>('update_set_auto', { enabled }),
-  openFolder: (which: 'data' | 'logs') => invoke<void>('open_folder', { which }),
+  openFolder: (which: 'data' | 'logs' | 'notices') => invoke<void>('open_folder', { which }),
   /** Downloads, verifies and starts the installer; on success the app closes and reopens itself. */
   install: (onEvent: (event: InstallEvent) => void) => {
     const channel = new Channel<InstallEvent>();

@@ -71,6 +71,8 @@ describe('App', () => {
     const user = userEvent.setup();
     render(<App />);
     const [nav] = await screen.findAllByRole('navigation', { name: 'Main' });
+    // Source comments must never reach the page (the shell's layout note once did).
+    expect(document.body).not.toHaveTextContent(/overflow-clip|\/\/ /);
     const go = async (link: string, heading: string) => {
       await user.click(within(nav as HTMLElement).getByRole('link', { name: link }));
       expect(await screen.findByRole('heading', { level: 1, name: heading })).toBeInTheDocument();

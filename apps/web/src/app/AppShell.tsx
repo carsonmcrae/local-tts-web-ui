@@ -73,8 +73,8 @@ const linkClass = ({ isActive }: { isActive: boolean }) =>
 export function AppShell() {
   return (
     <UpdatesProvider>
-      // overflow-clip, not hidden: a hidden box can still be scrolled by scrollIntoView or focus,
-      // which slid the whole shell up and left the sidebar ending mid-screen.
+      {/* overflow-clip, not hidden: a hidden box can still be scrolled by scrollIntoView or focus,
+          which slid the whole shell up and left the sidebar ending mid-screen. */}
       <div className="flex h-dvh overflow-clip">
         <a
           href="#main"

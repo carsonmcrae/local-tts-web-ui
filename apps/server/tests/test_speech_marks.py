@@ -118,3 +118,8 @@ def test_a_range_closed_before_a_sentence_or_opened_after_one_leaves_it_alone() 
     parts = [f"One.{opened}", "Two.", f"{closed}Three."]  # as fold() leaves marks that stood alone
     annotations, _ = apply(list(enumerate(parts)), encoded.marks, voices)
     assert [(a.index, a.kind, a.value) for a in annotations] == [(1, "voice", "kokoro:sam")]
+
+
+def test_a_pause_mark_with_no_words_of_its_own_joins_the_sentence_before() -> None:
+    assert split_sentences(f"One.{PAUSE_MARK}{PAUSE_MARK}Two.") == [f"One.{PAUSE_MARK}{PAUSE_MARK}", "Two."]
+    assert split_sentences(f"{PAUSE_MARK}Two.") == ["Two."]  # nothing before it to pause after

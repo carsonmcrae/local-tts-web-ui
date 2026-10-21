@@ -22,12 +22,14 @@ from ltts.documents import extract_pdf
 from ltts.documents.cleanup import is_page_number
 from ltts.documents.extract_pdf import (
     _group,
+    _line_box,
     _outline_starts,
     _Paragraph,
     _paragraphs,
     _Start,
     extract_pdf_file,
 )
+from ltts.documents.page_notes import LineBox
 from ltts.documents.structures import ExtractionLimits
 from ltts.errors import DocumentExtractionError
 
@@ -93,6 +95,38 @@ def test_grouping_skips_chapters_without_text() -> None:
     assert _group([], starts) == []
     paragraphs = [_Paragraph(0, 0, "First."), _Paragraph(2, 5, "Second.")]
     assert [s.title for s in _group(paragraphs, starts)] == ["One", "Two"]
+    # Furniture before the first text (a running head on a title page) goes with the first section that has text.
+    furnished = [_Paragraph(0, 0, "Running head", furniture="header"), _Paragraph(1, 3, "First words.")]
+    sections = _group(furnished, [_Start(0, 0, "One"), _Start(2, 1, "Two")])
+    assert [s.title for s in sections] == ["Two"]
+    assert [(b.text, b.furniture) for b in sections[0].blocks] == [("Running head", "header"), ("First words.", None)]
+
+
+def test_a_line_box_needs_visible_characters_that_match_and_measure(monkeypatch: pytest.MonkeyPatch) -> None:
+    unicode = {0: ord("a"), 1: ord("b"), 2: ord("c")}
+    boxes = {
+        0: (0.0, 10.0, 5.0, 22.0),
+        1: (6.0, 11.0, 10.0, 21.0),
+        2: (12.0, 9.0, 16.0, 23.0),
+    }  # left, bottom, right, top
+
+    class TextPage:
+        def get_charbox(self, index: int, loose: bool) -> tuple[float, float, float, float]:
+            if index not in boxes:
+                raise pdfium.PdfiumError("no box")
+            return boxes[index]
+
+    raw = SimpleNamespace(
+        FPDFText_GetCharIndexFromTextIndex=lambda _page, index: index if index < 3 else -1,
+        FPDFText_GetUnicode=lambda _page, index: unicode[index],
+    )
+    monkeypatch.setattr(extract_pdf, "pdfium_c", raw)
+    page = TextPage()
+    assert _line_box(page, "abc", 0) == LineBox(12.0, 9.0, 23.0)  # type: ignore[arg-type]  # the middle size, lowest bottom, highest top
+    assert _line_box(page, "   ", 0) is None  # type: ignore[arg-type]  # nothing visible
+    assert _line_box(page, "xbc", 0) is None  # type: ignore[arg-type]  # the page's character isn't the line's
+    boxes.pop(2)
+    assert _line_box(page, "abc", 0) is None  # type: ignore[arg-type]  # a character that can't be measured
 
 
 def test_outline_from_the_first_page_and_blank_chapters(tmp_path: Path) -> None:

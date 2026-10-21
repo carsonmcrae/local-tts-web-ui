@@ -13,6 +13,7 @@ Does NOT belong: Storing, undoing or applying the cleanup, or the API (test_docu
 
 from __future__ import annotations
 
+import json
 from collections.abc import Sequence
 from pathlib import Path
 
@@ -20,8 +21,10 @@ import pytest
 
 from builders import make_pdf
 from ltts.documents.cleanup import SUPERSCRIPT_DIGITS, Findings, describe, find, find_furniture
+from ltts.documents.cleanup_store import is_record
 from ltts.documents.extract_pdf import extract_pdf_file
 from ltts.documents.segmenter import segment_extraction
+from ltts.documents.service import _checked
 from ltts.documents.structures import Block, ExtractedSection, Extraction, ExtractionLimits
 
 ONE, TWO, THREE, FOUR = (SUPERSCRIPT_DIGITS[n] for n in range(1, 5))
@@ -243,3 +246,12 @@ def test_furniture_sentences_are_skipped_and_never_searched_for_markers() -> Non
 def test_the_import_notice_says_what_was_skipped(counts: dict[str, int], notice: str | None) -> None:
     said = describe(counts)
     assert said == notice if notice is None else (said or "").startswith(notice)
+
+
+def test_the_cleanups_records_are_checked_before_they_are_stored() -> None:
+    assert is_record(json.dumps({"skip": "header"})) and is_record(json.dumps({"citations": [["[3]", ""]]}))
+    assert not is_record("not json") and not is_record("{}") and not is_record("[]")  # nothing, or not a record
+    rows = [(0, "cleanup", json.dumps({"skip": "header"})), (0, "skip", "header")]
+    assert _checked(rows) == rows
+    with pytest.raises(ValueError, match="invalid cleanup annotation"):
+        _checked([(0, "cleanup", "{}")])

@@ -67,6 +67,7 @@ def test_citation_markers_after_a_word_or_punctuation_are_found(text: str, found
         "The value [1000] is too large.",
         "A note [a] explains it.",
         "Then x [3] is read.",  # a single letter is a variable
+        "He left (quietly) [3].",  # after a closing parenthesis
         "The cell (see [3](x)) holds it.",  # followed by a parenthesis
         "Its label [3]a follows.",  # followed by a letter
         "Here a = [3] and b = [4] are set.",  # code or mathematics

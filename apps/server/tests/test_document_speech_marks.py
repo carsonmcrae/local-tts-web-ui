@@ -87,3 +87,17 @@ def test_text_pasted_without_speech_marks_keeps_its_braces(client: TestClient) -
 def test_text_that_is_only_marks_is_refused(client: TestClient) -> None:
     response = client.post("/api/documents/text", json={"text": "{pause 2s} {sound laugh}", "speechMarks": True})
     assert response.json()["error"]["code"] == "empty_document"
+
+
+ENDING = """The bell rang.
+
+{pause 2s}
+
+{sound laugh}"""
+
+
+def test_marks_standing_alone_at_the_end_land_on_the_last_sentence(client: TestClient) -> None:
+    doc = paste(client, ENDING)
+    assert sentences(client, doc["id"]) == ["The bell rang."]  # no empty sentences for the lines of marks
+    assert styles(client, doc["id"]) == {0: {"pauseMs": 2000, "sound": "laugh"}}
+    assert doc["warnings"] == []

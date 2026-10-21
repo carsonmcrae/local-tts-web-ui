@@ -18,6 +18,7 @@ import pytest
 
 from ltts.documents.delivery import Sentence, analyse
 from ltts.documents.speaker_suggestions import (
+    MAX_LINES,
     LocalModel,
     LocalModelError,
     Untagged,
@@ -57,6 +58,8 @@ def test_only_untagged_dialogue_is_sent_with_its_context() -> None:
     data = json.loads(chat[1]["content"])
     assert data["names"] == ["Kael", "Mira"] and [line["sentence"] for line in data["lines"]] == [2, 4]
     assert data["lines"][0]["line"] == TEXTS[2]  # carried only as a JSON string
+    many = [Sentence(i, i, "paragraph", f'"Line {i}."') for i in range(MAX_LINES + 5)]
+    assert len(untagged(analyse(many), {s.index: s.text for s in many})) == MAX_LINES  # one request's worth
 
 
 def test_only_known_names_for_lines_that_were_sent_survive() -> None:

@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import sqlite3
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 from fastapi.testclient import TestClient
@@ -25,6 +26,7 @@ from fastapi.testclient import TestClient
 from conftest import FakeEngine
 from ltts.container import Services
 from ltts.db import MIGRATIONS
+from ltts.documents import styling_router
 from ltts.documents.delivery import CALM, DIALOGUE, LIVELY, NARRATION, QUESTION, Sentence, analyse, characters
 
 STORY = "\n\n".join(
@@ -65,6 +67,7 @@ def test_styles_come_from_tags_punctuation_and_asides() -> None:
                                                                                        None)  # fmt: skip
     assert [(p.text, p.quoted) for p in lines[1].parts] == [("Run!", True), ("she shouted.", False)]
     assert lines[10].parts == () and not lines[10].dialogue
+    assert lines_of("Oh, dear me.")[0].style == LIVELY  # type: ignore[attr-defined]  # an interjection, however it ends
 
 
 def test_a_quotation_over_several_sentences_keeps_its_speaker() -> None:
@@ -163,7 +166,9 @@ def test_a_pause_and_a_pronunciation_change_the_audio(client: TestClient, engine
     )
 
 
-def test_candidate_takes_need_a_voice_that_varies(client: TestClient, engines: dict[str, FakeEngine]) -> None:
+def test_candidate_takes_need_a_voice_that_varies(
+    client: TestClient, engines: dict[str, FakeEngine], monkeypatch: pytest.MonkeyPatch
+) -> None:
     doc_id = document(client)
     url = f"/api/documents/{doc_id}/segments/6/takes"
     refused = client.post(url, json={"voiceId": "kokoro:alpha"})
@@ -181,6 +186,9 @@ def test_candidate_takes_need_a_voice_that_varies(client: TestClient, engines: d
     assert nxt["take"] == 5
     client.put(f"/api/documents/{doc_id}/styles", json={"indexes": [6], "take": None})  # back to the first take
     assert client.get(f"/api/documents/{doc_id}/styles").json()["segments"] == []
+    monkeypatch.setattr(styling_router, "_making_take", SimpleNamespace(locked=lambda: True))  # one at a time
+    busy = client.post(url, json={"voiceId": "chatterbox:alpha"})
+    assert busy.status_code == 429 and busy.json()["error"]["code"] == "take_busy"
 
 
 def test_old_sentence_styling_moves_into_annotations(tmp_path: Path) -> None:

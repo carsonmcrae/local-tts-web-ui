@@ -4,8 +4,8 @@
 
 Scope: Enforces document-count and concurrency limits, verifies the real file type, runs the
 sandboxed extractor, segments the result, runs the automatic cleanup (``cleanup.py``: what to skip
-and which footnote markers to leave unread, stored with the document and noted in its warnings) and
-persists it. Web pages are fetched (``url_import``) and then read like an uploaded HTML file.
+and which footnote and citation markers to leave unread, stored with the document and noted in its
+warnings) and persists it. Web pages are fetched (``url_import``) and then read like an uploaded HTML file.
 Temporary files are always removed.
 Does NOT belong: HTTP concerns (``router.py``) or parsing (``extract_*``).
 """

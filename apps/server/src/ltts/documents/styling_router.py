@@ -74,8 +74,8 @@ def update_styles(document_id: DocumentId, body: SegmentStyleUpdate, services: S
 
 @router.get("/documents/{document_id}/cleanup")
 def get_cleanup(document_id: DocumentId, services: ServicesDep) -> CleanupOut:
-    """What the automatic cleanup found (running headers, footers, page numbers, footnote markers) and
-    the sentences skipped by hand, each with whether it applies now."""
+    """What the automatic cleanup found (running headers, footers, page numbers, footnotes, footnote and
+    citation markers) and the sentences skipped by hand, each with whether it applies now."""
     services.document_repo.get(document_id)
     return CleanupStore(services.db).report(document_id)
 

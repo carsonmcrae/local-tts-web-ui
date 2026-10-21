@@ -4,16 +4,19 @@
 
 Scope: Deterministic and conservative (a miss is better than a wrong find). On paged documents (PDF),
 lines at the top or bottom of pages repeated on many pages, digits ignored (running headers and
-footers), and page-number lines that count along with the pages. On other documents, paragraphs that
-only say "Page 12", "12 of 300" or "- 12 -", when several count up through it. In sentences,
-superscript footnote markers after a word, and digits glued after punctuation only when the document
-has a notes section holding those notes. Nothing is changed here: ``cleanup_store.py`` records and
-applies the finds so they can be reviewed and undone.
+footers), and page-number lines that count along with the pages; the extractor adds footnote text at
+the foot of pages (``page_notes.py``). On other documents, paragraphs that only say "Page 12", "12 of
+300" or "- 12 -", when several count up through it. In sentences, superscript footnote markers after a
+word (never in a sentence that reads as mathematics), digits glued after punctuation only when the
+document has a notes section holding those notes, and bracketed citation markers (``citations.py``).
+Nothing is changed here: ``cleanup_store.py`` records and applies the finds so they can be reviewed
+and undone.
 Does NOT belong: Storing, applying or undoing the cleanup (``cleanup_store.py``) or reading PDFs.
 """
 
 from __future__ import annotations
 
+import json
 import math
 import re
 from collections import Counter
@@ -22,11 +25,14 @@ from dataclasses import dataclass, field
 from itertools import pairwise
 from typing import Literal
 
+from ltts.documents import citations
 from ltts.documents.structures import Furniture, SectionInfo, Segment
 
-SkipReason = Literal["header", "footer", "page_number", "manual"]
-SKIP_REASONS: tuple[str, ...] = ("header", "footer", "page_number", "manual")
-AUTOMATIC: tuple[str, ...] = ("header", "footer", "page_number")  # the skips the cleanup makes (and undoes)
+SkipReason = Literal["header", "footer", "page_number", "footnote_text", "manual"]
+SKIP_REASONS: tuple[str, ...] = ("header", "footer", "page_number", "footnote_text", "manual")
+# The skips the cleanup makes (and undoes); "footnote_text" is a note's text at the foot of a PDF page.
+AUTOMATIC: tuple[str, ...] = ("header", "footer", "page_number", "footnote_text")
+MAX_PAIRS_CHARS = 4_000  # a sentence's markers as stored (JSON); a sentence with more keeps them all
 MIN_PAGES = 3  # shorter documents get no header, footer or page-number finds
 MIN_RUN = 3  # page-number paragraphs or glued footnote markers needed before any of them is trusted
 RUNNING_LINE_SHARE = 0.4  # a running header or footer is on at least this share of the pages
@@ -54,6 +60,9 @@ _TRAILING_WORD = re.compile(rf"({_LETTER}+)\W*$")
 _MATH = re.compile(r"[+=*/^<>]")
 _UNITS = frozenset({"metre", "metres", "meter", "meters", "feet", "foot", "inch", "inches", "yard", "yards",
                     "mile", "miles", "sec", "secs"})  # fmt: skip
+# Functions written with a power: "sin² x" squares the sine, it doesn't mark a note.
+_FUNCTIONS = frozenset({"sin", "cos", "tan", "cot", "csc", "log", "exp", "sinh", "cosh", "tanh", "arcsin",
+                        "arccos", "arctan", "lim", "max", "min", "det"})  # fmt: skip
 # Words a glued number belongs to rather than marks a note: "Fig.12", "No.5", "vol.3".
 _REFERENCE_WORDS = frozenset({
     "no", "nos", "nr", "fig", "figs", "vol", "vols", "pp", "ch", "chap", "sec", "sect", "art", "eq", "ref",
@@ -67,7 +76,9 @@ _NAMES = {
     "header": ("running header", "running headers"),
     "footer": ("running footer", "running footers"),
     "page_number": ("page number", "page numbers"),
+    "footnote_text": ("footnote", "footnotes"),
 }
+_MARKER_NAMES = (("footnote", "footnote marker"), ("citation", "citation marker"))
 
 Pair = tuple[str, str]  # (written, spoken): a word with its footnote marker, and the word without it
 
@@ -172,14 +183,19 @@ def is_top(position: int, count: int) -> bool:
 
 @dataclass(slots=True)
 class Findings:
-    """What an import found: sentences to skip and why, and footnote markers to leave unread."""
+    """What an import found: sentences to skip and why, and footnote and citation markers to leave unread."""
 
     skips: dict[int, Furniture] = field(default_factory=dict)
     footnotes: dict[int, list[Pair]] = field(default_factory=dict)
+    citations: dict[int, list[Pair]] = field(default_factory=dict)
 
     def counts(self) -> dict[str, int]:
         found: Counter[str] = Counter(self.skips.values())
-        return {**{reason: found[reason] for reason in AUTOMATIC}, "footnote": count_markers(self.footnotes.values())}
+        return {
+            **{reason: found[reason] for reason in AUTOMATIC},
+            "footnote": count_markers(self.footnotes.values()),
+            "citation": count_markers(self.citations.values()),
+        }
 
 
 def count_markers(pairs: Iterable[Sequence[Pair]]) -> int:
@@ -204,32 +220,60 @@ def _page_number_paragraphs(segments: Sequence[Segment]) -> dict[int, Furniture]
     return {index: "page_number" for index, _ in found}
 
 
-def _notes(segments: Sequence[Segment], sections: Sequence[SectionInfo]) -> tuple[set[int], set[int]]:
-    """The sentences of the document's notes (a "Notes" section or heading) and the note numbers they hold."""
-    titled = {info.index for info in sections if _NOTES_TITLE.match(info.title.strip())}
+def _titled(segments: Sequence[Segment], sections: Sequence[SectionInfo], title: re.Pattern[str]) -> set[int]:
+    """The sentences of sections, or of parts under a heading, whose title matches ``title`` ("Notes").
+
+    A paragraph saying only the title starts such a part too (a PDF's headings are paragraphs), though
+    only a heading ends one.
+    """
+    titled = {info.index for info in sections if title.match(info.title.strip())}
     inside: set[int] = set()
-    numbers: set[int] = set()
-    in_notes, section, paragraph = False, -1, -1
+    under, section, paragraph = False, -1, -1
     for segment in segments:
         if segment.section_index != section:
-            in_notes, section = False, segment.section_index
-        if segment.kind == "heading":
-            in_notes = bool(_NOTES_TITLE.match(segment.text.strip()))
-        if in_notes or section in titled:
+            under, section = False, segment.section_index
+        alone = segment.paragraph_index != paragraph and segment.boundary != "sentence"
+        if segment.kind == "heading" or (alone and not under):
+            under = bool(title.match(segment.text.strip()))
+        if under or section in titled:
             inside.add(segment.index)
-            body = _NOTE_BODY.match(segment.text) if segment.paragraph_index != paragraph else None
-            if body:
-                numbers.add(int(body.group(1)))
+        paragraph = segment.paragraph_index
+    return inside
+
+
+def _notes(segments: Sequence[Segment], sections: Sequence[SectionInfo]) -> tuple[set[int], set[int]]:
+    """The sentences of the document's notes (a "Notes" section or heading) and the note numbers they hold."""
+    inside = _titled(segments, sections, _NOTES_TITLE)
+    numbers: set[int] = set()
+    paragraph = -1
+    for segment in segments:
+        first = segment.paragraph_index != paragraph
+        if first and segment.index in inside and (body := _NOTE_BODY.match(segment.text)):
+            numbers.add(int(body.group(1)))
         paragraph = segment.paragraph_index
     return inside, numbers
 
 
+def _page_notes(segments: Sequence[Segment]) -> set[int]:
+    """The numbers the footnotes at the foot of a PDF's pages start with ("1 Smith, page 4.")."""
+    numbers: set[int] = set()
+    paragraph = -1
+    for segment in segments:
+        first = segment.paragraph_index != paragraph
+        if first and segment.furniture == "footnote_text" and (body := _NOTE_BODY.match(segment.text)):
+            numbers.add(int(body.group(1)))
+        paragraph = segment.paragraph_index
+    return numbers
+
+
 def _superscript_pairs(text: str) -> list[Pair]:
+    if citations.CODE_OR_MATH.search(text):
+        return []  # "a² + b² = c²", "area = width * length²"
     pairs: list[Pair] = []
     for match in _SUPERSCRIPT.finditer(text):
         before = match.group(1)
         word = _TRAILING_WORD.search(before)
-        if _MATH.search(before) or (word and word.group(1).lower() in _UNITS):
+        if _MATH.search(before) or (word and word.group(1).lower() in _UNITS | _FUNCTIONS):
             continue
         pairs.append((match.group(0), before))
     return pairs
@@ -247,8 +291,12 @@ def _glued_pairs(segments: Sequence[Segment], notes: set[int], numbers: set[int]
     return found if count_markers(found.values()) >= MIN_RUN else {}
 
 
-def _footnotes(segments: Sequence[Segment], sections: Sequence[SectionInfo]) -> dict[int, list[Pair]]:
+def _footnotes(
+    segments: Sequence[Segment], sections: Sequence[SectionInfo], page_notes: set[int]
+) -> dict[int, list[Pair]]:
+    """Superscript and glued footnote markers; ``page_notes`` numbers the notes found at the foot of pages."""
     notes, numbers = _notes(segments, sections)
+    numbers |= page_notes
     glued = _glued_pairs(segments, notes, numbers) if numbers else {}
     verses = sum(len(_VERSE_LIKE.findall(segment.text)) for segment in segments) >= MIN_RUN
     found: dict[int, list[Pair]] = {}
@@ -259,11 +307,17 @@ def _footnotes(segments: Sequence[Segment], sections: Sequence[SectionInfo]) -> 
     return found
 
 
+def _fitting(found: dict[int, list[Pair]]) -> dict[int, list[Pair]]:
+    """The sentences whose markers can be stored (``MAX_PAIRS_CHARS``); the rest keep theirs."""
+    return {index: pairs for index, pairs in found.items() if len(json.dumps(pairs)) <= MAX_PAIRS_CHARS}
+
+
 def find(segments: Sequence[Segment], sections: Sequence[SectionInfo], *, paged: bool) -> Findings:
-    """What to skip, and which footnote markers to leave unread, in a segmented document.
+    """What to skip, and which footnote and citation markers to leave unread, in a segmented document.
 
     Furniture comes from the extractor (``Segment.furniture``, paged documents); other documents are
-    searched for page-number paragraphs. Skipped sentences are never searched for footnote markers.
+    searched for page-number paragraphs. Skipped sentences are never searched for markers; the numbers
+    of a PDF's footnotes count as the document's notes for glued markers ("war.1").
     """
     skips: dict[int, Furniture] = {}
     for segment in segments:
@@ -271,7 +325,9 @@ def find(segments: Sequence[Segment], sections: Sequence[SectionInfo], *, paged:
             skips[segment.index] = segment.furniture
     if not paged:
         skips.update(_page_number_paragraphs(segments))
-    return Findings(skips, _footnotes([s for s in segments if s.index not in skips], sections))
+    read = [segment for segment in segments if segment.index not in skips]
+    cited = citations.find(read, _titled(read, sections, citations.REFERENCES_TITLE))
+    return Findings(skips, _fitting(_footnotes(read, sections, _page_notes(segments))), _fitting(cited))
 
 
 def _join(names: Sequence[str]) -> str:
@@ -280,12 +336,12 @@ def _join(names: Sequence[str]) -> str:
 
 def describe(counts: Mapping[str, int]) -> str | None:
     """The notice an import adds to the document's warnings, from how many sentences of each reason (and
-    how many footnote markers) the cleanup found; None when it found nothing."""
+    how many footnote and citation markers) the cleanup found; None when it found nothing."""
     reasons = [reason for reason in AUTOMATIC if counts.get(reason)]
     total = sum(counts[reason] for reason in reasons)
     parts = [f"{total} {_join([_NAMES[reason][total != 1] for reason in reasons])}"] if total else []
-    markers = counts.get("footnote", 0)
+    markers = [(counts.get(key, 0), name) for key, name in _MARKER_NAMES if counts.get(key)]
     if markers:
-        parts.append(f"{markers} footnote marker{'s' if markers != 1 else ''}")
-    them = "it" if total + markers == 1 else "them"
+        parts.append(_join([f"{count} {name}{'s' if count != 1 else ''}" for count, name in markers]))
+    them = "it" if total + sum(count for count, _ in markers) == 1 else "them"
     return f"Skipped {', and '.join(parts)} when reading aloud; you can review {them}." if parts else None

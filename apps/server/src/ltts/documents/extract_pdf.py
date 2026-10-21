@@ -2,13 +2,14 @@
 # Copyright (c) 2026 Carson McRae
 """Purpose: Text-PDF extraction with PDFium (pypdfium2), tuned for listening rather than layout.
 
-Scope: Reads each page's text layer; sets running headers/footers and page numbers (found by
-``cleanup.py``) apart as blocks of their own marked as furniture, kept to be skipped when reading and
-never joined into the text; rebuilds paragraphs across line and page breaks (de-hyphenating); groups
-paragraphs into chapters from the PDF outline, starting each chapter at its heading line when the
-heading is found on the outline's page (outlines only point at pages, and chapters often start
-partway down one), or into "Page N" sections when there is none; detects scanned/image-only PDFs
-and reports them instead of pretending they were read. Encrypted PDFs are rejected.
+Scope: Reads each page's text layer, with each line's type size and place (from a few of its characters'
+boxes); sets running headers/footers and page numbers (found by ``cleanup.py``) and footnote text at the
+foot of pages (``page_notes.py``, one block per note) apart as blocks of their own marked as furniture,
+kept to be skipped when reading and never joined into the text; rebuilds paragraphs across line and page
+breaks (de-hyphenating); groups paragraphs into chapters from the PDF outline, starting each chapter at
+its heading line when the heading is found on the outline's page (outlines only point at pages, and
+chapters often start partway down one), or into "Page N" sections when there is none; detects
+scanned/image-only PDFs and reports them instead of pretending they were read. Encrypted PDFs are rejected.
 Does NOT belong: OCR (not supported) or generic text clean-up (``normalize.py``).
 """
 
@@ -20,15 +21,17 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import pypdfium2 as pdfium
+import pypdfium2.raw as pdfium_c
 
 from ltts.documents.cleanup import find_furniture, is_top
 from ltts.documents.normalize import clean_inline
+from ltts.documents.page_notes import LineBox, find_notes, note_label
 from ltts.documents.structures import Block, ExtractedSection, Extraction, ExtractionLimits, Furniture
 from ltts.errors import DocumentExtractionError
 
 MIN_PAGE_CHARS = 20
 _SENTENCE_END = re.compile(r"[.!?:;\"”’)\]]$")
-_NEW_BLOCK_START = re.compile(r"^[A-Z0-9\"“‘(•\-–—]")
+_NEW_BLOCK_START = re.compile(r"^[A-Z0-9\"“‘(\[•\-–—]")  # "[1] Smith" starts a reference
 # Paragraphs starting at the same line of the stream: a page's footer comes before a section starting on
 # the next page, and that page's header after the section start but before the page's text.
 _FOOTER_RANK, _START_RANK, _HEADER_RANK, _TEXT_RANK = range(4)
@@ -60,16 +63,27 @@ def _without_furniture(pages: list[list[str]], found: list[dict[int, Furniture]]
     return [[line for at, line in enumerate(lines) if at not in found[page]] for page, lines in enumerate(pages)]
 
 
+def _joined(text: str, line: str) -> str:
+    """A line added to the text before it, joining a word hyphenated across the break."""
+    return text[:-1] + line if text.endswith("-") and line[:1].islower() else f"{text} {line}"
+
+
 def _furniture(pages: list[list[str]], found: list[dict[int, Furniture]], kept: list[list[str]]) -> list[_Paragraph]:
-    """Each furniture line as a paragraph of its own: a header where its page's text starts, a footer where it ends."""
+    """Each furniture line as a paragraph of its own (a header where its page's text starts, a footer where
+    it ends), and each footnote as one, its lines joined, where its page's text ends."""
     paragraphs: list[_Paragraph] = []
     start = 0
     for page, lines in enumerate(pages):
         end = start + len(kept[page])
+        note: _Paragraph | None = None
         for at, furniture in sorted(found[page].items()):
-            top = is_top(at, len(lines))
+            if furniture == "footnote_text" and note is not None and note_label(lines[at]) is None:
+                note.text = _joined(note.text, lines[at])
+                continue
+            top = furniture != "footnote_text" and is_top(at, len(lines))
             rank = _HEADER_RANK if top else _FOOTER_RANK
             paragraphs.append(_Paragraph(page, start if top else end, lines[at], furniture, rank))
+            note = paragraphs[-1] if furniture == "footnote_text" else None
         start = end
     return paragraphs
 
@@ -105,10 +119,8 @@ def _paragraphs(pages: list[list[str]], starts: set[int], headings: dict[int, in
     for i, (page, line) in enumerate(stream):
         if not buffer:
             buffer, start_page, start_position = line, page, i
-        elif buffer.endswith("-") and line[:1].islower():
-            buffer = buffer[:-1] + line
         else:
-            buffer = f"{buffer} {line}"
+            buffer = _joined(buffer, line)
         nxt = stream[i + 1] if i + 1 < len(stream) else None
         if i in inside_heading:
             continue
@@ -245,8 +257,47 @@ def _open(path: Path) -> pdfium.PdfDocument:
         raise DocumentExtractionError("This PDF is damaged or not a valid PDF.", code="corrupt_document") from exc
 
 
-def _read_pages(pdf: pdfium.PdfDocument, limits: ExtractionLimits) -> list[list[str]]:
+def _utf16(text: str) -> int:
+    """How many UTF-16 code units ``text`` takes: PDFium counts its text in them."""
+    return len(text.encode("utf-16-le")) // 2
+
+
+def _line_box(textpage: pdfium.PdfTextPage, line: str, offset: int) -> LineBox | None:
+    """A line's box from its first, middle and last visible characters, or None when any of them can't be
+    matched to the page's characters (an inserted or decomposed character) or measured."""
+    visible = [at for at, char in enumerate(line) if not char.isspace()]
+    if not visible:
+        return None
+    measured: list[tuple[float, float]] = []
+    for at in sorted({visible[0], visible[len(visible) // 2], visible[-1]}):
+        char = pdfium_c.FPDFText_GetCharIndexFromTextIndex(textpage, offset + _utf16(line[:at]))
+        if char < 0 or pdfium_c.FPDFText_GetUnicode(textpage, char) != ord(line[at]):
+            return None
+        try:
+            _, bottom, _, top = textpage.get_charbox(char, loose=True)
+        except pdfium.PdfiumError:
+            return None
+        measured.append((bottom, top))
+    sizes = sorted(top - bottom for bottom, top in measured)
+    return LineBox(sizes[len(sizes) // 2], min(bottom for bottom, _ in measured), max(top for _, top in measured))
+
+
+def _line_boxes(textpage: pdfium.PdfTextPage, text: str) -> list[LineBox | None]:
+    """The box of each of the text's lines, in ``str.splitlines`` order."""
+    boxes: list[LineBox | None] = []
+    offset = 0
+    for line in text.splitlines(keepends=True):
+        boxes.append(_line_box(textpage, line, offset))
+        offset += _utf16(line)
+    return boxes
+
+
+def _read_pages(
+    pdf: pdfium.PdfDocument, limits: ExtractionLimits
+) -> tuple[list[list[str]], list[list[LineBox | None]]]:
+    """Each page's lines of text, and the box of each line."""
     pages: list[list[str]] = []
+    boxes: list[list[LineBox | None]] = []
     total = 0
     for index in range(len(pdf)):
         page = pdf[index]
@@ -254,16 +305,18 @@ def _read_pages(pdf: pdfium.PdfDocument, limits: ExtractionLimits) -> list[list[
             textpage = page.get_textpage()
             try:
                 text = textpage.get_text_range()
+                measured = _line_boxes(textpage, text)
             finally:
                 textpage.close()
         finally:
             page.close()
-        lines = [clean_inline(line) for line in text.splitlines()]
-        pages.append([line for line in lines if line])
+        lines = [(clean_inline(line), box) for line, box in zip(text.splitlines(), measured, strict=True)]
+        pages.append([line for line, _ in lines if line])
+        boxes.append([box for line, box in lines if line])
         total += len(text)
         if total > limits.max_text_chars * 2:
             raise DocumentExtractionError("This PDF contains more text than the configured limit.", code="text_limit")
-    return pages
+    return pages, boxes
 
 
 def extract_pdf_file(path: Path, title: str | None, limits: ExtractionLimits) -> Extraction:
@@ -276,7 +329,7 @@ def extract_pdf_file(path: Path, title: str | None, limits: ExtractionLimits) ->
             raise DocumentExtractionError(
                 f"This PDF has {page_count} pages; the limit is {limits.max_pdf_pages}.", code="page_limit"
             )
-        pages = _read_pages(pdf, limits)
+        pages, boxes = _read_pages(pdf, limits)
         starts = _outline_starts(pdf, page_count)
         meta_title = (pdf.get_metadata_value("Title") or "").strip()
     finally:
@@ -293,6 +346,7 @@ def extract_pdf_file(path: Path, title: str | None, limits: ExtractionLimits) ->
     if blank:
         warnings.append(f"{blank} of {page_count} pages had no readable text (likely scanned images) and were skipped.")
     found = find_furniture(pages, [title for _, title in starts])
+    found = [{**page, **notes} for page, notes in zip(found, find_notes(pages, boxes, found), strict=True)]
     lines = _without_furniture(pages, found)
     chapters, headings = _chapter_starts(lines, starts) if len(starts) >= 2 else ([], {})
     paragraphs = _paragraphs(lines, {chapter.position for chapter in chapters}, headings)

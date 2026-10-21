@@ -4,7 +4,8 @@
 
 Scope: Extractor output (sections of blocks), segmentation output, and the limits object handed to
 sandboxed extractors. All are picklable so they can cross the extraction process boundary. A block
-(and its segments) can be page furniture, kept so the reader can see it and skipped when reading.
+(and its segments) can be page furniture or a page's footnote, kept so the reader can see it and
+skipped when reading.
 Does NOT belong: API response models (``schemas.py``) or persistence (``repository.py``).
 """
 
@@ -29,7 +30,8 @@ class DocumentType(StrEnum):
 
 BlockKind = Literal["heading", "paragraph"]
 Boundary = Literal["sentence", "paragraph", "section"]
-Furniture = Literal["header", "footer", "page_number"]  # a PDF's running header or footer, or page number
+# A PDF's running header or footer, page number, or footnote text at the foot of a page.
+Furniture = Literal["header", "footer", "page_number", "footnote_text"]
 
 
 @dataclass(slots=True)

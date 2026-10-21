@@ -2,9 +2,9 @@
 # Copyright (c) 2026 Carson McRae
 """Purpose: Build realistic (and deliberately malicious) test documents in memory.
 
-Scope: Minimal hand-written PDFs (text pages, outline, image-only pages), DOCX via python-docx,
-EPUB 3 (nav) and EPUB 2 (NCX) packages and plain archives via zipfile, and hostile archives (zip
-bombs, XML entity expansion, path traversal names).
+Scope: Minimal hand-written PDFs (text pages, outline, image-only pages, small-type footnotes and a
+footer line at the foot of a page), DOCX via python-docx, EPUB 3 (nav) and EPUB 2 (NCX) packages and
+plain archives via zipfile, and hostile archives (zip bombs, XML entity expansion, path traversal names).
 Generating fixtures in code keeps binary blobs out of the repository and documents exactly what
 each case contains.
 Does NOT belong: Assertions (tests) or app code.
@@ -23,13 +23,33 @@ def _pdf_string(text: str) -> str:
     return text.replace("\\", "\\\\").replace("(", "\\(").replace(")", "\\)")
 
 
+def _foot(notes: list[str], footer: str | None, size: float) -> list[str]:
+    """Text operators for a page's foot: its note lines in ``size`` pt type, then a footer line (11 pt)."""
+    ops: list[str] = []
+    if notes:
+        leading = size + 2
+        ops += ["BT", f"/F1 {size:g} Tf", f"{leading:g} TL", f"72 {60 + leading * len(notes):g} Td"]
+        ops += [*(f"({_pdf_string(line)}) Tj T*" for line in notes), "ET"]
+    if footer:
+        ops += ["BT", "/F1 11 Tf", "300 36 Td", f"({_pdf_string(footer)}) Tj", "ET"]
+    return ops
+
+
 def make_pdf(
     pages: list[list[str]],
     outline: list[tuple[str, int]] | None = None,
     image_only: bool = False,
     title: str | None = None,
+    *,
+    notes: list[list[str]] | None = None,
+    footers: list[str | None] | None = None,
+    note_size: float = 8,
 ) -> bytes:
-    """A valid PDF with one text line per list item (Helvetica 11pt), optional outline and image pages."""
+    """A valid PDF with one text line per list item (Helvetica 11pt), optional outline and image pages.
+
+    ``notes`` are each page's footnote lines, set in ``note_size`` pt type at the foot of the page below
+    its text, and ``footers`` a line under them (a page number); both come after the page's text.
+    """
     numbered: dict[int, bytes] = {}
     page_ids: list[int] = []
     font_id = 3
@@ -42,6 +62,7 @@ def make_pdf(
             stream = b"q 400 0 0 600 100 100 cm 0.5 g 0 0 1 1 re f Q"
         else:
             ops = ["BT", "/F1 11 Tf", "14 TL", "72 760 Td", *[f"({_pdf_string(line)}) Tj T*" for line in lines], "ET"]
+            ops += _foot(notes[index] if notes else [], footers[index] if footers else None, note_size)
             stream = "\n".join(ops).encode("latin-1")
         numbered[page_id] = (
             b"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] "

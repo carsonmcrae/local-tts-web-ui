@@ -226,7 +226,9 @@ def test_furniture_sentences_are_skipped_and_never_searched_for_markers() -> Non
     segments, infos = segment_extraction(extraction)
     found = find(segments, infos, paged=True)
     assert found.skips == {0: "header"} and markers(found) == [f"war{ONE}"]
-    assert found.counts() == {"header": 1, "footer": 0, "page_number": 0, "footnote": 1}
+    assert found.counts() == {
+        "header": 1, "footer": 0, "page_number": 0, "footnote_text": 0, "footnote": 1, "citation": 0,
+    }  # fmt: skip
 
 
 @pytest.mark.parametrize(

@@ -4,7 +4,7 @@
 
 Scope: Sentence annotations (``segment_annotations``, one row per sentence and kind: ``voice``,
 ``effect``, ``sound``, ``style``, ``take``, ``pause`` in ms, ``speak_as`` from speech marks, ``skip``
-with its reason, and the cleanup's ``footnotes`` and ``cleanup`` finds, see ``cleanup_store.py``),
+with its reason, and the cleanup's ``footnotes``, ``citations`` and ``cleanup`` finds, see ``cleanup_store.py``),
 validated by a registry so a new kind needs no new table; nothing is written into the text. The cast
 (``document_cast``): a dialogue voice, and whether quoted speech in a narrated sentence is voiced apart.
 Plans a sentence for synthesis: its voice is its own, else its tagged character's (``casting.py``), else
@@ -28,7 +28,7 @@ from pydantic import Field
 from ltts.common import ApiModel
 from ltts.db import Database
 from ltts.documents.cleanup import SKIP_REASONS, SkipReason
-from ltts.documents.cleanup_store import is_pairs, is_record
+from ltts.documents.cleanup_store import MARKERS, is_pairs, is_record
 from ltts.documents.delivery import Line, Sentence, analyse
 from ltts.effects import EFFECTS, Effect
 
@@ -58,6 +58,7 @@ KINDS: dict[str, Callable[[str], bool]] = {
     "speak_as": lambda value: len(value) <= 4_000,
     "skip": lambda value: value in SKIP_REASONS,  # not read: a reason the cleanup found, or "manual"
     "footnotes": is_pairs,  # footnote markers left unread: (written, spoken) replacements
+    "citations": is_pairs,  # citation markers left unread: (marker, "") replacements
     "cleanup": is_record,  # what the import's cleanup found, kept so it can be applied again
 }
 _FIELDS = {"voice_id": "voice", "effect": "effect", "sound": "sound", "style": "style", "take": "take",
@@ -254,8 +255,8 @@ class StylingStore:
             voice = speaker_voice
         else:
             voice = voice_id
-        # Footnote markers go first: "war¹" is no longer the word a pronunciation of "war" is looking for.
-        pairs = [pair for kind in ("footnotes", "speak_as") if kind in kinds for pair in json.loads(kinds[kind])]
+        # Markers go first: "war¹" is no longer the word a pronunciation of "war" is looking for.
+        pairs = [pair for kind in (*MARKERS, "speak_as") if kind in kinds for pair in json.loads(kinds[kind])]
         replacements = tuple((written, spoken) for written, spoken in pairs)
         return SegmentPlan(
             voice_id=voice,

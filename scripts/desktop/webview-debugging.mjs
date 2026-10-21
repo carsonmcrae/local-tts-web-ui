@@ -147,7 +147,12 @@ export async function launchForDebugging(exe, port) {
       const page = await appPage(port, 'http://127.0.0.1:', 240_000);
       const origin = new URL(page.url()).origin;
       await page.context().browser()?.close();
-      if (await healthy(origin)) return origin;
+      // The first answers after start-up can take longer than one probe allows on a slow runner.
+      const deadline = Date.now() + 120_000;
+      while (Date.now() < deadline) {
+        if (await healthy(origin)) return origin;
+        await sleep(1000);
+      }
       throw new Error(`FAILED: the window shows ${origin} but its server does not answer`);
     }
     console.log(

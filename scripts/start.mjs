@@ -10,7 +10,7 @@
 import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 import { setup } from './setup.mjs';
-import { BootstrapError, color, printFailure, step } from './lib/log.mjs';
+import { BootstrapError, color, printFailure, step, warn } from './lib/log.mjs';
 import { repoRoot, serverDir, webDir } from './lib/paths.mjs';
 import { exitWithChild, findFreePort, startManaged } from './lib/processes.mjs';
 import { uvEnv } from './lib/uv.mjs';
@@ -32,8 +32,14 @@ async function main() {
     );
     if (build.status !== 0) throw new BootstrapError('The web build failed; see the output above.');
   }
-  const port = await findFreePort(Number(process.env.LTTS_PORT ?? 8765));
+  const preferred = Number(process.env.LTTS_PORT ?? 8765);
+  const port = await findFreePort(preferred);
   if (port === null) throw new BootstrapError('No free local port found. Set LTTS_PORT and retry.');
+  if (port !== preferred) {
+    warn(
+      `Port ${preferred} is busy, so TTSNative is on port ${port} this time. Programs that use its local speech API need the new port.`,
+    );
+  }
   const server = startManaged({
     name: 'server',
     label: color.magenta('[app]'),

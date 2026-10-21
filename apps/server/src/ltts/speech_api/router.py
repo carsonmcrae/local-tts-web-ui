@@ -5,10 +5,11 @@
 Scope: Every ``/v1`` request passes the same checks, in order: the API is switched on (otherwise
 every ``/v1`` path answers 404 as if it didn't exist, before any other work), the request doesn't
 come from a browser page, the client is this computer (or the owner allowed other devices), the
-bearer token is valid (401 without saying why), and the rate limit (429 with ``Retry-After``). The
-speech body must be JSON, is read under a byte limit and a time limit (408), and validated strictly;
-a client that disconnects while sending it gets nothing. No CORS headers are ever sent. Logs carry
-counts and lengths only, never the token or the text.
+bearer token is valid (401 without saying why), and the rate limit (429 with ``Retry-After``). A
+request that passes them records the port it arrived on, so Settings can say when programs need a new
+one. The speech body must be JSON, is read under a byte limit and a time limit (408), and validated
+strictly; a client that disconnects while sending it gets nothing. No CORS headers are ever sent.
+Logs carry counts and lengths only, never the token or the text.
 Does NOT belong: Synthesis (``service.py``) or the Settings endpoints (``settings_router.py``).
 """
 
@@ -26,7 +27,7 @@ from starlette.requests import ClientDisconnect
 
 from ltts.container import ServicesDep
 from ltts.errors import AppError, BusyError, ForbiddenError, PayloadTooLargeError, UnsupportedDocumentError
-from ltts.speech_api.guard import bearer, from_browser, is_local
+from ltts.speech_api.guard import bearer, from_browser, is_local, server_port
 from ltts.speech_api.schemas import ModelList, ModelOut, SpeechRequest, VoiceList, VoiceOut
 from ltts.speech_api.service import OPENAI_NAMES
 from ltts.speech_api.store import SpeechApiConfig
@@ -77,6 +78,9 @@ def _access(request: Request, services: ServicesDep) -> SpeechApiConfig:
         raise TokenError(
             "A valid API token is required (Authorization: Bearer <token>).", headers={"WWW-Authenticate": "Bearer"}
         )
+    port = server_port(request.scope)
+    if port is not None and port != config.last_port:
+        api.store.used_on(port)
     wait = api.limiter.hit(config.token_hash or "")
     if wait is not None:
         raise BusyError(

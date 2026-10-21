@@ -6,7 +6,8 @@ Scope: Off by default (every /v1 path answers like an unknown one and does no wo
 (401 without details, revoked or replaced at once, stored only as a hash), browser pages refused
 with no CORS headers, other devices refused unless allowed (also in network mode, where /v1 checks
 its own token), the rate limit, wrong methods, model and voice discovery, custom voices refused until
-allowed and forgotten when deleted, the Settings validation, and the usage status.
+allowed and forgotten when deleted, the Settings validation, the usage status, and the port: the one
+the server socket listens on (not the page's), and the one programs last used, kept across restarts.
 Does NOT belong: Making audio (test_speech_api_audio.py).
 """
 
@@ -25,7 +26,8 @@ from ltts.config import Settings
 from ltts.container import Services, build_services
 from ltts.engines.base import VoiceSpec
 from ltts.engines.registry import ResolvedVoice
-from ltts.speech_api.guard import RateLimiter, Usage, bearer, is_local
+from ltts.speech_api.guard import RateLimiter, Usage, bearer, is_local, server_port
+from ltts.speech_api.store import SpeechApiConfig
 from speech_api_support import auth, custom_voice, error_code, program, speak, switch_on
 
 NOT_FOUND = {"error": {"code": "http_error", "message": "Not Found", "details": {}}}
@@ -277,3 +279,47 @@ def test_usage_status_and_activity(client: TestClient) -> None:
     assert snapshot.requests == 1 and snapshot.last_voice_id == "kokoro:alpha" and not snapshot.active
 
     assert client.get("/api/speech-api").json()["port"] == 80  # the port this server answered on
+
+
+def test_the_port_is_the_servers_own_not_the_pages(client: TestClient) -> None:
+    # Under npm run dev the page comes from the web dev server, whose proxy passes its own Host on.
+    assert client.get("/api/speech-api", headers={"Host": "127.0.0.1:5173"}).json()["port"] == 80
+    assert TestClient(client.app, base_url="http://127.0.0.1:8766").get("/api/speech-api").json()["port"] == 8766
+    assert server_port({"server": ("127.0.0.1", 8765)}) == 8765
+    assert server_port({"server": ("ltts.sock", None)}) is None and server_port({}) is None
+
+
+def test_settings_remember_the_port_programs_last_used(
+    client: TestClient, services: Services, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    store = services.speech_api.store
+    writes: list[int | None] = []
+    write = store._write
+
+    def counted(config: SpeechApiConfig) -> SpeechApiConfig:
+        writes.append(config.last_port)
+        return write(config)
+
+    monkeypatch.setattr(store, "_write", counted)
+    token = switch_on(client)
+    assert client.get("/api/speech-api").json()["lastUsedPort"] is None  # no program has used it yet
+    assert program(client, port=8765).get("/v1/models").status_code == 401  # a refused request isn't use
+    assert store.config().last_port is None
+    for _ in range(3):
+        assert program(client, port=8765).get("/v1/models", headers=auth(token)).status_code == 200
+    assert writes.count(8765) == 1  # written once, not on every request
+    status = client.get("/api/speech-api").json()
+    assert status["lastUsedPort"] == 8765 and status["port"] == 80  # Settings warns: they differ
+
+    # TTSNative restarted on the next port because 8765 was busy: the old port is still remembered...
+    moved = TestClient(client.app, base_url="http://127.0.0.1:8766", headers={"X-LTTS-Client": "web"})
+    status = moved.get("/api/speech-api").json()
+    assert status["port"] == 8766 and status["lastUsedPort"] == 8765
+    # ...until a program reaches it on the new one.
+    assert program(client, port=8766).post("/v1/audio/speech", json={}, headers=auth(token)).status_code == 422
+    assert moved.get("/api/speech-api").json()["lastUsedPort"] == 8766
+
+    client.put("/api/speech-api", json={"enabled": False})
+    assert program(client, port=8767).get("/v1/models", headers=auth(token)).status_code == 404
+    assert store.config().last_port == 8766  # nothing is recorded while the API is off
+    assert client.put("/api/speech-api", json={"enabled": True}).json()["lastUsedPort"] == 8766

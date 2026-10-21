@@ -6,7 +6,8 @@ Scope: Keeps the on/off switch (off by default), the "other devices on my networ
 by default), the custom voices allowed for the API (none by default) and a SHA-256 hash of the token
 in the ``integrations`` table. A new token is made here and returned once; only its hash is stored,
 so it can never be read back, and a supplied token is checked by comparing hashes in constant time.
-Revoking deletes the hash. Allowed custom voices that were deleted are dropped.
+Revoking deletes the hash. Allowed custom voices that were deleted are dropped. Also the port programs
+last reached the API on, so Settings can warn when TTSNative has moved to another one.
 Does NOT belong: Serving requests (``router.py``, ``service.py``) or rate limits (``guard.py``).
 """
 
@@ -40,6 +41,7 @@ class SpeechApiConfig:
     allowed_voices: tuple[str, ...] = ()
     token_hash: str | None = None
     token_created_at: str | None = None
+    last_port: int | None = None  # the port programs last reached the API on (None until one does)
 
     def accepts(self, supplied: str | None) -> bool:
         """Whether ``supplied`` is the current token (the hashes are compared in constant time)."""
@@ -66,6 +68,7 @@ class SpeechApiStore:
             allowed_voices=tuple(stored["allowed_voices"]),
             token_hash=stored["token_hash"],
             token_created_at=stored["token_created_at"],
+            last_port=stored.get("last_port"),  # absent in settings saved before it was kept
         )
 
     def _write(self, config: SpeechApiConfig) -> SpeechApiConfig:
@@ -97,6 +100,13 @@ class SpeechApiStore:
     def revoke(self) -> SpeechApiConfig:
         with self._lock:
             return self._write(replace(self.config(), token_hash=None, token_created_at=None))
+
+    def used_on(self, port: int) -> None:
+        """Remember the port a program reached the API on; written only when it changed."""
+        with self._lock:
+            current = self.config()
+            if current.last_port != port:
+                self._write(replace(current, last_port=port))
 
     def prune_voices(self) -> SpeechApiConfig:
         """Forget the permission of custom voices that were deleted."""

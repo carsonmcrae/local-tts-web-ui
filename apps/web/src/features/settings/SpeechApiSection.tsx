@@ -3,8 +3,8 @@
 /**
  * Purpose: The optional local speech API in Settings, for advanced users.
  * Scope: A collapsed section (an On/Off badge and a one-line summary; a link to #speech-api opens it)
- *   with the on/off switch, the access token, how it is being used, an example command, the custom
- *   voices programs may use, the network permission and the limits. Every change is saved at once;
+ *   with the on/off switch, how it is being used, the access token, the address programs connect to,
+ *   an example command, the custom voices programs may use, the network permission and the limits. Every change is saved at once;
  *   failures are reported in a toast.
  * Does NOT belong: The pieces themselves (SpeechApiParts.tsx) or the server's checks.
  */
@@ -18,6 +18,7 @@ import { HOMEPAGE } from '@/lib/provenance';
 import { CollapsibleSection, useSectionOpen } from './CollapsibleSection';
 import {
   AllowedVoices,
+  ApiAddress,
   CurlExample,
   NetworkPermission,
   TokenControls,
@@ -59,6 +60,7 @@ function SpeechApiPanel({ status, now }: Readonly<{ status: SpeechApiStatus; now
       </div>
       <UsageLine status={status} now={now} />
       <TokenControls status={status} onError={failed} />
+      <ApiAddress status={status} />
       <CurlExample port={status.port} />
       <AllowedVoices
         allowed={status.allowedVoices}

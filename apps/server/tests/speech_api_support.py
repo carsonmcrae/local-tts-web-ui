@@ -2,8 +2,8 @@
 # Copyright (c) 2026 Carson McRae
 """Purpose: Shared helpers for the local speech API tests.
 
-Scope: A "program" client (no app header, a chosen client address, as curl or a script would call
-it), an app with chosen engines, switching the API on with a fresh token through
+Scope: A "program" client (no app header, a chosen client address and server port, as curl or a
+script would call it), an app with chosen engines, switching the API on with a fresh token through
 the Settings endpoints, the bearer header, a speech request with sensible defaults or a raw body,
 creating a custom voice, a fake engine that holds synthesis until a test lets it finish (and an app
 whose only engine it is), a fake Kokoro with the real engine's voice ids, and one speech request driven at the ASGI level, for what TestClient can't do (a
@@ -31,9 +31,11 @@ from ltts.engines.kokoro_voices import GRADES, describe
 LOCAL = "127.0.0.1"
 
 
-def program(web: TestClient, host: str = LOCAL) -> TestClient:
-    """A non-browser client on ``host`` for the same app as ``web`` (no X-LTTS-Client header)."""
-    return TestClient(web.app, client=(host, 50000))
+def program(web: TestClient, host: str = LOCAL, port: int | None = None) -> TestClient:
+    """A non-browser client on ``host`` for the same app as ``web`` (no X-LTTS-Client header), reaching
+    the server on ``port`` (TestClient's own default, 80, when None)."""
+    base_url = f"http://{LOCAL}:{port}" if port else "http://testserver"
+    return TestClient(web.app, base_url=base_url, client=(host, 50000))
 
 
 def app_with(settings: Settings, *engines: FakeEngine) -> tuple[TestClient, Services]:

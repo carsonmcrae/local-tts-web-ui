@@ -257,6 +257,7 @@ class SpeechApi:
             token_created_at=config.token_created_at,
             network_mode=self.settings.allow_network or lan_mode,
             port=port,
+            last_used_port=config.last_port,
             max_input_chars=self.settings.speech_api_max_chars,
             requests_per_minute=self.settings.speech_api_requests_per_minute,
             usage=SpeechApiUsage(

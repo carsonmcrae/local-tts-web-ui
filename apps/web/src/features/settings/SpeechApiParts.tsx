@@ -3,10 +3,11 @@
 /**
  * Purpose: The pieces of the local speech API settings.
  * Scope: The access token (create, replace or revoke after a confirmation; a new token is shown once
- *   with a copy button and is never shown again), the usage line (a polite live region), an example
- *   curl command, which custom voices programs may use (none until allowed, with a note on consent),
- *   the "other devices on my network" permission with what turning it on would expose, and a coarse
- *   "… ago" formatter.
+ *   with a copy button and is never shown again), the usage line (a polite live region), the address
+ *   programs connect to (the server's own port, a warning when it differs from the one programs last
+ *   used), an example curl command, which custom voices programs may use (none until allowed, with a
+ *   note on consent), the "other devices on my network" permission with what turning it on would
+ *   expose, and a coarse "… ago" formatter.
  * Does NOT belong: Loading or saving the settings (SpeechApiSection.tsx, api/speechApiQueries.ts).
  */
 import { ClipboardCopy, KeyRound } from 'lucide-react';
@@ -176,9 +177,62 @@ export function UsageLine({ status, now }: Readonly<{ status: SpeechApiStatus; n
   );
 }
 
+/** The base URL programs on this computer use: the server's own port, which the status reports. */
+const apiBase = (port: number | null) => `http://127.0.0.1:${port ?? '<port>'}/v1`;
+
+function MovedPort({ port, before }: Readonly<{ port: number; before: number }>) {
+  return (
+    <Banner tone="warning" title={`The speech API moved from port ${before} to port ${port}`}>
+      A program last used port {before}. That port was probably busy when TTSNative started, so
+      programs set up for it can&apos;t connect now. Change them to {apiBase(port)}, or close
+      whatever is using port {before} and restart TTSNative. This note goes away once a program uses
+      the new address.
+    </Banner>
+  );
+}
+
+export function ApiAddress({ status }: Readonly<{ status: SpeechApiStatus }>) {
+  const copy = useCopy();
+  const { port, lastUsedPort } = status;
+  const base = apiBase(port);
+  const pagePort = window.location.port; // under npm run dev, the web dev server's, not the API's
+  const notPagePort =
+    port !== null && pagePort !== '' && pagePort !== String(port)
+      ? `, not ${pagePort} as in your browser's address bar: under npm run dev, this page comes from a separate web server`
+      : '';
+  return (
+    <div className="flex flex-col gap-2">
+      <h3 className="text-sm font-medium">Address</h3>
+      <p className="text-[13px] text-muted">Programs on this computer connect to:</p>
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+        <code className="rounded-[var(--radius-md)] bg-surface-2 px-3 py-2 font-mono text-[13px] break-all">
+          {base}
+        </code>
+        <Button
+          size="sm"
+          className={`self-start sm:self-auto ${MOBILE_TARGET}`}
+          icon={<ClipboardCopy size={14} />}
+          disabled={port === null}
+          onClick={() => copy(base, 'Address copied')}
+        >
+          Copy address
+        </Button>
+      </div>
+      {status.enabled && port !== null && lastUsedPort !== null && lastUsedPort !== port ? (
+        <MovedPort port={port} before={lastUsedPort} />
+      ) : null}
+      <p className="text-[13px] leading-relaxed text-muted">
+        {port === null
+          ? "TTSNative couldn't tell which port it listens on. Use the one it printed when it started."
+          : `Port ${port} is where TTSNative listens now${notPagePort}. It stays the same until TTSNative restarts. If its usual port is busy when it starts, it uses the next free one, and programs set up with the old address can't connect until you change them; this section warns you when that happens.`}
+      </p>
+    </div>
+  );
+}
+
 export function CurlExample({ port }: Readonly<{ port: number | null }>) {
   const copy = useCopy();
-  const base = `http://127.0.0.1:${port ?? 8765}/v1`;
+  const base = apiBase(port);
   const body = JSON.stringify({ model: 'ttsnative', voice: EXAMPLE_VOICE, input: 'Hello from TTSNative.' }); // prettier-ignore
   const command = `curl ${base}/audio/speech -H "Authorization: Bearer $TTSNATIVE_TOKEN" -H "Content-Type: application/json" -d '${body}' -o hello.mp3`;
   return (
@@ -199,9 +253,10 @@ export function CurlExample({ port }: Readonly<{ port: number | null }>) {
       >
         Copy command
       </Button>
-      <p className="text-[13px] text-muted">
-        OpenAI clients work too: use the base URL {base} with the token as the API key. GET {base}
-        /voices lists the voice ids.
+      <p className="text-[13px] leading-relaxed text-muted">
+        OpenAI clients work too: use the address above as the base URL and the token as the API key.
+        They can keep OpenAI&apos;s voice names, such as alloy or nova, which read with built-in
+        Kokoro voices. GET {base}/voices lists every voice id.
       </p>
     </div>
   );
@@ -261,7 +316,7 @@ export function NetworkPermission({
         token make speech with these voices, including any custom voices allowed above. Requests
         travel as plain HTTP, so others on the same network could read the text and the token.{' '}
         {status.networkMode
-          ? 'Other devices can reach TTSNative now (LAN mode or network mode is on).'
+          ? "Other devices can reach TTSNative now (LAN mode or network mode is on). They use this computer's network address in place of 127.0.0.1, with the same port."
           : 'TTSNative only listens on this computer right now, so this has no effect until you turn on LAN mode in Phones & tablets, or start it in network mode.'}
       </p>
       {status.allowNetwork ? (

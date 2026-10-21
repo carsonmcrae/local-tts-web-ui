@@ -5,8 +5,9 @@
  * Scope: The collapsed section and its summary, turning the API on, a new token shown once (copied,
  *   then gone, and kept in no cache), replacing and revoking the token after a confirmation,
  *   allowing a cloned voice (with the consent note), the network permission and what it exposes, the
- *   usage line, the example command, errors, opening from a link, "… ago" wording and the settings
- *   index entry.
+ *   usage line, the address (the server's own port, a warning when programs last used another one,
+ *   an unknown port), the example command, errors, opening from a link, "… ago" wording and the
+ *   settings index entry.
  * Does NOT belong: The app shell's in-use sign (app/speechApiIndicator.test.tsx).
  */
 import { screen, waitFor, within } from '@testing-library/react';
@@ -27,7 +28,7 @@ const minutesAgo = (minutes: number) => new Date(Date.now() - minutes * 60_000).
 
 const status = (overrides: Partial<SpeechApiStatus> = {}): SpeechApiStatus => ({
   enabled: false, allowNetwork: false, allowedVoices: [], hasToken: false, tokenCreatedAt: null, networkMode: false,
-  port: 8765, maxInputChars: 4000, requestsPerMinute: 60,
+  port: 8765, lastUsedPort: null, maxInputChars: 4000, requestsPerMinute: 60,
   usage: { requests: 0, lastUsedAt: null, lastVoiceId: null, inProgress: false, active: false },
   ...overrides,
 }); // prettier-ignore
@@ -179,6 +180,7 @@ describe('Local speech API settings', () => {
     const command = within(section).getByText(/^curl /);
     expect(command).toHaveTextContent('curl http://127.0.0.1:8765/v1/audio/speech -H "Authorization: Bearer $TTSNATIVE_TOKEN"'); // prettier-ignore
     expect(command).toHaveTextContent('"voice":"kokoro:af_heart"');
+    expect(section).toHaveTextContent("They can keep OpenAI's voice names, such as alloy or nova");
     await user.click(within(section).getByRole('button', { name: 'Copy command' }));
     expect(await screen.findByText('Command copied')).toBeInTheDocument();
     expect(await navigator.clipboard.readText()).toContain('/v1/audio/speech');
@@ -187,6 +189,7 @@ describe('Local speech API settings', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('Copy failed');
     expect(section).toHaveTextContent('Up to 4,000 characters a request, 60 requests a minute');
     expect(section).toHaveTextContent('Other devices can reach TTSNative now');
+    expect(section).toHaveTextContent("use this computer's network address in place of 127.0.0.1, with the same port"); // prettier-ignore
     expect(within(section).getByRole('link', { name: 'Read the guide' })).toHaveAttribute('href', expect.stringContaining('docs/guides/local-speech-api.md')); // prettier-ignore
   });
 
@@ -211,11 +214,51 @@ describe('Local speech API settings', () => {
     expect(power).not.toBeChecked();
   });
 
-  it('falls back to the default port and makes the first token without asking', async () => {
+  it("shows the address programs use, on the server's own port", async () => {
+    const pagePort = window.location.port; // the test page's, standing in for the web dev server's
+    const { user } = setup(status({ enabled: true, hasToken: true, tokenCreatedAt: MADE }));
+    const section = await openSection(user);
+    expect(within(section).getByText('http://127.0.0.1:8765/v1')).toBeInTheDocument();
+    expect(section).toHaveTextContent(`Port 8765 is where TTSNative listens now, not ${pagePort} as in your browser's address bar: under npm run dev, this page comes from a separate web server.`); // prettier-ignore
+    expect(section).toHaveTextContent('If its usual port is busy when it starts, it uses the next free one'); // prettier-ignore
+    expect(within(section).queryByText(/moved from port/)).not.toBeInTheDocument();
+    await user.click(within(section).getByRole('button', { name: 'Copy address' }));
+    expect(await screen.findByText('Address copied')).toBeInTheDocument();
+    expect(await navigator.clipboard.readText()).toBe('http://127.0.0.1:8765/v1');
+  });
+
+  it("says nothing about the page's port when the page comes from the same one", async () => {
+    const port = Number(window.location.port);
+    const { user } = setup(status({ port, lastUsedPort: port }));
+    const section = await openSection(user);
+    expect(section).toHaveTextContent(`Port ${port} is where TTSNative listens now. It stays the same`); // prettier-ignore
+    expect(section).not.toHaveTextContent("browser's address bar");
+  });
+
+  it('warns when programs last used another port', async () => {
+    const moved = status({ enabled: true, hasToken: true, tokenCreatedAt: MADE, port: 8766, lastUsedPort: 8765 }); // prettier-ignore
+    const { user, unmount } = setup(moved);
+    const section = await openSection(user);
+    const title = within(section).getByText('The speech API moved from port 8765 to port 8766');
+    const warning = title.closest('div.flex') ?? title;
+    expect(warning).toHaveTextContent('A program last used port 8765. That port was probably busy when TTSNative started'); // prettier-ignore
+    expect(warning).toHaveTextContent('Change them to http://127.0.0.1:8766/v1, or close whatever is using port 8765 and restart TTSNative.'); // prettier-ignore
+    expect(within(section).getByText((text) => text.startsWith('curl http://127.0.0.1:8766/v1/'))).toBeInTheDocument(); // prettier-ignore
+    unmount();
+
+    const off = setup({ ...moved, enabled: false }); // nothing can use it while it is off
+    expect(
+      within(await openSection(off.user)).queryByText(/moved from port/),
+    ).not.toBeInTheDocument();
+  });
+
+  it("shows a placeholder for a port it can't tell, and makes the first token without asking", async () => {
     const { count, user } = setup(status({ port: null }), { 'GET /api/voices': [voice()] });
     const section = await openSection(user);
     expect(await within(section).findByText('You have no custom voices.')).toBeInTheDocument();
-    expect(within(section).getByText(/^curl http:\/\/127\.0\.0\.1:8765\/v1/)).toBeInTheDocument();
+    expect(within(section).getByText((text) => text.startsWith('curl http://127.0.0.1:<port>/v1/'))).toBeInTheDocument(); // prettier-ignore
+    expect(section).toHaveTextContent("TTSNative couldn't tell which port it listens on. Use the one it printed when it started."); // prettier-ignore
+    expect(within(section).getByRole('button', { name: 'Copy address' })).toBeDisabled();
     await user.click(within(section).getByRole('button', { name: 'Create token' }));
     expect(await within(section).findByLabelText('New API token')).toBeInTheDocument();
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();

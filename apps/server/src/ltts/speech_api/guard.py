@@ -3,10 +3,10 @@
 """Purpose: Per-request checks and live counters for the local speech API.
 
 Scope: Recognising a request from a browser page (it carries ``Origin`` or ``Sec-Fetch-*`` headers)
-or from another device (a client address that isn't loopback), reading a bearer token, a
-sliding-window rate limit with the seconds to wait, and in-memory usage (requests served, when, with
-which voice, and whether one is being made now) for the Settings status and the in-use indicator.
-Nothing here is persisted or logged.
+or from another device (a client address that isn't loopback), reading a bearer token, the port a
+request arrived on, a sliding-window rate limit with the seconds to wait, and in-memory usage
+(requests served, when, with which voice, and whether one is being made now) for the Settings status
+and the in-use indicator. Nothing here is persisted or logged.
 Does NOT belong: Stored settings (``store.py``) or synthesis (``service.py``).
 """
 
@@ -19,6 +19,7 @@ import time
 from collections import deque
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
+from typing import Any
 
 from ltts.common import utc_now
 
@@ -40,6 +41,16 @@ def is_local(host: str | None) -> bool:
         return False
     mapped = address.ipv4_mapped if isinstance(address, ipaddress.IPv6Address) else None
     return (mapped or address).is_loopback
+
+
+def server_port(scope: Mapping[str, Any]) -> int | None:
+    """The port of the server socket a request arrived on, which is where programs must connect.
+
+    Not the ``Host`` header: under ``npm run dev`` the page comes from the web dev server's port, and its
+    proxy passes that header on unchanged.
+    """
+    server = scope.get("server")
+    return int(server[1]) if server and len(server) > 1 and server[1] else None
 
 
 def bearer(header: str | None) -> str | None:

@@ -7,7 +7,7 @@ request, validated strictly (no type coercion, fixed formats and ranges, voice i
 letters, digits, ``_``, ``-`` and ``:``; any other field is ignored), and the model and voice lists
 (each voice with the OpenAI voice name that also reaches it, if any). Also the Settings bodies
 (camelCase, like the rest of ``/api``): the switches, the allowed custom voices, a new token
-(returned once), the status and the in-use activity.
+(returned once), the status (with the port now and the one programs last used) and the in-use activity.
 Does NOT belong: Validation that needs state, such as the input length limit or allowed voices (``service.py``).
 """
 
@@ -90,7 +90,8 @@ class SpeechApiStatus(ApiModel):
     has_token: bool
     token_created_at: str | None
     network_mode: bool  # whether other devices can reach this server at all (network mode or LAN mode)
-    port: int | None
+    port: int | None  # the port this server listens on now, where programs must connect
+    last_used_port: int | None  # the port a program last reached the API on, kept across restarts
     max_input_chars: int
     requests_per_minute: int
     usage: SpeechApiUsage

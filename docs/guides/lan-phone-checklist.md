@@ -18,6 +18,37 @@ from **Expected**, note what it showed.
 You need: the computer on your home Wi-Fi, one iPhone or Android phone on the same Wi-Fi (Safari on
 iPhone, Chrome on Android), and five minutes of waiting for step 3.4.
 
+## Before you start: find the right network adapter
+
+LAN mode only turns on for a network Windows lists as **Private**. Before you change any network's
+profile, make sure it is the right one. Don't change a virtual adapter, a VPN, a network your
+workplace manages, or any Wi-Fi you don't own.
+
+1. In TTSNative, open **Settings → Phones and tablets**. Note the address it offers (for example
+   `192.168.1.20`) and, when there is a choice, the adapter name next to it (for example "Wi-Fi" or
+   "Ethernet"). Adapters it marks as virtual or VPN are not the ones to change: pick another
+   address in TTSNative instead.
+2. In PowerShell, list what Windows thinks of each connected network (read-only):
+
+   ```powershell
+   Get-NetConnectionProfile | Format-Table InterfaceAlias, Name, NetworkCategory, IPv4Connectivity
+   Get-NetIPAddress -AddressFamily IPv4 | Format-Table InterfaceAlias, IPAddress
+   ```
+
+   The adapter whose `IPAddress` matches the address TTSNative showed is the one that matters. Its
+   `Name` is the network's name (for Wi-Fi, your network's name). Leave anything else alone.
+
+3. Change it only if all of these are true:
+   - the `Name` is your own home network;
+   - the `InterfaceAlias` is a real adapter (Wi-Fi, Ethernet), not `vEthernet`, WSL, Hyper-V,
+     VirtualBox, VMware, Docker, Tailscale, WireGuard or another VPN;
+   - the category is **Public** only because Windows asked when you first joined and you chose
+     "no", not because it is a shared, guest, café, hotel or office network (a workplace network
+     shows **DomainAuthenticated**; leave it).
+4. Then, in Windows **Settings → Network & internet**, open that connection's properties and set
+   **Network profile type** to **Private network**. Nothing else on the computer needs changing,
+   and TTSNative never changes it for you.
+
 ## 1. The network check
 
 1. **Windows, public network.** In **Settings → Network & internet → Wi-Fi → (your network)

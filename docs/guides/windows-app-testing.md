@@ -39,4 +39,23 @@ candidate's Desktop workflow artifact:
 
 ## Latest results
 
-Recorded with each release candidate; see the pull request that introduced the app for the first run.
+**2026-10-21, development build `2.1.0-dev.88` (first build, pull request #37).**
+
+- **CI, clean `windows-2025` runner (Windows Server 2025, not Windows 11):** installer 371 MB, installed
+  size about 600 MB. Every smoke-test check passed; the only failure was the test checking Installed Apps
+  before the background uninstaller had finished (the test now waits).
+- **This maintainer's Windows 11 PC (not a clean machine; installed per user, then uninstalled):**
+  checksum verified; silent install from PowerShell (no app launch, Start Menu shortcut, Installed Apps
+  entry with version, publisher, size and homepage); window titled "TTSNative"; server healthy in about
+  2.5 s; the page reaches the app's commands (version, folders, update check; Tauri falls back from its
+  `ipc.localhost` transport to `postMessage` because the server's CSP allows only `'self'`);
+  WebView2 data in `%LOCALAPPDATA%\com.ttsnative.desktop\EBWebView`; silent uninstall removed the app,
+  the shortcut, the Installed Apps entry and the install folder and kept the data.
+- **Bundled runtime against the shell's launch (emulated):** bundled Kokoro ready without a download,
+  speech in 0.8 s, clean exit 0.9 s after the app closes the server's stdin.
+- **Found and fixed:** the server hung at start when the app watched its stdin (Windows stalls DLL loading
+  while a thread reads a pipe; now polled); a layout comment rendered as text at the top of the UI; the
+  server reported 2.0.0 while the app was a development build; update errors showed technical details.
+- **Not yet done:** an interactive install on a clean Windows 11 machine without developer tools, a
+  custom voice in the installed app (needs the multi-gigabyte voice-cloning download), and the
+  SmartScreen experience of a published download.

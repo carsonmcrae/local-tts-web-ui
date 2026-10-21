@@ -207,6 +207,67 @@ export type paths = {
     patch?: never;
     trace?: never;
   };
+  '/api/documents/{document_id}/cleanup': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get Cleanup
+     * @description What the automatic cleanup found (running headers, footers, page numbers, footnote markers) and
+     *     the sentences skipped by hand, each with whether it applies now.
+     */
+    get: operations['get_cleanup_api_documents__document_id__cleanup_get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/documents/{document_id}/cleanup/apply': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Apply Cleanup
+     * @description Skip everything the cleanup found again.
+     */
+    post: operations['apply_cleanup_api_documents__document_id__cleanup_apply_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/documents/{document_id}/cleanup/undo': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Undo Cleanup
+     * @description Read everything the cleanup skipped again; sentences skipped by hand stay skipped.
+     */
+    post: operations['undo_cleanup_api_documents__document_id__cleanup_undo_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/documents/{document_id}/cover': {
     parameters: {
       query?: never;
@@ -344,7 +405,7 @@ export type paths = {
     get: operations['get_styles_api_documents__document_id__styles_get'];
     /**
      * Update Styles
-     * @description Set (or, with null, clear) a voice, effect, sound, style, take or pause on the chosen sentences.
+     * @description Set (or, with null, clear) a voice, effect, sound, style, take, pause or skip on the chosen sentences.
      */
     put: operations['update_styles_api_documents__document_id__styles_put'];
     post?: never;
@@ -712,6 +773,133 @@ export type paths = {
     put?: never;
     /** Cancel Job */
     post: operations['cancel_job_api_jobs__job_id__cancel_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/lan': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Lan Status */
+    get: operations['lan_status_api_lan_get'];
+    /**
+     * Update Lan
+     * @description Turn LAN mode on (on the main server's port) or off; turning it off stops listening at once.
+     */
+    put: operations['update_lan_api_lan_put'];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/lan/device': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** This Device */
+    get: operations['this_device_api_lan_device_get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/lan/devices': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /** Remove All Devices */
+    delete: operations['remove_all_devices_api_lan_devices_delete'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/lan/devices/{device_id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /** Remove Device */
+    delete: operations['remove_device_api_lan_devices__device_id__delete'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/lan/pair': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Pair Device
+     * @description Pair the device making the request (on the network) with the code shown on the computer.
+     */
+    post: operations['pair_device_api_lan_pair_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/lan/pairing': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** New Pairing Code */
+    post: operations['new_pairing_code_api_lan_pairing_post'];
+    /** Cancel Pairing Code */
+    delete: operations['cancel_pairing_code_api_lan_pairing_delete'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/lan/pairing/qr.svg': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Pairing Qr */
+    get: operations['pairing_qr_api_lan_pairing_qr_svg_get'];
+    put?: never;
+    post?: never;
     delete?: never;
     options?: never;
     head?: never;
@@ -1500,6 +1688,31 @@ export type components = {
        */
       trebleDb: number;
     };
+    /** CleanupItem */
+    CleanupItem: {
+      /** Applied */
+      applied: boolean;
+      /** Index */
+      index: number;
+      /** Markers */
+      markers?: string[];
+      /**
+       * Reason
+       * @enum {string}
+       */
+      reason: 'header' | 'footer' | 'page_number' | 'footnote' | 'manual';
+      /** Sectionindex */
+      sectionIndex: number;
+      /** Text */
+      text: string;
+    };
+    /** CleanupOut */
+    CleanupOut: {
+      /** Items */
+      items: components['schemas']['CleanupItem'][];
+      /** Notice */
+      notice?: string | null;
+    };
     /** ConsentInfo */
     ConsentInfo: {
       /** Statement */
@@ -1527,6 +1740,17 @@ export type components = {
       hasCover: boolean;
       /** Narrator */
       narrator?: string | null;
+    };
+    /** DeviceOut */
+    DeviceOut: {
+      /** Createdat */
+      createdAt: string;
+      /** Id */
+      id: string;
+      /** Lastseenat */
+      lastSeenAt: string | null;
+      /** Name */
+      name: string;
     };
     /** DocumentDetail */
     DocumentDetail: {
@@ -1818,10 +2042,50 @@ export type components = {
      */
     JobStatus:
       'queued' | 'running' | 'succeeded' | 'failed' | 'canceled' | 'interrupted' | 'paused';
+    /** LanStatus */
+    LanStatus: {
+      /** Address */
+      address: string | null;
+      /** Addresses */
+      addresses: string[];
+      /** Devices */
+      devices: components['schemas']['DeviceOut'][];
+      /** Enabled */
+      enabled: boolean;
+      pairing: components['schemas']['PairingOut'] | null;
+      /** Port */
+      port: number | null;
+      /** Url */
+      url: string | null;
+    };
+    /** LanUpdate */
+    LanUpdate: {
+      /** Address */
+      address?: string | null;
+      /** Enabled */
+      enabled: boolean;
+    };
     /** NoteUpdate */
     NoteUpdate: {
       /** Note */
       note: string;
+    };
+    /** PairingOut */
+    PairingOut: {
+      /** Code */
+      code: string;
+      /** Expiresins */
+      expiresInS: number;
+    };
+    /** PairRequest */
+    PairRequest: {
+      /** Code */
+      code: string;
+      /**
+       * Name
+       * @default Phone or tablet
+       */
+      name: string;
     };
     /** PasteTextRequest */
     PasteTextRequest: {
@@ -2086,6 +2350,8 @@ export type components = {
       index: number;
       /** Pausems */
       pauseMs?: number | null;
+      /** Skip */
+      skip?: ('header' | 'footer' | 'page_number' | 'manual') | null;
       /** Sound */
       sound?:
         | (
@@ -2129,6 +2395,8 @@ export type components = {
       indexes: number[];
       /** Pausems */
       pauseMs?: number | null;
+      /** Skip */
+      skip?: boolean | null;
       /** Sound */
       sound?:
         | (
@@ -2320,6 +2588,13 @@ export type components = {
       take?: number | null;
       /** Voiceid */
       voiceId: string;
+    };
+    /** ThisDevice */
+    ThisDevice: {
+      /** Name */
+      name?: string | null;
+      /** Paired */
+      paired: boolean;
     };
     /** ValidationError */
     ValidationError: {
@@ -2952,6 +3227,99 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['CharacterOut'][];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  get_cleanup_api_documents__document_id__cleanup_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        document_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CleanupOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  apply_cleanup_api_documents__document_id__cleanup_apply_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        document_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CleanupOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  undo_cleanup_api_documents__document_id__cleanup_undo_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        document_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CleanupOut'];
         };
       };
       /** @description Validation Error */
@@ -4101,6 +4469,217 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  lan_status_api_lan_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['LanStatus'];
+        };
+      };
+    };
+  };
+  update_lan_api_lan_put: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['LanUpdate'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['LanStatus'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  this_device_api_lan_device_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ThisDevice'];
+        };
+      };
+    };
+  };
+  remove_all_devices_api_lan_devices_delete: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  remove_device_api_lan_devices__device_id__delete: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        device_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  pair_device_api_lan_pair_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['PairRequest'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DeviceOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  new_pairing_code_api_lan_pairing_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['PairingOut'];
+        };
+      };
+    };
+  };
+  cancel_pairing_code_api_lan_pairing_delete: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  pairing_qr_api_lan_pairing_qr_svg_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'image/svg+xml': unknown;
         };
       };
     };

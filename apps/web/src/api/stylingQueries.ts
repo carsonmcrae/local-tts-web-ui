@@ -6,11 +6,11 @@
  *   voice and its revision) and changing it; choosing the dialogue voice and whether quoted speech in
  *   narration is voiced apart; the characters dialogue tags name and their voices; saved casts;
  *   and candidate takes of one sentence. Each answer replaces the cached data (a skip changes the
- *   cleanup report too).
+ *   cleanup report, and the document's spoken word count and listening estimate, too).
  * Does NOT belong: Playback (the player refetches audio itself) or presentation.
  */
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { cleanupKey } from './cleanupQueries';
+import { cleanupKey, refreshSpokenCounts } from './cleanupQueries';
 import { api } from './client';
 import type {
   CastPreset,
@@ -39,7 +39,9 @@ export function useStyleSentences(documentId: string) {
       api<DocumentStyles>(`/api/documents/${documentId}/styles`, { method: 'PUT', json: change }),
     onSuccess: (styles, change) => {
       client.setQueryData(stylesKey(documentId), styles);
-      if ('skip' in change) void client.invalidateQueries({ queryKey: cleanupKey(documentId) });
+      if (!('skip' in change)) return;
+      void client.invalidateQueries({ queryKey: cleanupKey(documentId) });
+      refreshSpokenCounts(client, documentId);
     },
   });
 }

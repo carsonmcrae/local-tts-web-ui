@@ -165,6 +165,8 @@ export const documentDetail = (overrides: Partial<DocumentDetail> = {}): Documen
   sizeBytes: 2_400_000,
   charCount: 9000,
   wordCount: 1500,
+  spokenCharCount: 9000,
+  spokenWordCount: 1500,
   pageCount: 12,
   segmentCount: 4,
   sectionCount: 2,

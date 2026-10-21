@@ -3,10 +3,11 @@
 /**
  * Purpose: The reader's note on what isn't read aloud, and the place to review and undo it.
  * Scope: One quiet, collapsed line saying what is skipped when reading: the running headers,
- *   footers, page numbers and footnote markers the cleanup found at import, and sentences skipped
- *   by hand. Opened, it lists them by reason (each a button that shows it in the text) with "Read
- *   them all again" (undo the cleanup) or "Skip them again". Hidden when nothing was found. Shown
- *   after the document's other warnings, in place of the notice the cleanup added to them.
+ *   footers, page numbers, footnotes and footnote and citation markers the cleanup found at import,
+ *   and sentences skipped by hand. Opened, it lists them by reason (each a button that shows it in
+ *   the text) with "Read them all again" (undo the cleanup) or "Skip them again". Hidden when
+ *   nothing was found. Shown after the document's other warnings, in place of the notice the
+ *   cleanup added to them.
  * Does NOT belong: Skipping one sentence (StyleSentencesDialog) or fetching (cleanupQueries).
  */
 import { ChevronDown, ChevronRight, EyeOff } from 'lucide-react';
@@ -20,11 +21,18 @@ const REASONS: readonly { reason: CleanupReason; one: string; many: string; titl
   { reason: 'header', one: 'running header', many: 'running headers', title: 'Running headers' },
   { reason: 'footer', one: 'running footer', many: 'running footers', title: 'Running footers' },
   { reason: 'page_number', one: 'page number', many: 'page numbers', title: 'Page numbers' },
+  { reason: 'footnote_text', one: 'footnote', many: 'footnotes', title: 'Footnotes' },
   {
     reason: 'footnote',
     one: 'footnote marker',
     many: 'footnote markers',
     title: 'Footnote markers',
+  },
+  {
+    reason: 'citation',
+    one: 'citation marker',
+    many: 'citation markers',
+    title: 'Citation markers',
   },
   {
     reason: 'manual',
@@ -37,10 +45,12 @@ const LISTED = 100; // sentences listed for each reason
 // Touch targets are 44px on phones, compact with a pointer.
 const ROW = 'min-h-11 sm:min-h-8';
 
-/** How many things items stand for: footnote markers one by one, anything else by the sentence. */
+const MARKERS: ReadonlySet<CleanupReason> = new Set(['footnote', 'citation']);
+
+/** How many things items stand for: markers one by one, anything else by the sentence. */
 const size = (items: readonly CleanupItem[]) =>
   items.reduce(
-    (sum, item) => sum + (item.reason === 'footnote' ? (item.markers?.length ?? 0) : 1),
+    (sum, item) => sum + (MARKERS.has(item.reason) ? (item.markers?.length ?? 0) : 1),
     0,
   );
 

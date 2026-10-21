@@ -10,7 +10,7 @@
  *   mid-take. Returns float samples at the device's own rate.
  * Does NOT belong: Encoding (wav.ts), analysis or upload.
  */
-import { explainMicrophoneError, inputLevel, MicrophoneError } from './recorder';
+import { explainMicrophoneError, inputLevel, MicrophoneError, requireSecurePage } from './recorder';
 
 export const WORKLET_URL = '/audio/capture-worklet.js';
 
@@ -66,12 +66,7 @@ export class PcmRecorder {
   private readonly levelBuffer = new Float32Array(2048);
 
   static check(): void {
-    if (!globalThis.isSecureContext)
-      throw new MicrophoneError(
-        'insecure',
-        'Recording needs a secure page (localhost or HTTPS).',
-        'Voice Studio records only on the computer running TTSNative: open the app there.',
-      );
+    requireSecurePage();
     if (!navigator.mediaDevices?.getUserMedia || typeof AudioWorkletNode === 'undefined')
       throw new MicrophoneError(
         'unsupported',

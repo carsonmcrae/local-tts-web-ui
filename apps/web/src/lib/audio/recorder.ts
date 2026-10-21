@@ -85,6 +85,16 @@ export function inputLevel(
   return Math.min(Math.max((db + 60) / 60, 0), 1);
 }
 
+/** Browsers only record on a secure page, so a phone on plain HTTP (LAN mode) never can. */
+export function requireSecurePage(): void {
+  if (!globalThis.isSecureContext)
+    throw new MicrophoneError(
+      'insecure',
+      'Recording needs a secure page (localhost or HTTPS).',
+      'Voice Studio records only on the computer running TTSNative: open the app there.',
+    );
+}
+
 export class MicRecorder {
   private stream: MediaStream | null = null;
   private recorder: MediaRecorder | null = null;
@@ -94,12 +104,7 @@ export class MicRecorder {
   private readonly levelBuffer = new Float32Array(2048);
 
   static check(): void {
-    if (!globalThis.isSecureContext)
-      throw new MicrophoneError(
-        'insecure',
-        'Recording needs a secure page (localhost or HTTPS).',
-        'Voice Studio records only on the computer running TTSNative: open the app there.',
-      );
+    requireSecurePage();
     if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined')
       throw new MicrophoneError(
         'unsupported',

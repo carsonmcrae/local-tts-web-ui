@@ -143,6 +143,25 @@ async function serverOrigin(/** @type {number} */ timeoutMs) {
   throw new Error('FAILED: the app did not start its server');
 }
 
+/**
+ * The app's page, through WebView2's debugging port (it can open a little after the server answers).
+ * @param {string} origin
+ */
+async function appPage(origin) {
+  const deadline = Date.now() + 90_000;
+  while (Date.now() < deadline) {
+    const browser = await chromium.connectOverCDP('http://127.0.0.1:9222').catch(() => null);
+    const page = browser
+      ?.contexts()
+      .flatMap((context) => context.pages())
+      .find((item) => item.url().startsWith(origin));
+    if (page) return page;
+    await browser?.close().catch(() => undefined);
+    await sleep(1000);
+  }
+  throw new Error('FAILED: the app window could not be reached through WebView2');
+}
+
 const installedVersion = () =>
   /DisplayVersion\s+REG_SZ\s+(\S+)/.exec(
     execFileSync(REG, ['query', KEY], { encoding: 'utf8' }),
@@ -180,12 +199,7 @@ async function main() {
         })
       ).json()
     );
-    const browser = await chromium.connectOverCDP('http://127.0.0.1:9222');
-    const page = browser
-      .contexts()
-      .flatMap((context) => context.pages())
-      .find((item) => item.url().startsWith(origin));
-    if (!page) throw new Error('FAILED: the app window was not found');
+    const page = await appPage(origin);
     const notice = page.getByRole('region', { name: 'Update available' });
     await notice.getByText(`TTSNative ${NEW} is available`).waitFor({ timeout: 60_000 });
     check(
@@ -219,7 +233,11 @@ async function main() {
       .getByRole('button', { name: 'Try again' })
       .click()
       .catch(() => undefined);
-    await browser.close().catch(() => undefined);
+    await page
+      .context()
+      .browser()
+      ?.close()
+      .catch(() => undefined);
     const deadline = Date.now() + 240_000;
     while (Date.now() < deadline && installedVersion() !== NEW) await sleep(1000);
     check(installedVersion() === NEW, `the verified update installed ${NEW}`);

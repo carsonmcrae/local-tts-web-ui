@@ -6,13 +6,15 @@ Scope: Every ``/v1`` request passes the same checks, in order: the API is switch
 every ``/v1`` path answers 404 as if it didn't exist, before any other work), the request doesn't
 come from a browser page, the client is this computer (or the owner allowed other devices), the
 bearer token is valid (401 without saying why), and the rate limit (429 with ``Retry-After``). The
-speech body must be JSON, is read under a byte limit and validated strictly. No CORS headers are
-ever sent. Logs carry counts and lengths only, never the token or the text.
+speech body must be JSON, is read under a byte limit and a time limit (408), and validated strictly;
+a client that disconnects while sending it gets nothing. No CORS headers are ever sent. Logs carry
+counts and lengths only, never the token or the text.
 Does NOT belong: Synthesis (``service.py``) or the Settings endpoints (``settings_router.py``).
 """
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from typing import Annotated
 
@@ -20,6 +22,7 @@ from fastapi import APIRouter, Depends, Request, Response
 from fastapi.exceptions import RequestValidationError
 from pydantic import ValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
+from starlette.requests import ClientDisconnect
 
 from ltts.container import ServicesDep
 from ltts.errors import AppError, BusyError, ForbiddenError, PayloadTooLargeError, UnsupportedDocumentError
@@ -33,6 +36,8 @@ router = APIRouter(prefix="/v1", tags=["speech api"], include_in_schema=False)
 METHODS = {"/v1/audio/speech": "POST", "/v1/models": "GET", "/v1/voices": "GET", "/v1/audio/voices": "GET"}
 BODY_OVERHEAD = 16 * 1024  # the JSON around the input
 BYTES_PER_CHAR = 12  # the most a JSON-escaped character can take (a surrogate pair written as two \u escapes)
+BODY_TIMEOUT_S = 30.0  # a body this small arrives in well under a second, even over Wi-Fi
+CLIENT_GONE = 499  # nginx's "client closed request": nobody is left to read it
 
 
 class TokenError(AppError):
@@ -43,6 +48,11 @@ class TokenError(AppError):
 class MethodError(AppError):
     status_code = 405
     code = "method_not_allowed"
+
+
+class BodyTimeoutError(AppError):
+    status_code = 408
+    code = "request_timeout"
 
 
 def _hidden() -> StarletteHTTPException:
@@ -88,10 +98,14 @@ async def _json_body(request: Request, limit: int) -> bytes:
     if declared.isdigit() and int(declared) > limit:
         raise too_large
     body = bytearray()
-    async for chunk in request.stream():
-        body += chunk
-        if len(body) > limit:
-            raise too_large
+    try:
+        async with asyncio.timeout(BODY_TIMEOUT_S):
+            async for chunk in request.stream():
+                body += chunk
+                if len(body) > limit:
+                    raise too_large
+    except TimeoutError:
+        raise BodyTimeoutError("The request body took too long to arrive.") from None
     return bytes(body)
 
 
@@ -123,7 +137,10 @@ def list_voices(services: ServicesDep, config: Access) -> VoiceList:
 @router.post("/audio/speech")
 async def create_speech(request: Request, services: ServicesDep, config: Access) -> Response:
     api = services.speech_api
-    raw = await _json_body(request, BODY_OVERHEAD + BYTES_PER_CHAR * api.settings.speech_api_max_chars)
+    try:
+        raw = await _json_body(request, BODY_OVERHEAD + BYTES_PER_CHAR * api.settings.speech_api_max_chars)
+    except ClientDisconnect:
+        return Response(status_code=CLIENT_GONE)
     try:
         speech = SpeechRequest.model_validate_json(raw)
     except ValidationError as exc:
@@ -136,7 +153,7 @@ async def create_speech(request: Request, services: ServicesDep, config: Access)
     try:
         audio = await api.speak(speech, parts, request.is_disconnected)
     except ClientGoneError:
-        return Response(status_code=499)
+        return Response(status_code=CLIENT_GONE)
     log.info(
         "speech api request served",
         extra={

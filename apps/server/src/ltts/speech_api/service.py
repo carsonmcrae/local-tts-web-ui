@@ -3,12 +3,13 @@
 """Purpose: Turn one speech API request into audio with TTSNative's own voices.
 
 Scope: The models and voices a client may use (every built-in voice of an installed engine, blends of
-them, and only the custom voices the owner allowed; any other kind of voice is refused), checking a requested model
-and voice, cleaning the input and splitting it with the document segmenter, rendering each sentence
-through the synthesis service (cache, pronunciation dictionary and engine queues included, at preview
-priority so reading in the app comes first), joining the sentences and encoding them. One request is
-synthesised at a time (another gets 429), and a request that runs out of time or whose client
-disconnects releases its queued work. Also the status the Settings page shows.
+them, and only the custom voices the owner allowed; any other kind of voice, and any voice that copies
+a recording, is refused), checking a requested model and voice, cleaning the input and splitting it
+with the document segmenter, rendering each sentence through the synthesis service (cache,
+pronunciation dictionary and engine queues included, at preview priority so reading in the app comes
+first), joining the sentences and encoding them. One request is synthesised at a time (another gets
+429), and a request that runs out of time or whose client disconnects releases its queued work and
+starts no further sentence. Also the status the Settings page shows.
 Does NOT belong: HTTP concerns such as access checks and parsing (``router.py``) or stored settings
 (``store.py``).
 """
@@ -40,7 +41,7 @@ from ltts.synthesis.service import ClientGoneError, SynthesisService
 MODEL = "ttsnative"
 OPENAI_MODELS = ("tts-1", "tts-1-hd", "gpt-4o-mini-tts")  # accepted so OpenAI clients work unchanged
 MAX_SENTENCES = 200
-CUSTOM_PREFIX = "custom:"  # cloned voices: only those the owner allowed
+CUSTOM = "custom"  # cloned voices (custom:<id>): only those the owner allowed
 BLEND_PREFIX = "blend:"  # mixes of built-in voices, which copy no one: allowed like them
 CONTENT_TYPES = {
     "mp3": "audio/mpeg",
@@ -126,23 +127,27 @@ class SpeechApi:
         engines = self._engine_ids()
         if request.model not in (MODEL, *OPENAI_MODELS, *engines):
             raise NotFoundError("Unknown model. GET /v1/models lists the models you can use.", code="model_not_found")
-        allowed = request.voice in config.allowed_voices
+        voice = request.voice
+        allowed = voice in config.allowed_voices  # ids match exactly, case included
         refused = ForbiddenError(
             "This voice isn't allowed for the speech API. Its owner can allow a custom voice in TTSNative's "
             "Settings, under Local speech API.",
             code="voice_not_allowed",
         )
-        if request.voice.startswith(CUSTOM_PREFIX) and not allowed:
+        if voice.partition(":")[0].lower() == CUSTOM and not allowed:
             raise refused
         try:
-            engine = self._engines.resolve(request.voice).engine
+            resolved = self._engines.resolve(voice)
         except NotFoundError as exc:
             raise NotFoundError(
                 "Unknown voice. Use a TTSNative voice id such as kokoro:af_heart; GET /v1/voices lists them.",
                 code="voice_not_found",
             ) from exc
-        built_in = request.voice.startswith(BLEND_PREFIX) or any(
-            voice.id == request.voice and voice.category == "built-in" for voice in engine.voices()
+        engine, spec = resolved.engine, resolved.spec
+        copies = spec.reference_path is not None or spec.conditioning_path is not None or bool(spec.styles)
+        built_in = not copies and (
+            voice.startswith(BLEND_PREFIX)
+            or any(item.id == voice and item.category == "built-in" for item in engine.voices())
         )
         if not (built_in or allowed):
             raise refused
@@ -202,6 +207,8 @@ class SpeechApi:
         clips: list[tuple[Float32Array, int]] = []
         try:
             for text, boundary in parts:
+                if await stop():  # don't hand the engine another sentence nobody will hear
+                    raise ClientGoneError
                 audio = await self._synthesis.render(
                     request.voice, text, boundary, request.speed, PRIORITY_PREVIEW, stop
                 )

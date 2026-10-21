@@ -24,30 +24,13 @@ import soundfile as sf
 from fastapi.testclient import TestClient
 
 from conftest import FakeEngine
-from ltts.app import create_app
 from ltts.config import Settings
-from ltts.container import Services, build_services
 from ltts.speech_api.schemas import SpeechRequest
 from ltts.speech_api.service import encode_clips
 from ltts.synthesis.service import ClientGoneError
-from speech_api_support import GatedEngine, auth, error_code, program, speak, switch_on
+from speech_api_support import auth, error_code, gated, program, raw, speak, switch_on
 
 FORMATS = [("mp3", "audio/mpeg"), ("opus", "audio/ogg"), ("flac", "audio/flac"), ("wav", "audio/wav")]
-
-
-def gated(settings: Settings) -> tuple[TestClient, GatedEngine, Services]:
-    """An app whose only engine holds every synthesis until the test releases it."""
-    engine = GatedEngine()
-    services = build_services(settings, isolate_extraction=False, engine_factory=lambda _s, _m: [engine])
-    web = TestClient(create_app(settings, services=services), headers={"X-LTTS-Client": "web"})
-    return web, engine, services
-
-
-def raw(
-    caller: TestClient, token: str, content: bytes, content_type: str | None = "application/json"
-) -> httpx.Response:
-    headers = auth(token) | ({"Content-Type": content_type} if content_type else {})
-    return caller.post("/v1/audio/speech", content=content, headers=headers)
 
 
 def test_each_format_has_its_content_type_and_decodes(client: TestClient, engines: dict[str, FakeEngine]) -> None:

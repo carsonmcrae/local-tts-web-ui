@@ -86,3 +86,13 @@ def test_the_gap_between_narration_and_quoted_speech_keeps_the_background() -> N
     out = render(job).samples
     gap = out[RATE : RATE + int(RATE * PIECE_GAP_S)]
     assert gap.size and _db(gap[240:-240]) > -60  # not digital silence between the two pieces
+
+
+def test_the_fill_is_never_louder_than_the_background_just_before_the_pause() -> None:
+    clip = _speech_with_hiss(-45.0)
+    clip[-int(RATE * 0.06) :] *= 0.1  # the sentence ends quieter than its average background
+    tail = clip[-int(RATE * 0.05) : -int(RATE * 0.008)]
+    tone = room_tone(clip, RATE, 0.6)[int(RATE * 0.02) : -int(RATE * 0.02)]
+    assert _db(tone) <= _db(tail) - 1.5  # no swell of hiss after the sentence
+    clip[-int(RATE * 0.06) :] = 0.0  # a clean, silent ending: the pause stays silent
+    assert not room_tone(clip, RATE, 0.6).any()

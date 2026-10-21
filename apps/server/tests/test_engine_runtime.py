@@ -235,7 +235,7 @@ def chatterbox(settings: Settings) -> ChatterboxEngine:
 
 
 def test_chatterbox_identity_and_worker_command(chatterbox: ChatterboxEngine) -> None:
-    assert chatterbox.revision() == "chatterbox-turbo/worker-4"
+    assert chatterbox.revision() == "chatterbox-turbo/worker-5"
     argv = chatterbox._worker_argv()
     assert argv[1:] == ["-I", "-m", "ltts_chatterbox_worker"] and argv[0] == str(chatterbox._python)
 

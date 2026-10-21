@@ -122,14 +122,14 @@ def test_playback_takes_exports_and_previews_say_the_same_and_the_text_stays(
         assert client.get(f"/api/documents/{doc_id}/segments/0/audio", params={"voice": VOICE}).status_code == 200
         return calls[-1][0]
 
-    assert play(wardens) == "Dr. Win ate nyoh-kee with quinoa."
-    assert play(other) == "Dr. Nguyen ate nyoh-kee with quinoa."  # the library's rules only
+    assert play(wardens) == "Doctor Win ate nyoh-kee with quinoa."
+    assert play(other) == "Doctor Nguyen ate nyoh-kee with quinoa."  # the library's rules only
     shown = client.get(f"/api/documents/{wardens}/sections/0").json()["segments"][0]["text"]
     assert shown == TEXT  # what is written never changes
 
     plan = services.synthesis.plan_segment(wardens, 0, TEXT, VOICE)
     take = dataclasses.replace(plan, take=1)
-    assert services.synthesis.job(take, TEXT, "paragraph", 1).pieces[0].spoken == "Dr. Win ate nyoh-kee with quinoa."
+    assert services.synthesis.job(take, TEXT, "paragraph", 1).pieces[0].spoken == "Doctor Win ate nyoh-kee with quinoa."
 
     def export() -> None:
         request = {"documentId": wardens, "voiceId": VOICE, "format": "wav"}
@@ -140,11 +140,11 @@ def test_playback_takes_exports_and_previews_say_the_same_and_the_text_stays(
     assert len(calls) == played  # the export reused the audio playback made: same spoken text, same key
     add(client, "quinoa", "KEEN-wah", wardens)
     export()
-    assert calls[-1][0] == "Dr. Win ate nyoh-kee with keen-wah."
-    assert play(wardens) == "Dr. Win ate nyoh-kee with keen-wah." and len(calls) == played + 1  # cached by export
+    assert calls[-1][0] == "Doctor Win ate nyoh-kee with keen-wah."
+    assert play(wardens) == "Doctor Win ate nyoh-kee with keen-wah." and len(calls) == played + 1  # cached by export
 
     assert client.post(f"/api/voices/{VOICE}/preview", json={"text": TEXT}).status_code == 200
-    assert calls[-1][0] == "Dr. Nguyen ate nyoh-kee with quinoa."  # voice previews: the library's rules
+    assert calls[-1][0] == "Doctor Nguyen ate nyoh-kee with quinoa."  # voice previews: the library's rules
 
 
 def test_hearing_a_word_before_saving_it(

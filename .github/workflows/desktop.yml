@@ -64,7 +64,7 @@ jobs:
         run: |
           curl -sSfL -o "$RUNNER_TEMP/cargo-deny.tgz" https://github.com/EmbarkStudios/cargo-deny/releases/download/0.20.2/cargo-deny-0.20.2-x86_64-pc-windows-msvc.tar.gz
           echo "975a22143262fd27476d19ee00c7af67978426e40e1dee94eed6bbade1cf87dc  $RUNNER_TEMP/cargo-deny.tgz" | sha256sum --check
-          tar -xzf "$RUNNER_TEMP/cargo-deny.tgz" -C "$RUNNER_TEMP"
+          (cd "$RUNNER_TEMP" && tar -xzf cargo-deny.tgz)
           "$RUNNER_TEMP/cargo-deny-0.20.2-x86_64-pc-windows-msvc/cargo-deny.exe" --locked check
       - name: Lints and unit tests
         working-directory: apps/desktop/src-tauri

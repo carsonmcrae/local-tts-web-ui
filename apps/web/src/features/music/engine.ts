@@ -4,7 +4,7 @@
  * Purpose: Framework-free player for the background music under the narration.
  * Scope: One Web Audio graph per page (track → fade gain → volume gain → speakers), created on first
  *   use. Decodes tracks (keeping the two most recent), plays one track at a time with fades and
- *   crossfades, loops sample-accurately (skipping codec padding at the edges), remembers where a
+ *   crossfades (never more than two overlapping, however fast it is toggled), loops sample-accurately (skipping codec padding at the edges), remembers where a
  *   paused track was, stops and disconnects every faded-out track, suspends the audio context when
  *   nothing plays and reports tracks that fail to load. Each load is guarded by a generation counter
  *   so a track that was replaced while loading never starts.
@@ -89,10 +89,12 @@ interface Voice {
 
 const KEEP_DECODED = 2;
 const VOLUME_RAMP_SECONDS = 0.08;
+/** How quickly a track still fading out finishes when another fade begins. */
+const HURRY_SECONDS = 0.05;
 const IDLE_SUSPEND_MS = 5_000;
 /** Codec padding is at most a few tens of milliseconds; never trim more than this. */
 const EDGE_SCAN_SECONDS = 0.2;
-const SILENT = 1e-4;
+const SILENT = 1e-5; // -100 dBFS: quiet music is louder than this; decoder padding is not
 
 function ramp(param: ParamLike, now: number, to: number, seconds: number): void {
   param.cancelScheduledValues(now);
@@ -272,12 +274,23 @@ export class MusicEngine {
     const context = this.context;
     if (!voice || !context) return;
     this.current = null;
-    const stopAt = context.currentTime + Math.max(fade, 0.01);
-    if (voice.resumable) this.paused = { id: voice.id, position: this.position(voice, stopAt) };
-    ramp(voice.fade.gain, context.currentTime, 0, fade);
+    const now = context.currentTime;
+    // A crossfade overlaps two tracks; anything still fading out from before finishes now.
+    for (const older of this.fading) this.silence(older, now, HURRY_SECONDS);
+    if (voice.resumable)
+      this.paused = { id: voice.id, position: this.position(voice, now + Math.max(fade, 0.01)) };
     this.fading.add(voice);
     voice.source.addEventListener('ended', () => this.release(voice));
-    voice.source.stop(stopAt);
+    this.silence(voice, now, fade);
+  }
+
+  private silence(voice: Voice, now: number, seconds: number): void {
+    ramp(voice.fade.gain, now, 0, seconds);
+    try {
+      voice.source.stop(now + Math.max(seconds, 0.01));
+    } catch {
+      // A browser that refuses a second stop() keeps the first, which is at most a fade away.
+    }
   }
 
   private position(voice: Voice, time: number): number {

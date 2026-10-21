@@ -71,6 +71,8 @@ export class FakeSource extends FakeNode implements SourceLike {
     this.started = { when, offset };
   }
   stop(when: number) {
+    if (this.stoppedAt !== null && this.context.strictStop)
+      throw new DOMException('stop() was already called', 'InvalidStateError');
     this.stoppedAt = when;
   }
   addEventListener(_type: 'ended', listener: () => void) {
@@ -107,6 +109,8 @@ export class FakeAudioContext implements ContextLike {
   currentTime = 0;
   state = 'running';
   readonly connected = new Set<NodeLike>();
+  /** Behave like older browsers that refuse a second stop() on a source. */
+  strictStop = false;
   readonly gains: FakeGain[] = [];
   readonly sources: FakeSource[] = [];
   readonly destination: NodeLike = { connect: () => undefined, disconnect: () => undefined };

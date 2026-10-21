@@ -118,6 +118,31 @@ describe('MusicEngine', () => {
     expect(context().connected.has(fadeA as never)).toBe(false);
   });
 
+  it('never overlaps more than two tracks, however fast they change', async () => {
+    const { engine, context } = setup();
+    for (const target of [A, B, C]) {
+      engine.play(target, 1);
+      await flush();
+    }
+    context().currentTime = 0.5;
+    engine.play(null, 1);
+    const [a, b, c] = context().sources;
+    expect(c?.stoppedAt).toBe(1.5);
+    expect([a?.stoppedAt, b?.stoppedAt]).toEqual([0.55, 0.55]);
+    expect(context().gains[1]?.gain.events.at(-1)).toEqual({ type: 'ramp', value: 0, time: 0.55 });
+  });
+
+  it('lets the first stop stand where a browser refuses a second one', async () => {
+    const { engine, context } = setup();
+    engine.play(A, 1);
+    await flush();
+    context().strictStop = true;
+    engine.play(null, 2);
+    engine.play(A, 1);
+    expect(() => engine.play(null, 1)).not.toThrow();
+    expect(context().sources[0]?.stoppedAt).toBe(2);
+  });
+
   it('carries on from where a paused track stopped, and starts previews at the beginning', async () => {
     const { engine, context } = setup();
     engine.play(A, 1);

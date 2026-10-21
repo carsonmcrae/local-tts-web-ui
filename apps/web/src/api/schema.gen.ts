@@ -658,7 +658,7 @@ export type paths = {
     put?: never;
     /**
      * Test Audiobookshelf
-     * @description Check the address and key by listing the libraries and folders the key can upload to.
+     * @description Check an address and key (the saved ones, or ones not saved yet) by listing what the key can upload to.
      */
     post: operations['test_audiobookshelf_api_integrations_audiobookshelf_test_post'];
     delete?: never;
@@ -3677,7 +3677,11 @@ export interface operations {
       path?: never;
       cookie?: never;
     };
-    requestBody?: never;
+    requestBody?: {
+      content: {
+        'application/json': components['schemas']['AbsSettingsIn'] | null;
+      };
+    };
     responses: {
       /** @description Successful Response */
       200: {
@@ -3686,6 +3690,15 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['AbsLibrary'][];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
         };
       };
     };

@@ -123,7 +123,8 @@ def test_export_resume_readiness_removal_and_empty_ranges(client: TestClient, se
     assert client.get(f"/api/exports/{finished['id']}/download").status_code == 200
     assert client.post(f"/api/exports/{finished['id']}/resume").json()["error"]["code"] == "not_resumable"
     assert client.delete(f"/api/exports/{finished['id']}").status_code == 204
-    assert client.get(f"/api/exports/{finished['id']}/download").json()["error"]["code"] == "export_missing"
+    gone = client.get(f"/api/exports/{finished['id']}/download")  # deleting removes the export itself
+    assert gone.status_code == 404 and gone.json()["error"]["code"] == "job_not_found"
 
     empty = wait_job(client, client.post("/api/exports", json={**body, "firstSection": 5}).json()["id"])
     assert empty["status"] == "failed" and empty["errorCode"] == "empty_export"

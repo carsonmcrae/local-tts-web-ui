@@ -89,6 +89,21 @@ def test_settings_keep_the_key_secret(client: TestClient, shelf: FakeShelf) -> N
                                                                      "hasKey": False}  # fmt: skip
 
 
+def test_a_connection_can_be_tested_before_it_is_saved(client: TestClient, shelf: FakeShelf) -> None:
+    trial = {"url": "http://192.168.1.21:13378/", "apiKey": KEY}
+    found = client.post("/api/integrations/audiobookshelf/test", json=trial).json()
+    assert found[0]["id"] == "lib_1"
+    assert str(shelf.requests[-1].url) == "http://192.168.1.21:13378/api/libraries"
+    assert client.get("/api/integrations/audiobookshelf").json()["configured"] is False  # nothing saved
+    no_key = client.post("/api/integrations/audiobookshelf/test", json={"url": "http://192.168.1.21:13378"})
+    assert no_key.json()["error"]["code"] == "audiobookshelf_not_set_up"
+    configure(client)
+    other = client.post("/api/integrations/audiobookshelf/test", json={"url": "http://192.168.1.22:13378"})
+    assert other.status_code == 200 and shelf.requests[-1].headers["authorization"] == f"Bearer {KEY}"
+    bad = client.post("/api/integrations/audiobookshelf/test", json={"url": "ftp://server/"})
+    assert bad.json()["error"]["code"] == "invalid_url"
+
+
 def finished_export(client: TestClient, fmt: str, monkeypatch: pytest.MonkeyPatch) -> tuple[str, str]:
     doc_id = client.post("/api/documents/text", json={"text": "One. Two.", "title": "Short"}).json()["id"]
     client.put(f"/api/documents/{doc_id}/details", json={"author": "A. Writer"})

@@ -163,6 +163,8 @@ def test_cancel_discards_saved_sentences_and_delete_waits_for_a_stop(
     services.exports.pause(paused["id"])
     wait_job(client, paused["id"])
     assert client.post(f"/api/exports/{paused['id']}/cancel").json()["status"] == "canceled"
+    assert client.delete(f"/api/exports/{paused['id']}").status_code == 204  # gone from the list too
+    assert paused["id"] not in [item["job"]["id"] for item in client.get("/api/exports").json()]
     assert client.post(f"/api/exports/{'0' * 32}/resume").status_code == 404
 
 

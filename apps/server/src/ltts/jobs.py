@@ -22,7 +22,7 @@ from typing import Any
 
 from ltts.common import ApiModel, new_id, utc_now
 from ltts.db import Database
-from ltts.errors import AppError, NotFoundError
+from ltts.errors import AppError, ConflictError, NotFoundError
 
 log = logging.getLogger("ltts.jobs")
 _WRITE_INTERVAL_S = 0.5
@@ -251,6 +251,13 @@ class JobManager:
     def pausing(self, job_id: str) -> bool:
         """Whether a stop requested for this job is a pause (its work is kept) rather than a cancel."""
         return job_id in self._pausing
+
+    def forget(self, job_id: str) -> None:
+        """Remove a stopped job from the history (a running job can't be forgotten)."""
+        if self.get(job_id).status in (JobStatus.QUEUED, JobStatus.RUNNING):
+            raise ConflictError("That job is still running.", code="job_running")
+        with self._db.connect() as conn:
+            conn.execute("DELETE FROM jobs WHERE id = ?", (job_id,))
 
     def mark(self, job_id: str, status: JobStatus, message: str) -> None:
         """Record a stopped job's status, such as a paused job that is then canceled."""

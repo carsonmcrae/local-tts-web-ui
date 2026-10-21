@@ -3,8 +3,9 @@
 /**
  * Purpose: The optional Audiobookshelf connection in Settings.
  * Scope: The server address and API key (a password field; a saved key is never shown, and an
- *   empty field keeps it), "Test connection" (which saves the address and key, then lists the
- *   libraries and folders the key can upload to), choosing a library and folder, saving, and
+ *   empty field keeps it), "Test connection" (which tries the address and key as typed, without
+ *   saving them, and lists the libraries and folders the key can upload to), choosing a library and
+ *   folder, saving, and
  *   forgetting everything after a confirmation, with a short note on where uploads go.
  * Does NOT belong: Sending exports (features/exports/SendToShelf) or storing the key (server).
  */
@@ -130,9 +131,7 @@ function ShelfForm({ saved }: Readonly<{ saved: ShelfSettings | undefined }>) {
     if (!valid()) return;
     setTesting(true);
     try {
-      await save.mutateAsync(input()); // the test uses the saved address and key
-      setApiKey('');
-      const found = await test.mutateAsync();
+      const found = await test.mutateAsync(input()); // nothing is saved until Save
       const library = found.find((item) => item.id === libraryId) ?? found[0];
       const folder = library?.folders.find((item) => item.id === folderId) ?? library?.folders[0];
       setLibraries(found);
@@ -224,9 +223,7 @@ function ShelfForm({ saved }: Readonly<{ saved: ShelfSettings | undefined }>) {
         >
           Test connection
         </Button>
-        <p className="text-[13px] text-muted">
-          Saves the address and key, then lists your libraries.
-        </p>
+        <p className="text-[13px] text-muted">Nothing is saved until you press Save.</p>
       </div>
       {libraries ? (
         <Destination

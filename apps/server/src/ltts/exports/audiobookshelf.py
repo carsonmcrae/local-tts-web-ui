@@ -102,24 +102,26 @@ class Audiobookshelf:
         with self._db.connect() as conn:
             conn.execute("DELETE FROM integrations WHERE name = ?", (NAME,))
 
-    def _client(self) -> tuple[httpx.Client, str]:
+    def _client(self, trial: AbsSettingsIn | None = None) -> tuple[httpx.Client, str]:
+        """A client for the saved settings, or for ``trial`` (unsaved; an empty key means the saved one)."""
         current = self.settings()
-        key = self._secrets.get(SECRET_NAME)
-        if not current.configured or not current.url or not key:
+        url = _base(trial.url) if trial else current.url
+        key = (trial.api_key.strip() if trial and trial.api_key else None) or self._secrets.get(SECRET_NAME)
+        if not (trial or current.configured) or not url or not key:
             raise ConflictError("Set up Audiobookshelf in Settings first.", code="audiobookshelf_not_set_up")
         client = httpx.Client(
-            base_url=current.url,
+            base_url=url,
             headers={"Authorization": f"Bearer {key}"},
             timeout=TIMEOUT,
             follow_redirects=False,
             trust_env=False,
             transport=self._transport,
         )
-        return client, current.url
+        return client, url
 
-    def libraries(self) -> list[AbsLibrary]:
-        """The libraries and folders the key can upload to (also tests the connection)."""
-        client, url = self._client()
+    def libraries(self, trial: AbsSettingsIn | None = None) -> list[AbsLibrary]:
+        """The libraries and folders the key can upload to: tests the saved settings, or ``trial`` unsaved."""
+        client, url = self._client(trial)
         with client:
             data = self._json(client, "GET", "/api/libraries", url)
         raw = data.get("libraries", data) if isinstance(data, dict) else data

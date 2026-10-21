@@ -163,6 +163,7 @@ class ExportService:
         if self._jobs.get(job_id).status in (JobStatus.QUEUED, JobStatus.RUNNING):
             raise ConflictError("Pause or cancel the export before deleting it.", code="export_running")
         ExportWorkspace(self._settings.resolved_data_dir / "exports" / job_id).remove()
+        self._jobs.forget(job_id)  # gone from the list too
 
     def clean_orphans(self) -> int:
         """Remove export folders whose job no longer exists or was canceled (startup housekeeping)."""

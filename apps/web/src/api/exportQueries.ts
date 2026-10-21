@@ -169,9 +169,13 @@ export function useForgetShelf() {
 }
 
 /** Checks the saved address and key by listing the libraries and folders the key can upload to. */
+/** Lists what a key can upload to: for `trial` settings (not saved; no key means the saved one). */
 export function useTestShelf() {
   return useMutation({
-    mutationFn: () =>
-      api<ShelfLibrary[]>('/api/integrations/audiobookshelf/test', { method: 'POST' }),
+    mutationFn: (trial: ShelfSettingsInput) =>
+      api<ShelfLibrary[]>('/api/integrations/audiobookshelf/test', {
+        method: 'POST',
+        body: JSON.stringify(trial),
+      }),
   });
 }

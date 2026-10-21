@@ -47,12 +47,16 @@ function setup(
     api.calls
       .filter((call) => call.method === 'PUT')
       .map((call) => JSON.parse(String(call.body)) as ShelfSettingsInput);
-  return { ...api, saves, user: userEvent.setup() };
+  const tests = () =>
+    api.calls
+      .filter((call) => call.method === 'POST' && call.path.endsWith('/test'))
+      .map((call) => JSON.parse(String(call.body)) as ShelfSettingsInput);
+  return { ...api, saves, tests, user: userEvent.setup() };
 }
 
 describe('Audiobookshelf settings', () => {
   it('tests the connection, picks a library and folder and saves, never showing the key', async () => {
-    const { saves, user } = setup();
+    const { saves, tests, user } = setup();
     const section = await screen.findByRole('region', { name: 'Audiobookshelf' });
     const key = await within(section).findByLabelText('API key');
     expect(key).toHaveAttribute('type', 'password');
@@ -61,9 +65,8 @@ describe('Audiobookshelf settings', () => {
     await user.type(key, KEY);
     await user.click(within(section).getByRole('button', { name: 'Test connection' }));
     expect(await within(section).findByText('Connected. Choose where new audiobooks go.')).toBeInTheDocument(); // prettier-ignore
-    expect(saves()).toEqual([{ url: 'http://192.168.1.20:13378', apiKey: KEY, libraryId: null, folderId: null }]); // prettier-ignore
-    expect(key).toHaveValue('');
-    expect(within(section).getByText('Saved, leave empty to keep it.')).toBeInTheDocument();
+    expect(saves()).toEqual([]); // a test saves nothing
+    expect(tests()).toEqual([{ url: 'http://192.168.1.20:13378', apiKey: KEY, libraryId: null, folderId: null }]); // prettier-ignore
     expect(within(section).getByLabelText('Library')).toHaveValue('books');
     expect(within(section).getByLabelText('Folder')).toHaveValue('f1');
     await user.selectOptions(within(section).getByLabelText('Library'), 'talks');
@@ -71,7 +74,9 @@ describe('Audiobookshelf settings', () => {
     await user.selectOptions(within(section).getByLabelText('Folder'), '/talks/new');
     await user.click(within(section).getByRole('button', { name: 'Save' }));
     expect(await screen.findByText('Audiobookshelf saved')).toBeInTheDocument();
-    expect(saves()[1]).toEqual({ url: 'http://192.168.1.20:13378', libraryId: 'talks', folderId: 'f3' }); // prettier-ignore
+    expect(saves()).toEqual([{ url: 'http://192.168.1.20:13378', apiKey: KEY, libraryId: 'talks', folderId: 'f3' }]); // prettier-ignore
+    expect(key).toHaveValue('');
+    expect(within(section).getByText('Saved, leave empty to keep it.')).toBeInTheDocument();
     expect(within(section).getByText('Set up')).toBeInTheDocument();
     expect(document.body).not.toHaveTextContent(KEY);
     expect(section).toHaveTextContent('Uploads go only to this server');
@@ -81,7 +86,7 @@ describe('Audiobookshelf settings', () => {
   it('keeps a saved key, checks the address first and explains a failed test', async () => {
     const saved: ShelfSettings = { configured: true, url: 'http://shelf.local', libraryId: 'books', folderId: 'f1', hasKey: true }; // prettier-ignore
     const refused = json({ error: { code: 'audiobookshelf_error', message: 'Audiobookshelf refused the API key.' } }, 502); // prettier-ignore
-    const { saves, user } = setup(saved, refused);
+    const { saves, tests, user } = setup(saved, refused);
     const section = await screen.findByRole('region', { name: 'Audiobookshelf' });
     expect(await within(section).findByLabelText('Server address')).toHaveValue(
       'http://shelf.local',
@@ -101,7 +106,8 @@ describe('Audiobookshelf settings', () => {
     await user.type(address, 'https://shelf.local');
     await user.click(within(section).getByRole('button', { name: 'Test connection' }));
     expect(await within(section).findByRole('alert')).toHaveTextContent('Audiobookshelf refused the API key.'); // prettier-ignore
-    expect(saves()).toEqual([{ url: 'https://shelf.local', libraryId: 'books', folderId: 'f1' }]);
+    expect(tests()).toEqual([{ url: 'https://shelf.local', libraryId: 'books', folderId: 'f1' }]);
+    expect(saves()).toEqual([]);
     expect(within(section).queryByLabelText('Library')).not.toBeInTheDocument();
   });
 

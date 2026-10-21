@@ -19,6 +19,7 @@ import sqlite3
 import threading
 import time
 from dataclasses import dataclass, field
+from datetime import UTC, datetime, timedelta
 
 from ltts.common import ApiModel, new_id, utc_now
 from ltts.db import Database
@@ -30,6 +31,7 @@ CODE_TTL_S = 300.0
 MAX_WRONG_PER_CODE = 10
 MAX_TRIES_PER_MINUTE = 5  # per address
 MAX_DEVICES = 20
+SEEN_EVERY = timedelta(minutes=1)  # how often a device's last-seen time is written
 TOKEN_PREFIX = "ttsd_"  # noqa: S105 - a marker that makes a leaked device token recognisable
 
 
@@ -151,7 +153,12 @@ class DeviceStore:
             row = conn.execute("SELECT * FROM lan_devices WHERE token_hash = ?", (_hash(token),)).fetchone()
             if row is None:
                 return None
-            conn.execute("UPDATE lan_devices SET last_seen_at = ? WHERE id = ?", (utc_now(), row["id"]))
+            now = datetime.now(UTC)
+            if row["last_seen_at"] is None or row["last_seen_at"] < (now - SEEN_EVERY).isoformat(timespec="seconds"):
+                conn.execute(
+                    "UPDATE lan_devices SET last_seen_at = ? WHERE id = ?",
+                    (now.isoformat(timespec="seconds"), row["id"]),
+                )
         return _out(row)
 
     def remove(self, device_id: str) -> None:

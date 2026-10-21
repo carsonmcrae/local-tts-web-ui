@@ -6,184 +6,8 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
-## [2.1.0] - 2026-10-21
-
-What's new for readers and listeners, in short:
-
-- **More to read.** HTML, FB2 and MOBI books, web pages by their address, and PDFs that skip their
-  running headers, page numbers, footnotes and citation markers while keeping every word visible
-  (and letting you undo it).
-- **Audiobooks you can finish.** M4B audiobooks with chapters and a cover, read-along EPUB books,
-  exports that pause, resume and survive a restart, a queue that shows each export's place, and
-  one-click sending to your own Audiobookshelf.
-- **Stories that sound like stories.** Characters get their own voices, quoted speech and narration
-  are told apart, sentences can be read as an announcement, a phone call or a memory, and pasted
-  text understands speech marks such as `{pause 2s}`.
-- **A shorter studio session.** Voice Studio now asks for about a dozen good passages instead of
-  48, shows what your voice still needs, and says plainly when better audio would help more than
-  more recordings. No model is trained; your clean takes and speaking styles are what make the
-  voice yours.
-- **Say it right.** Select a word in the reader, write it the way it sounds (gnocchi → NYOH-kee),
-  hear both versions, and keep the fix for one document or all of them.
-- **Phones and tablets.** Pair a phone on your home Wi-Fi to read and listen from it, with the
-  computer doing the work. Plain HTTP for now, so home networks only; settings, voices and
-  deleting stay on the computer.
-- **For your other programs.** An optional local speech API that works with OpenAI-style clients,
-  off until you turn it on.
-- **Easier on the eyes.** A high-contrast option, wider letter spacing for the reading text, and
-  support for Windows high-contrast themes.
-- **Experimental, off by default.** Fine-tuning a studio voice on its takes exists for those with an
-  NVIDIA GPU; in a blind test it didn't sound clearly better, so keep it only if you prefer it.
-
-The full list follows.
-
 ### Added
 
-- **Fix a word's pronunciation from the reader.** Select it, choose **Fix pronunciation**, write it
-  the way it sounds (gnocchi → NYOH-kee) and hear the word and your respelling side by side before
-  saving it for this document or for all documents. Document rules win over library ones and go
-  with the document; Settings → Pronunciation shows each rule's scope. Respellings with capitals
-  for stress are read as words, never spelled out, and your documents' text never changes.
-- **Exports wait their turn.** One runs at a time and up to four wait, each showing its place in
-  line; beyond that, starting or resuming is refused with a clear reason, for this computer and
-  paired devices alike. Exports check free disk space before starting and while they run, and stop
-  resumably when it runs out. Only one studio voice build or fine-tune runs at a time, and each
-  engine caps waiting on-demand sentences while keeping room for playback.
-- **Studio progress that weighs the recordings:** a voice is complete only when one take is long and
-  clean enough for its sound; when most takes are noisy, the session says better audio would help
-  instead of suggesting more passages.
-- A real-phone checklist for LAN mode (`docs/guides/lan-phone-checklist.md`) and a design for HTTPS
-  on phones with a local certificate authority (`docs/research/lan-https.md`, not built).
-- **Fine-tune a studio voice (experimental).** **Fine-tune this voice** trains a small adapter
-  (about 13 MB) on the takes a studio voice kept, on your own NVIDIA graphics card, in a few
-  minutes. It stops once passages it held back stop getting closer to your reading, and offers
-  nothing if it barely helped. You hear three sentences **Now** and **Fine-tuned**, then keep or
-  discard it; **Remove fine-tune** goes back. Nothing new is downloaded or installed, and nothing
-  trains unless you press the button. In a blind listening test it didn't sound clearly better
-  than the voice without it.
-- **A shorter, honest studio session.** The tiers now follow what a studio voice actually uses:
-  **Foundation** (a working voice), **Developing** (its sound has settled after twelve clean takes)
-  and **Complete** (every speaking style has its three takes). Each style shows its takes out of
-  three, the session suggests the **most useful next** passage (**Go to it**), and a complete
-  session says more passages won't change the voice: about 15 passages instead of 48. The intro
-  and docs say plainly that no model is trained. See the
-  [studio voice audit](docs/research/studio-voice-audit.md).
-- **Switch to the previous expression:** rebuilding a studio voice's speaking styles keeps the
-  ones from before, and you can switch back (and forward again).
-- **A blind listening panel** for comparing several voices: `ltts voice-panel make` and
-  `ltts voice-panel score` (ratings with 95 % intervals and a paired sign test).
-- **Local speech API:** OpenAI's voice names (alloy, nova, shimmer and the rest) read with fixed
-  built-in Kokoro voices (`GET /v1/voices` shows them as `openai_name`). Settings shows the exact
-  address to use with a Copy button and warns when TTSNative has moved to another port since a
-  program last used it; `npm run start` and `npm run dev` warn in the terminal too.
-- **Footnotes and citation markers in the cleanup.** PDF footnotes at the foot of a page (small
-  type below the text, starting with a number that marks a word on the page) are skipped like
-  running headers, and citation markers such as [12], [3, 4] or [5–7] are left unread; both can be
-  reviewed and read again.
-- **Listening times count what is read.** Library cards, the reader and the player count only what
-  is read aloud, and update when you skip a sentence, read one again or undo the cleanup.
-- **LAN mode, hardened.** A phone's pairing works only from the address it paired from and ends
-  after 30 days (or 14 days unused); the computer shows a refused use of a device's cookie, and the
-  phone says why it must pair again. Paired devices reach only an explicit list of features (voice
-  recordings, cancelling the computer's jobs and the data folder's path are no longer available to
-  them). LAN mode turns itself off when the computer's network changes or after it slept, the
-  address list hides virtual-machine and container adapters and labels VPNs, turning it off stops
-  at once (downloads included), unpaired devices may send only small requests, and costly work from
-  one device is limited. The sidebar shows when LAN mode is on. See
-  [HTTPS options for phones](docs/research/lan-https.md).
-- Research: [what a studio voice's recordings do](docs/research/studio-voice-audit.md), measured on
-  a real session, and [open speech engines compared](docs/research/engine-comparison.md) for
-  studio voices, with licences for code, weights and output checked separately.
-- **Local speech API** (optional, off by default): an OpenAI-compatible `POST /v1/audio/speech`
-  with `GET /v1/models` and `GET /v1/voices`, so scripts, screen readers and home automation on
-  this computer can use TTSNative voices (MP3, WAV, FLAC, Ogg Opus or raw PCM). Set up in
-  **Settings → Local speech API**: a token shown once and stored only as a hash (revoke or replace it
-  at any time), custom voices refused until you allow each one, requests from other devices refused
-  unless allowed, and web pages always refused. Limits on input length, body size, requests a
-  minute, one request at a time and time per request. A **Speech API in use** sign shows while a
-  program uses it. See [the guide](docs/guides/local-speech-api.md).
-- **Phones and tablets (LAN mode)** (optional, off by default and after every restart): read and
-  listen on other devices on the same Wi-Fi. Turn it on in **Settings → Phones and tablets**, which
-  first says what a paired device can and can't do, then pair each device once with a QR code or an
-  eight-character code (five minutes, used once). Paired devices can read, listen, change reading
-  settings, add documents and run exports, but this computer's own settings, voices, engines and
-  deleting documents stay here. Remove one or all devices at any time; turning it off stops at once.
-  Plain HTTP on your network, nothing opened on the router. See
-  [Other Devices](docs/wiki/Other-Devices.md).
-- **Installable app and an offline notice** (on this computer): a web app manifest and a careful
-  service worker that keeps only the app shell (never documents, audio or API answers), so the app
-  opens without the server and says it can't reach it. A **Reconnecting…** bar appears while the
-  server doesn't answer and goes away by itself.
-- **Audiobook exports you can pause and resume.** Exports save each sentence as it is made, so a
-  paused, interrupted (even by a crash or restart) or failed export carries on with only the missing
-  sentences. A new **Exports** page lists them with Resume, Cancel, Download and Delete.
-- **M4B audiobooks** with chapters, title, author, narrator, description and a cover (made with your
-  own ffmpeg; the app says how to get it if it's missing), and **read-along EPUB 3** books whose text
-  is highlighted as the audio plays (Media Overlays).
-- **Send to Audiobookshelf** (optional): set your server address, API key (stored encrypted on
-  Windows, never shown again), library and folder in Settings, then send a finished export.
-- **More documents:** HTML pages, FB2 (and `.fb2.zip`) and MOBI books (DRM-protected books are
-  refused, never unlocked), and **Import a web page** by its address: only public http(s) addresses,
-  every redirect re-checked, connections pinned to the checked address, size and time limits.
-- **A careful cleanup of running headers, page numbers and footnote markers.** They're skipped when
-  reading aloud and exporting, but stay visible (marked "skipped"), and **Read them all again** undoes
-  it; any sentence can be skipped or read by hand. Detection prefers missing one to skipping real text
-  (it needs three or more pages, and page numbers that count along with the pages).
-- **Speech marks** (optional, when pasting text): `{pause 2s}`, `{voice Sam}…{/voice}`,
-  `{effect radio}…{/effect}`, `{style calm}…{/style}`, `{sound laugh}` and `{say Kael = Kay-el}`
-  become sentence settings; the stored text never contains them, and unknown marks are listed.
-- **Characters, takes, styles and pauses in the reader.** Quoted speech is read in the dialogue voice
-  while the narration keeps the reading voice; characters named by dialogue tags ("…," said Mira) can
-  each get a voice, saved as reusable cast presets. Studio voices can read a sentence in another
-  speaking style, try other takes of it and keep the best, and any sentence can get a longer or
-  shorter pause after it. New effects: **Quiet** (an aside or near-whisper) and **Memory** (a
-  flashback).
-- **Voice blends:** mix two to four built-in voices into a new one on the Voices page.
-- **Better studio takes:** the background is named when it matters (a hum, a low rumble, hiss,
-  clicks or other voices), a take cut off mid-word is pointed out, recording a passage again keeps
-  the previous take to compare and restore, the session shows its tier (Foundation, Developing,
-  Complete) and which speaking styles your takes can teach, and microphone problems (blocked,
-  unplugged mid-take, not responding, no sound) say what happened and what to do.
-- **A voice file preview:** choosing a `.ttsvoice` file shows its name, description, creator,
-  styles, size and app version after checking it completely, before anything is imported; a file
-  from a newer TTSNative says so. An import never replaces one of your voices. The format is
-  documented in [docs/reference/ttsvoice-format.md](docs/reference/ttsvoice-format.md).
-- **Blind A/B voice comparisons** for quality work: `ltts voice-ab compare` and `ltts voice-ab score`
-  (see [voice quality research](docs/research/voice-quality.md)).
-- **Accessibility:** a high-contrast option (also following the system setting), wider letter and
-  word spacing for the reading text, and support for Windows high-contrast themes.
-- **Expressive studio voices.** A studio voice keeps a speaking style for questions, lively lines,
-  dialogue and narration, learnt from your takes of the matching passages, and reads each sentence
-  in the style its punctuation asks for (the sound of the voice stays the same). Voices built
-  earlier get **Improve expression**, which learns the styles from the takes they kept.
-- **Natural sentence-to-sentence delivery for custom voices.** Each sentence is generated from a
-  seed taken from its text (so it always sounds the same) and is generated again when it comes out
-  implausibly short or long. Every sentence is then levelled to the built-in voices' loudness, with
-  silent edges trimmed and long pauses shortened.
-- **Studio recording guidance.** Every passage has **How to read it**: the inflection and pauses it
-  teaches. **Listen to this take** before recording again, and **All passages** jumps to any passage
-  and shows which are recorded, have advice or need another take.
-- **An early studio voice.** A longer foundation passage (about a minute) plus 45 seconds of speech
-  is enough to build an early version, with a clear warning that it's less complete than a full
-  session.
-- **Smarter take checks.** A take with no speech gets one message about the cause instead of every
-  measurement that follows from it. Full takes estimate how much of the passage was read (syllables
-  heard and speaking time, calibrated to the speaker) and compare background noise with the
-  speaker's other takes. Both are advice and never block a take.
-- **Share voices** as `.ttsvoice` files after confirming it's your voice (or the owner agreed). The
-  file holds the built voice, its styles and a short reference; your session recordings stay on the
-  computer. **Import a voice** needs your consent, and every file is checked: allowed names, sizes,
-  checksums, the audio and each safetensors header, with no code run.
-- **Characters and effects in the reader.** Select text and choose **Voice & effect** to read those
-  sentences:
-  - in another voice or accent;
-  - as a loudspeaker announcement, a telephone call, a radio broadcast, in a large hall, far away or
-    as a robot;
-  - with a sound before them (custom voices, experimental).
-
-  **Voices & effects** sets one voice for all quoted dialogue. Exports sound the same as playback.
-- Research notes on [cloned voice quality](docs/research/voice-quality.md) and
-  [feature suggestions](docs/research/feature-suggestions.md) from comparable open-source apps.
 - **Model integrity checks and repair.** Every model file is checked against its published SHA-256
   checksum before an engine loads it, including files installed long ago. A missing, incomplete or
   mismatched file puts the engine in a **Needs repair** state that names the file, and **Repair**
@@ -231,11 +55,6 @@ The full list follows.
 
 ### Changed
 
-- The **Steady** delivery uses temperature 0.7 and top-k 600 for steadier prosody. Custom voices'
-  audio is generated again once (engine revision `worker-2`).
-- Background noise in a studio take is advice, not an error. Noisy takes still count but never give
-  the voice its sound.
-- Selecting text in the reader no longer starts playback from the sentence you clicked.
 - **Renamed to TTSNative** (formerly Local TTS), with a new identity: an N drawn as five waveform bars,
   the app icon and favicon, logos and a brand guide (`brand/`). The repository is now
   `carsonmcrae/ttsnative`; old GitHub links redirect. Internal identifiers are unchanged, so existing
@@ -257,41 +76,11 @@ The full list follows.
 
 ### Fixed
 
-- Pausing or cancelling an export never ends it as failed, and cancelling removes everything it made
-  as soon as it stops; after a crash, half-built files are tidied and saved sentences kept for
-  Resume. Exports left for two weeks show how much space they use instead of being deleted.
-- Room tone in the pauses of a cloned voice is never louder than the background heard just before
-  the pause, and stays silent after a sentence that ends in near-silence.
-- `npm run start` reads `LTTS_API_PORT`, like `npm run dev` (the older `LTTS_PORT` still works).
-- Cloned voices no longer drop to dead silence between sentences: a voice that carries its recordings'
-  faint hiss or hum keeps that room tone through the pauses after sentences and between narration
-  and quoted speech, so the background doesn't switch off and on. Built-in voices are unchanged.
-- Numbers in brackets are no longer dropped from speech: `array[3]`, `x[i+1]`, `matrix[2][3]`,
-  `[0, 1]` and `list[-1]` are read as written, in the speech API too. In documents added before
-  this version, citation numbers like [12] are read until the document is added again.
-- Superscripts in equations (a² + b² = c², sin² x) are no longer taken for footnote markers.
-- Reading progress reaches 100 % at the last sentence that is read, even when the last page number
-  is skipped.
-- Local speech API: a request body that takes more than 30 seconds gets 408; a client that
-  disconnects no longer causes a server error or an extra sentence of work; and any voice made
-  from a recording is refused unless you allowed it, whatever its id.
-- The A/B comparison's default sentences are no longer taken from the studio recording script, so
-  a studio or fine-tuned voice is compared on text it has never read.
-- Privacy and the speech API section now say when LAN mode lets other devices in.
-- Library cards no longer push the page sideways on phones.
 - **Website on phones:** the install commands scroll sideways on narrow screens and can now be reached
   and scrolled with a keyboard (a labelled, focusable region). The phone tests now run axe.
 
 ### Security
 
-- TTSNative refuses requests passed on by a reverse proxy, tunnel or port forward, and treats a
-  request as the person at the computer only from `localhost`, `127.0.0.1` or `[::1]`, so a proxy
-  can't pass for them.
-- LAN mode turns on only for a network Windows lists as private (it explains how to mark a home
-  network private) and turns itself off if the network becomes public; on macOS and Linux you
-  confirm each time that it's a home network you trust.
-- Phones and tablets can no longer delete or cancel exports or send them to Audiobookshelf; Settings
-  and the pairing page say what works over LAN mode's plain HTTP and what would need HTTPS.
 - **ONNX Runtime telemetry is now switched off.** Official ONNX Runtime builds send usage telemetry
   to Microsoft by default (Windows TraceLogging, or HTTPS on other platforms). TTSNative now sets
   `ORT_DISABLE_TELEMETRY` and calls `disable_telemetry_events()` before Kokoro loads, so the
@@ -364,7 +153,6 @@ fresh with `npm install && npm run dev`.
 Initial Gradio prototype (`kokoro_tts_ui.py`), tagged `v1.0.0` at commit `1452251`. See
 [docs/architecture/legacy-audit.md](docs/architecture/legacy-audit.md).
 
-[Unreleased]: https://github.com/carsonmcrae/ttsnative/compare/v2.1.0...HEAD
-[2.1.0]: https://github.com/carsonmcrae/ttsnative/compare/v2.0.0...v2.1.0
+[Unreleased]: https://github.com/carsonmcrae/ttsnative/compare/v2.0.0...HEAD
 [2.0.0]: https://github.com/carsonmcrae/ttsnative/compare/v1.0.0...v2.0.0
 [1.0.0]: https://github.com/carsonmcrae/ttsnative/tree/v1.0.0

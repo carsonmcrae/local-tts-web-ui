@@ -1,7 +1,7 @@
 {
   "//": "Purpose: The React web UI package. Scope: Runtime UI dependencies and web-only scripts (vite, vitest). Does NOT belong: Repository-wide tooling (root package.json).",
   "name": "@ltts/web",
-  "version": "2.1.0",
+  "version": "2.0.0",
   "author": "Carson McRae",
   "homepage": "https://github.com/carsonmcrae/ttsnative",
   "repository": {

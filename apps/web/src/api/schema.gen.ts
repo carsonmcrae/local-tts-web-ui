@@ -672,6 +672,23 @@ export type paths = {
     patch?: never;
     trace?: never;
   };
+  '/api/exports/queue': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Export Queue */
+    get: operations['export_queue_api_exports_queue_get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/health': {
     parameters: {
       query?: never;
@@ -790,7 +807,8 @@ export type paths = {
     get: operations['lan_status_api_lan_get'];
     /**
      * Update Lan
-     * @description Turn LAN mode on (on the main server's port) or off; turning it off stops listening at once.
+     * @description Turn LAN mode on (on the main server's port, on a network the person trusts) or off; turning it off
+     *     stops listening at once.
      */
     put: operations['update_lan_api_lan_put'];
     post?: never;
@@ -918,6 +936,26 @@ export type paths = {
     /** Put Preferences */
     put: operations['put_preferences_api_preferences_put'];
     post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/pronunciation-preview': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Preview Pronunciation
+     * @description Render a word as written, or its respelling, in a voice; play the clip from ``audioUrl``.
+     */
+    post: operations['preview_pronunciation_api_pronunciation_preview_post'];
     delete?: never;
     options?: never;
     head?: never;
@@ -2024,14 +2062,43 @@ export type components = {
        */
       format: 'wav' | 'mp3' | 'm4b' | 'epub';
       job: components['schemas']['JobOut'];
+      /** Queueposition */
+      queuePosition?: number | null;
       /** Savedsentences */
       savedSentences: number;
       /** Sentences */
       sentences: number;
+      /**
+       * Stale
+       * @default false
+       */
+      stale: boolean;
       /** Title */
       title: string;
       /** Workingbytes */
       workingBytes: number;
+    };
+    /**
+     * ExportQueueOut
+     * @description How busy exporting is, and why a new export (or a resume) can't start now.
+     */
+    ExportQueueOut: {
+      /** Blocked */
+      blocked: ('queue_full' | 'low_disk') | null;
+      /** Freebytes */
+      freeBytes: number;
+      /** Maxrunning */
+      maxRunning: number;
+      /** Maxwaiting */
+      maxWaiting: number;
+      /** Reservebytes */
+      reserveBytes: number;
+      /** Running */
+      running: number;
+      /** Voicejobrunning */
+      voiceJobRunning: boolean;
+      /** Waiting */
+      waiting: number;
     };
     /** ExportRequest */
     ExportRequest: {
@@ -2165,17 +2232,25 @@ export type components = {
       address: string | null;
       /** Addresses */
       addresses: components['schemas']['NetworkAddress'][];
+      /** Category */
+      category?: ('private' | 'domain') | null;
       /** Devices */
       devices: components['schemas']['DeviceOut'][];
       /** Enabled */
       enabled: boolean;
       /** Interface */
       interface: string | null;
+      /**
+       * Networkcheck
+       * @default confirm
+       * @enum {string}
+       */
+      networkCheck: 'category' | 'confirm';
       pairing: components['schemas']['PairingOut'] | null;
       /** Port */
       port: number | null;
       /** Turnedoff */
-      turnedOff?: 'network_changed' | null;
+      turnedOff?: ('network_changed' | 'network_public' | 'network_unknown') | null;
       /** Url */
       url: string | null;
     };
@@ -2185,6 +2260,11 @@ export type components = {
       address?: string | null;
       /** Enabled */
       enabled: boolean;
+      /**
+       * Trustednetwork
+       * @default false
+       */
+      trustedNetwork: boolean;
     };
     /** NetworkAddress */
     NetworkAddress: {
@@ -2303,6 +2383,8 @@ export type components = {
     };
     /** PronunciationIn */
     PronunciationIn: {
+      /** Documentid */
+      documentId?: string | null;
       /**
        * Matchcase
        * @default false
@@ -2317,6 +2399,10 @@ export type components = {
     PronunciationOut: {
       /** Createdat */
       createdAt: string;
+      /** Documentid */
+      documentId?: string | null;
+      /** Documenttitle */
+      documentTitle?: string | null;
       /** Id */
       id: string;
       /**
@@ -2328,6 +2414,30 @@ export type components = {
       sayAs: string;
       /** Word */
       word: string;
+    };
+    /** PronunciationPreviewIn */
+    PronunciationPreviewIn: {
+      /**
+       * Pace
+       * @default 1
+       */
+      pace: number;
+      /**
+       * Respelling
+       * @default false
+       */
+      respelling: boolean;
+      /** Text */
+      text: string;
+      /** Voiceid */
+      voiceId: string;
+    };
+    /** PronunciationPreviewOut */
+    PronunciationPreviewOut: {
+      /** Audiourl */
+      audioUrl: string;
+      /** Durations */
+      durationS: number;
     };
     /** QualityIssue */
     QualityIssue: {
@@ -4455,6 +4565,26 @@ export interface operations {
       };
     };
   };
+  export_queue_api_exports_queue_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ExportQueueOut'];
+        };
+      };
+    };
+  };
   health_api_health_get: {
     parameters: {
       query?: never;
@@ -4912,6 +5042,39 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['Preferences'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  preview_pronunciation_api_pronunciation_preview_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['PronunciationPreviewIn'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['PronunciationPreviewOut'];
         };
       };
       /** @description Validation Error */

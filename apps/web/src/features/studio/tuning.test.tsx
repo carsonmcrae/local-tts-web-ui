@@ -64,7 +64,9 @@ describe('Fine-tuning a voice', () => {
     expect(await screen.findByText(/Experimental: fine-tune the voice/)).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Fine-tune this voice' }));
     await waitFor(() => expect(calls.some((call) => call.path.endsWith('/tuning'))).toBe(true));
-    expect(await screen.findByText(/predicted the passages it didn’t train on 5% better/)).toBeInTheDocument();
+    expect(
+      await screen.findByText(/predicted the passages it didn’t train on 5% better/),
+    ).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Keep fine-tune' })).toBeInTheDocument();
   });
 

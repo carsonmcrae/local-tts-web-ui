@@ -3,8 +3,9 @@
 """Purpose: Wire-format models for the documents API.
 
 Scope: Library summaries, document detail with sections, section contents, paste and web page requests,
-section corrections (title and where it starts), search results and reading-progress updates. ``estimated_seconds``
-is a character-rate estimate until real audio exists.
+section corrections (title and where it starts), search results and reading-progress updates. Counts come
+twice: of all the extracted text (as stored) and of what is read aloud, without skipped sentences and the
+markers left unread; ``estimated_seconds`` is a character-rate estimate of what is read aloud.
 Does NOT belong: Internal extraction structures (``types.py``).
 """
 
@@ -41,12 +42,14 @@ class DocumentSummary(ApiModel):
     filename: str | None
     file_type: str
     size_bytes: int
-    char_count: int
-    word_count: int
+    char_count: int  # all the extracted text
+    word_count: int  # all the extracted text
+    spoken_char_count: int  # what is read aloud: no skipped sentences, no footnote or citation markers
+    spoken_word_count: int
     page_count: int | None
     segment_count: int
     section_count: int
-    estimated_seconds: float
+    estimated_seconds: float  # listening time for what is read aloud
     created_at: str
     last_opened_at: str | None
     progress: ReadingProgress | None = None

@@ -6,7 +6,7 @@ Scope: Insert a fully segmented document atomically (with the sentence annotatio
 such as the automatic cleanup); list/get/delete; fetch a section's or a single segment's text;
 search a document's sentences; rename a section or move where it starts (keeping segments, counts
 and the longer "end of section" pause in step); save and read progress. Rows are mapped to API
-models here.
+models here, with what is read aloud counted as they are read (``spoken.py``).
 Does NOT belong: Validation or extraction (``service.py``).
 """
 
@@ -30,6 +30,7 @@ from ltts.documents.schemas import (
     SectionOut,
     SegmentOut,
 )
+from ltts.documents.spoken import UNREAD_SQL, Unread, unread
 from ltts.documents.structures import SectionInfo, Segment
 from ltts.errors import ConflictError, NotFoundError
 
@@ -44,16 +45,18 @@ ORDER BY COALESCE(p.updated_at, d.created_at) DESC
 """
 
 
-def _summary(row: sqlite3.Row) -> DocumentSummary:
+def _summary(row: sqlite3.Row, unspoken: Unread) -> DocumentSummary:
     progress = None
     if row["p_segment"] is not None:
+        last = unspoken.last_read(row["segment_count"])
         progress = ReadingProgress(
             segment_index=row["p_segment"],
             voice_id=row["p_voice"],
             updated_at=row["p_updated"],
-            # Reaching the last segment counts as finished.
-            percent=round(100 * row["p_segment"] / max(row["segment_count"] - 1, 1), 1),
+            # Reaching the last sentence that is read counts as finished.
+            percent=round(min(100 * row["p_segment"] / max(last, 1), 100), 1),
         )
+    spoken_chars = max(row["char_count"] - unspoken.chars, 0)
     return DocumentSummary(
         id=row["id"],
         title=row["title"],
@@ -62,10 +65,12 @@ def _summary(row: sqlite3.Row) -> DocumentSummary:
         size_bytes=row["size_bytes"],
         char_count=row["char_count"],
         word_count=row["word_count"],
+        spoken_char_count=spoken_chars,
+        spoken_word_count=max(row["word_count"] - unspoken.words, 0),
         page_count=row["page_count"],
         segment_count=row["segment_count"],
         section_count=len(json.loads(row["sections_json"])),
-        estimated_seconds=round(row["char_count"] / CHARS_PER_SECOND, 1),
+        estimated_seconds=round(spoken_chars / CHARS_PER_SECOND, 1),
         created_at=row["created_at"],
         last_opened_at=row["last_opened_at"],
         progress=progress,
@@ -111,7 +116,8 @@ class DocumentRepository:
     def list_all(self) -> list[DocumentSummary]:
         with self._db.connect() as conn:
             rows = conn.execute(_SUMMARY_SQL, {"document_id": None}).fetchall()
-        return [_summary(row) for row in rows]
+            unspoken = unread(conn.execute(UNREAD_SQL, {"document_id": None}))
+        return [_summary(row, unspoken.get(row["id"], Unread())) for row in rows]
 
     def get(self, document_id: str) -> DocumentDetail:
         with self._db.connect() as conn:
@@ -119,7 +125,8 @@ class DocumentRepository:
             if row is None:
                 raise NotFoundError(_DOCUMENT_GONE, code="document_not_found")
             conn.execute("UPDATE documents SET last_opened_at = ? WHERE id = ?", (utc_now(), document_id))
-        summary = _summary(row)
+            unspoken = unread(conn.execute(UNREAD_SQL, {"document_id": document_id}))
+        summary = _summary(row, unspoken.get(document_id, Unread()))
         return DocumentDetail(
             **summary.model_dump(),
             sections=[SectionOut(**s) for s in json.loads(row["sections_json"])],

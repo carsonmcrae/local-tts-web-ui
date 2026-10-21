@@ -13,7 +13,6 @@ import userEvent from '@testing-library/user-event';
 import { expect } from 'vitest';
 import type { JobOut, SessionTake, VoiceSession } from '@/api/types';
 import type * as PcmModule from '@/lib/audio/pcmRecorder';
-import VoiceStudioPage from '@/features/studio/VoiceStudioPage';
 import { json, kokoro, mockApi, preferences, renderWithApp, voice, voiceProfile } from './render';
 
 /** What the fake microphone does next, and which inputs were opened. */
@@ -178,6 +177,9 @@ export async function recordTake(
 
 /** Open Voice Studio and continue the session in progress; returns the wizard dialog. */
 export async function resumeStudioSession() {
+  // Imported here, not at the top: tests mock pcmRecorder with fakePcmModule from this file, and a
+  // top-level import of the page (which loads pcmRecorder) would make that mock wait on itself.
+  const { default: VoiceStudioPage } = await import('@/features/studio/VoiceStudioPage');
   const user = userEvent.setup();
   renderWithApp(<VoiceStudioPage />);
   await user.click(await screen.findByRole('button', { name: 'Continue' }));

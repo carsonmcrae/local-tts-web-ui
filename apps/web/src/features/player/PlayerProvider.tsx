@@ -4,8 +4,10 @@
  * Purpose: Expose one app-wide PlaybackController to React and keep it in sync with preferences.
  * Scope: Creates the controller with real fetch/audio dependencies (or injected ones for tests),
  *   subscribes via useSyncExternalStore, applies saved voice/rate/pace once, debounces progress
- *   saves, and wires the Media Session API (lock-screen and hardware media keys).
- * Does NOT belong: Player UI (PlayerBar) or keyboard shortcuts (useShortcuts).
+ *   saves, wires the Media Session API (lock-screen and hardware media keys) and hosts the
+ *   background music, which follows this player.
+ * Does NOT belong: Player UI (PlayerBar), keyboard shortcuts (useShortcuts) or music rules
+ *   (features/music).
  */
 import { useQueryClient } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
@@ -20,6 +22,7 @@ import {
 } from 'react';
 import { ApiError, api, describeError, prepareAudio } from '@/api/client';
 import { keys, usePreferences } from '@/api/queries';
+import { MusicProvider } from '@/features/music/MusicProvider';
 import type { MediaLike, PlayerState } from './controller';
 import { PlaybackController } from './controller';
 
@@ -137,7 +140,11 @@ export function PlayerProvider({
   useMediaSession(controller, state);
 
   const value = useMemo(() => ({ controller, state }), [controller, state]);
-  return <PlayerContext.Provider value={value}>{children}</PlayerContext.Provider>;
+  return (
+    <PlayerContext.Provider value={value}>
+      <MusicProvider player={controller}>{children}</MusicProvider>
+    </PlayerContext.Provider>
+  );
 }
 
 export function usePlayer(): PlayerContextValue {

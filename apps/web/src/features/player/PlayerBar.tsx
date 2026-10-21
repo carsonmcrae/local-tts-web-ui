@@ -2,8 +2,8 @@
 // Copyright (c) 2026 Carson McRae
 /**
  * Purpose: The persistent audio player docked at the bottom of every screen.
- * Scope: Wires player state to the transport, position, voice, speed, bookmark, sleep-timer and
- *   export controls; persists voice/speed choices as preferences; enables keyboard shortcuts;
+ * Scope: Wires player state to the transport, position, voice, speed, bookmark, background-music,
+ *   sleep-timer and export controls; persists voice/speed choices as preferences; enables keyboard shortcuts;
  *   collapses to a compact layout on phones and announces errors to assistive technology.
  * Does NOT belong: Playback logic (controller.ts) or presentational pieces (PlayerParts.tsx).
  */
@@ -13,6 +13,7 @@ import { Link } from 'react-router';
 import { usePreferences, useSavePreferences, useVoices } from '@/api/queries';
 import { IconButton } from '@/components/ui/Button';
 import { useBookmarkToggle } from '@/features/bookmarks/useBookmarkToggle';
+import { MusicMenu } from '@/features/music/MusicMenu';
 import { ExportDialog } from '@/features/reader/ExportDialog';
 import type { PlayerState } from './controller';
 import {
@@ -128,6 +129,7 @@ export function PlayerBar() {
             {voicePicker(false)}
             <SpeedMenu rate={rate} onChange={changeRate} />
             {bookmarkButton('md')}
+            <MusicMenu />
             {sleepMenu}
             <IconButton
               label="Export audio"
@@ -157,6 +159,7 @@ export function PlayerBar() {
           <div className="flex items-center md:hidden">
             {voicePicker(true)}
             {bookmarkButton('sm')}
+            <MusicMenu />
             {sleepMenu}
             <button
               type="button"

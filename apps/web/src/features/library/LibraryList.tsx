@@ -110,7 +110,7 @@ export function LibraryList({ documents }: Readonly<{ documents: readonly Docume
           </Button>
         </div>
       ) : (
-        <ul className="grid gap-3 lg:grid-cols-2">
+        <ul className="grid grid-cols-1 gap-3 lg:grid-cols-2">
           {shown.map((doc) => (
             <DocumentCard key={doc.id} doc={doc} />
           ))}

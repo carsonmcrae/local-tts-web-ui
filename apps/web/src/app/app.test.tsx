@@ -3,8 +3,8 @@
 /**
  * Purpose: Tests for the application root: lazy routes and the shell's engine status.
  * Scope: Opening a document by URL through the real router (lazy page with a loading state), moving
- *   between the main sections with the navigation, and the sidebar status while the default voices
- *   are installing.
+ *   between the main sections with the navigation (five places, also on the phone tab bar), and the
+ *   sidebar status while the default voices are installing.
  * Does NOT belong: Page behaviour (feature tests) or the not-found/offline cases (flows.test.tsx).
  */
 import { render, screen, within } from '@testing-library/react';
@@ -66,17 +66,25 @@ describe('App', () => {
       'GET /api/voice-profiles': [],
       'GET /api/system': () => json({ error: { code: 'starting', message: 'Starting.' } }, 503),
       'GET /api/documents': [],
+      'GET /api/exports': [],
+      'GET /api/integrations/audiobookshelf': { configured: false, hasKey: false },
     });
     window.history.pushState({}, '', '/');
     const user = userEvent.setup();
     render(<App />);
-    const [nav] = await screen.findAllByRole('navigation', { name: 'Main' });
+    const [nav, tabs] = await screen.findAllByRole('navigation', { name: 'Main' });
+    expect(
+      within(tabs as HTMLElement)
+        .getAllByRole('link')
+        .map((link) => link.textContent),
+    ).toEqual(['Library', 'Voices', 'Studio', 'Exports', 'Settings']);
     const go = async (link: string, heading: string) => {
       await user.click(within(nav as HTMLElement).getByRole('link', { name: link }));
       expect(await screen.findByRole('heading', { level: 1, name: heading })).toBeInTheDocument();
     };
     await go('Voices', 'Voices');
     await go('Voice Studio', 'Voice Studio');
+    await go('Exports', 'Exports');
     await go('Settings', 'Settings');
     await go('Library', 'Library');
   });

@@ -82,6 +82,8 @@ interface ConfirmDialogProps {
   title: string;
   description: ReactNode;
   confirmLabel: string;
+  /** The dismiss button's text, when "Cancel" would be ambiguous (e.g. cancelling an export). */
+  cancelLabel?: string;
   onConfirm: () => void;
   busy?: boolean;
   destructive?: boolean;
@@ -93,6 +95,7 @@ export function ConfirmDialog({
   title,
   description,
   confirmLabel,
+  cancelLabel = 'Cancel',
   onConfirm,
   busy = false,
   destructive = true,
@@ -106,7 +109,7 @@ export function ConfirmDialog({
       footer={
         <>
           <Button onClick={() => onOpenChange(false)} disabled={busy}>
-            Cancel
+            {cancelLabel}
           </Button>
           <Button variant={destructive ? 'danger' : 'primary'} onClick={onConfirm} loading={busy}>
             {confirmLabel}

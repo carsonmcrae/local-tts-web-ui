@@ -15,7 +15,6 @@ import type {
   DocumentDetail,
   DocumentSummary,
   EngineInfo,
-  ExportRequest,
   JobOut,
   Preferences,
   SectionContent,
@@ -220,13 +219,6 @@ export function useCancelJob() {
   return useMutation({
     mutationFn: (jobId: string) => api<JobOut>(`/api/jobs/${jobId}/cancel`, { method: 'POST' }),
     onSuccess: (job) => client.setQueryData(keys.job(job.id), job),
-  });
-}
-
-export function useStartExport() {
-  return useMutation({
-    mutationFn: (request: ExportRequest) =>
-      api<JobOut>('/api/exports', { method: 'POST', json: request }),
   });
 }
 

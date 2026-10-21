@@ -6,7 +6,7 @@
  *   page area, and the docked player that persists across navigation.
  * Does NOT belong: Page content or player logic.
  */
-import { AudioLines, BookOpen, Mic, Settings, ShieldCheck } from 'lucide-react';
+import { AudioLines, BookHeadphones, BookOpen, Mic, Settings, ShieldCheck } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { NavLink, Outlet } from 'react-router';
 import { useEngines } from '@/api/queries';
@@ -18,6 +18,7 @@ const NAV: readonly { to: string; label: string; icon: ReactNode }[] = [
   { to: '/library', label: 'Library', icon: <BookOpen size={19} /> },
   { to: '/voices', label: 'Voices', icon: <AudioLines size={19} /> },
   { to: '/studio', label: 'Voice Studio', icon: <Mic size={19} /> },
+  { to: '/exports', label: 'Exports', icon: <BookHeadphones size={19} /> },
   { to: '/settings', label: 'Settings', icon: <Settings size={19} /> },
 ];
 
@@ -91,7 +92,8 @@ export function AppShell() {
             <p className="mb-1 flex items-center gap-1.5 font-medium text-text">
               <ShieldCheck size={14} className="text-success" /> Private by design
             </p>
-            Documents, voices and audio never leave this computer.
+            Documents, voices and audio stay on this computer, unless you send a book to your own
+            Audiobookshelf.
           </div>
           <EngineStatus />
         </div>
@@ -109,7 +111,7 @@ export function AppShell() {
         <PlayerBar />
         <nav
           aria-label="Main"
-          className="grid grid-cols-4 border-t border-line bg-surface pb-[env(safe-area-inset-bottom)] md:hidden"
+          className="grid grid-cols-5 border-t border-line bg-surface pb-[env(safe-area-inset-bottom)] md:hidden"
         >
           {NAV.map((item) => (
             <NavLink

@@ -133,7 +133,7 @@ export function PrivacySection() {
         {[
           'No accounts, analytics or telemetry.',
           'Documents, recordings and generated audio are processed and stored only on this computer.',
-          'The only network requests are the model downloads you start yourself (and your browser loading this page).',
+          'The only network requests are the model downloads you start yourself, books you send to your own Audiobookshelf, and your browser loading this page.',
           'Once models are installed, everything works offline.',
         ].map((line) => (
           <li key={line} className="flex gap-2.5">

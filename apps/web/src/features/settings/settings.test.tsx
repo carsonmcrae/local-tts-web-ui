@@ -40,6 +40,7 @@ function api(overrides: Record<string, unknown> = {}) {
     ],
     'GET /api/system': system,
     'GET /api/pronunciations': [],
+    'GET /api/integrations/audiobookshelf': { configured: false, hasKey: false },
     'PUT /api/preferences': (_url: URL, init: RequestInit) => JSON.parse(String(init.body)),
     ...overrides,
   });

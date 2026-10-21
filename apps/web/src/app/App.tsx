@@ -24,6 +24,7 @@ const LibraryPage = lazy(() => import('@/features/library/LibraryPage'));
 const ReaderPage = lazy(() => import('@/features/reader/ReaderPage'));
 const VoiceLibraryPage = lazy(() => import('@/features/voices/VoiceLibraryPage'));
 const VoiceStudioPage = lazy(() => import('@/features/studio/VoiceStudioPage'));
+const ExportsPage = lazy(() => import('@/features/exports/ExportsPage'));
 const SettingsPage = lazy(() => import('@/features/settings/SettingsPage'));
 
 function Page({ children }: Readonly<{ children: ReactNode }>) {
@@ -94,6 +95,14 @@ function createRouter() {
           element: (
             <Page>
               <VoiceStudioPage />
+            </Page>
+          ),
+        },
+        {
+          path: 'exports',
+          element: (
+            <Page>
+              <ExportsPage />
             </Page>
           ),
         },

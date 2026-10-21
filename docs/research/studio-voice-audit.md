@@ -249,6 +249,50 @@ It read three questions and three exclamations, against Turbo. The owner rated t
   change the decoder between sentences, so the next test is the whole voice: the ten-item panel,
   long passage included, with generation speed measured. Nothing is in the app.
 
+### The whole voice on the original Chatterbox (blind, 2026-10-21)
+
+The whole complete voice was built on the original model. It used voice C's takes, speaker and style
+prompts, the app's seeds, retries, polish and room tone, and the ten unseen items, long passage
+included. Three voices:
+
+- **Turbo** as the app reads today;
+- **O:** the original at exaggeration 0.5 throughout;
+- **OX:** the original at 0.7 for questions and exclamations only.
+
+| Voice | Likeness | Naturalness | Best (of 10) | Garbled | Generation (RTX 3080) | GPU memory |
+| ----- | -------- | ----------- | ------------ | ------- | --------------------- | ---------- |
+| Turbo | 4.10     | 4.30        | 4            | 2       | 0.71 × real time      | 2.85 GiB   |
+| O     | 3.80     | 3.80        | 4            | 0       | 1.13 × real time      | 3.21 GiB   |
+| OX    | 3.80     | 3.40        | 1            | 1       | 1.11 × real time      | 3.21 GiB   |
+
+- **Overall:** Turbo was better on 5 items and the original (O) on 3, with 2 tied (p = 0.73), and
+  similarity to the held-out takes was 0.923 against 0.914.
+- **Where the original won:** again the excited line and the question.
+- **Where Turbo won:** the narration, the dialogue and the long passage.
+- **Speed:** the original is slower than real time on this GPU, so continuous reading could stall
+  while it catches up.
+- **Comparing across panels:** ratings sat higher in this three-voice panel than in the six-voice
+  one, with the same Turbo audio for one-sentence items, so compare voices within a panel, not
+  across panels.
+
+Verdict:
+
+- Turbo stays the studio engine.
+- The original's expression control helps questions and exclamations but not the voice as a whole,
+  and it would cost real-time speed.
+- Switching engines per sentence would change the decoder mid-voice (untested).
+
+Two artifacts the owner heard came from the first room tone, not the voices:
+
+- **What was heard:** garbling at the ends of the long passage's sentences, and lip and stop sounds.
+- **The cause:** the first room tone repeated pieces of each clip's quiet moments. Measured against
+  the same speech without it, the fill swung 5 dB every 10 ms and peaked at 10 times its level.
+- **The fix:** the fill is now steady noise shaped like the clip's background (peaks 3–4 times its
+  level), and nothing of the clip is copied.
+
+"Tulips" was mispronounced by the original model, which is another word for the pronunciation
+dictionary.
+
 ## Fine-tuning (`feat/voice-tune`), reviewed
 
 - **What it changes.**

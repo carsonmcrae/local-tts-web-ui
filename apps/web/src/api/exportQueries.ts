@@ -3,15 +3,17 @@
 /**
  * Purpose: TanStack Query hooks for audiobook exports, a document's audiobook details and the
  *   optional Audiobookshelf connection.
- * Scope: Starting an export; listing recent exports (polled while one is running); what a stopped
- *   export has saved; pausing, cancelling, resuming and deleting one; sending a finished file to
- *   Audiobookshelf; reading and saving the author, narrator, description and cover; and reading,
- *   saving, testing and forgetting the Audiobookshelf settings (the API key is only ever sent).
+ * Scope: Starting an export; listing recent exports (polled while one is running); how busy the
+ *   export queue is and why a new export can't start; what a stopped export has saved; pausing,
+ *   cancelling, resuming and deleting one; sending a finished file to Audiobookshelf; reading and
+ *   saving the author, narrator, description and cover; and reading, saving, testing and
+ *   forgetting the Audiobookshelf settings (the API key is only ever sent).
  * Does NOT belong: Presentation, or the generic job polling (`useJob` in queries.ts).
  */
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from './client';
 import { isJobActive, keys } from './queries';
+import type { components } from './schema.gen';
 import type {
   AudiobookDetails,
   AudiobookDetailsInput,
@@ -23,8 +25,12 @@ import type {
   ShelfSettingsInput,
 } from './types';
 
+/** How many exports run and wait, the free disk space, and why a new export can't start now. */
+export type ExportQueue = components['schemas']['ExportQueueOut'];
+
 export const exportKeys = {
   all: ['exports'] as const,
+  queue: ['exports', 'queue'] as const, // refreshed with the list: every export change invalidates both
   one: (id: string) => ['exports', id] as const,
   details: (documentId: string) => ['documents', documentId, 'details'] as const,
   shelf: ['integrations', 'audiobookshelf'] as const,
@@ -40,6 +46,15 @@ export function useExports() {
     queryFn: () => api<ExportOut[]>('/api/exports'),
     refetchInterval: (query) =>
       query.state.data?.some((item) => isJobActive(item.job)) ? LIST_POLL_MS : false,
+  });
+}
+
+/** The export queue, refreshed like the list while `poll` (an export is running or waiting). */
+export function useExportQueue(poll: boolean) {
+  return useQuery({
+    queryKey: exportKeys.queue,
+    queryFn: () => api<ExportQueue>('/api/exports/queue'),
+    refetchInterval: poll ? LIST_POLL_MS : false,
   });
 }
 

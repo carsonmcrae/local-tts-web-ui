@@ -3,15 +3,17 @@
 /**
  * Purpose: Tests for the Exports page.
  * Scope: Stopped exports (interrupted when the app closed, or paused) listed first with what they
- *   saved and Resume; refreshing while one runs; the empty state; cancelling after a confirmation;
- *   deleting a finished file; and when "Send to Audiobookshelf" is offered (set up, and one M4B,
- *   MP3 or WAV file) and what it reports.
+ *   saved and Resume; refreshing while one runs; waiting exports in line with their place; why a
+ *   new export can't start (a full queue, a nearly full disk) and why a resume was refused; the
+ *   note when a voice job slows exports and the reminder for exports left for weeks; the empty
+ *   state; cancelling after a confirmation; deleting a finished file; and when "Send to
+ *   Audiobookshelf" is offered (set up, and one M4B, MP3 or WAV file) and what it reports.
  * Does NOT belong: The export dialog (features/reader/export.test.tsx).
  */
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { exportKeys } from '@/api/exportQueries';
+import { type ExportQueue, exportKeys } from '@/api/exportQueries';
 import type { ExportOut, JobOut, ShelfSettings } from '@/api/types';
 import { mockApi, renderWithApp } from '@/test/render';
 import ExportsPage from './ExportsPage';
@@ -26,7 +28,13 @@ const job = (overrides: Partial<JobOut>): JobOut => ({
 }); // prettier-ignore
 
 const item = (overrides: Partial<ExportOut> & { job: JobOut }): ExportOut => ({
-  title: 'The Lighthouse', format: 'm4b', sentences: 400, savedSentences: 0, workingBytes: 0, ...overrides,
+  title: 'The Lighthouse', format: 'm4b', sentences: 400, savedSentences: 0, workingBytes: 0, queuePosition: null,
+  stale: false, ...overrides,
+}); // prettier-ignore
+
+const queue = (overrides: Partial<ExportQueue>): ExportQueue => ({
+  running: 1, waiting: 0, maxRunning: 1, maxWaiting: 4, freeBytes: 5e10, reserveBytes: 500 * 1024 ** 2,
+  voiceJobRunning: false, blocked: null, ...overrides,
 }); // prettier-ignore
 
 const finished = (id: string, filename: string, title: string): ExportOut =>
@@ -72,6 +80,54 @@ describe('Exports page', () => {
     );
     expect(screen.queryByRole('region', { name: 'Ready to resume' })).not.toBeInTheDocument();
     expect(calls.some((call) => call.path === `/api/exports/${A}/resume`)).toBe(true);
+  });
+
+  it('lists waiting exports in line after the one being made, and says the queue is full', async () => {
+    const making = job({ id: B, status: 'running', progress: 0.5, message: 'Generated 4 of 8 sentences' }); // prettier-ignore
+    const next = job({ id: C, status: 'queued', progress: 0, message: 'Waiting its turn (1 export ahead)…' }); // prettier-ignore
+    const after = job({ id: D, status: 'queued', progress: 0, message: 'Waiting its turn (2 exports ahead)…' }); // prettier-ignore
+    mockApi({
+      'GET /api/exports': [
+        item({ job: after, title: 'Third book', queuePosition: 2 }),
+        item({ job: next, title: 'Second book', queuePosition: 1 }),
+        item({ job: making, title: 'First book', savedSentences: 4, sentences: 8 }),
+      ],
+      'GET /api/exports/queue': queue({ waiting: 4, blocked: 'queue_full' }),
+    });
+    renderWithApp(<ExportsPage />);
+    expect(await screen.findByText('The export queue is full')).toBeInTheDocument();
+    expect(screen.getByText(/1 export running and 4 waiting/)).toBeInTheDocument();
+    const region = screen.getByRole('region', { name: 'In progress' });
+    const cards = within(region).getAllByRole('article');
+    expect(cards.map((card) => card.getAttribute('aria-label'))).toEqual(['First book', 'Second book', 'Third book']); // prettier-ignore
+    expect(cards[0]).toHaveTextContent('Exporting');
+    expect(cards[1]).toHaveTextContent('Waiting');
+    expect(cards[1]).toHaveTextContent('Next in line');
+    expect(cards[2]).toHaveTextContent('2nd in line');
+    expect(within(cards[2]!).getByText('Waiting its turn (2 exports ahead)…')).toHaveAttribute('aria-live', 'polite'); // prettier-ignore
+  });
+
+  it('says when the disk is nearly full, when a voice job slows exports, and which were left for weeks', async () => {
+    const left = job({ status: 'paused', progress: 0.4, message: 'Paused', updatedAt: '2026-09-01T10:00:00+00:00' }); // prettier-ignore
+    const making = job({ id: B, status: 'running', progress: 0.2, message: 'Generated 2 of 8 sentences' }); // prettier-ignore
+    mockApi({
+      'GET /api/exports': [
+        item({ job: making, title: 'Second book' }),
+        item({ job: left, stale: true, savedSentences: 120, workingBytes: 1.5e9 }),
+      ],
+      'GET /api/exports/queue': queue({ blocked: 'low_disk', freeBytes: 300 * 1024 ** 2, voiceJobRunning: true }), // prettier-ignore
+      'POST /api/exports/': new Response(JSON.stringify({ error: { code: 'insufficient_disk_space', message: 'Not enough free disk space for this export.' } }), { status: 507, headers: { 'Content-Type': 'application/json' } }), // prettier-ignore
+    });
+    renderWithApp(<ExportsPage />);
+    const user = userEvent.setup();
+    expect(await screen.findByText('Low disk space')).toBeInTheDocument();
+    expect(screen.getByText(/Only 300 MB is free on this computer, and TTSNative keeps 500 MB free/)).toBeInTheDocument(); // prettier-ignore
+    expect(screen.getByRole('region', { name: 'In progress' })).toHaveTextContent('A studio voice is being built or fine-tuned'); // prettier-ignore
+    const card = screen.getByRole('article', { name: 'The Lighthouse' });
+    expect(card).toHaveTextContent('Not resumed since');
+    expect(card).toHaveTextContent('Its saved sentences take 1.4 GB on this computer');
+    await user.click(within(card).getByRole('button', { name: 'Resume' }));
+    expect(await within(card).findByRole('alert')).toHaveTextContent('Not enough free disk space for this export.'); // prettier-ignore
   });
 
   it('explains how to make an export when there are none', async () => {

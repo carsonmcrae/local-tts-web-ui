@@ -324,3 +324,7 @@ section {
       color 0.15s ease;
   }
 }
+
+.not-found {
+  padding-block: 15vh;
+}

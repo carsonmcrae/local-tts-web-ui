@@ -61,6 +61,9 @@ function main() {
   const out = path.resolve(option('--out'));
   let base = option('--base-url');
   while (base.endsWith('/')) base = base.slice(0, -1);
+  // The base URL comes from the Pages configuration, and goes into HTML and XML unescaped.
+  if (!/^https?:\/\/[\w.-]+(:\d+)?(\/[\w./-]*)?$/.test(base))
+    throw new Error(`--base-url must be a plain http(s) origin, got "${base}"`);
   rmSync(out, { recursive: true, force: true });
   cpSync(path.join(repoRoot, 'site'), out, { recursive: true });
 
@@ -71,12 +74,25 @@ function main() {
   )) {
     copyFileSync(path.join(media, file), path.join(out, 'media', file));
   }
-  cpSync(path.join(repoRoot, 'docs', 'images'), path.join(out, 'images'), { recursive: true });
+  // Only the screenshots the pages use: docs/images also holds ones meant for the README.
+  const pages = ['index.html', '404.html'].map((page) =>
+    readFileSync(path.join(out, page), 'utf8'),
+  );
+  const wanted = new Set(
+    pages.flatMap((html) => [...html.matchAll(/images\/([\w.-]+)/g)].map((m) => m[1])),
+  );
+  mkdirSync(path.join(out, 'images'), { recursive: true });
+  for (const file of wanted) {
+    copyFileSync(path.join(repoRoot, 'docs', 'images', file), path.join(out, 'images', file));
+  }
 
   const problems = [];
   for (const page of ['index.html', '404.html']) {
     const file = path.join(out, page);
-    const html = applyRequirements(readFileSync(file, 'utf8'), out).replaceAll('%BASE_URL%', base);
+    const html = applyRequirements(readFileSync(file, 'utf8'), out).replaceAll(
+      '%BASE_URL%',
+      () => base,
+    );
     writeFileSync(file, html);
     if (page === 'index.html')
       problems.push(...brokenLinks(html, out).map((ref) => `${page}: ${ref}`));

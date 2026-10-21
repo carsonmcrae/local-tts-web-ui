@@ -36,8 +36,12 @@
   /** The text split into sentences; one piece where the browser can't segment text. */
   function sentences(words, lang) {
     if (typeof Intl.Segmenter !== 'function') return [words];
-    const parts = [...new Intl.Segmenter(lang, { granularity: 'sentence' }).segment(words)];
-    return parts.map((part) => part.segment.trim()).filter(Boolean);
+    try {
+      const parts = [...new Intl.Segmenter(lang, { granularity: 'sentence' }).segment(words)];
+      return parts.map((part) => part.segment.trim()).filter(Boolean);
+    } catch {
+      return [words]; // a voice can report a language tag the segmenter rejects
+    }
   }
 
   /** Shows the sentences in the read-along box; returns a function that highlights one of them. */

@@ -12,7 +12,9 @@ All notable changes to this project are documented here. The format follows
   (about 13 MB) on the takes a studio voice kept, on your own NVIDIA graphics card, in a few
   minutes. It stops once passages it held back stop getting closer to your reading, and offers
   nothing if it barely helped. You hear three sentences **Now** and **Fine-tuned**, then keep or
-  discard it; **Remove fine-tune** goes back. Nothing new is downloaded or installed.
+  discard it; **Remove fine-tune** goes back. Nothing new is downloaded or installed, and nothing
+  trains unless you press the button. In a blind listening test it didn't sound clearly better
+  than the voice without it.
 - **A shorter, honest studio session.** The tiers now follow what a studio voice actually uses:
   **Foundation** (a working voice), **Developing** (its sound has settled after twelve clean takes)
   and **Complete** (every speaking style has its three takes). Each style shows its takes out of

@@ -56,8 +56,8 @@ export function VoiceTuning({ profile }: Readonly<{ profile: VoiceProfile }>) {
         <>
           <p className="text-xs leading-relaxed text-muted">
             {profile.fineTuned
-              ? 'Fine-tuned on this computer from the takes it kept, so it reads more like you.'
-              : 'Experimental: fine-tune the voice on the takes it kept so it reads more like you. It takes a few minutes on an NVIDIA graphics card, and you compare the result before keeping it.'}
+              ? 'Fine-tuned on this computer from the takes it kept. Remove the fine-tune if the voice sounded better without it.'
+              : 'Experimental: fine-tune the voice on the takes it kept. In a blind listening test it didn’t sound clearly better, so compare the result by ear before keeping it. It takes a few minutes on an NVIDIA graphics card.'}
           </p>
           <div className="flex flex-wrap gap-2">
             {profile.canTune ? (
@@ -101,8 +101,9 @@ function Comparison({
   return (
     <div className="flex flex-col gap-2">
       <p className="text-xs leading-relaxed text-muted">
-        The fine-tune came {percent}% closer to how you read passages it didn’t train on. Listen to
-        each sentence as the voice reads it now and fine-tuned, then keep it or discard it.
+        The fine-tune predicted the passages it didn’t train on {percent}% better, which doesn’t
+        always sound better. Listen to each sentence as the voice reads it now and fine-tuned, then
+        keep it or discard it.
       </p>
       <ul className="flex flex-col gap-1.5">
         {candidate.texts.map((text, index) => (

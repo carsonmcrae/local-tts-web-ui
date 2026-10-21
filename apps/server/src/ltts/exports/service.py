@@ -4,39 +4,43 @@
 
 Scope: Synthesises every sentence in the chosen chapter range at export priority (so live playback
 stays responsive), leaving out skipped ones as playback does, and saves each one as it finishes
-(``workspace.py``). A paused, failed, canceled or interrupted export (the app closed or crashed)
-resumes under the same job, generating only the sentences whose saved audio no longer matches, so a
-crash ten hours into a twenty-hour book costs one sentence, not ten hours. Only one export runs at a
-time; others wait their turn. When every sentence is saved, the parts become WAV or MP3 (one file or
-one per chapter, optional SRT), an M4B audiobook with chapters (``m4b.py``) or a read-along EPUB
-(``epub.py``), and the parts are removed. Canceling discards the parts; deleting removes everything.
+(``workspace.py``). A stopped export (paused, failed, canceled, or interrupted by a crash) resumes
+under the same job, generating only the sentences whose saved audio no longer matches. Exports share
+the export queue and need disk space to start, resume and carry on (``capacity.py``). The saved parts
+then become WAV or MP3 (one file or one per chapter, optional SRT), an M4B audiobook (``m4b.py``) or a
+read-along EPUB (``epub.py``). A pause or failure tidies half-built files and keeps the parts; a cancel
+removes everything once the export has stopped; startup tidies what a crash left.
 Does NOT belong: HTTP (``router.py``), synthesis internals or the output formats themselves.
 """
 
 from __future__ import annotations
 
 import logging
-import threading
+import shutil
 from pathlib import Path
 from typing import Any
 
 from ltts.audio import Float32Array
+from ltts.common import MB
 from ltts.config import Settings
 from ltts.documents.details import DocumentDetailsStore
 from ltts.documents.repository import DocumentRepository
-from ltts.errors import ConflictError, NotFoundError
+from ltts.documents.styling import SegmentPlan
+from ltts.errors import AppError, ConflictError, NotFoundError
+from ltts.exports import capacity
 from ltts.exports.assemble import Assembled, Layout, Row, assemble, package, safe_filename
 from ltts.exports.audiobookshelf import Audiobookshelf
+from ltts.exports.capacity import EXPORT_LANE, KIND, UPLOAD_KIND, UPLOAD_LANE
 from ltts.exports.epub import EpubChapter, Sentence, write_epub
 from ltts.exports.m4b import Book, write_m4b
-from ltts.exports.models import ExportOut, ExportRequest
+from ltts.exports.models import ExportOut, ExportQueueOut, ExportRequest
 from ltts.exports.workspace import ExportWorkspace
-from ltts.jobs import STOPPED, JobCanceledError, JobContext, JobManager, JobOut, JobStatus
+from ltts.jobs import ACTIVE, STOPPED, JobCanceledError, JobContext, JobManager, JobOut, JobStatus
+from ltts.synthesis.cache import CachedAudio
 from ltts.synthesis.scheduler import PRIORITY_EXPORT
 from ltts.synthesis.service import SynthesisService
 
 log = logging.getLogger("ltts.exports")
-KIND = "export"
 _LABELS = {"mp3": "MP3", "wav": "WAV"}
 
 
@@ -54,17 +58,41 @@ class ExportService:
         self._documents = documents
         self._synthesis = synthesis
         self._details = details
-        self._turn = threading.Lock()  # one export synthesises at a time
+        jobs.limit(EXPORT_LANE)  # one export synthesises at a time; a few more wait their turn
+        jobs.limit(UPLOAD_LANE)
+        jobs.when_canceled(KIND, lambda job_id: self._workspace(job_id).remove())
 
     def folder(self, job_id: str) -> Path:
-        return self._settings.path("exports", job_id)
+        """An export's working folder (it exists once the export saved its first sentence)."""
+        return self._settings.resolved_data_dir / "exports" / job_id
+
+    def _workspace(self, job_id: str) -> ExportWorkspace:
+        return ExportWorkspace(self.folder(job_id))
+
+    def _root(self) -> Path:
+        return self._settings.path("exports")
+
+    def _reserve(self) -> int:
+        return self._settings.min_free_disk_mb * MB
+
+    def _ensure_room(self, needed: int, job_id: str | None) -> None:
+        """Refuse an export the disk can't hold alongside what the exports already queued still need."""
+        queued = sum(
+            max(0, int(job.payload.get("estimatedBytes") or 0) - self._workspace(job.id).bytes_used())
+            for job in self._jobs.list_active(KIND)
+            if job.id != job_id
+        )
+        capacity.ensure_room(self._root(), needed, self._reserve(), queued=queued)
 
     # -- lifecycle -------------------------------------------------------------
     def start(self, request: ExportRequest) -> JobOut:
         detail = self._documents.get(request.document_id)
         self._synthesis.cached_or_none(request.voice_id, ".", "sentence", request.pace)  # validates voice early
+        size = capacity.footprint(self._rows(request), request)
+        self._ensure_room(size, None)
         payload = request.model_dump(by_alias=True)
         payload["title"] = detail.title
+        payload["estimatedBytes"] = size  # what its folder grows to, counted when later exports start
         return self._jobs.submit(KIND, payload, lambda ctx: self._run(ctx, request, detail.title))
 
     def _stopped(self, job_id: str) -> JobOut:
@@ -80,6 +108,8 @@ class ExportService:
             raise ConflictError("Only stopped exports can be resumed.", code="not_resumable")
         request = ExportRequest.model_validate(job.payload)
         title = str(job.payload.get("title") or "audio")
+        size = capacity.footprint(self._rows(request), request)
+        self._ensure_room(max(0, size - self._workspace(job_id).bytes_used()), job_id)
         return self._jobs.restart(job_id, lambda ctx: self._run(ctx, request, title))
 
     def pause(self, job_id: str) -> JobOut:
@@ -87,24 +117,30 @@ class ExportService:
         return self._jobs.pause(job_id)
 
     def cancel(self, job_id: str) -> JobOut:
-        """Stop the export and discard its saved sentences (a paused export is canceled at once)."""
+        """Stop the export and discard everything it made (a stopped export is canceled at once; a
+        running one once it has stopped, so nothing it was writing is left behind)."""
         job = self._stopped(job_id)
+        if job.status == JobStatus.SUCCEEDED:
+            return job  # nothing to cancel: Delete removes the file
         if job.status in STOPPED:
             self._jobs.mark(job_id, JobStatus.CANCELED, "Canceled")
+            self._workspace(job_id).remove()
         else:
-            self._jobs.cancel(job_id)
-        ExportWorkspace(self.folder(job_id)).clear_parts()
+            self._jobs.cancel(job_id)  # the folder goes when it stops (``when_canceled``)
         return self._jobs.get(job_id)
 
     def recent(self) -> list[ExportOut]:
-        """Recent exports with what each one has saved, newest first."""
-        return [self._describe(job) for job in self._jobs.list_recent(kind=KIND, limit=20)]
+        """Recent exports with what each one has saved, newest first, and every export still active."""
+        jobs = self._jobs.list_recent(kind=KIND, limit=20)
+        shown = {job.id for job in jobs}
+        jobs += [job for job in self._jobs.list_active(KIND) if job.id not in shown]
+        return [self._describe(job) for job in jobs]
 
     def describe(self, job_id: str) -> ExportOut:
         return self._describe(self._stopped(job_id))
 
     def _describe(self, job: JobOut) -> ExportOut:
-        workspace = ExportWorkspace(self._settings.resolved_data_dir / "exports" / job.id)
+        workspace = self._workspace(job.id)
         request = ExportRequest.model_validate(job.payload)
         saved = set(workspace.existing())
         try:
@@ -119,7 +155,13 @@ class ExportService:
             sentences=len(rows),
             saved_sentences=len(saved),
             working_bytes=workspace.bytes_used(),
+            queue_position=self._jobs.queue_position(job.id, EXPORT_LANE) if job.status == JobStatus.QUEUED else None,
+            stale=capacity.is_stale(job),
         )
+
+    def queue(self) -> ExportQueueOut:
+        """How many exports run and wait, the free space, and why a new one can't start now."""
+        return capacity.queue_status(self._jobs, self._root(), self._reserve())
 
     def output(self, job_id: str) -> tuple[Path, str]:
         job = self._jobs.get(job_id)
@@ -147,40 +189,55 @@ class ExportService:
         def work(ctx: JobContext) -> dict[str, Any]:
             ctx.update(0.1, "Sending to Audiobookshelf…", force=True)
             files = [path]
-            staged = None
-            if cover is not None:
-                staged = self.folder(ctx.job_id) / f"cover{cover.path.suffix}"
-                staged.write_bytes(cover.path.read_bytes())
-                files.append(staged)
+            staging = self._settings.path("tmp", f"cover-{ctx.job_id}")  # the app empties tmp at every start
             try:
+                if cover is not None:
+                    staged = staging / f"cover{cover.path.suffix}"
+                    shutil.copyfile(cover.path, staged)
+                    files.append(staged)
                 shelf.upload(files, title, author)
             finally:
-                if staged is not None:
-                    staged.unlink(missing_ok=True)
+                shutil.rmtree(staging, ignore_errors=True)
             return {"sent": path.name}
 
-        return self._jobs.submit("audiobookshelf", {"exportId": job_id, "title": title}, work, key=job_id)
+        return self._jobs.submit(UPLOAD_KIND, {"exportId": job_id, "title": title}, work, key=job_id)
 
     def delete(self, job_id: str) -> None:
-        if self._jobs.get(job_id).status in (JobStatus.QUEUED, JobStatus.RUNNING):
+        if self._jobs.get(job_id).status in ACTIVE:
             raise ConflictError("Pause or cancel the export before deleting it.", code="export_running")
-        ExportWorkspace(self._settings.resolved_data_dir / "exports" / job_id).remove()
+        self._workspace(job_id).remove()
         self._jobs.forget(job_id)  # gone from the list too
 
     def clean_orphans(self) -> int:
-        """Remove export folders whose job no longer exists or was canceled (startup housekeeping)."""
+        """Startup housekeeping (safe while the app runs, too). Removes the folders of exports that are
+        gone or canceled, and folders that aren't an export's; tidies stopped exports (half-built and
+        temporary files go, saved sentences stay for Resume) and finished ones (leftover parts); and
+        logs stopped exports nobody has resumed for weeks, which are kept: they are the user's work."""
         root = self._settings.resolved_data_dir / "exports"
         if not root.is_dir():
             return 0
-        removed = 0
+        removed, stale, stale_bytes = 0, 0, 0
         for folder in root.iterdir():
+            if not folder.is_dir():
+                continue
             try:
-                job = self._jobs.get(folder.name)
+                job: JobOut | None = self._jobs.get(folder.name)
             except NotFoundError:
                 job = None
-            if job is None or job.status == JobStatus.CANCELED:
-                ExportWorkspace(folder).remove()
+            workspace = ExportWorkspace(folder)
+            if job is not None and job.status in ACTIVE:
+                continue  # in use
+            if job is None or job.kind != KIND or job.status == JobStatus.CANCELED:
+                workspace.remove()
                 removed += 1
+            elif job.status == JobStatus.SUCCEEDED:
+                workspace.clear_parts()
+            else:
+                workspace.clear_unfinished()
+                if capacity.is_stale(job):
+                    stale, stale_bytes = stale + 1, stale_bytes + workspace.bytes_used()
+        if stale:
+            log.warning("stopped exports kept for a resume", extra={"exports": stale, "bytes": stale_bytes})
         return removed
 
     # -- the job ---------------------------------------------------------------
@@ -196,20 +253,26 @@ class ExportService:
         ]
 
     def _run(self, ctx: JobContext, req: ExportRequest, title: str) -> dict[str, Any]:
-        ctx.update(0.0, "Waiting for another export to finish…", force=True)
+        workspace = self._workspace(ctx.job_id)
         try:
-            with self._turn:
-                return self._export(ctx, req, title)
-        except JobCanceledError:
-            if not self._jobs.pausing(ctx.job_id):
-                ExportWorkspace(self.folder(ctx.job_id)).clear_parts()  # canceled: nothing is kept
+            return self._export(ctx, req, title, workspace)
+        except Exception as exc:
+            if not ctx.canceled or self._jobs.pausing(ctx.job_id):
+                workspace.clear_unfinished()  # paused or failed: the saved sentences stay for a resume
+            if not ctx.canceled and not isinstance(exc, AppError | JobCanceledError):
+                self._space_left()  # a write that failed because the disk filled up says so
             raise
 
-    def _export(self, ctx: JobContext, req: ExportRequest, title: str) -> dict[str, Any]:
+    def _space_left(self) -> None:
+        capacity.ensure_room(self._root(), 0, self._reserve(), resumable=True)
+
+    def _export(self, ctx: JobContext, req: ExportRequest, title: str, workspace: ExportWorkspace) -> dict[str, Any]:
         rows = self._rows(req)
         if not rows:
             raise ConflictError("There's nothing to export in that range.", code="empty_export")
-        workspace = ExportWorkspace(self.folder(ctx.job_id))
+        # It may have waited a long time for its turn: check the space again before generating.
+        needed = max(0, capacity.footprint(rows, req) - workspace.bytes_used())
+        capacity.ensure_room(self._root(), needed, self._reserve(), resumable=True)
         keys = self._synthesise(ctx, req, rows, workspace)
         ctx.update(0.97, "Putting the audiobook together…", force=True)
         result = self._build(ctx, req, title, rows, keys, workspace)
@@ -221,7 +284,7 @@ class ExportService:
     ) -> dict[int, str]:
         """Make sure every sentence is saved with its current audio; returns each sentence's key."""
         keys: dict[int, str] = {}
-        reused = 0
+        reused = made = 0
         for done, row in enumerate(rows):
             ctx.check()
             plan = self._synthesis.plan_segment(req.document_id, row.index, row.text, req.voice_id)
@@ -230,13 +293,23 @@ class ExportService:
             if workspace.has(row.index, key):
                 reused += 1
             else:
-                audio = self._synthesis.render_blocking(
-                    plan, row.text, row.boundary, req.pace, PRIORITY_EXPORT, lambda: ctx.canceled
-                )
-                samples, rate = self._synthesis.read(audio)
+                if made and made % capacity.CHECK_EVERY == 0:
+                    self._space_left()
+                samples, rate = self._synthesis.read(self._render(ctx, req, plan, row))
                 workspace.save(row.index, key, samples, rate)
+                made += 1
             ctx.update(0.96 * (done + 1) / len(rows), _progress(done + 1, len(rows), reused))
         return keys
+
+    def _render(self, ctx: JobContext, req: ExportRequest, plan: SegmentPlan, row: Row) -> CachedAudio:
+        """One sentence's audio; a pause or cancel stops the wait and drops the queued request."""
+        try:
+            return self._synthesis.render_blocking(
+                plan, row.text, row.boundary, req.pace, PRIORITY_EXPORT, lambda: ctx.canceled
+            )
+        except TimeoutError:
+            ctx.check()  # it stopped waiting because the export was paused or canceled
+            raise
 
     def _build(
         self,
@@ -248,9 +321,7 @@ class ExportService:
         workspace: ExportWorkspace,
     ) -> dict[str, Any]:
         folder = self.folder(ctx.job_id)
-        for old in folder.iterdir():
-            if old.is_file():
-                old.unlink()  # a previous, unfinished assembly
+        workspace.clear_unfinished()  # a previous, unfinished assembly
         base = safe_filename(title)
         titles = {s.index: s.title for s in self._documents.get(req.document_id).sections}
 

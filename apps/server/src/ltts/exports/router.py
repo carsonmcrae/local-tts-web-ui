@@ -2,9 +2,11 @@
 # Copyright (c) 2026 Carson McRae
 """Purpose: HTTP endpoints for audiobook exports.
 
-Scope: Start an export, list recent exports with what each has saved, read one, pause, cancel
-(which discards its saved sentences), resume a stopped one under the same job, download the
-finished file (WAV, MP3, M4B, EPUB or a ZIP), send it to Audiobookshelf and delete an export.
+Scope: Start an export, list recent exports with what each has saved, how busy the export queue is
+(and why a new export can't start), read one, pause, cancel (which discards its saved sentences),
+resume a stopped one under the same job, download the finished file (WAV, MP3, M4B, EPUB or a ZIP),
+send it to Audiobookshelf and delete an export. A full queue answers 429 ``export_queue_full``; too
+little disk space, 507 ``insufficient_disk_space``.
 Does NOT belong: Export logic (``service.py``).
 """
 
@@ -17,7 +19,7 @@ from fastapi import APIRouter, Path, Response
 from fastapi.responses import FileResponse
 
 from ltts.container import ServicesDep
-from ltts.exports.models import ExportOut, ExportRequest
+from ltts.exports.models import ExportOut, ExportQueueOut, ExportRequest
 from ltts.jobs import JobOut
 
 router = APIRouter(prefix="/api/exports", tags=["exports"])
@@ -39,6 +41,11 @@ def start_export(body: ExportRequest, services: ServicesDep) -> JobOut:
 @router.get("")
 def list_exports(services: ServicesDep) -> list[ExportOut]:
     return services.exports.recent()
+
+
+@router.get("/queue")  # before /{job_id}, which would otherwise match it
+def export_queue(services: ServicesDep) -> ExportQueueOut:
+    return services.exports.queue()
 
 
 @router.get("/{job_id}")

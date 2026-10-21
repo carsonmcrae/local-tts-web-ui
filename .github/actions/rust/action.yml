@@ -1,6 +1,7 @@
 # Purpose: Install the desktop shell's pinned Rust toolchain and cache Cargo downloads and build output.
 # Scope: The toolchain from apps/desktop/src-tauri/rust-toolchain.toml and a cache keyed by the caller's
-#   name plus the manifest, lockfile and toolchain; used by the desktop and release workflows.
+#   name plus the manifest, lockfile and toolchain; optionally the verified Python and model downloads
+#   the runtime build reuses. Used by the desktop and release workflows.
 # Does NOT belong: Building or testing (the calling job does that).
 name: Rust toolchain and Cargo cache
 description: Install the pinned Rust toolchain and restore the Cargo cache for the desktop shell.
@@ -8,6 +9,9 @@ inputs:
   cache-name:
     description: Distinguishes the caches of jobs that build differently (checks versus release builds).
     required: true
+  runtime-cache:
+    description: Also restore the verified Python and model downloads (.tools/desktop-cache).
+    default: 'false'
 runs:
   using: composite
   steps:
@@ -22,3 +26,8 @@ runs:
           ~/.cargo/git
           apps/desktop/src-tauri/target
         key: cargo-${{ inputs.cache-name }}-${{ runner.os }}-${{ hashFiles('apps/desktop/src-tauri/Cargo.toml', 'apps/desktop/src-tauri/Cargo.lock', 'apps/desktop/src-tauri/rust-toolchain.toml') }}
+    - if: inputs.runtime-cache == 'true'
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: .tools/desktop-cache
+        key: desktop-runtime-${{ hashFiles('apps/server/src/ltts/modelstore/manifest.json', 'apps/desktop/runtime.json', 'scripts/toolchain.json', 'apps/server/uv.lock') }}

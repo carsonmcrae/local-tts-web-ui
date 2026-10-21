@@ -102,6 +102,7 @@ jobs:
       - uses: ./.github/actions/rust
         with:
           cache-name: release
+          runtime-cache: 'true'
       - name: Build the installer
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}

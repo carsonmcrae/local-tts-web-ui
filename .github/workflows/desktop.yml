@@ -86,11 +86,7 @@ jobs:
       - uses: ./.github/actions/rust
         with:
           cache-name: installer
-      - name: Cache the verified model and Python downloads
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: .tools/desktop-cache
-          key: desktop-runtime-${{ hashFiles('apps/server/src/ltts/modelstore/manifest.json', 'apps/desktop/runtime.json', 'scripts/toolchain.json', 'apps/server/uv.lock') }}
+          runtime-cache: 'true'
       - name: Build the installer (no updater key; never published)
         run: npm run desktop:build
       - name: Smoke test on this clean runner
@@ -126,11 +122,7 @@ jobs:
       - uses: ./.github/actions/rust
         with:
           cache-name: installer
-      - name: Cache the verified model and Python downloads
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: .tools/desktop-cache
-          key: desktop-runtime-${{ hashFiles('apps/server/src/ltts/modelstore/manifest.json', 'apps/desktop/runtime.json', 'scripts/toolchain.json', 'apps/server/uv.lock') }}
+          runtime-cache: 'true'
       - name: Install A, refuse a bad and a broken update, then update to B (throwaway key)
         run: npm run desktop:update-test
       - name: Keep the app's logs

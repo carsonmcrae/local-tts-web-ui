@@ -2,19 +2,13 @@
 # Copyright (c) 2026 Carson McRae
 """Purpose: Sound effects a reader can put on chosen sentences: a loudspeaker, a phone call, a radio.
 
-Scope: Eight deterministic effects on a mono clip, in plain NumPy:
-- ``loudspeaker``: a public-address announcement: narrow band, driven, with slap echoes in a big space;
-- ``telephone``: narrow band, a little distortion;
-- ``radio``: broadcast band, compressed, faint static;
-- ``hall``: a large room;
-- ``distant``: muffled, far away;
-- ``robot``: ring-modulated, metallic;
-- ``quiet``: an aside or a near-whisper, softer and closer;
-- ``memory``: a flashback or dream, soft and roomy.
-
-Every effect keeps the clip's speech loudness (``quiet`` is deliberately softer), stays below
--1 dBFS, and may add a short tail for its echo. Noise and room
-responses come from fixed seeds, so the same sentence always sounds the same (and caches).
+Scope: Eight deterministic effects on a mono clip, in plain NumPy: ``loudspeaker`` (a public-address
+announcement: narrow band, driven, slap echoes), ``telephone`` (narrow band, a little distortion),
+``radio`` (broadcast band, compressed, faint static), ``hall`` (a large room), ``distant`` (muffled, far
+away), ``robot`` (ring-modulated), ``quiet`` (an aside or near-whisper, softer and closer) and ``memory``
+(a flashback or dream, soft and roomy). Each keeps the clip's speech loudness (``quiet`` is softer on
+purpose), stays below -1 dBFS and may add a short echo tail. Noise and rooms use fixed seeds, so the
+same sentence always sounds the same (and caches).
 Does NOT belong: Choosing which sentences get an effect (``documents.styling``) or synthesis.
 """
 

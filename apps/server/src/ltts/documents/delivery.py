@@ -2,17 +2,13 @@
 # Copyright (c) 2026 Carson McRae
 """Purpose: Decide, locally and deterministically, how each sentence of a document should be read.
 
-Scope: Reads the document in order and looks at each sentence's context (its kind, its paragraph,
-whether a quotation is still open from an earlier sentence). For every sentence it gives:
-- its speaking style: narration, question, lively, dialogue or calm;
-- whether it wants a steadier delivery (headings, list items, announcements);
-- the speaker of its quoted speech when a dialogue tag names one ("…," said Nicole / Nicole asked, "…");
-- its quoted and unquoted parts, so narration and dialogue can be voiced separately.
-
-Dialogue tags shape the style (whispered → calm, shouted → lively, asked → question), as do
-parentheses, interjections and question or exclamation marks. Nothing is guessed that the text does
-not show: an untagged line has no speaker, and sarcasm or stressed words are left alone, because
-punctuation cannot reveal them.
+Scope: Reads the document in order, with each sentence's context (its kind, its paragraph, a quotation
+still open from an earlier sentence), and gives every sentence its speaking style (narration, question,
+lively, dialogue or calm), whether it wants a steadier delivery (headings, lists, announcements), the
+speaker a dialogue tag names ("…," said Nicole / Nicole asked, "…") and its quoted and unquoted parts,
+so narration and dialogue can be voiced separately. Tags shape the style (whispered → calm, shouted →
+lively, asked → question), as do parentheses, interjections and punctuation. Nothing is guessed that
+the text does not show: an untagged line has no speaker; sarcasm and stress are left alone.
 Does NOT belong: Voices, synthesis or storage; ``styling.py`` combines this with the user's choices.
 """
 

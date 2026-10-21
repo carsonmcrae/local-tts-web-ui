@@ -2,24 +2,13 @@
 # Copyright (c) 2026 Carson McRae
 """Purpose: How each sentence of a document is read: the reader's choices, its characters and its context.
 
-Scope: Sentence annotations are stored in ``segment_annotations``, one row per sentence and kind:
-- ``voice``: another voice;
-- ``effect``: a sound effect;
-- ``sound``: a sound before the sentence;
-- ``style``: a speaking style for studio voices;
-- ``take``: which generated take;
-- ``pause``: a pause after the sentence, in milliseconds;
-- ``speak_as``: per-sentence pronunciations from speech marks.
-
-Kinds are validated by a registry, so a new kind needs no new table. Setting a kind replaces it and
-clearing it removes it; nothing is ever written into the document's text. The document's cast
-(``document_cast``) is a dialogue voice and whether quoted speech inside a narrated sentence is voiced
-separately.
-
-Plans a sentence for synthesis. The voice comes from, in order: the sentence's own voice, the voice
-of the character its dialogue tag names (``casting.py``), the dialogue voice for quoted speech, then
-the reader's. The speaking style is the sentence's own, or what ``delivery.py`` reads from the
-context. A revision string changes with every edit, so players know to fetch new audio.
+Scope: Sentence annotations (``segment_annotations``, one row per sentence and kind: ``voice``,
+``effect``, ``sound``, ``style``, ``take``, ``pause`` in ms, ``speak_as`` from speech marks), validated
+by a registry so a new kind needs no new table; nothing is written into the document's text. The cast
+(``document_cast``): a dialogue voice, and whether quoted speech in a narrated sentence is voiced apart.
+Plans a sentence for synthesis: its voice is its own, else its tagged character's (``casting.py``), else
+the dialogue voice for quoted speech, else the reader's; its style is its own or what ``delivery.py``
+reads from the context. A revision string changes with every edit, so players fetch new audio.
 Does NOT belong: Synthesis, effects, the analysis itself (``delivery.py``) or HTTP (``styling_router.py``).
 """
 

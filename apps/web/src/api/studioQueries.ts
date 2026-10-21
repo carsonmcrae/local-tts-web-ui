@@ -10,6 +10,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api, buildUrl } from './client';
 import { keys } from './queries';
+import type { components } from './schema.gen';
 import type { JobOut, VoiceProfile } from './types';
 
 export function useBuildStyles() {
@@ -30,6 +31,17 @@ export function useConsentStatement() {
 /** Downloads the voice as a package; ``confirm`` records that its owner chose to share it. */
 export function exportVoiceUrl(profileId: string): string {
   return buildUrl(`/api/voice-profiles/${profileId}/export`, { confirm: true });
+}
+
+/** What a voice file holds, checked by the server exactly as an import would be; nothing is saved. */
+export function usePreviewVoice() {
+  return useMutation({
+    mutationFn: (file: Blob) =>
+      api<components['schemas']['VoicePreview']>('/api/voice-profiles/import/preview', {
+        method: 'POST',
+        body: file,
+      }),
+  });
 }
 
 export function useImportVoice() {

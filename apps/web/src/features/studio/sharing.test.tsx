@@ -15,6 +15,13 @@ import { kokoro, mockApi, preferences, renderWithApp, voiceProfile } from '@/tes
 import { chatterbox } from '@/test/studio';
 import VoiceStudioPage from './VoiceStudioPage';
 
+const PREVIEW = {
+  name: 'Sam', description: 'Warm and calm', creator: 'Sam K.', kind: 'studio', delivery: 'expressive',
+  durationS: 12, styles: ['question', 'calm'], sizeBytes: 2_400_000, consentStatement: 'I may share it.',
+  consentedAt: '2026-10-01T00:00:00+00:00', createdAt: '2026-10-01T00:00:00+00:00',
+  exportedAt: '2026-10-02T00:00:00+00:00', appVersion: '2.0.0', formatVersion: 1, humanVoice: true,
+}; // prettier-ignore
+
 const JOB_ID = 'e'.repeat(32);
 const stylesJob = (status: JobOut['status']): JobOut => ({
   id: JOB_ID, kind: 'voice-styles', status, progress: 0.5, message: 'Teaching the voice…', payload: {}, result: null,
@@ -52,6 +59,7 @@ describe('Voice sharing', () => {
   it('imports a shared voice with the importer’s consent and an optional name', async () => {
     const { calls } = studioPage([], {
       'POST /api/voice-profiles/import': voiceProfile({ name: 'From Sam', source: 'shared' }),
+      'POST /api/voice-profiles/import/preview': PREVIEW,
     });
     const user = userEvent.setup({ applyAccept: false });
     renderWithApp(<VoiceStudioPage />);
@@ -66,6 +74,12 @@ describe('Voice sharing', () => {
     expect(within(dialog).getByText('That file is larger than 40 MB.')).toBeInTheDocument();
     await user.upload(input, new File(['PK'], 'sam.ttsvoice'));
     expect(within(dialog).getByText('sam.ttsvoice')).toBeInTheDocument();
+    const shown = await within(dialog).findByRole('region', { name: 'Voice file' });
+    expect(shown).toHaveTextContent('Sam');
+    expect(shown).toHaveTextContent('By Sam K.');
+    expect(shown).toHaveTextContent('Studio voice · 2.4 MB');
+    expect(shown).toHaveTextContent('Speaking styles: questions, calm lines');
+    expect(shown).toHaveTextContent('This is a copy of a real person’s voice');
     const submit = within(dialog).getByRole('button', { name: 'Import voice' });
     expect(submit).toBeDisabled();
     await user.type(within(dialog).getByLabelText(/Name/), 'From Sam');
@@ -77,7 +91,7 @@ describe('Voice sharing', () => {
     expect(sent?.query.get('name')).toBe('From Sam');
   });
 
-  it('shows why an import was refused', async () => {
+  it('shows why a voice file was refused before anything is imported', async () => {
     studioPage([], {
       'POST /api/voice-profiles/import': () =>
         new Response(
@@ -96,9 +110,10 @@ describe('Voice sharing', () => {
       within(dialog).getByTestId('voice-import-input'),
       new File(['x'], 'a.ttsvoice'),
     );
+    expect(await within(dialog).findByText('Not a voice.')).toBeInTheDocument(); // from the check
     await user.click(await within(dialog).findByRole('checkbox'));
-    await user.click(within(dialog).getByRole('button', { name: 'Import voice' }));
-    expect(await within(dialog).findByText('Not a voice.')).toBeInTheDocument();
+    expect(within(dialog).getByRole('button', { name: 'Import voice' })).toBeDisabled();
+    expect(within(dialog).queryByRole('region', { name: 'Voice file' })).not.toBeInTheDocument();
   });
 });
 

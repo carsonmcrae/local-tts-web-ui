@@ -159,17 +159,23 @@ the consent statement it was created under. Your session recordings stay on this
 who has the file can make the voice say anything, so you confirm that it's your voice (or that its
 owner agreed to it being shared) before the download starts.
 
-**Import a voice** (top of Voice Studio) adds a `.ttsvoice` file someone shared with you, after you
-confirm you have the voice owner's permission. The app checks the file completely before saving it:
-only the expected files, within size limits, every checksum, the reference audio, and each voice file's
-format and contents (it never runs code from the file). Imported voices are marked **Shared**.
+**Import a voice** (top of Voice Studio) adds a `.ttsvoice` file someone shared with you. As soon as
+you choose the file, the app checks it completely — only the expected files, each once and within size
+limits, every checksum, the reference audio, and each voice file's format and contents (it never runs
+code from the file) — and shows what it holds: the name, description and creator it was shared with,
+whether it's a studio or quick voice, its speaking styles, its size and the app version that made it.
+Then you confirm you have the voice owner's permission. Imported voices are marked **Shared** and never
+replace one of yours: a name already in use gets "(2)" added. A file from a newer TTSNative says so and
+asks you to update. The format is described in
+[the `.ttsvoice` reference](https://github.com/carsonmcrae/ttsnative/blob/main/docs/reference/ttsvoice-format.md).
 
 ## Recording tips
 
 - Use a quiet room, keep the microphone about a hand's width away, and read at your normal pace.
 - Read continuously. More than half the recording being silence triggers a warning.
-- Follow **How to read it** under each passage: the varied inflection is what teaches the voice to
-  sound like you in questions, dialogue and lively lines.
+- **How to read it** under each passage is a suggestion: the varied inflection is what teaches the
+  voice to sound like you in questions, dialogue and lively lines, but read in your own natural voice —
+  there's no need to exaggerate.
 - Browsers only allow recording on `localhost` or HTTPS pages. On another device over your network,
   import a recording instead (see [Other Devices](Other-Devices)).
 - If the browser blocks the microphone, allow it in the browser's site settings and try again.

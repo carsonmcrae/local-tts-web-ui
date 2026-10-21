@@ -1029,6 +1029,26 @@ export type paths = {
     patch?: never;
     trace?: never;
   };
+  '/api/voice-profiles/import/preview': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Preview Voice File
+     * @description What a ``.ttsvoice`` package holds, checked exactly as an import would be, without saving it.
+     */
+    post: operations['preview_voice_file_api_voice_profiles_import_preview_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/voice-sessions': {
     parameters: {
       query?: never;
@@ -2283,6 +2303,51 @@ export type components = {
       name: string;
       /** Qualitygrade */
       qualityGrade?: string | null;
+    };
+    /**
+     * VoicePreview
+     * @description What a voice file holds, shown before it is imported (nothing is saved to show it).
+     */
+    VoicePreview: {
+      /** Appversion */
+      appVersion: string | null;
+      /** Consentedat */
+      consentedAt: string;
+      /** Consentstatement */
+      consentStatement: string;
+      /** Createdat */
+      createdAt: string | null;
+      /** Creator */
+      creator: string | null;
+      /**
+       * Delivery
+       * @enum {string}
+       */
+      delivery: 'steady' | 'natural' | 'expressive';
+      /** Description */
+      description: string | null;
+      /** Durations */
+      durationS: number;
+      /** Exportedat */
+      exportedAt: string;
+      /** Formatversion */
+      formatVersion: number;
+      /**
+       * Humanvoice
+       * @default true
+       */
+      humanVoice: boolean;
+      /**
+       * Kind
+       * @enum {string}
+       */
+      kind: 'quick' | 'studio';
+      /** Name */
+      name: string;
+      /** Sizebytes */
+      sizeBytes: number;
+      /** Styles */
+      styles: string[];
     };
     /** VoiceProfileOut */
     VoiceProfileOut: {
@@ -4612,6 +4677,26 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  preview_voice_file_api_voice_profiles_import_preview_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['VoicePreview'];
         };
       };
     };

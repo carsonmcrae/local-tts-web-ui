@@ -3,11 +3,13 @@
 """Purpose: Share a custom voice as a ``.ttsvoice`` file, and import a voice someone shared with you.
 
 Scope: Export packs a profile's built voice, its speaking styles and its short playable reference
-with a manifest (name, delivery, the creator's consent statement and a SHA-256 per file) into a ZIP;
-session takes and other recordings never leave the computer. Import reads only the exact files a
-voice package may hold, each within a strict size limit, verifies every checksum, the reference
-audio and each safetensors header (``safetensors_check``) without loading a tensor or running any
-code, requires the importer's own consent, and saves it as a new profile marked as shared.
+with a manifest (format version, name, delivery, the creator's consent statement, a SHA-256 per file)
+into a ZIP; session takes never leave the computer. Import (and its preview, which checks the same
+and saves nothing) reads only the exact files a package may hold, each once and within a size limit,
+refuses newer format versions with a clear message, strips control and text-direction characters
+from the text it shows, verifies every checksum, the audio and each safetensors header without
+loading a tensor or running code, needs the importer's consent and adds a new profile, never
+replacing one. The format is documented in docs/reference/ttsvoice-format.md.
 Does NOT belong: HTTP parsing (``router.py``), profile storage (``profiles.py``) or synthesis.
 """
 
@@ -19,12 +21,14 @@ import json
 import logging
 import re
 import shutil
+import unicodedata
 import zipfile
 from pathlib import Path
-from typing import Literal
+from typing import Any, Literal
 
-from pydantic import Field, ValidationError
+from pydantic import Field, ValidationError, field_validator
 
+from ltts import __version__
 from ltts.common import MB, ApiModel, new_id, utc_now
 from ltts.config import Settings
 from ltts.engines.base import Delivery
@@ -52,14 +56,25 @@ _LIMITS: dict[str, int] = {
     _VOICE: 16 * MB,
     **{f"styles/{style}.safetensors": 2 * MB for style in STYLE_SOURCES},
 }
+FORMAT = "ttsnative-voice"
+FORMAT_VERSION = 1  # optional fields may be added within a version; anything else is a new version
 _SHA256 = re.compile("^[0-9a-f]{64}$")
 _UNSAFE_NAME = re.compile("[^A-Za-z0-9 _-]+")
+
+
+def _plain(text: str) -> str:
+    """Text without control or invisible formatting characters (such as ones that reverse its direction)."""
+    return "".join(char for char in text if unicodedata.category(char) not in ("Cc", "Cf", "Co", "Cs")).strip()
 
 
 class SharedVoiceManifest(ApiModel):
     format: Literal["ttsnative-voice"]
     version: Literal[1]
     name: str = Field(min_length=1, max_length=60)
+    description: str | None = Field(default=None, max_length=500)
+    creator: str | None = Field(default=None, max_length=60)  # who made the voice, as they chose to say
+    app_version: str | None = Field(default=None, max_length=40)  # the TTSNative version that exported it
+    created_at: str | None = Field(default=None, max_length=40)
     kind: VoiceKind
     engine_id: Literal["chatterbox"]
     delivery: Delivery
@@ -69,6 +84,31 @@ class SharedVoiceManifest(ApiModel):
     consented_at: str = Field(max_length=40)
     exported_at: str = Field(max_length=40)
     files: dict[str, str]  # file name -> SHA-256
+
+    @field_validator("name", "description", "creator", "consent_statement")
+    @classmethod
+    def _shown_plainly(cls, value: str | None) -> str | None:
+        return _plain(value) if value is not None else None
+
+
+class VoicePreview(ApiModel):
+    """What a voice file holds, shown before it is imported (nothing is saved to show it)."""
+
+    name: str
+    description: str | None
+    creator: str | None
+    kind: VoiceKind
+    delivery: Delivery
+    duration_s: float
+    styles: list[str]
+    size_bytes: int
+    consent_statement: str
+    consented_at: str
+    created_at: str | None
+    exported_at: str
+    app_version: str | None
+    format_version: int
+    human_voice: bool = True  # every shared voice is a copy of a real person's voice
 
 
 def _invalid(why: str) -> UnsupportedDocumentError:
@@ -86,6 +126,55 @@ def _sha256(path: Path) -> str:
 def package_name(name: str) -> str:
     """A safe download name for a voice's package."""
     return f"{_UNSAFE_NAME.sub('', name).strip()[:60] or 'voice'}{EXTENSION}"
+
+
+_PREVIEWED = {
+    "name", "description", "creator", "kind", "delivery", "duration_s", "consent_statement", "consented_at",
+    "created_at", "exported_at", "app_version",
+}  # fmt: skip
+
+
+def _check_version(raw: Any) -> None:
+    """A clear message for a voice file from a newer version of the app, before checking its fields."""
+    if not isinstance(raw, dict) or raw.get("format") != FORMAT:
+        raise _invalid("it isn't a .ttsvoice package")
+    version = raw.get("version")
+    if isinstance(version, int) and not isinstance(version, bool) and version > FORMAT_VERSION:
+        raise UnsupportedDocumentError(
+            f"This voice file was made by a newer version of TTSNative (voice format {version}). Update the "
+            "app to import it.",
+            code="voice_file_too_new",
+        )
+
+
+def _allowed_entries(package: zipfile.ZipFile) -> list[zipfile.ZipInfo]:
+    """The package's files, each exactly once, each one a voice package may hold, within its size limit."""
+    infos = [info for info in package.infolist() if not info.is_dir()]
+    names = [info.filename for info in infos]
+    if len(names) > len(_LIMITS) or len(set(names)) != len(names):
+        raise _invalid("it holds files twice or more files than a voice can have")
+    for info in infos:
+        if info.filename not in _LIMITS:
+            raise _invalid(f"it contains an unexpected file ({info.filename[:80]})")
+        if info.flag_bits & 0x1:
+            raise _invalid("it is encrypted")
+        if info.file_size > _LIMITS[info.filename]:
+            raise _invalid(f"{info.filename} is too large")
+    return infos
+
+
+def _read_manifest(path: Path) -> SharedVoiceManifest:
+    if not path.is_file():
+        raise _invalid("it has no manifest")
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+    except (ValueError, RecursionError) as exc:
+        raise _invalid("its manifest isn't valid") from exc
+    _check_version(raw)
+    try:
+        return SharedVoiceManifest.model_validate(raw)
+    except ValidationError as exc:
+        raise _invalid("its manifest isn't valid") from exc
 
 
 class VoiceSharing:
@@ -107,7 +196,9 @@ class VoiceSharing:
             sample_rate=profile.sample_rate,
             consent_statement=statement,
             consented_at=profile.consented_at,
+            created_at=profile.created_at,
             exported_at=utc_now(),
+            app_version=__version__,
             files={name: _sha256(path) for name, path in files.items()},
         )
         buffer = io.BytesIO()
@@ -132,7 +223,7 @@ class VoiceSharing:
             styles = staging / "styles"
             return self._profiles.create_shared(
                 SharedVoice(
-                    name=(name or manifest.name).strip()[:60] or manifest.name,
+                    name=self._unused_name(_plain(name or "")[:60] or manifest.name),
                     kind=manifest.kind,
                     delivery=manifest.delivery,
                     duration_s=manifest.duration_s,
@@ -146,6 +237,32 @@ class VoiceSharing:
         finally:
             shutil.rmtree(staging, ignore_errors=True)
 
+    def preview(self, upload: Path) -> VoicePreview:
+        """Check a package exactly as an import would, and describe it, without saving anything."""
+        staging = self._settings.path("tmp") / f"voice-preview-{new_id()}"
+        staging.mkdir(parents=True)
+        try:
+            manifest = self._unpack(upload, staging)
+            self._check_files(manifest, staging)
+            styles = sorted(Path(name).stem for name in manifest.files if name.startswith("styles/"))
+            return VoicePreview(
+                **manifest.model_dump(include=_PREVIEWED),
+                styles=styles,
+                size_bytes=upload.stat().st_size,
+                format_version=manifest.version,
+            )
+        finally:
+            shutil.rmtree(staging, ignore_errors=True)
+
+    def _unused_name(self, name: str) -> str:
+        """``name``, or "name (2)" and so on when a voice is already called that: an import never replaces one."""
+        taken = {profile.name.casefold() for profile in self._profiles.list_all()}
+        candidate, number = name, 2
+        while candidate.casefold() in taken:
+            suffix = f" ({number})"
+            candidate, number = f"{name[: 60 - len(suffix)]}{suffix}", number + 1
+        return candidate
+
     def _unpack(self, upload: Path, staging: Path) -> SharedVoiceManifest:
         """Read the package's allowed files into ``staging`` (never by their own paths), checking their sizes."""
         try:
@@ -153,14 +270,7 @@ class VoiceSharing:
         except (zipfile.BadZipFile, OSError) as exc:
             raise _invalid("it isn't a .ttsvoice package") from exc
         with package:
-            infos = [info for info in package.infolist() if not info.is_dir()]
-            for info in infos:
-                if info.filename not in _LIMITS:
-                    raise _invalid(f"it contains an unexpected file ({info.filename[:80]})")
-                if info.flag_bits & 0x1:
-                    raise _invalid("it is encrypted")
-                if info.file_size > _LIMITS[info.filename]:
-                    raise _invalid(f"{info.filename} is too large")
+            infos = _allowed_entries(package)
             try:
                 for info in infos:
                     target = staging / info.filename  # a name from the allow-list, never a path from the archive
@@ -169,13 +279,7 @@ class VoiceSharing:
                         target.write_bytes(member.read(_LIMITS[info.filename] + 1))
             except (zipfile.BadZipFile, OSError, EOFError) as exc:
                 raise _invalid("it is damaged") from exc
-        manifest_path = staging / _MANIFEST
-        if not manifest_path.is_file():
-            raise _invalid("it has no manifest")
-        try:
-            return SharedVoiceManifest.model_validate(json.loads(manifest_path.read_text(encoding="utf-8")))
-        except (ValueError, ValidationError) as exc:
-            raise _invalid("its manifest isn't valid") from exc
+        return _read_manifest(staging / _MANIFEST)
 
     def _check_files(self, manifest: SharedVoiceManifest, staging: Path) -> None:
         present = {str(path.relative_to(staging).as_posix()) for path in staging.rglob("*") if path.is_file()}

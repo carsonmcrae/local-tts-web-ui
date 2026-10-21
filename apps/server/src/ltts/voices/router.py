@@ -28,7 +28,7 @@ from ltts.errors import ConflictError
 from ltts.jobs import JobOut
 from ltts.voices.cleanup import MAX_BASS_BOOST_DB, MAX_TREBLE_CUT_DB, Cleanup, RecordingCheck
 from ltts.voices.profiles import CONSENT_STATEMENT, VoiceProfileOut
-from ltts.voices.sharing import MAX_PACKAGE_BYTES, package_name
+from ltts.voices.sharing import MAX_PACKAGE_BYTES, VoicePreview, package_name
 
 router = APIRouter(prefix="/api/voice-profiles", tags=["voice studio"])
 ProfileId = Annotated[str, Path(pattern=r"^[0-9a-f]{32}$")]
@@ -103,6 +103,16 @@ async def create_profile(
     target = await receive_upload(request, services)
     try:
         return await run_in_threadpool(services.voices.create, target, name.strip(), consent, source, cleanup)
+    finally:
+        target.unlink(missing_ok=True)
+
+
+@router.post("/import/preview")
+async def preview_voice_file(request: Request, services: ServicesDep) -> VoicePreview:
+    """What a ``.ttsvoice`` package holds, checked exactly as an import would be, without saving it."""
+    target = await receive_upload(request, services, MAX_PACKAGE_BYTES)
+    try:
+        return await run_in_threadpool(services.voice_sharing.preview, target)
     finally:
         target.unlink(missing_ok=True)
 

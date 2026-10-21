@@ -4,19 +4,26 @@
  * Purpose: Share a custom voice with someone else's TTSNative, and import a voice shared with you.
  * Scope: "Share" explains what the .ttsvoice file holds (the built voice, its styles and a short
  *   reference; never the session recordings) and what anyone holding it can do, and downloads it
- *   only after an explicit confirmation. "Import a voice" takes a .ttsvoice file, an optional new
- *   name and the importer's own consent, then adds it to the voice list.
+ *   only after an explicit confirmation. "Import a voice" takes a .ttsvoice file, shows what it holds
+ *   once the server has checked it (VoiceFilePreview), then takes an optional new name and the
+ *   importer's own consent and adds it to the voice list (never replacing a voice).
  * Does NOT belong: Packaging or checking voices (the server) or the rest of the profile card.
  */
 import { Download, Share2, Upload } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { describeError } from '@/api/client';
-import { exportVoiceUrl, useConsentStatement, useImportVoice } from '@/api/studioQueries';
+import {
+  exportVoiceUrl,
+  useConsentStatement,
+  useImportVoice,
+  usePreviewVoice,
+} from '@/api/studioQueries';
 import type { VoiceProfile } from '@/api/types';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
 import { Banner } from '@/components/ui/Feedback';
 import { Checkbox, Field, Input } from '@/components/ui/Field';
+import { VoiceFilePreview } from './VoiceFilePreview';
 
 const MAX_PACKAGE_BYTES = 40 * 1024 * 1024;
 
@@ -89,6 +96,7 @@ export function ImportVoiceButton() {
   const input = useRef<HTMLInputElement>(null);
   const statement = useConsentStatement();
   const importer = useImportVoice();
+  const preview = usePreviewVoice();
   const close = () => {
     setOpen(false);
     setFile(null);
@@ -96,12 +104,18 @@ export function ImportVoiceButton() {
     setConsent(false);
     setProblem(null);
     importer.reset();
+    preview.reset();
   };
   const choose = (chosen: File) => {
     setProblem(null);
+    setFile(null);
+    preview.reset();
     if (!chosen.name.toLowerCase().endsWith('.ttsvoice')) setProblem('Choose a .ttsvoice file.');
     else if (chosen.size > MAX_PACKAGE_BYTES) setProblem('That file is larger than 40 MB.');
-    else setFile(chosen);
+    else {
+      setFile(chosen);
+      preview.mutate(chosen);
+    }
   };
   const submit = () => {
     if (file) importer.mutate({ file, name: name.trim() }, { onSuccess: close });
@@ -124,7 +138,7 @@ export function ImportVoiceButton() {
             <Button
               variant="primary"
               icon={<Upload size={14} />}
-              disabled={!file || !consent}
+              disabled={!file || !consent || !preview.isSuccess}
               loading={importer.isPending}
               onClick={submit}
             >
@@ -154,6 +168,13 @@ export function ImportVoiceButton() {
               }}
             />
           </div>
+          {preview.isPending ? (
+            <p className="text-sm text-muted" role="status">
+              Checking the voice file…
+            </p>
+          ) : null}
+          {preview.isError ? <Banner tone="error">{describeError(preview.error)}</Banner> : null}
+          {preview.data ? <VoiceFilePreview preview={preview.data} /> : null}
           <Field label="Name (optional)" hint="Leave empty to keep the name it was shared with.">
             {({ id, describedBy }) => (
               <Input

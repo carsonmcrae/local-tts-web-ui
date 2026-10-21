@@ -20,6 +20,7 @@ from fastapi.testclient import TestClient
 
 from builders import make_docx, make_epub, make_pdf
 from conftest import FakeEngine
+from ltts import __version__
 from ltts.config import Settings
 
 
@@ -28,7 +29,7 @@ def upload(client: TestClient, name: str, data: bytes):  # type: ignore[no-untyp
 
 
 def test_health(client: TestClient) -> None:
-    assert client.get("/api/health").json() == {"status": "ok", "version": "2.0.0"}
+    assert client.get("/api/health").json() == {"status": "ok", "version": __version__}
 
 
 def test_upload_each_format_and_read_back(client: TestClient, tmp_path: Path) -> None:

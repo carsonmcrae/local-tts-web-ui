@@ -118,7 +118,11 @@ describe('Sentence styling', () => {
     select(sentence('Sentence 2.'), sentence('Sentence 3.'));
     await user.click(await screen.findByRole('button', { name: 'Voice & effect (2)' }));
     const dialog = await screen.findByRole('dialog', { name: 'Voice and effect' });
-    expect(within(dialog).getByText('How these 2 sentences should sound.')).toBeInTheDocument();
+    expect(
+      within(dialog).getByText(
+        /^How these 2 sentences should sound\. A voice or effect covers whole sentences/,
+      ),
+    ).toBeInTheDocument();
     await user.selectOptions(within(dialog).getByLabelText('Voice'), 'kokoro:bm_george');
     await user.selectOptions(within(dialog).getByLabelText('Effect'), 'loudspeaker');
     await user.click(within(dialog).getByRole('button', { name: 'Apply' }));

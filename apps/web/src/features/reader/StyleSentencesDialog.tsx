@@ -164,7 +164,7 @@ export function StyleSentencesDialog({
       open
       onOpenChange={(open) => (open ? undefined : onClose())}
       title="Voice and effect"
-      description={`How ${count} should sound.`}
+      description={`How ${count} should sound. A voice or effect covers whole sentences; to voice only the quoted words, give the character a voice in Voices & effects.`}
       footer={
         <div className="flex flex-wrap justify-between gap-2">
           <div className="flex flex-wrap gap-2">

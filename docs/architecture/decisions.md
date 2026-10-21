@@ -307,3 +307,32 @@ when a choice changes the stack, a trust boundary, data storage or the setup exp
   - **Listening.** In the owner's blind test on the same 24 pairs, 7 went to the fine-tune, 7 to the
     voice without it and 10 sounded the same. It ships as an experimental opt-in on the owner's
     overall impression; more training speech is the follow-up.
+
+## ADR-17 (proposed, for a later version): Voices and effects for part of a sentence
+
+- **Status:** proposed. Not built: it touches storage, planning, rendering, the cache key and the
+  reader's selection, too much for the release-hardening pass.
+- **Today:**
+  - A voice, effect, style, sound or pause chosen with **Voice & effect** applies to whole sentences.
+    The dialog says so.
+  - Quoted speech inside a narrated sentence already gets its character's voice, while the narration
+    keeps the reading voice (ADR-13, the `parts` a sentence plan carries).
+  - What is missing is choosing a voice or effect for any stretch of text by hand: for example, only
+    the announcement in "The guard cleared his throat. 'The train is delayed,' he said."
+- **Design:**
+  1. A `ranges` annotation per sentence: a list of `{start, end, voice_id?, effect?}` character
+     offsets into the sentence's stored text, which never changes. Validate on write: in bounds, not
+     overlapping, at most a few per sentence. Offsets are reset when a document's text is edited.
+  2. The planner (`documents/styling.py`) splits a sentence with ranges into parts at their
+     boundaries; each part has its own voice and effect. Ranges take priority over the quote split,
+     and text outside them uses the sentence's or the reading voice.
+  3. `synthesis/render.py` applies a part's effect to that piece before joining (the sentence-wide
+     effect, if any, after). Each piece's effect joins its extras, so the cache key changes only for
+     sentences that have ranges.
+  4. The reader turns a selection into offsets within each touched sentence; a selection over several
+     sentences covers the middle ones fully. Exports and the speech API need nothing new: they render
+     through the same plan.
+- **Risks:**
+  - Joins inside a sentence (the existing 0.12 s gap with room tone) can make speech choppy if a
+    range is very short; require at least a few words.
+  - Engines read short fragments less naturally than whole sentences.

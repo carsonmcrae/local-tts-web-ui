@@ -64,8 +64,9 @@ always in sync. Word-level highlighting from real model timings is on the roadma
 
 ## Can I make audiobooks?
 
-Yes. Export a document as MP3 or WAV, as one file or as a ZIP with one file per chapter and a
-playlist. See [Exporting Audio](Exporting-Audio). M4B export with chapter markers is on the roadmap.
+Yes. Export a document as an M4B audiobook with chapters, title, author, narrator and cover, as a
+read-along EPUB, or as MP3 or WAV (one file or a ZIP with one file per chapter and a playlist).
+Long exports pause, resume and survive a restart. See [Exporting Audio](Exporting-Audio).
 
 ## What licences apply?
 

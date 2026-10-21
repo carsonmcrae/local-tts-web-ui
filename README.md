@@ -215,6 +215,11 @@ See [CONTRIBUTING.md](CONTRIBUTING.md), [testing](docs/guides/testing.md),
 - OCR for scanned PDFs (optional, to keep setup light)
 - Multilingual voice cloning (Chatterbox Multilingual) and a lighter CPU cloning option
 - Better English pronunciation with the misaki G2P used to train Kokoro
+- Improve a saved studio voice later with new takes, comparing before replacing it
+- Voices and effects for part of a sentence ([ADR-17](docs/architecture/decisions.md))
+- A secure (HTTPS) mode for phones and tablets ([design](docs/research/lan-https.md))
+- More expressive questions and exclamations for studio voices, if an engine shows it in a blind test
+  (Chatterbox Turbo has no expression control; see the [studio voice audit](docs/research/studio-voice-audit.md))
 
 ## Responsible use
 

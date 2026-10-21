@@ -31,14 +31,14 @@ release is compatible, the worker lifts the pin (`override-dependencies` in
 would detach torch from the per-extra PyTorch index). `npm run security` audits both extras through
 `scripts/audit-worker.mjs`, against OSV because PyTorch's `+cpu` and `+cu126` builds are not on PyPI.
 
-| Package           | Pinned by chatterbox    | Locked            | Why                                                                                           |
-| ----------------- | ----------------------- | ----------------- | --------------------------------------------------------------------------------------------- |
-| diffusers         | 0.29.0                  | 0.38.0            | Two high-severity `trust_remote_code` advisories (GHSA-98h9-4798-4q5v, GHSA-7wx4-6vff-v64p)   |
-| safetensors       | 0.5.3                   | 0.8.0             | Required by diffusers 0.38                                                                    |
-| transformers      | 5.2.0                   | 5.11.0            | Four high-severity advisories below (5.11 rather than 5.10.x, which crashed on torch 2.6)     |
-| torch, torchaudio | 2.6.0 (`+cu124`)        | 2.11.0 (`+cu126`) | 18 of the 19 advisories below; torchaudio has no release after 2.11, so torch stops there too |
-| Pillow            | No (diffusers needs it) | 13.0.0            | Nine advisories in 12.3.0, fixed only in 13.0.0 ([below](#pillow-13-2026-10-20))              |
-| virtualenv        | No (via s3tokenizer)    | 21.14.7           | CVE-2026-113725 in 21.14.5, fixed in 21.14.7 ([below](#virtualenv-21147-2026-10-21))          |
+| Package           | Pinned by chatterbox    | Locked            | Why                                                                                               |
+| ----------------- | ----------------------- | ----------------- | ------------------------------------------------------------------------------------------------- |
+| diffusers         | 0.29.0                  | 0.38.0            | Two high-severity `trust_remote_code` advisories (GHSA-98h9-4798-4q5v, GHSA-7wx4-6vff-v64p)       |
+| safetensors       | 0.5.3                   | 0.8.0             | Required by diffusers 0.38                                                                        |
+| transformers      | 5.2.0                   | 5.11.0            | Four high-severity advisories below (5.11 rather than 5.10.x, which crashed on torch 2.6)         |
+| torch, torchaudio | 2.6.0 (`+cu124`)        | 2.11.0 (`+cu126`) | 18 of the 19 advisories below; torchaudio has no release after 2.11, so torch stops there too     |
+| Pillow            | No (diffusers needs it) | 13.0.0            | Nine advisories in 12.3.0, fixed only in 13.0.0 ([below](#pillow-13-2026-10-20))                  |
+| virtualenv        | No (via s3tokenizer)    | 21.14.10          | Four advisories in 21.14.5 and 21.14.7, fixed by 21.14.9 ([below](#virtualenv-211410-2026-10-21)) |
 
 The cu126 build supports the same GPUs as cu124 did (sm_50 to sm_90, Maxwell through Hopper). Linux
 wheels now need glibc 2.28 or newer.
@@ -120,12 +120,14 @@ worker never loads. gradio declares `pillow<13` but is never installed (`sys_pla
 diffusers accepts any Pillow. The licence is unchanged (MIT-CMU). Only Pillow moved in the lock, and its
 15 files match the SHA-256 digests PyPI publishes.
 
-### virtualenv 21.14.7 (2026-10-21)
+### virtualenv 21.14.10 (2026-10-21)
 
 - **The advisory.** CVE-2026-113725 / GHSA-vxj4-q4g9-crj7 (CVSS 3.1 local, user interaction
   required): before 21.14.7, the bash `activate` script that `virtualenv` writes escapes the
   environment's name for only one of bash's two passes over the prompt, so a name containing
-  `\$(...)` runs as commands whenever bash draws the prompt. Published 2026-10-20.
+  `\$(...)` runs as commands whenever bash draws the prompt. Published 2026-10-20. On 2026-10-21, 21.14.7 was
+  itself reported for three more activation-script issues of the same kind (CVE-2026-113716,
+  CVE-2026-113722 and CVE-2026-113724), fixed in 21.14.9.
 - **How it got here.** `s3tokenizer` 0.3.0 (a Chatterbox dependency) lists the developer tool
   `pre-commit` as a runtime requirement, and `pre-commit` requires `virtualenv`. Nothing in the
   Chatterbox environment imports `virtualenv` or `pre_commit` (checked in `chatterbox`,
@@ -134,18 +136,18 @@ diffusers accepts any Pillow. The licence is unchanged (MIT-CMU). Only Pillow mo
   environment's own activation scripts come from uv, not from this package. Triggering it needs
   someone to create an environment with the `virtualenv` command, give it a name holding `\$(...)`,
   and activate it in bash.
-- **The fix.** The lock moves to 21.14.7, the first fixed release (2026-10-12; no advisories are open
-  against it), through a per-package exception to the 14-day cool-down and a floor of
-  `virtualenv>=21.14.7` in `override-dependencies`. Nothing else in the lock changed, and
-  `s3tokenizer` stays at 0.3.0. The exception line in `pyproject.toml` says to drop it after
-  2026-10-27, when the release is two weeks old.
+- **The fix.** The lock first moved to 21.14.7 (2026-10-12) and, once that version was reported too,
+  to 21.14.10 (2026-10-17; no advisories are open against it), through a per-package exception to
+  the 14-day cool-down and a floor of `virtualenv>=21.14.9` in `override-dependencies`. Nothing else
+  in the lock changed, and `s3tokenizer` stays at 0.3.0. The exception line in `pyproject.toml` says
+  to drop it after 2026-10-31, when the release is two weeks old.
 - **Still installed.** `uv sync --no-dev` leaves out only this project's own development group; it
   can't drop `pre-commit` or `virtualenv`, because `s3tokenizer` declares `pre-commit` as a runtime
-  requirement. Both stay in the environment, `virtualenv` at 21.14.7 and unused. Removing them would
+  requirement. Both stay in the environment, `virtualenv` at 21.14.10 and unused. Removing them would
   take an override that marks `pre-commit` as never installed, as this file already does for gradio;
   that is a change for a later release, not a release-week one.
 - **Revisit.** Reassess if `s3tokenizer` drops the `pre-commit` requirement (then both packages can
-  leave the environment altogether), or if a newer advisory names 21.14.7.
+  leave the environment altogether), or if a newer advisory names 21.14.10.
 
 ### Verification
 
@@ -219,11 +221,13 @@ known advisories.
   and the runtime build and clean-install check were repeated with the new version. The cool-down would
   have covered this release on 2026-11-03; nothing needs removing afterwards, since the bootstrap is a
   plain pin.
-- **virtualenv 21.14.5 (CVE-2026-113725, in the voice-cloning environment through pre-commit):** its bash
-  `activate` script could run commands from an environment name; TTSNative never uses virtualenv (uv
-  builds the environment), but the fixed 21.14.7 (2026-10-12) comes in through a security exception
-  (`exclude-newer-package`), so existing installs are offered the in-place update. Drop the exception
-  after 2026-10-27.
+- **virtualenv (in the voice-cloning environment through pre-commit):** 21.14.5's bash `activate` script
+  could run commands from an environment name (CVE-2026-113725, fixed in 21.14.7 on 2026-10-12), and
+  21.14.7 was then reported for three more activation-script issues (CVE-2026-113716, -113722,
+  -113724, fixed in 21.14.9). TTSNative never runs virtualenv (uv builds the environment), but the
+  advisories fail the audit, so 21.14.10 (2026-10-17) comes in through a security exception
+  (`exclude-newer-package`), re-locked with the same uv that wrote the lock so only virtualenv changes;
+  existing installs are offered the in-place update. Drop the exception after 2026-10-31.
 - **Licences:** see [license-inventory.md](license-inventory.md) for what the installer ships and the
   GPL/LGPL source offer.
 

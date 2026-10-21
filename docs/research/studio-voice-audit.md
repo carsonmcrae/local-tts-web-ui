@@ -289,6 +289,10 @@ Two artifacts the owner heard came from the first room tone, not the voices:
   the same speech without it, the fill swung 5 dB every 10 ms and peaked at 10 times its level.
 - **The fix:** the fill is now steady noise shaped like the clip's background (peaks 3–4 times its
   level), and nothing of the clip is copied.
+- **Checked for seams and added hiss:** the first steady fill could still swell, sitting up to 13 dB
+  above the background heard just before the pause. It is now capped there. On the same passages it
+  sits 1.8–2.2 dB under what came before every pause, and pauses after a sentence that ends in
+  near-silence stay silent (2 of 4 and 2 of 9). Nothing is added to a clean voice.
 
 "Tulips" was mispronounced by the original model, which is another word for the pronunciation
 dictionary.

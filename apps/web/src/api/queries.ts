@@ -130,7 +130,7 @@ export function useUploadDocument() {
 export function usePasteText() {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: (input: { text: string; title?: string }) =>
+    mutationFn: (input: { text: string; title?: string; speechMarks?: boolean }) =>
       api<DocumentDetail>('/api/documents/text', { method: 'POST', json: input }),
     onSuccess: () => client.invalidateQueries({ queryKey: keys.documents }),
   });

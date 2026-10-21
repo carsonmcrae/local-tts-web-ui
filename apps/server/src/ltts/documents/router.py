@@ -60,7 +60,7 @@ async def upload_document(
 
 @router.post("/text", status_code=201)
 def paste_text(body: PasteTextRequest, services: ServicesDep) -> DocumentDetail:
-    return services.document_service.ingest_text(body.text, body.title)
+    return services.document_service.ingest_text(body.text, body.title, speech_marks=body.speech_marks)
 
 
 def require_local_client(request: Request) -> None:

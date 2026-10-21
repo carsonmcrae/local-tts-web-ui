@@ -16,6 +16,7 @@ import json
 import logging
 import threading
 from pathlib import Path
+from typing import NamedTuple
 
 from ltts.common import MB, ensure_free_space, new_id
 from ltts.config import Settings
@@ -28,11 +29,21 @@ from ltts.documents.sandbox import extract_isolated
 from ltts.documents.schemas import MAX_TITLE_CHARS, DocumentDetail
 from ltts.documents.segmenter import segment_extraction
 from ltts.documents.sniff import detect_type
-from ltts.documents.structures import DocumentType, Extraction, ExtractionLimits
+from ltts.documents.speech_marks import Annotation, Encoded, MarkHooks, apply, encode, fold, strip
+from ltts.documents.structures import DocumentType, Extraction, ExtractionLimits, SectionInfo, Segment
 from ltts.documents.url_import import fetch_page
 from ltts.errors import BusyError, ConflictError, DocumentExtractionError
 
 log = logging.getLogger("ltts.documents")
+
+
+class _Source(NamedTuple):
+    doc_type: DocumentType
+    filename: str | None
+    size: int
+    sha256: str
+
+
 _BUSY_WAIT_S = 30.0
 
 
@@ -44,10 +55,18 @@ def display_filename(filename: str) -> str:
 
 
 class DocumentService:
-    def __init__(self, settings: Settings, repository: DocumentRepository, *, isolate: bool = True):
+    def __init__(
+        self,
+        settings: Settings,
+        repository: DocumentRepository,
+        *,
+        isolate: bool = True,
+        marks: MarkHooks | None = None,
+    ):
         self._settings = settings
         self._repo = repository
         self._isolate = isolate
+        self._marks = marks  # speech marks in pasted text; off without them
         self._slots = threading.BoundedSemaphore(settings.max_concurrent_extractions)
 
     @property
@@ -91,7 +110,7 @@ class DocumentService:
             label = display_filename(filename)
             doc_type = detect_type(path, label)
             extraction = self._run_extraction(path, doc_type, Path(label).stem)
-            return self._store(extraction, doc_type, label, size, sha256)
+            return self._store(extraction, _Source(doc_type, label, size, sha256))
         finally:
             path.unlink(missing_ok=True)
 
@@ -108,26 +127,46 @@ class DocumentService:
             path.write_bytes(data)
             extraction = self._run_extraction(path, DocumentType.HTML, page.host)
             label = page.address[:MAX_TITLE_CHARS]
-            return self._store(
-                extraction, DocumentType.HTML, label, len(page.body), hashlib.sha256(page.body).hexdigest()
-            )
+            source = _Source(DocumentType.HTML, label, len(page.body), hashlib.sha256(page.body).hexdigest())
+            return self._store(extraction, source)
         finally:
             path.unlink(missing_ok=True)
 
-    def ingest_text(self, text: str, title: str | None) -> DocumentDetail:
+    def ingest_text(self, text: str, title: str | None, *, speech_marks: bool = False) -> DocumentDetail:
+        """Add pasted text; with ``speech_marks``, marks such as {pause 2s} become sentence annotations."""
         self._check_capacity()
         if len(text) > self._settings.max_text_chars:
             raise DocumentExtractionError("The pasted text is longer than the configured limit.", code="text_limit")
-        extraction = text_to_extraction(text, title)
+        marks = encode(text) if speech_marks and self._marks is not None else None
+        extraction = text_to_extraction(marks.text if marks else text, title)
         if not extraction.sections:
             raise DocumentExtractionError("There's no readable text to add.", code="empty_document")
         raw = text.encode("utf-8")
-        return self._store(extraction, DocumentType.PASTE, None, len(raw), hashlib.sha256(raw).hexdigest())
+        return self._store(
+            extraction, _Source(DocumentType.PASTE, None, len(raw), hashlib.sha256(raw).hexdigest()), marks
+        )
 
-    def _store(
-        self, extraction: Extraction, doc_type: DocumentType, filename: str | None, size: int, sha256: str
-    ) -> DocumentDetail:
+    def _read_marks(
+        self, segments: list[Segment], sections: list[SectionInfo], marks: Encoded
+    ) -> tuple[list[Segment], list[SectionInfo], list[Annotation], list[str]]:
+        """The sentences without their marks, and the annotations and warnings the marks make."""
+        assert self._marks is not None  # noqa: S101 - only called when speech marks are enabled
+        segments, sections = fold(segments, sections)
+        annotations, warnings = apply([(s.index, s.text) for s in segments], marks.marks, self._marks.find_voice)
+        for segment in segments:
+            segment.text = strip(segment.text)
+        for section in sections:
+            section.title = strip(section.title)
+        return segments, sections, annotations, marks.warnings + warnings
+
+    def _store(self, extraction: Extraction, source: _Source, marks: Encoded | None = None) -> DocumentDetail:
+        doc_type, filename, size, sha256 = source
         segments, sections = segment_extraction(extraction)
+        warnings: list[str] = list(extraction.warnings)
+        annotations: list[Annotation] = []
+        if marks is not None:
+            segments, sections, annotations, found = self._read_marks(segments, sections, marks)
+            warnings += found
         if not segments:
             raise DocumentExtractionError("No readable text was found in this document.", code="empty_document")
         all_text = " ".join(s.text for s in segments)
@@ -145,12 +184,15 @@ class DocumentService:
                 "word_count": word_count(all_text),
                 "page_count": extraction.page_count,
                 "segment_count": len(segments),
-                "warnings_json": json.dumps(extraction.warnings),
+                "warnings_json": json.dumps(warnings),
                 "source_sha256": sha256,
             },
             sections,
             segments,
         )
+        for annotation in annotations:
+            assert self._marks is not None  # noqa: S101 - annotations only come from speech marks
+            self._marks.annotate(document_id, annotation.index, annotation.kind, annotation.value)
         log.info(
             "document stored",
             extra={"document_id": document_id, "type": doc_type.value, "segments": len(segments)},

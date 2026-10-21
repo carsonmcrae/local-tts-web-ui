@@ -23,6 +23,7 @@ from ltts.documents.delivery import Sentence
 from ltts.documents.details import DocumentDetailsStore
 from ltts.documents.repository import DocumentRepository
 from ltts.documents.service import DocumentService
+from ltts.documents.speech_marks import MarkHooks, voice_finder
 from ltts.documents.styling import StylingStore
 from ltts.engines.registry import EngineRegistry
 from ltts.exports.audiobookshelf import Audiobookshelf
@@ -102,12 +103,13 @@ def build_services(
     registry.attach_custom_voices(voices.resolve, lambda: voices.as_voices(lambda: registry.is_ready(CLONING_ENGINE)))
     sessions = VoiceSessionService(settings, db, jobs)
     studio = StudioService(sessions, voices, jobs, lambda: registry.voice_builder(CLONING_ENGINE))
+    marks = MarkHooks(voice_finder(lambda: [(v.id, v.name) for v in registry.voices()]), styling.annotate)
     return Services(
         settings=settings,
         db=db,
         jobs=jobs,
         document_repo=documents,
-        document_service=DocumentService(settings, documents, isolate=isolate_extraction),
+        document_service=DocumentService(settings, documents, isolate=isolate_extraction, marks=marks),
         model_store=store,
         engines=registry,
         audio_cache=cache,

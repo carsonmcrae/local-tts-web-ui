@@ -1650,6 +1650,11 @@ export type components = {
     };
     /** PasteTextRequest */
     PasteTextRequest: {
+      /**
+       * Speechmarks
+       * @default false
+       */
+      speechMarks: boolean;
       /** Text */
       text: string;
       /** Title */

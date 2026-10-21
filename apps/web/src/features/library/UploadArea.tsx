@@ -18,6 +18,7 @@ import { Banner, StatusRegion } from '@/components/ui/Feedback';
 import { Field, Input, Textarea } from '@/components/ui/Field';
 import { IndeterminateBar } from '@/components/ui/Spinner';
 import { cn } from '@/lib/cn';
+import { SpeechMarksOption } from './SpeechMarksOption';
 
 const ACCEPTED = '.txt,.md,.markdown,.pdf,.docx,.epub,.html,.htm,.fb2,.fb2.zip,.mobi,.azw,.azw3';
 const ACCEPTED_EXTENSIONS = new Set(ACCEPTED.split(','));
@@ -69,9 +70,10 @@ export function PasteTextDialog({
   const navigate = useNavigate();
   const [text, setText] = useState('');
   const [title, setTitle] = useState('');
+  const [marks, setMarks] = useState(false);
   const submit = () =>
     paste.mutate(
-      { text, ...(title.trim() ? { title: title.trim() } : {}) },
+      { text, speechMarks: marks, ...(title.trim() ? { title: title.trim() } : {}) },
       {
         onSuccess: (document) => {
           onOpenChange(false);
@@ -126,6 +128,7 @@ export function PasteTextDialog({
             />
           )}
         </Field>
+        <SpeechMarksOption checked={marks} onCheckedChange={setMarks} />
         {paste.isError ? <Banner tone="error">{describeError(paste.error)}</Banner> : null}
       </div>
     </Dialog>

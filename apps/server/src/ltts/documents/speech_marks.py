@@ -16,10 +16,11 @@ from __future__ import annotations
 
 import json
 import re
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Iterable, Sequence
 from dataclasses import dataclass, field
 
 from ltts.documents.segmenter import FIRST_MARK, MAX_MARKS, PAUSE_MARK
+from ltts.documents.structures import SectionInfo, Segment
 from ltts.documents.styling import SOUNDS, STYLES
 from ltts.effects import EFFECTS
 
@@ -111,8 +112,62 @@ def strip(text: str) -> str:
     return " ".join("".join(" " if _is_mark(char) else char for char in text).split())
 
 
-def _marks_in(text: str, count: int) -> list[int]:
-    return [ord(char) - FIRST_MARK for char in text if FIRST_MARK <= ord(char) < FIRST_MARK + count]
+_RANK = {"sentence": 0, "paragraph": 1, "section": 2}
+
+
+def fold(segments: list[Segment], sections: list[SectionInfo]) -> tuple[list[Segment], list[SectionInfo]]:
+    """Move marks standing alone (a line holding only ``{voice Sam}``) onto the sentence they belong to.
+
+    A lone pause belongs to the sentence before it; any other lone mark to the sentence after it (or the
+    one before, at the very end). Sentences and sections are then numbered again without the empty ones.
+    """
+    kept: list[Segment] = []
+    carried = ""
+    for segment in segments:
+        if strip(segment.text):
+            segment.text = carried + segment.text
+            carried = ""
+            kept.append(segment)
+            continue
+        alone = "".join(char for char in segment.text if _is_mark(char))
+        if kept and _RANK[segment.boundary] > _RANK[kept[-1].boundary]:
+            kept[-1].boundary = segment.boundary  # keep the paragraph or section break it ended
+        if PAUSE_MARK in alone and kept:
+            kept[-1].text += alone
+        else:
+            carried += alone
+    if carried and kept:
+        kept[-1].text += carried
+    return kept, _renumber(kept, sections)
+
+
+def _renumber(kept: list[Segment], sections: list[SectionInfo]) -> list[SectionInfo]:
+    firsts: dict[int, int] = {}
+    counts: dict[int, int] = {}
+    for position, segment in enumerate(kept):
+        segment.index = position
+        firsts.setdefault(segment.section_index, position)
+        counts[segment.section_index] = counts.get(segment.section_index, 0) + 1
+    out: list[SectionInfo] = []
+    numbers: dict[int, int] = {}
+    for section in sections:
+        if section.index in counts:
+            numbers[section.index] = len(out)
+            out.append(SectionInfo(len(out), section.title, firsts[section.index], counts[section.index], section.page))
+    for segment in kept:
+        segment.section_index = numbers[segment.section_index]
+    return out
+
+
+def _marks_in(text: str, count: int) -> list[tuple[int, bool, bool]]:
+    """Each mark in ``text`` as (number, before the sentence's words, after them)."""
+    words = [position for position, char in enumerate(text) if not (_is_mark(char) or char.isspace())]
+    first, last = (words[0], words[-1]) if words else (len(text), -1)
+    return [
+        (ord(char) - FIRST_MARK, position < first, position > last)
+        for position, char in enumerate(text)
+        if FIRST_MARK <= ord(char) < FIRST_MARK + count
+    ]
 
 
 @dataclass(frozen=True, slots=True)
@@ -122,18 +177,47 @@ class Annotation:
     value: str
 
 
+@dataclass(frozen=True, slots=True)
+class MarkHooks:
+    """What importing marked text needs from the rest of the app."""
+
+    find_voice: Callable[[str], str | None]  # a mark's voice name or id -> a voice id, or None
+    annotate: Callable[[str, int, str, str], None]  # (document, sentence, kind, value)
+
+
+def voice_finder(voices: Callable[[], Iterable[tuple[str, str]]]) -> Callable[[str], str | None]:
+    """Find a mark's voice by id or name (ignoring case) among ``voices()``, listed once, when first needed."""
+    known: dict[str, str] = {}
+
+    def find(wanted: str) -> str | None:
+        if not known:
+            for voice_id, name in voices():
+                known.setdefault(name.casefold(), voice_id)
+                known[voice_id.casefold()] = voice_id
+        return known.get(wanted.strip().casefold())
+
+    return find
+
+
 def _read_marks(
     index: int, text: str, marks: Sequence[Mark], open_ranges: dict[str, str]
 ) -> tuple[dict[str, str], list[Annotation]]:
-    """The ranged marks covering one sentence (updating ``open_ranges``) and its pauses and sounds."""
+    """The ranged marks covering one sentence (updating ``open_ranges``) and its pauses and sounds.
+
+    A range closed before the sentence's words doesn't cover it; one opened after them starts with the next.
+    """
     active = dict(open_ranges)
     points: list[Annotation] = []
-    for number in _marks_in(text, len(marks)):
+    for number, before, after in _marks_in(text, len(marks)):
         mark = marks[number]
         if mark.kind in _RANGED and mark.closing:
             open_ranges.pop(mark.kind, None)
+            if before:
+                active.pop(mark.kind, None)
         elif mark.kind in _RANGED:
-            open_ranges[mark.kind] = active[mark.kind] = mark.value
+            open_ranges[mark.kind] = mark.value
+            if not after:
+                active[mark.kind] = mark.value
         elif mark.kind == "pause":
             points.append(Annotation(index, "pause", str(_pause_ms(mark.value))))
         elif mark.kind == "sound":

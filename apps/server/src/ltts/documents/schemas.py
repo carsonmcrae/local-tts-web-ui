@@ -74,6 +74,7 @@ class SectionContent(ApiModel):
 class PasteTextRequest(ApiModel):
     text: str = Field(min_length=1, max_length=2_000_000)
     title: str | None = Field(default=None, max_length=MAX_TITLE_CHARS)
+    speech_marks: bool = False  # read {pause 2s}, {voice Sam}...{/voice} and the like as instructions
 
 
 class WebPageRequest(ApiModel):

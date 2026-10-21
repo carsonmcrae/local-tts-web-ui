@@ -110,3 +110,11 @@ def test_marks_past_the_limit_are_left_as_text() -> None:
 def test_text_without_marks_splits_exactly_as_before() -> None:
     plain = 'Dr. Smith said "Hi." Then J. K. Rowling left... and returned! Did she? Yes.'
     assert split_sentences(encode(plain).text) == split_sentences(plain)
+
+
+def test_a_range_closed_before_a_sentence_or_opened_after_one_leaves_it_alone() -> None:
+    encoded = encode("{voice Sam}{/voice}")  # mark 0 opens, mark 1 closes
+    opened, closed = chr(FIRST_MARK), chr(FIRST_MARK + 1)
+    parts = [f"One.{opened}", "Two.", f"{closed}Three."]  # as fold() leaves marks that stood alone
+    annotations, _ = apply(list(enumerate(parts)), encoded.marks, voices)
+    assert [(a.index, a.kind, a.value) for a in annotations] == [(1, "voice", "kokoro:sam")]

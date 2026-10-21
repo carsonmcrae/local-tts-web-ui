@@ -27,6 +27,10 @@ All notable changes to this project are documented here. The format follows
 - **More documents:** HTML pages, FB2 (and `.fb2.zip`) and MOBI books (DRM-protected books are
   refused, never unlocked), and **Import a web page** by its address: only public http(s) addresses,
   every redirect re-checked, connections pinned to the checked address, size and time limits.
+- **A careful cleanup of running headers, page numbers and footnote markers.** They're skipped when
+  reading aloud and exporting, but stay visible (marked "skipped"), and **Read them all again** undoes
+  it; any sentence can be skipped or read by hand. Detection prefers missing one to skipping real text
+  (it needs three or more pages, and page numbers that count along with the pages).
 - **Speech marks** (optional, when pasting text): `{pause 2s}`, `{voice Sam}…{/voice}`,
   `{effect radio}…{/effect}`, `{style calm}…{/style}`, `{sound laugh}` and `{say Kael = Kay-el}`
   become sentence settings; the stored text never contains them, and unknown marks are listed.

@@ -103,15 +103,15 @@ Nothing is installed system-wide. To remove everything, delete the folder.
 
 ## Supported formats
 
-| Format        | Notes                                                                                                                                                                                           |
-| ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| PDF           | Text PDFs; chapters from the outline or one section per page; running headers, footers and page numbers removed. Scanned (image-only) PDFs are detected and reported — OCR isn't supported yet. |
-| DOCX          | Headings become chapters; tables are read row by row. Macros and embedded objects are ignored.                                                                                                  |
-| EPUB 2/3      | Chapters from the table of contents. Scripts and styles are ignored.                                                                                                                            |
-| Markdown, TXT | Headings / "Chapter N" lines become sections; UTF-8, UTF-16 and Windows-1252 text.                                                                                                              |
-| MOBI          | Kindle MOBI (PalmDOC). DRM-protected books are refused, never unlocked; KF8/AZW3 isn't supported yet.                                                                                           |
-| FB2           | FictionBook, also zipped (`.fb2.zip`); sections, authors and footnotes.                                                                                                                         |
-| HTML, web     | Saved pages, or a public page by its address: the main text only, without menus, scripts or hidden parts.                                                                                       |
+| Format        | Notes                                                                                                                                                                                                                              |
+| ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| PDF           | Text PDFs; chapters from the outline or one section per page; running headers, footers and page numbers skipped when reading (still visible; undo). Scanned (image-only) PDFs are detected and reported — OCR isn't supported yet. |
+| DOCX          | Headings become chapters; tables are read row by row. Macros and embedded objects are ignored.                                                                                                                                     |
+| EPUB 2/3      | Chapters from the table of contents. Scripts and styles are ignored.                                                                                                                                                               |
+| Markdown, TXT | Headings / "Chapter N" lines become sections; UTF-8, UTF-16 and Windows-1252 text.                                                                                                                                                 |
+| MOBI          | Kindle MOBI (PalmDOC). DRM-protected books are refused, never unlocked; KF8/AZW3 isn't supported yet.                                                                                                                              |
+| FB2           | FictionBook, also zipped (`.fb2.zip`); sections, authors and footnotes.                                                                                                                                                            |
+| HTML, web     | Saved pages, or a public page by its address: the main text only, without menus, scripts or hidden parts.                                                                                                                          |
 
 Limits (configurable): 25 MB per file, 2 million characters, 2,000 PDF pages.
 

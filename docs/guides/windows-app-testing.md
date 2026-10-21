@@ -5,20 +5,23 @@ release, and the latest results. Design: [desktop-and-releases.md](../architectu
 
 ## Automated (Desktop workflow, clean `windows-2025` runner)
 
-| Check                                                                                                                                                                    | Where                             |
-| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------- |
-| Shell formatting, clippy (`-D warnings`), unit tests (settings file, reminders, version comparison)                                                                      | `desktop.yml` → shell             |
-| Installer builds from the locked runtime; the model is SHA-256 verified                                                                                                  | `npm run desktop:build`           |
-| Silent per-user install; Installed Apps shows version and publisher                                                                                                      | `scripts/desktop/smoke-test.mjs`  |
-| The app starts its server; the bundled Kokoro model is ready without a download                                                                                          | smoke test                        |
-| Real speech (voice preview) and an MP3 export of pasted text                                                                                                             | smoke test                        |
-| Only the app's window is visible: no console windows from the server or its helpers                                                                                      | smoke test                        |
-| A second launch reuses the running app; closing the window stops the server                                                                                              | smoke test                        |
-| The document is still there after a restart; uninstalling removes the app and keeps the data                                                                             | smoke test                        |
-| Update path: notice with notes; wrong signature and broken download refused (old version keeps running); verified update installs, reopens and keeps the user's document | `scripts/desktop/update-test.mjs` |
-| Release only: the update signature matches the key in the app, then the same smoke test on the signed build                                                              | `release.yml`                     |
-| UI: update notice, install progress and failures, remind later, automatic checks, release history, What's new (mocked app)                                               | `apps/web/src/features/updates`   |
-| Version, change-file and release-notes rules; concurrent branches never collide                                                                                          | `npm run test:scripts`            |
+| Check                                                                                                                                                                    | Where                                  |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------- |
+| Shell formatting, clippy (`-D warnings`), unit tests (settings file, reminders, version comparison)                                                                      | `desktop.yml` → shell                  |
+| Installer builds from the locked runtime; the model is SHA-256 verified                                                                                                  | `npm run desktop:build`                |
+| Silent per-user install; Installed Apps shows version and publisher                                                                                                      | `scripts/desktop/smoke-test.mjs`       |
+| The app starts its server; the bundled Kokoro model is ready without a download                                                                                          | smoke test                             |
+| Real speech (voice preview) and an MP3 export of pasted text                                                                                                             | smoke test                             |
+| Only the app's window is visible: no console windows from the server or its helpers                                                                                      | smoke test                             |
+| A second launch reuses the running app; closing the window stops the server                                                                                              | smoke test                             |
+| The document is still there after a restart; uninstalling removes the app and keeps the data                                                                             | smoke test                             |
+| Close, then crash: uploaded PDF, Word and EPUB files, reading position and voice, bookmark, pronunciation rule, preferences, MP3 export and window storage all come back | `scripts/desktop/persistence-test.mjs` |
+| Update path: notice with notes; wrong signature and broken download refused (old version keeps running); verified update installs, reopens and keeps the user's document | `scripts/desktop/update-test.mjs`      |
+| Release only: the update signature matches the key in the app, then the same smoke test on the signed build                                                              | `release.yml`                          |
+| Release only: every GPL/LGPL source archive matches its pinned size and SHA-256; the release refuses to publish without it                                               | `release.yml`                          |
+| The source manifest covers the versions of espeakng-loader, phonemizer, soundfile and lxml in `uv.lock`                                                                  | `npm run test:scripts`                 |
+| UI: update notice, install progress and failures, remind later, automatic checks, release history, What's new (mocked app)                                               | `apps/web/src/features/updates`        |
+| Version, change-file and release-notes rules; concurrent branches never collide                                                                                          | `npm run test:scripts`                 |
 
 ## By hand, before a major or minor release
 
@@ -39,7 +42,27 @@ candidate's Desktop workflow artifact:
 
 ## Latest results
 
-**2026-10-21, development build `2.1.0-dev.88` (first build, pull request #37).**
+**2026-10-21, development builds up to `2.1.0-dev.98` (pull request #37), on this maintainer's Windows 11
+PC (not a clean machine).**
+
+- **Updating in place:** installing dev.98 over dev.88 kept all three documents.
+- **Close and reopen, and a crash:** the persistence test against the installed app found every
+  uploaded document (PDF, Word, EPUB), reading position and voice, bookmark with its note, pronunciation
+  rule, preference, MP3 export and the window's own storage intact after a normal close and after the
+  process was killed.
+- **What the installed app touches:** the server listens on `127.0.0.1` only (port 8770); WebView2's
+  network log shows only loopback traffic (update checks come from the app itself and go only to
+  GitHub Releases); no firewall rule, service, scheduled task or startup entry; files only under `%LOCALAPPDATA%\TTSNative` (app) and
+  `%LOCALAPPDATA%\com.ttsnative.desktop` (data, logs, WebView2).
+- **Contents:** all 3,721 files of the installed Python packages match the SHA-256 in their wheels'
+  RECORD files; no secrets, keys or tokens in any of the 7,224 files; the 7 signed executables are
+  Microsoft's (ONNX Runtime, Visual C++ runtime) and uv's, byte-identical to the pinned uv release; the
+  rest, including `TTSNative.exe` until Authenticode signing is set up, are unsigned. See
+  `docs/security/supply-chain.md`.
+- **Source offer:** all 16 archives in `apps/desktop/third-party-sources.json` downloaded and matched
+  their pinned size and SHA-256 (bundle 58 MB).
+
+**2026-10-21, development build `2.1.0-dev.88` (first build).**
 
 - **CI, clean `windows-2025` runner (Windows Server 2025, not Windows 11):** installer 371 MB, installed
   size about 600 MB. Every smoke-test check passed; the only failure was the test checking Installed Apps

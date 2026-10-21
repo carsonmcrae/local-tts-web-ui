@@ -216,8 +216,8 @@ export type paths = {
     };
     /**
      * Get Cleanup
-     * @description What the automatic cleanup found (running headers, footers, page numbers, footnote markers) and
-     *     the sentences skipped by hand, each with whether it applies now.
+     * @description What the automatic cleanup found (running headers, footers, page numbers, footnotes, footnote and
+     *     citation markers) and the sentences skipped by hand, each with whether it applies now.
      */
     get: operations['get_cleanup_api_documents__document_id__cleanup_get'];
     put?: never;
@@ -1720,7 +1720,8 @@ export type components = {
        * Reason
        * @enum {string}
        */
-      reason: 'header' | 'footer' | 'page_number' | 'footnote' | 'manual';
+      reason:
+        'header' | 'footer' | 'page_number' | 'footnote_text' | 'footnote' | 'citation' | 'manual';
       /** Sectionindex */
       sectionIndex: number;
       /** Text */
@@ -1763,14 +1764,24 @@ export type components = {
     };
     /** DeviceOut */
     DeviceOut: {
+      /** Address */
+      address: string | null;
       /** Createdat */
       createdAt: string;
+      /** Expired */
+      expired: boolean;
+      /** Expiresat */
+      expiresAt: string;
       /** Id */
       id: string;
       /** Lastseenat */
       lastSeenAt: string | null;
       /** Name */
       name: string;
+      /** Refusedaddress */
+      refusedAddress?: string | null;
+      /** Refusedat */
+      refusedAt?: string | null;
     };
     /** DocumentDetail */
     DocumentDetail: {
@@ -1799,6 +1810,10 @@ export type components = {
       segmentCount: number;
       /** Sizebytes */
       sizeBytes: number;
+      /** Spokencharcount */
+      spokenCharCount: number;
+      /** Spokenwordcount */
+      spokenWordCount: number;
       /** Title */
       title: string;
       /** Warnings */
@@ -1845,6 +1860,10 @@ export type components = {
       segmentCount: number;
       /** Sizebytes */
       sizeBytes: number;
+      /** Spokencharcount */
+      spokenCharCount: number;
+      /** Spokenwordcount */
+      spokenWordCount: number;
       /** Title */
       title: string;
       /** Wordcount */
@@ -2067,14 +2086,18 @@ export type components = {
       /** Address */
       address: string | null;
       /** Addresses */
-      addresses: string[];
+      addresses: components['schemas']['NetworkAddress'][];
       /** Devices */
       devices: components['schemas']['DeviceOut'][];
       /** Enabled */
       enabled: boolean;
+      /** Interface */
+      interface: string | null;
       pairing: components['schemas']['PairingOut'] | null;
       /** Port */
       port: number | null;
+      /** Turnedoff */
+      turnedOff?: 'network_changed' | null;
       /** Url */
       url: string | null;
     };
@@ -2084,6 +2107,18 @@ export type components = {
       address?: string | null;
       /** Enabled */
       enabled: boolean;
+    };
+    /** NetworkAddress */
+    NetworkAddress: {
+      /** Address */
+      address: string;
+      /** Interface */
+      interface: string;
+      /**
+       * Kind
+       * @enum {string}
+       */
+      kind: 'network' | 'virtual' | 'vpn';
     };
     /** NoteUpdate */
     NoteUpdate: {
@@ -2371,7 +2406,7 @@ export type components = {
       /** Pausems */
       pauseMs?: number | null;
       /** Skip */
-      skip?: ('header' | 'footer' | 'page_number' | 'manual') | null;
+      skip?: ('header' | 'footer' | 'page_number' | 'footnote_text' | 'manual') | null;
       /** Sound */
       sound?:
         | (
@@ -2480,6 +2515,8 @@ export type components = {
       enabled: boolean;
       /** Hastoken */
       hasToken: boolean;
+      /** Lastusedport */
+      lastUsedPort: number | null;
       /** Maxinputchars */
       maxInputChars: number;
       /** Networkmode */
@@ -2622,6 +2659,8 @@ export type components = {
       name?: string | null;
       /** Paired */
       paired: boolean;
+      /** Reason */
+      reason?: ('expired' | 'address_changed') | null;
     };
     /** ValidationError */
     ValidationError: {

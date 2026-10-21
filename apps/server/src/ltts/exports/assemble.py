@@ -19,9 +19,7 @@ from pathlib import Path
 
 import soundfile as sf
 
-from ltts.audio import PAUSE_SECONDS, Float32Array
-
-_SUBTYPES = {"wav": ("WAV", "PCM_16"), "mp3": ("MP3", "MPEG_LAYER_III")}
+from ltts.audio import ENCODINGS, PAUSE_SECONDS, Float32Array
 
 
 @dataclass(frozen=True, slots=True)
@@ -99,7 +97,7 @@ def _naming(chapters: bool, title: str, chapter: str, section: int) -> tuple[str
 
 
 def _open(path: Path, rate: int, audio_format: str, tags: dict[str, str], section: int) -> Track:
-    fmt, subtype = _SUBTYPES[audio_format]
+    fmt, subtype = ENCODINGS[audio_format]
     handle = sf.SoundFile(str(path), "w", rate, 1, subtype, format=fmt)
     # Tags describe the user's document only; set before any audio, as WAV writes them into its header.
     for name, value in tags.items():

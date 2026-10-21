@@ -21,7 +21,7 @@ from typing import Any
 
 import numpy as np
 
-from ltts.audio import Float32Array, finalize_segment
+from ltts.audio import Float32Array, finalize_segment, resample
 from ltts.effects import Effect, apply_effect
 from ltts.engines.base import AudioClip, VoiceSpec
 from ltts.engines.registry import ResolvedVoice
@@ -99,13 +99,6 @@ class RenderJob:
         return cache_key(parts=parts, pace=round(self.pace, 2), boundary=self.boundary, **extra)
 
 
-def _resample(samples: Float32Array, rate: int, target: int) -> Float32Array:
-    if rate == target or samples.size == 0:
-        return samples
-    positions = np.linspace(0, samples.size - 1, round(samples.size * target / rate))
-    return np.interp(positions, np.arange(samples.size), samples).astype(np.float32)
-
-
 def render(job: RenderJob) -> AudioClip:
     """Synthesise every piece, join them, apply the effect, then fade and add the pause."""
     clips = [piece.voice.engine.synthesize(piece.spoken, piece.spec, job.pace) for piece in job.pieces]
@@ -117,7 +110,7 @@ def render(job: RenderJob) -> AudioClip:
     for position, clip in enumerate(clips):
         if position:
             joined.append(gap)
-        joined.append(_resample(clip.samples, clip.sample_rate, rate))
+        joined.append(resample(clip.samples, clip.sample_rate, rate))
     samples = np.concatenate(joined).astype(np.float32)
     raw = apply_effect(job.effect, samples, rate) if job.effect else samples
     pause = None if job.pause_ms is None else job.pause_ms / 1000

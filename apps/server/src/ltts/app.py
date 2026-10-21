@@ -107,6 +107,8 @@ def create_app(
     from ltts.integrations_router import router as integrations_router
     from ltts.preferences import router as preferences_router
     from ltts.pronunciation.router import router as pronunciation_router
+    from ltts.speech_api.router import router as speech_api_router
+    from ltts.speech_api.settings_router import router as speech_api_settings_router
     from ltts.synthesis.router import router as audio_router
     from ltts.system import router as system_router
     from ltts.voices.router import router as voices_router
@@ -114,7 +116,8 @@ def create_app(
 
     for router in (system_router, documents_router, audio_router, engines_router, voices_router,
                    voice_sessions_router, exports_router, preferences_router, pronunciation_router,
-                   styling_router, details_router, integrations_router):  # fmt: skip
+                   styling_router, details_router, integrations_router, speech_api_settings_router,
+                   speech_api_router):  # fmt: skip
         app.include_router(router)
     if static_dir is not None:
         _mount_static(app, static_dir)

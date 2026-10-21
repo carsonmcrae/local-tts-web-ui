@@ -5,8 +5,9 @@
 Scope: Pure ASGI middleware that (1) rejects unexpected Host headers (DNS rebinding), (2) blocks
 cross-site requests via Sec-Fetch-Site and a required custom header on state-changing methods
 (CSRF; no CORS is ever enabled so browsers cannot satisfy the pre-flight), (3) requires an access
-token for non-loopback clients when network mode is explicitly enabled, (4) caps request bodies,
-and (5) adds security headers including a strict Content-Security-Policy.
+token for non-loopback clients when network mode is explicitly enabled (except on the speech API,
+``/v1``, which checks its own token and network permission), (4) caps request bodies, and (5) adds
+security headers including a strict Content-Security-Policy.
 Does NOT belong: Upload content validation (documents/voices) or authentication of local users —
 on loopback the machine's user is trusted.
 """
@@ -29,6 +30,7 @@ Send = Callable[[Message], Awaitable[None]]
 ASGIApp = Callable[[Scope, Receive, Send], Awaitable[None]]
 
 CLIENT_HEADER = b"x-ltts-client"
+SPEECH_API_PREFIX = "/v1/"  # speech_api/router.py: its own bearer token and network permission
 SAFE_METHODS = {"GET", "HEAD", "OPTIONS"}
 CSP = (
     "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; "
@@ -117,7 +119,8 @@ class SecurityMiddleware:
         if path.startswith("/api/") and scope["method"] not in SAFE_METHODS and CLIENT_HEADER not in headers:
             return 403, "missing_client_header", "Requests must come from the TTSNative app."
         client = scope.get("client")
-        if self.settings.allow_network and not _is_loopback(client[0] if client else None):
+        remote = not _is_loopback(client[0] if client else None)
+        if self.settings.allow_network and remote and not path.startswith(SPEECH_API_PREFIX):
             return self._check_token(headers, scope.get("query_string", b""))
         return None
 
@@ -169,7 +172,7 @@ def _with_headers(send: Send, path: str, cookie: bytes | None = None) -> Send:
             existing = list(message.get("headers", []))
             names = {name.lower() for name, _ in existing}
             extra = [(k, v) for k, v in SECURITY_HEADERS if k not in names]
-            if path.startswith("/api/"):
+            if path.startswith(("/api/", SPEECH_API_PREFIX)):
                 extra.append((b"cache-control", b"no-store"))
             if cookie:
                 extra.append((b"set-cookie", cookie))

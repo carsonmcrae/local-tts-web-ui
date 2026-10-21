@@ -32,6 +32,8 @@ from ltts.jobs import JobManager
 from ltts.modelstore.store import ModelStore
 from ltts.pronunciation.store import PronunciationStore
 from ltts.secrets import SecretStore
+from ltts.speech_api.service import SpeechApi
+from ltts.speech_api.store import SpeechApiStore
 from ltts.synthesis.cache import AudioCache
 from ltts.synthesis.service import SynthesisService
 from ltts.voices.profiles import CLONING_ENGINE, VoiceProfileService
@@ -71,6 +73,7 @@ class Services:
     casting: CastingStore
     details: DocumentDetailsStore
     audiobookshelf: Audiobookshelf
+    speech_api: SpeechApi
 
 
 def build_services(
@@ -99,7 +102,14 @@ def build_services(
     casting = CastingStore(db, styling.lines, lambda doc: {s.index: s.text for s in documents.segments_detail(doc)})
     details = DocumentDetailsStore(settings, db)
     synthesis = SynthesisService(registry, cache, documents, pronunciations.apply, styling, casting)
-    voices = VoiceProfileService(settings, db, cache.purge_voice)
+    speech_store = SpeechApiStore(db, lambda: {profile.voice_id for profile in voices.list_all()})
+
+    def purge_voice(voice_id: str) -> int:
+        purged = cache.purge_voice(voice_id)
+        speech_store.prune_voices()  # a deleted custom voice loses its speech API permission
+        return purged
+
+    voices = VoiceProfileService(settings, db, purge_voice)
     registry.attach_custom_voices(voices.resolve, lambda: voices.as_voices(lambda: registry.is_ready(CLONING_ENGINE)))
     sessions = VoiceSessionService(settings, db, jobs)
     studio = StudioService(sessions, voices, jobs, lambda: registry.voice_builder(CLONING_ENGINE))
@@ -126,6 +136,7 @@ def build_services(
         casting=casting,
         details=details,
         audiobookshelf=Audiobookshelf(db, SecretStore(settings.path("secrets"))),
+        speech_api=SpeechApi(settings, speech_store, synthesis, registry),
     )
 
 

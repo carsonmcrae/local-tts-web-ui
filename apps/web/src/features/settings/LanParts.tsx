@@ -2,16 +2,16 @@
 // Copyright (c) 2026 Carson McRae
 /**
  * Purpose: The pieces of the "Phones and tablets" (LAN mode) settings.
- * Scope: What LAN mode shares and what stays on this computer (shown before the switch), what is
- *   open to the network while it is on, why it turned itself off, the pairing card (the address to
- *   open, the QR code, the code in large type with a live countdown and a new code), the paired
- *   devices (where each paired from, when its pairing ends, a refused use of its cookie from another
- *   address) with removal behind a confirmation, the notes on what phones can't do over plain HTTP
- *   and on the development server, and the error explanations.
+ * Scope: What LAN mode shares and what stays on this computer (shown before the switch), the
+ *   trusted-network confirmation (macOS and Linux), what is open to the network while it is on, why
+ *   it turned itself off, the pairing card (the address, the QR code, the code in large type with a
+ *   live countdown and a new code), the paired devices (where each paired from, when its pairing
+ *   ends, a refused use of its cookie elsewhere) with removal behind a confirmation, what works over
+ *   plain HTTP and what would need HTTPS, the development-server note and the error explanations.
  * Does NOT belong: Loading or saving (LanSection.tsx, api/lanQueries.ts) or the pairing page on the
  *   phone (features/lan/PairPage.tsx).
  */
-import { ClipboardCopy, Lock, MicOff } from 'lucide-react';
+import { BookOpenCheck, ClipboardCopy, Lock, MicOff, ShieldAlert } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { ApiError } from '@/api/client';
 import { describeError } from '@/api/client';
@@ -20,6 +20,7 @@ import { useNewPairingCode, useRemoveAllDevices, useRemoveDevice } from '@/api/l
 import { Button } from '@/components/ui/Button';
 import { ConfirmDialog } from '@/components/ui/Dialog';
 import { Banner, StatusRegion } from '@/components/ui/Feedback';
+import { Checkbox } from '@/components/ui/Field';
 import { formatClock } from '@/lib/format';
 import { timeAgo, useCopy } from './SpeechApiParts';
 
@@ -37,14 +38,16 @@ export function WhatLanModeShares() {
       </p>
       <p>
         It can&apos;t change these settings, record, play back or manage voice recordings, install
-        engines, import web pages or delete documents. Those stay on this computer.
+        engines, import web pages, delete documents or exports, cancel an export or send one to
+        Audiobookshelf. Those stay on this computer.
       </p>
       <ul className={`flex flex-col gap-1.5 ${NOTE}`}>
         <li>
-          Traffic is plain HTTP on your network, not encrypted: anyone on the same Wi-Fi could read
-          the documents and audio a device opens, and copy its cookie. A copied cookie only works
-          from that device&apos;s own address, and pairings end after 30 days. Only use LAN mode on
-          networks you trust, such as your home Wi-Fi, never on public Wi-Fi.
+          Traffic is plain HTTP on your network, not encrypted, so it isn&apos;t secure against
+          other devices on that network: anyone on the same Wi-Fi could read the documents and audio
+          a device opens, and copy its cookie. A copied cookie only works from that device&apos;s
+          own address, and pairings end after 30 days. Only use LAN mode on networks you trust, such
+          as your home Wi-Fi, never on public Wi-Fi.
         </li>
         <li>
           Nothing is opened on your router (no port forwarding or UPnP), so only devices on your own
@@ -61,23 +64,61 @@ export function WhatLanModeShares() {
   );
 }
 
+const CATEGORY = {
+  private: 'Windows lists it as a private network.',
+  domain: 'Windows lists it as a work (domain) network.',
+} as const;
+
 /** While LAN mode is on: what other devices can reach, in plain words. */
-export function OpenToTheNetwork({ url, where }: Readonly<{ url: string; where: string | null }>) {
+export function OpenToTheNetwork({
+  url,
+  where,
+  category,
+}: Readonly<{ url: string; where: string | null; category: LanStatus['category'] }>) {
   return (
     <Banner tone="warning" title="Open to devices on your network">
       Any device on {where ? `this computer’s ${where} network` : 'this network'} can open {url} and
-      ask to pair. Only paired devices can use your library, and what they open isn&apos;t encrypted
-      on the way.
+      ask to pair. Only paired devices can use your library, but what they open isn&apos;t encrypted
+      on the way, so other devices on the network could read it.
+      {category ? ` ${CATEGORY[category]}` : ''}
     </Banner>
   );
 }
 
-/** LAN mode stopped by itself rather than appear on a network nobody chose. */
-export function TurnedOff() {
+/** Asked every time on macOS and Linux, which have no network category to read. */
+export function NetworkConfirmation({
+  checked,
+  onCheckedChange,
+}: Readonly<{ checked: boolean; onCheckedChange: (checked: boolean) => void }>) {
+  return (
+    <div className="flex flex-col gap-1">
+      <Checkbox
+        checked={checked}
+        onCheckedChange={onCheckedChange}
+        label="This is a home network I trust, such as my own Wi-Fi"
+      />
+      <p className={`pl-8 ${NOTE}`}>
+        Asked every time LAN mode is turned on. Don&apos;t turn it on in cafés, hotels, airports or
+        offices.
+      </p>
+    </div>
+  );
+}
+
+const TURNED_OFF = {
+  network_changed:
+    'This computer’s network changed, or it was asleep, so TTSNative stopped listening on the network. Check that you’re on your own network, then turn it on again.',
+  network_public:
+    'Windows now lists this network as public, so TTSNative stopped listening on it. If it’s your home network, make it private in Windows Settings (Network & internet, then the network’s properties), then turn LAN mode on again.',
+  network_unknown:
+    'TTSNative couldn’t confirm in Windows that this network is still private, so it stopped listening on it. Check the network’s profile type in Windows Settings, then turn LAN mode on again.',
+} as const;
+
+/** LAN mode stopped by itself rather than stay open on a network nobody chose. */
+export function TurnedOff({ reason }: Readonly<{ reason: keyof typeof TURNED_OFF }>) {
   return (
     <Banner tone="info" title="LAN mode turned itself off">
-      This computer&apos;s network changed, or it was asleep, so TTSNative stopped listening on the
-      network. Check that you&apos;re on your own network, then turn it on again.
+      {TURNED_OFF[reason]}
     </Banner>
   );
 }
@@ -94,6 +135,7 @@ export function DevelopmentNote() {
 }
 
 const HINTS = new Map([
+  ['lan_confirm_network', 'Tick “This is a home network I trust”, then turn it on.'],
   ['lan_no_network', 'Connect this computer to Wi-Fi or a network cable, then try again.'],
   ['lan_port_busy', 'Close the other program, or restart TTSNative on a different port.'],
   ['lan_address', 'The network may have changed. Choose an address from the list and try again.'],
@@ -296,19 +338,33 @@ export function PairedDevices({
   );
 }
 
-export function LanNotes() {
+const ICON = { size: 14, className: 'mt-0.5 shrink-0', 'aria-hidden': true } as const;
+
+/** What a phone or tablet can use over LAN mode's plain HTTP, and what would need HTTPS. */
+export function HttpLimits() {
   return (
     <div className={`flex flex-col gap-2 ${NOTE}`}>
+      <h3 className="text-sm font-medium text-text">What works over LAN mode (plain HTTP)</h3>
       <p className="flex gap-2">
-        <MicOff size={14} className="mt-0.5 shrink-0" aria-hidden="true" />
-        Voices are recorded and managed on this computer: browsers only allow the microphone on a
-        secure page, and LAN mode keeps voice recordings off the network.
+        <BookOpenCheck {...ICON} />
+        Works: reading and listening, bookmarks, reading settings and pronunciations, adding
+        documents, and starting and downloading exports, while the computer running TTSNative is on.
       </p>
       <p className="flex gap-2">
-        <Lock size={14} className="mt-0.5 shrink-0" aria-hidden="true" />
-        Phones can&apos;t install TTSNative as an app: browsers only allow that on a secure (HTTPS)
-        page, and LAN mode uses plain HTTP. Reading and listening always need this computer to be on
-        with TTSNative running.
+        <MicOff {...ICON} />
+        Needs HTTPS: recording with the microphone. Browsers only allow it on a secure page, so
+        voices are recorded on the computer, and LAN mode keeps voice recordings off the network.
+      </p>
+      <p className="flex gap-2">
+        <Lock {...ICON} />
+        Needs HTTPS: installing TTSNative as an app, and its screens opening while the computer
+        can&apos;t be reached. Browsers only allow those on a secure page, and LAN mode uses plain
+        HTTP.
+      </p>
+      <p className="flex gap-2">
+        <ShieldAlert {...ICON} />
+        Plain HTTP isn&apos;t secure against other devices on your network: they could read what a
+        phone or tablet opens. Use LAN mode only on a network you trust.
       </p>
     </div>
   );

@@ -7,7 +7,8 @@
  *   or is typed in (with or without the dash, any case). The device name is guessed from the browser
  *   and can be changed. After pairing it returns to the page that sent it here, or the library.
  *   If this device is paired already it says so; if its pairing stopped working (it ended, or the
- *   device's network address changed), it says why before asking for a new code.
+ *   device's network address changed), it says why before asking for a new code. It says what works
+ *   over LAN mode's plain HTTP, and that plain HTTP isn't secure against other devices nearby.
  * Does NOT belong: Showing codes or managing devices (features/settings/LanSection) or sending
  *   unpaired devices here (app/App.tsx).
  */
@@ -173,8 +174,14 @@ export default function PairPage() {
         <p className="text-[13px] leading-relaxed text-muted">
           Pairing keeps a cookie on this device so TTSNative recognises it, for up to 30 days and
           only from this device&apos;s network address. It can be removed at any time on the
-          computer. Traffic on your network isn&apos;t encrypted, so only pair on networks you
-          trust, such as your home Wi-Fi.
+          computer. Traffic on your network isn&apos;t encrypted, so it isn&apos;t secure against
+          other devices on the same network: only pair on networks you trust, such as your home
+          Wi-Fi.
+        </p>
+        <p className="text-[13px] leading-relaxed text-muted">
+          On this device, reading and listening work over LAN mode. Recording with the microphone,
+          installing TTSNative as an app and screens that open without the computer need a secure
+          (HTTPS) page, which LAN mode doesn&apos;t use.
         </p>
       </div>
     </main>

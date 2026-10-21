@@ -77,13 +77,19 @@ def test_policy_keeps_this_computers_own_operations_off_the_network() -> None:
                          ("POST", "/api/system/cache/clear"), ("POST", "/api/jobs/" + "a" * 32 + "/cancel"),
                          ("GET", "/api/voice-profiles/" + "a" * 32 + "/reference"), ("GET", "/api/openapi.json"),
                          ("POST", "/api/voice-profiles/blends"), ("PATCH", "/api/voice-profiles/" + "a" * 32),
+                         ("DELETE", "/api/exports/" + "a" * 32), ("POST", "/api/exports/" + "a" * 32 + "/cancel"),
+                         ("POST", "/api/exports/" + "a" * 32 + "/audiobookshelf"), ("DELETE", "/api/exports/x/"),
+                         ("POST", "/api/pronunciation-preview"),
                          ("GET", "/api/something-new"), ("POST", "/"), ("GET", "/api")]:  # fmt: skip
         assert refused_remotely(method, path), (method, path)
     for method, path in [("GET", "/api/documents"), ("POST", "/api/documents/text"), ("GET", "/api/voices"),
                          ("PUT", "/api/preferences"), ("POST", "/api/exports"), ("GET", "/api/voice-profiles"),
                          ("PUT", "/api/documents/" + "a" * 32 + "/progress"), ("POST", "/api/lan/pair"),
                          ("GET", "/api/voice-profiles/blends"), ("POST", "/api/voices/kokoro:af_heart/preview"),
-                         ("GET", "/api/system"), ("GET", "/library")]:  # fmt: skip
+                         ("GET", "/api/system"), ("GET", "/library"), ("POST", "/api/exports/" + "a" * 32 + "/pause"),
+                         ("POST", "/api/exports/" + "a" * 32 + "/resume"), ("GET", "/api/exports/" + "a" * 32),
+                         ("PATCH", "/api/documents/" + "a" * 32 + "/sections/0"),
+                         ("POST", "/api/documents/" + "a" * 32 + "/cleanup/apply")]:  # fmt: skip
         assert not refused_remotely(method, path), (method, path)
 
 
@@ -111,7 +117,9 @@ def test_a_paired_device_can_read_but_not_run_this_computer(client: TestClient, 
     for call in (lambda: device.get("/api/lan"), lambda: device.put("/api/lan", json={"enabled": False}),
                  lambda: device.put("/api/speech-api", json={"enabled": True}),
                  lambda: device.delete(f"/api/documents/{added.json()['id']}"),
-                 lambda: device.post("/api/voice-sessions")):  # fmt: skip
+                 lambda: device.post("/api/voice-sessions"), lambda: device.delete(f"/api/exports/{'a' * 32}"),
+                 lambda: device.post(f"/api/exports/{'a' * 32}/cancel"),
+                 lambda: device.post(f"/api/exports/{'a' * 32}/audiobookshelf")):  # fmt: skip
         response = call()
         assert response.status_code == 403 and response.json()["error"]["code"] == "not_allowed_remotely"
     assert client.get(f"/api/documents/{added.json()['id']}").status_code == 200  # still there

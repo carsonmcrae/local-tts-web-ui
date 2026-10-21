@@ -2,11 +2,12 @@
 # Copyright (c) 2026 Carson McRae
 """Purpose: HTTP endpoints for LAN mode.
 
-Scope: From this computer: read LAN mode's state, turn it on (choosing an address) or off, show a new
-pairing code and its QR code, cancel it, and remove one paired device or all of them. From a device on
-the network: pair with a code (setting its device cookie, which replaces any earlier pairing of the
-same device) and ask whether it is paired, or why its cookie stopped working. Which side may call what
-is enforced by ``security.py`` with ``policy.py``.
+Scope: From this computer: read LAN mode's state, turn it on (choosing an address, and on macOS or
+Linux confirming the network is trusted) or off, show a new pairing code and its QR code, cancel it,
+and remove one paired device or all of them. From a device on the network: pair with a code (setting
+its device cookie, which replaces any earlier pairing of the same device) and ask whether it is
+paired, or why its cookie stopped working. Which side may call what is enforced by ``security.py``
+with ``policy.py``.
 Does NOT belong: Pairing rules or listening (``devices.py``, ``listener.py``).
 """
 
@@ -30,6 +31,9 @@ DeviceId = Annotated[str, Path(pattern=r"^[0-9a-f]{32}$")]
 class LanUpdate(ApiModel):
     enabled: bool
     address: str | None = Field(default=None, max_length=45)
+    # macOS and Linux: the person confirmed, this time, that this is a home network they trust (Windows
+    # reads the network's category instead).
+    trusted_network: bool = False
 
 
 class PairRequest(ApiModel):
@@ -50,11 +54,12 @@ def lan_status(services: ServicesDep) -> LanStatus:
 
 @router.put("")
 async def update_lan(body: LanUpdate, request: Request, services: ServicesDep) -> LanStatus:
-    """Turn LAN mode on (on the main server's port) or off; turning it off stops listening at once."""
+    """Turn LAN mode on (on the main server's port, on a network the person trusts) or off; turning it off
+    stops listening at once."""
     if not body.enabled:
         return await services.lan.disable()
     port = request.scope["server"][1] if request.scope.get("server") else 8765
-    return await services.lan.enable(body.address, int(port))
+    return await services.lan.enable(body.address, int(port), trusted=body.trusted_network)
 
 
 @router.post("/pairing")

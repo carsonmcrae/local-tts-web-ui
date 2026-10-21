@@ -5,10 +5,11 @@
 Scope: A device that isn't paired may only load the app itself and pair (or ask whether it is
 paired). A paired device may use only what is listed here (anything new stays on this computer until
 it is added): read, listen, control playback, change reading preferences and pronunciations, add and
-edit documents, style sentences and run exports. It may never change LAN, speech API or integration
-settings, record, build, import, export, share or delete voices, play a voice's recording, install
-or remove engines, cancel this computer's jobs, import web pages (the server would fetch them),
-change the system or delete documents. Starting costly work (exports, uploads) is limited per device.
+edit documents, style sentences, and start, pause, resume and download exports. Sensitive operations
+stay on this computer: LAN, speech API and integration settings, voices and their recordings,
+engines, this computer's jobs, the system, importing web pages, and anything that throws work away
+or uses this computer's accounts (deleting documents or exports, cancelling an export, sending one to
+Audiobookshelf). Starting costly work (exports, uploads) is limited per device.
 Does NOT belong: Checking tokens or hosts (``security.py``) or pairing (``devices.py``).
 """
 
@@ -27,23 +28,28 @@ _ANY = frozenset({"GET", "HEAD", "POST", "PUT", "PATCH", "DELETE"})
 _ALLOWED: tuple[tuple[frozenset[str], str], ...] = (
     (_READ, "/api/health"),
     (_READ, "/api/system"),  # versions and storage sizes; the data folder's path is hidden
-    (_ANY, "/api/documents"),  # except the two below
+    (_ANY, "/api/documents"),  # except what _ON_THE_COMPUTER keeps here
     (_ANY, "/api/cast-presets"),
     (_READ, "/api/audio"),
     (_ANY, "/api/voices"),  # the voice list and previews
     (_READ, "/api/engines"),
     (_READ, "/api/jobs"),
-    (_ANY, "/api/exports"),
+    (_ANY, "/api/exports"),  # except what _ON_THE_COMPUTER keeps here
     (_ANY, "/api/preferences"),
     (_ANY, "/api/pronunciations"),
 )
 _EXACT_READS = {"/api/voice-profiles", "/api/voice-profiles/blends", "/api/voice-profiles/consent"}
-_DOCUMENT = re.compile(r"^/api/documents/[0-9a-f]{32}/?$")
+# Sensitive operations under an allowed prefix, which a paired device must still do on the computer.
+_ON_THE_COMPUTER: tuple[tuple[str, re.Pattern[str]], ...] = (
+    ("POST", re.compile(r"^/api/documents/url/?$")),  # the server would fetch the page from the internet
+    ("DELETE", re.compile(r"^/api/documents/[^/]+/?$")),  # a document and everything made from it
+    ("DELETE", re.compile(r"^/api/exports/[^/]+/?$")),  # an export's files: minutes or hours of synthesis
+    ("POST", re.compile(r"^/api/exports/[^/]+/cancel/?$")),  # throws away the sentences it has saved
+    ("POST", re.compile(r"^/api/exports/[^/]+/audiobookshelf/?$")),  # this computer's account, another server
+)
 _ID = r"[0-9a-f]{32}"
 # Starting work that costs minutes of synthesis or stores files.
-_COSTLY = re.compile(
-    rf"^/api/(exports|exports/{_ID}/(resume|audiobookshelf)|documents/(upload|text)|documents/{_ID}/cover)/?$"
-)
+_COSTLY = re.compile(rf"^/api/(exports|exports/{_ID}/resume|documents/(upload|text)|documents/{_ID}/cover)/?$")
 COSTLY_PER_WINDOW = 20
 COSTLY_WINDOW_S = 600.0
 
@@ -66,7 +72,7 @@ def refused_remotely(method: str, path: str) -> bool:
         return False
     if not path.startswith("/api/") and path != "/api":
         return method not in _READ  # the app's own pages
-    if (method, path) == ("POST", "/api/documents/url") or (method == "DELETE" and _DOCUMENT.match(path)):
+    if any(method == kept and pattern.match(path) for kept, pattern in _ON_THE_COMPUTER):
         return True
     if method in _READ and path in _EXACT_READS:
         return False
@@ -74,7 +80,7 @@ def refused_remotely(method: str, path: str) -> bool:
 
 
 def costly(method: str, path: str) -> bool:
-    """Starting an export, sending one on, or adding a document or cover (limited per device)."""
+    """Starting or resuming an export, or adding a document or cover (limited per device)."""
     return method in ("POST", "PUT") and bool(_COSTLY.match(path))
 
 

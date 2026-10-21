@@ -2,14 +2,15 @@
 # Copyright (c) 2026 Carson McRae
 """Purpose: LAN mode as a whole: turning it on and off, pairing devices, and recognising them.
 
-Scope: LAN mode is off until turned on from this computer, and off again after every restart (paired
-devices stay paired). While it is on, the app is also served on one private address of this computer,
-the pairing code and its QR code (a link with the code after ``#``, so it never reaches a log) can
-be shown, and requests that arrive on that address are recognised by their device cookie and the
-address they come from. Turning it off stops listening at once. It also turns itself off, and says
-why, when its address leaves this computer or moves to another adapter, or after the computer slept
-(a laptop may wake on another network that hands out the same address), rather than appear on a
-network nobody chose.
+Scope: LAN mode is off until turned on from this computer, only on a network the person trusts
+(``trust.py``), and off again after every restart (paired devices stay paired). While it is on, the
+app is also served on one private address of this computer, the pairing code and its QR code (the
+code after ``#``, so it never reaches a log) can be shown, and requests on that address are
+recognised by their device cookie and the address they come from. Turning it off stops listening at
+once. It also turns itself off, and says why, when its address leaves this computer or moves to
+another adapter, after the computer slept (a laptop may wake on another network with the same
+address), or when Windows calls its network public (or twice can't say), rather than stay open on
+a network nobody chose.
 Does NOT belong: The request checks themselves (``security.py``, ``policy.py``) or HTTP (``router.py``).
 """
 
@@ -33,11 +34,15 @@ from ltts.lan.devices import DEVICE_TTL, DeviceOut, DeviceStore, PairingCodes, P
 from ltts.lan.listener import LanListener
 from ltts.lan.network import NetworkAddress
 from ltts.lan.policy import WorkBudget
+from ltts.lan.trust import Category, Check, NetworkTrust
 
 COOKIE = "ltts_device"
 COOKIE_MAX_AGE_S = int(DEVICE_TTL.total_seconds())
 WATCH_EVERY_S = 2.0  # how often the address is checked while LAN mode is on
 SLEPT_AFTER_S = 30.0  # a check this much later than due means the computer was asleep (or suspended)
+CATEGORY_EVERY = 30  # on Windows, the network's category is read every this many checks (a minute)
+CATEGORY_MISSES = 2  # unreadable this many times running, LAN mode turns itself off
+TurnedOff = Literal["network_changed", "network_public", "network_unknown"]
 log = logging.getLogger("ltts.lan")
 
 
@@ -50,7 +55,9 @@ class LanStatus(ApiModel):
     addresses: list[NetworkAddress]  # this computer's private network addresses to choose from
     devices: list[DeviceOut]
     pairing: PairingOut | None
-    turned_off: Literal["network_changed"] | None = None  # why it turned itself off, until switched again
+    turned_off: TurnedOff | None = None  # why it turned itself off, until switched again
+    network_check: Check = "confirm"  # Windows reads the network's category; elsewhere the person confirms
+    category: Category | None = None  # while on (Windows): what Windows calls its network
 
 
 class LanService:
@@ -61,7 +68,9 @@ class LanService:
         self._app: Any = None
         self.listener = LanListener(lambda: self._app)
         self.interface: str | None = None
-        self.turned_off: Literal["network_changed"] | None = None
+        self.trust = NetworkTrust()
+        self.category: Category | None = None
+        self.turned_off: TurnedOff | None = None
         self._watch: asyncio.Task[None] | None = None
         self.wall = time.time  # the wall clock, which keeps counting while the computer sleeps
 
@@ -86,6 +95,8 @@ class LanService:
             devices=self.devices.list_all(),
             pairing=self.codes.current() if running else None,
             turned_off=None if running else self.turned_off,
+            network_check=self.trust.check,
+            category=self.category if running else None,
         )
 
     def origin(self) -> str | None:
@@ -103,8 +114,9 @@ class LanService:
                                                                                     self.listener.port))  # fmt: skip
 
     # -- turning it on and off -----------------------------------------------
-    async def enable(self, address: str | None, port: int) -> LanStatus:
-        """Listen on ``address``, or on the first ordinary network (never a VPN unless it is chosen)."""
+    async def enable(self, address: str | None, port: int, trusted: bool = False) -> LanStatus:
+        """Listen on ``address``, or on the first ordinary network (never a VPN unless it is chosen), once the
+        network is one the person trusts: on Windows its category, elsewhere ``trusted`` (they confirmed it)."""
         choices = network.network_addresses()
         if address is None:
             chosen = next((choice for choice in choices if choice.kind != "vpn"), None)
@@ -112,9 +124,12 @@ class LanService:
                 raise ConflictError("This computer isn't connected to a local network.", code="lan_no_network")
         else:
             chosen = next((choice for choice in choices if choice.address == address), None)
+        if chosen is None:
+            raise ConflictError("That address isn't one of this computer's network addresses.", code="lan_address")
+        category = await asyncio.to_thread(self.trust.require, chosen.interface, trusted)  # raises if not trusted
         await self._stop_watching()
-        await self.listener.start(chosen.address if chosen else str(address), port)  # refuses unknown addresses
-        self.interface = chosen.interface if chosen else None
+        await self.listener.start(chosen.address, port)
+        self.interface, self.category = chosen.interface, category
         self.turned_off = None
         self.codes.new()
         self._watch = asyncio.get_running_loop().create_task(self._watch_network(self.wall()))
@@ -148,15 +163,26 @@ class LanService:
         )
 
     async def _watch_network(self, last: float) -> None:
-        """Turn LAN mode off when its address goes or moves, or after the computer slept."""
+        """Turn LAN mode off when its address goes or moves, after the computer slept, or when Windows calls
+        its network public (or can't say twice running)."""
+        checks = misses = 0
         while self.listener.running:
             await asyncio.sleep(WATCH_EVERY_S)
             now = self.wall()
             slept, last = now - last > WATCH_EVERY_S + SLEPT_AFTER_S, now
+            reason: TurnedOff | None = None
             if slept or not await asyncio.to_thread(self._still_here):
-                self.turned_off = "network_changed"
-                self._watch = None
-                log.warning("LAN mode turned itself off: the network changed or the computer was asleep")
+                reason = "network_changed"
+            elif self.trust.check == "category" and (checks := checks + 1) % CATEGORY_EVERY == 0:
+                reading = await asyncio.to_thread(self.trust.read, self.interface or "")
+                misses = 0 if reading in ("private", "domain") else misses + 1
+                if reading == "public":
+                    reason = "network_public"
+                elif misses >= CATEGORY_MISSES:
+                    reason = "network_unknown"
+            if reason:
+                self.turned_off, self._watch = reason, None
+                log.warning("LAN mode turned itself off: %s", reason)
                 await self._turn_off()
                 return
 

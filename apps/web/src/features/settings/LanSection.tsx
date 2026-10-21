@@ -3,11 +3,11 @@
 /**
  * Purpose: "Phones and tablets" in Settings: LAN mode, for reading and listening on other devices.
  * Scope: A collapsed section (an On/Off badge and a one-line summary; a link to #lan opens it) that
- *   says what LAN mode shares before the switch, then the switch, the network address to use (when
- *   there is a choice to make, with virtual and VPN adapters labelled), what is open to the network
- *   while it is on, the pairing card and paired devices, "Turn off", why it turned itself off, and
- *   the notes. The status is polled only while the section is open and LAN mode is on. On a phone
- *   or tablet the section only says to manage this on the computer.
+ *   says what LAN mode shares before the switch, then (on macOS and Linux) the trusted-network
+ *   confirmation, the switch, the network address to use (when there is a choice, with virtual and
+ *   VPN adapters labelled), what is open while it is on, the pairing card and paired devices, "Turn
+ *   off", why it turned itself off, and what works over plain HTTP. The status is polled only while
+ *   open and on. On a phone or tablet it says to manage this on the computer, and what works there.
  * Does NOT belong: The pieces themselves (LanParts.tsx) or the server's checks.
  */
 import { Power } from 'lucide-react';
@@ -22,8 +22,9 @@ import { pluralize } from '@/lib/format';
 import { CollapsibleSection, useSectionOpen } from './CollapsibleSection';
 import {
   DevelopmentNote,
-  LanNotes,
+  HttpLimits,
   LanProblem,
+  NetworkConfirmation,
   OpenToTheNetwork,
   PairedDevices,
   PairingCard,
@@ -94,9 +95,19 @@ function choose(addresses: readonly NetworkAddress[], picked: string): NetworkAd
 function LanPanel({ status, updatedAt }: Readonly<{ status: LanStatus; updatedAt: number }>) {
   const update = useUpdateLan();
   const [picked, setPicked] = useState(status.address ?? '');
+  const [trusted, setTrusted] = useState(false); // asked again every time (macOS and Linux)
+  const [wasOn, setWasOn] = useState(status.enabled);
+  if (wasOn !== status.enabled) {
+    setWasOn(status.enabled);
+    if (!status.enabled) setTrusted(false); // it went off: the next time is a new session
+  }
   const address = choose(status.addresses, picked);
   const change = (enabled: boolean, chosen = address?.address) =>
-    update.mutate({ enabled, address: enabled && chosen ? chosen : null });
+    update.mutate({
+      enabled,
+      address: enabled && chosen ? chosen : null,
+      trustedNetwork: enabled && trusted,
+    });
   const pick = (chosen: string) => {
     setPicked(chosen);
     if (status.enabled) change(true, chosen); // move to the other network at once
@@ -105,7 +116,10 @@ function LanPanel({ status, updatedAt }: Readonly<{ status: LanStatus; updatedAt
   return (
     <>
       {import.meta.env.DEV ? <DevelopmentNote /> : null}
-      {!status.enabled && status.turnedOff ? <TurnedOff /> : null}
+      {!status.enabled && status.turnedOff ? <TurnedOff reason={status.turnedOff} /> : null}
+      {status.networkCheck === 'confirm' ? (
+        <NetworkConfirmation checked={trusted} onCheckedChange={setTrusted} />
+      ) : null}
       <div className="flex min-h-11 flex-col justify-center">
         <Switch
           label="Turn on LAN mode"
@@ -125,7 +139,7 @@ function LanPanel({ status, updatedAt }: Readonly<{ status: LanStatus; updatedAt
       {update.isError ? <LanProblem error={update.error} /> : null}
       {status.enabled && status.url ? (
         <>
-          <OpenToTheNetwork url={status.url} where={status.interface} />
+          <OpenToTheNetwork url={status.url} where={status.interface} category={status.category} />
           <PairingCard pairing={status.pairing} url={status.url} updatedAt={updatedAt} />
         </>
       ) : null}
@@ -148,7 +162,7 @@ function LanPanel({ status, updatedAt }: Readonly<{ status: LanStatus; updatedAt
           </p>
         </div>
       ) : null}
-      <LanNotes />
+      <HttpLimits />
     </>
   );
 }
@@ -156,11 +170,14 @@ function LanPanel({ status, updatedAt }: Readonly<{ status: LanStatus; updatedAt
 function Unavailable({ error }: Readonly<{ error: unknown }>) {
   const remote = error instanceof ApiError && error.code === 'not_allowed_remotely';
   return (
-    <Banner tone={remote ? 'info' : 'error'}>
-      {remote
-        ? 'Phones and tablets are managed on the computer running TTSNative.'
-        : describeError(error)}
-    </Banner>
+    <>
+      <Banner tone={remote ? 'info' : 'error'}>
+        {remote
+          ? 'Phones and tablets are managed on the computer running TTSNative.'
+          : describeError(error)}
+      </Banner>
+      {remote ? <HttpLimits /> : null}
+    </>
   );
 }
 

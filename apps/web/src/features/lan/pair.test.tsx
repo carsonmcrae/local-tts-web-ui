@@ -46,6 +46,8 @@ describe('Pairing page', () => {
     await waitFor(() => expect(router.state.location.hash).toBe(''));
     expect(router.state.location.pathname).toBe('/pair');
     expect(document.title).toBe('Pair this device · TTSNative');
+    expect(screen.getByText(/so it isn.t secure against\s+other devices on the same network/)).toBeInTheDocument(); // prettier-ignore
+    expect(screen.getByText(/Recording with the microphone,\s+installing TTSNative as an app/)).toBeInTheDocument(); // prettier-ignore
     await user.click(screen.getByRole('button', { name: 'Pair this device' }));
     await waitFor(() => expect(router.state.location.pathname).toBe('/library'));
     expect(pairings()).toEqual([{ code: 'ABCD-EFGH', name: 'iPhone' }]);

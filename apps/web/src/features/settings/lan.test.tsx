@@ -3,10 +3,11 @@
 /**
  * Purpose: Tests for "Phones and tablets" (LAN mode) in Settings.
  * Scope: What it shares (said before the switch), turning it on (the address picker, the QR code
- *   with the code in its text alternative, the large code, the countdown and a new code), an
- *   expired code, removing one or all paired devices after a confirmation, turning it off, the
- *   errors explained, polling only while open and on, the development-server note, the phone's
- *   view and the settings index entry.
+ *   with the code in its text alternative, the large code, the countdown and a new code), the
+ *   trusted-network confirmation on macOS and Linux and Windows' category, an expired code, removing
+ *   one or all paired devices after a confirmation, turning it off, why it turned itself off, the
+ *   errors explained, polling only while open and on, the development-server note, what works over
+ *   plain HTTP, the phone's view and the settings index entry.
  * Does NOT belong: Pairing on the phone (features/lan/pair.test.tsx).
  */
 import { act, screen, waitFor, within } from '@testing-library/react';
@@ -34,7 +35,7 @@ const net = (address: string, name = 'Wi-Fi', kind: NetworkAddress['kind'] = 'ne
 }); // prettier-ignore
 const off = (overrides: Partial<LanStatus> = {}): LanStatus => ({
   enabled: false, address: null, interface: null, port: null, url: null, addresses: [net('192.168.1.20')],
-  devices: [], pairing: null, ...overrides,
+  devices: [], pairing: null, networkCheck: 'category', category: null, ...overrides,
 }); // prettier-ignore
 const on = (overrides: Partial<LanStatus> = {}): LanStatus =>
   off({ enabled: true, address: '192.168.1.20', interface: 'Wi-Fi', port: 8765, url: URL_ON, pairing: { code: 'ABCD-EFGH', expiresInS: 300 }, ...overrides }); // prettier-ignore
@@ -49,7 +50,7 @@ function setup(
     'GET /api/lan': () => current,
     'PUT /api/lan': (_url: URL, init: RequestInit) => {
       const body = JSON.parse(String(init.body)) as LanUpdate;
-      const keep = { addresses: current.addresses, devices: current.devices };
+      const keep = { addresses: current.addresses, devices: current.devices, networkCheck: current.networkCheck }; // prettier-ignore
       current = body.enabled
         ? on({ ...keep, address: body.address ?? null, url: `http://${body.address}:8765`,
             interface: keep.addresses.find((choice) => choice.address === body.address)?.interface ?? null }) // prettier-ignore
@@ -106,7 +107,11 @@ describe('Phones and tablets (LAN mode)', () => {
     expect(within(section).getByText(/plain HTTP on your network, not encrypted/)).toBeInTheDocument(); // prettier-ignore
     expect(within(section).getByText(/no port forwarding or UPnP/)).toBeInTheDocument();
     expect(within(section).getByText(/turns itself off when TTSNative restarts/)).toBeInTheDocument(); // prettier-ignore
-    expect(within(section).getByText(/browsers only allow the microphone on a secure page/)).toBeInTheDocument(); // prettier-ignore
+    expect(within(section).getByText(/Needs HTTPS: recording with the microphone/)).toBeInTheDocument(); // prettier-ignore
+    expect(within(section).getByText(/Needs HTTPS: installing TTSNative as an app/)).toBeInTheDocument(); // prettier-ignore
+    expect(within(section).getByText(/Plain HTTP isn.t secure against other devices on your network/)).toBeInTheDocument(); // prettier-ignore
+    expect(within(section).getByText(/delete documents or exports, cancel an export or send one to/)).toBeInTheDocument(); // prettier-ignore
+    expect(within(section).queryByRole('checkbox')).not.toBeInTheDocument(); // Windows reads the category
 
     await user.selectOptions(within(section).getByLabelText('Network address'), '10.0.0.5');
     expect(sent('PUT')).toHaveLength(0); // choosing while off only picks it
@@ -115,6 +120,7 @@ describe('Phones and tablets (LAN mode)', () => {
     expect(JSON.parse(String(sent('PUT')[0]?.body))).toEqual({
       enabled: true,
       address: '10.0.0.5',
+      trustedNetwork: false,
     });
     const qr = await within(section).findByRole('img', { name: /pairing code ABCD-EFGH/ });
     expect(qr).toHaveAttribute('src', '/api/lan/pairing/qr.svg?v=1'); // never the code itself
@@ -139,7 +145,7 @@ describe('Phones and tablets (LAN mode)', () => {
 
     await user.selectOptions(within(section).getByLabelText('Network address'), '192.168.1.20');
     await waitFor(() => expect(sent('PUT')).toHaveLength(2)); // moving networks while on is at once
-    expect(JSON.parse(String(sent('PUT')[1]?.body))).toEqual({ enabled: true, address: '192.168.1.20' }); // prettier-ignore
+    expect(JSON.parse(String(sent('PUT')[1]?.body))).toEqual({ enabled: true, address: '192.168.1.20', trustedNetwork: false }); // prettier-ignore
   });
 
   it('counts down and offers a new code once the code expires', async () => {
@@ -188,7 +194,7 @@ describe('Phones and tablets (LAN mode)', () => {
     expect(within(section).queryByText('This is the development server')).not.toBeInTheDocument();
     await user.click(await within(section).findByRole('button', { name: 'Turn off LAN mode' }));
     await waitFor(() => expect(within(section).getByRole('switch')).not.toBeChecked());
-    expect(JSON.parse(String(sent('PUT')[0]?.body))).toEqual({ enabled: false, address: null });
+    expect(JSON.parse(String(sent('PUT')[0]?.body))).toEqual({ enabled: false, address: null, trustedNetwork: false }); // prettier-ignore
     expect(within(section).queryByRole('img')).not.toBeInTheDocument();
     expect(within(section).getByText('Off')).toBeInTheDocument();
     expect(within(section).getByText('Kitchen tablet')).toBeInTheDocument(); // still paired
@@ -199,6 +205,8 @@ describe('Phones and tablets (LAN mode)', () => {
     ['lan_port_busy', "Couldn't listen on 192.168.1.20:8765; another program may be using it.", /Close the other program/, ['192.168.1.20']],
     ['lan_address', "That address isn't one of this computer's network addresses.", /The network may have changed/, ['192.168.1.20']],
     ['lan_not_started', "The network listener didn't start.", /^The network listener didn't start\.$/, ['192.168.1.20']],
+    ['lan_public_network', 'Windows lists the network on Wi-Fi as a public network, so LAN mode stays off.', /^Windows lists the network on Wi-Fi as a public network, so LAN mode stays off.$/, ['192.168.1.20']],
+    ['lan_network_unknown', "TTSNative couldn't read whether Windows treats the network on Wi-Fi as private or public.", /^TTSNative couldn't read whether Windows treats/, ['192.168.1.20']],
   ])('explains %s', async (code, message, hint, addresses) => {
     const { sent, user } = setup(off({ addresses: addresses.map((a) => net(a)) }), { 'PUT /api/lan': json({ error: { code, message } }, 409) });
     const section = await expand(user);
@@ -207,7 +215,7 @@ describe('Phones and tablets (LAN mode)', () => {
     expect(alert).toHaveTextContent("LAN mode didn't change");
     expect(alert).toHaveTextContent(message);
     expect(within(alert).getByText(hint)).toBeInTheDocument();
-    expect(JSON.parse(String(sent('PUT')[0]?.body))).toEqual({ enabled: true, address: addresses[0] ?? null });
+    expect(JSON.parse(String(sent('PUT')[0]?.body))).toEqual({ enabled: true, address: addresses[0] ?? null, trustedNetwork: false });
     await waitFor(() => expect(sent('GET')).toHaveLength(2)); // the status is checked again
   }); // prettier-ignore
 
@@ -255,6 +263,12 @@ describe('Phones and tablets (LAN mode)', () => {
     const section = await expand(user);
     expect(await within(section).findByText('Phones and tablets are managed on the computer running TTSNative.')).toBeInTheDocument(); // prettier-ignore
     expect(within(section).queryByRole('switch')).not.toBeInTheDocument();
+    expect(within(section).getByText('What works over LAN mode (plain HTTP)')).toBeInTheDocument();
+    expect(
+      within(section).getByText(/Works: reading and listening, bookmarks/),
+    ).toBeInTheDocument();
+    expect(within(section).getByText(/Needs HTTPS: recording with the microphone/)).toBeInTheDocument(); // prettier-ignore
+    expect(within(section).getByText(/its screens opening while the computer/)).toBeInTheDocument();
   });
 
   it('shows other failures to load as they are, and is listed in the settings index', async () => {
@@ -264,6 +278,7 @@ describe('Phones and tablets (LAN mode)', () => {
     expect(within(index).getByRole('link', { name: 'Phones & tablets' })).toHaveAttribute('href', '#lan'); // prettier-ignore
     const section = await expand(user);
     expect(await within(section).findByRole('alert')).toHaveTextContent('Something broke.');
+    expect(within(section).queryByText('What works over LAN mode (plain HTTP)')).not.toBeInTheDocument(); // prettier-ignore
   });
 
   it('labels virtual and VPN adapters, warns about them and never picks a VPN by itself', async () => {
@@ -285,6 +300,7 @@ describe('Phones and tablets (LAN mode)', () => {
     expect(JSON.parse(String(sent('PUT')[0]?.body))).toEqual({
       enabled: true,
       address: '10.8.0.2',
+      trustedNetwork: false,
     });
   });
 
@@ -294,6 +310,64 @@ describe('Phones and tablets (LAN mode)', () => {
     expect(await within(section).findByText('LAN mode turned itself off')).toBeInTheDocument();
     expect(within(section).getByText(/network changed, or it was asleep/)).toBeInTheDocument();
     expect(within(section).getByRole('option')).toHaveTextContent('Local Area Connection* 10 (virtual adapter)'); // prettier-ignore
+  });
+
+  it('on macOS and Linux, asks every time to confirm a home network the person trusts', async () => {
+    const refusal = { code: 'lan_confirm_network', message: 'Confirm that this computer is on a home network you trust.' }; // prettier-ignore
+    let current = off({ networkCheck: 'confirm' });
+    const { sent, user } = setup(current, {
+      'GET /api/lan': () => current,
+      'PUT /api/lan': (_url: URL, init: RequestInit) => {
+        const body = JSON.parse(String(init.body)) as LanUpdate;
+        if (body.enabled && !body.trustedNetwork) return json({ error: refusal }, 409);
+        current = body.enabled ? on({ networkCheck: 'confirm' }) : off({ networkCheck: 'confirm' });
+        return current;
+      },
+    });
+    const section = await expand(user);
+    const power = await within(section).findByRole('switch', { name: 'Turn on LAN mode' });
+    const trusted = within(section).getByRole('checkbox', { name: 'This is a home network I trust, such as my own Wi-Fi' }); // prettier-ignore
+    expect(within(section).getByText(/Asked every time LAN mode is turned on/)).toBeInTheDocument();
+    await user.click(power);
+    const alert = await within(section).findByRole('alert');
+    expect(alert).toHaveTextContent('Confirm that this computer is on a home network you trust.');
+    expect(alert).toHaveTextContent('Tick “This is a home network I trust”, then turn it on.');
+    expect(JSON.parse(String(sent('PUT')[0]?.body))).toEqual({ enabled: true, address: '192.168.1.20', trustedNetwork: false }); // prettier-ignore
+    await user.click(trusted);
+    await user.click(power);
+    await waitFor(() => expect(power).toBeChecked());
+    expect(JSON.parse(String(sent('PUT')[1]?.body))).toEqual({ enabled: true, address: '192.168.1.20', trustedNetwork: true }); // prettier-ignore
+    expect(within(section).queryByText(/Windows lists it/)).not.toBeInTheDocument();
+    expect(trusted).toBeChecked(); // still ticked while it is on
+    await user.click(power); // off: the next time is a new session, asked again
+    await waitFor(() => expect(power).not.toBeChecked());
+    expect(trusted).not.toBeChecked();
+    await user.click(power);
+    expect(await within(section).findByRole('alert')).toHaveTextContent('Confirm that this computer'); // prettier-ignore
+    expect(JSON.parse(String(sent('PUT')[3]?.body))).toEqual({ enabled: true, address: '192.168.1.20', trustedNetwork: false }); // prettier-ignore
+  });
+
+  it('says what Windows calls the network while LAN mode is on', async () => {
+    const old = device('a', 'Old phone', null, { address: null }); // paired before addresses were kept
+    const { user } = setup(on({ category: 'private', interface: null, devices: [old] }));
+    const section = await expand(user);
+    expect(await within(section).findByText(/Windows lists it as a private network/)).toBeInTheDocument(); // prettier-ignore
+    expect(within(section).getByText(/so other devices on the network could read it/)).toBeInTheDocument(); // prettier-ignore
+    expect(within(section).getByText(/^Any device on this network can open/)).toBeInTheDocument();
+    expect(within(section).getByText(/^Paired [^f]*, not used yet/)).toBeInTheDocument(); // no "from"
+  });
+
+  it.each([
+    [
+      'network_public',
+      /Windows now lists this network as public, so TTSNative stopped listening on it/,
+    ],
+    ['network_unknown', /couldn.t confirm in Windows that this network is still private/],
+  ] as const)('says LAN mode turned itself off because of %s', async (turnedOff, why) => {
+    const { user } = setup(off({ turnedOff }));
+    const section = await expand(user);
+    expect(await within(section).findByText('LAN mode turned itself off')).toBeInTheDocument();
+    expect(within(section).getByText(why)).toBeInTheDocument();
   });
 
   it('shows where each device paired from, a refused use of its cookie and an ended pairing', async () => {

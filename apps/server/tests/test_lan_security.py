@@ -34,6 +34,7 @@ from ltts.lan import service as service_module
 from ltts.lan.listener import LanListener
 from ltts.lan.network import NetworkAddress, adapter_kind
 from ltts.lan.policy import COSTLY_PER_WINDOW, refused_remotely
+from ltts.lan.trust import NetworkTrust
 
 # Every API route a paired phone or tablet may use. A new route stays on this computer until it is
 # added to lan/policy.py; if it is, add it here too, deliberately.
@@ -44,9 +45,9 @@ REACHABLE = {
     "GET /api/preferences", "PUT /api/preferences", "GET /api/lan/device", "POST /api/lan/pair",
     "GET /api/pronunciations", "POST /api/pronunciations", "PUT /api/pronunciations/{rule_id}",
     "DELETE /api/pronunciations/{rule_id}", "GET /api/cast-presets", "DELETE /api/cast-presets/{preset_id}",
-    "GET /api/exports", "POST /api/exports", "GET /api/exports/{job_id}", "DELETE /api/exports/{job_id}",
-    "GET /api/exports/{job_id}/download", "POST /api/exports/{job_id}/audiobookshelf",
-    "POST /api/exports/{job_id}/cancel", "POST /api/exports/{job_id}/pause", "POST /api/exports/{job_id}/resume",
+    "GET /api/exports", "POST /api/exports", "GET /api/exports/queue", "GET /api/exports/{job_id}",
+    "GET /api/exports/{job_id}/download",
+    "POST /api/exports/{job_id}/pause", "POST /api/exports/{job_id}/resume",
     "GET /api/documents", "POST /api/documents/text", "POST /api/documents/upload", "GET /api/documents/{document_id}",
     "GET /api/documents/{document_id}/bookmarks", "POST /api/documents/{document_id}/bookmarks",
     "PATCH /api/documents/{document_id}/bookmarks/{bookmark_id}",
@@ -241,6 +242,7 @@ def test_lan_mode_turns_itself_off_when_the_network_changes(
     monkeypatch.setattr(service_module, "WATCH_EVERY_S", 0.01)
     lan = services.lan
     lan.listener = FakeListener()  # type: ignore[assignment]
+    lan.trust = NetworkTrust("linux")  # confirmed each time it is turned on (test_lan_network_trust.py: Windows)
     clock = [time.time()]
     lan.wall = lambda: clock[0]
 
@@ -251,25 +253,25 @@ def test_lan_mode_turns_itself_off_when_the_network_changes(
             await asyncio.sleep(0.01)
 
     async def scenario() -> None:
-        on = await lan.enable(None, 8765)  # never a VPN unless chosen
+        on = await lan.enable(None, 8765, trusted=True)  # never a VPN unless chosen
         assert (on.address, on.interface, on.turned_off) == (LAN_ADDRESS, "Wi-Fi", None)
         current[1] = NetworkAddress(address=LAN_ADDRESS, interface="Ethernet", kind="network")  # moved adapter
         await off_soon()
         status = lan.status()
         assert not status.enabled and status.turned_off == "network_changed" and status.pairing is None
         current[1] = here(LAN_ADDRESS)[0]
-        assert (await lan.enable(LAN_ADDRESS, 8765)).turned_off is None
+        assert (await lan.enable(LAN_ADDRESS, 8765, trusted=True)).turned_off is None
         clock[0] += 3600  # an hour passed between two checks: the computer slept
         await off_soon()
         assert lan.status().turned_off == "network_changed"
-        await lan.enable(LAN_ADDRESS, 8765)
+        await lan.enable(LAN_ADDRESS, 8765, trusted=True)
         current.pop()  # the address left this computer
         await off_soon()
         assert not lan.enabled
         assert (await lan.disable()).turned_off is None  # switching it off by hand clears the notice
         current.pop()
         with pytest.raises(Exception) as only_vpn:
-            await lan.enable(None, 8765)
+            await lan.enable(None, 8765, trusted=True)
         assert getattr(only_vpn.value, "code", "") == "lan_no_network"
 
     asyncio.run(scenario())

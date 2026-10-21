@@ -42,6 +42,26 @@ candidate's Desktop workflow artifact:
 
 ## Latest results
 
+**2026-10-21, CI build `2.1.0-dev.110` installed over dev.98 on this maintainer's Windows 11 PC (not a
+clean machine).**
+
+- **Voice cloning in the installed app:** Settings' install (NVIDIA option) finished in under two
+  minutes (uv's cache on this PC already held most packages), a 23-second recording made with the
+  built-in voice was analysed (no issues), a custom voice was created from it, a preview in that voice
+  answered in 18 s (first use) and an MP3 export of a short text with it finished in 5 s.
+- **Close and crash (persistence test, twice):** one run passed completely; in another the window
+  closed but the process and its server stayed alive and ignored a second close request (no window
+  left, nothing in the logs), so the test failed its close check. It did not happen again, and CI's
+  smoke test passed its close check on the same build; this PC is known to flip memory bits, so it is
+  recorded here rather than explained. Worth watching for in the manual checks.
+- **Release rehearsal on a throwaway copy of the branch:** `release:prepare` produced 2.1.0 from the
+  change files, the checks the release workflow runs passed (version in 11 places, no change file left,
+  finished notes), the release notes rendered with the installer, download-page and source-archive
+  links, the source archive and web SBOM were produced, and the website built against a simulated
+  published 2.1.0 advertised the installer, redirected the download page to it and listed all three
+  versions. Not rehearsed: the signed installer build, the environment approval and the GitHub
+  Release itself (they need the secrets and a tag).
+
 **2026-10-21, development builds up to `2.1.0-dev.98` (pull request #37), on this maintainer's Windows 11
 PC (not a clean machine).**
 

@@ -184,6 +184,11 @@ known advisories.
   uv 0.13.4, is inside the cool-down and a minor-version upgrade of the bootstrap for every developer;
   **pending the maintainer's decision** to take it through a security exception (update
   `scripts/toolchain.json`, run the clean-install check, rebuild the installer).
+- **virtualenv 21.14.5 (CVE-2026-113725, in the voice-cloning environment through pre-commit):** its bash
+  `activate` script could run commands from an environment name; TTSNative never uses virtualenv (uv
+  builds the environment), but the fixed 21.14.7 (2026-10-12) comes in through a security exception
+  (`exclude-newer-package`), so existing installs are offered the in-place update. Drop the exception
+  after 2026-10-27.
 - **Licences:** see [license-inventory.md](license-inventory.md) for what the installer ships and the
   GPL/LGPL source offer.
 

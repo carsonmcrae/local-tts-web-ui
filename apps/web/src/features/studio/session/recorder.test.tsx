@@ -7,20 +7,10 @@
  *   little more unlocks an early build, with a warning on the record and build steps.
  * Does NOT belong: The full wizard (session.test.tsx) or the recorder hook.
  */
-import { screen, within } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import { within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { renderWithApp } from '@/test/render';
-import { quality, studioApi, studioSession, take } from '@/test/studio';
-import VoiceStudioPage from '../VoiceStudioPage';
+import { quality, resumeStudioSession, studioApi, studioSession, take } from '@/test/studio';
 import { FOUNDATION_ID, maxTakeSeconds, PASSAGES } from './passages';
-
-async function resume() {
-  const user = userEvent.setup();
-  renderWithApp(<VoiceStudioPage />);
-  await user.click(await screen.findByRole('button', { name: 'Continue' }));
-  return { user, dialog: await screen.findByRole('dialog', { name: 'Create a studio voice' }) };
-}
 
 describe('Studio passages', () => {
   it('gives every passage a hint and a stable take number, the foundation passage first', () => {
@@ -46,7 +36,7 @@ describe('Studio recorder guidance', () => {
       quality: quality(12, [{ code: 'noisy', severity: 'warning', message: 'A bit noisy.' }]),
     };
     studioApi(studioSession({ takes: [take(1, 'narration-1'), retake, advice], usableSpeechS: 24, requiredSpeechS: 300 })); // prettier-ignore
-    const { user, dialog } = await resume();
+    const { user, dialog } = await resumeStudioSession();
     expect(await within(dialog).findByText('Foundation passage')).toBeInTheDocument();
     await user.click(within(dialog).getByText(/All passages \(2 of 49 recorded\)/));
     const strip = within(dialog).getByRole('list', { name: 'Passages' });
@@ -74,7 +64,7 @@ describe('Studio recorder guidance', () => {
       complete: false,
     });
     studioApi(early);
-    const { user, dialog } = await resume();
+    const { user, dialog } = await resumeStudioSession();
     expect(await within(dialog).findByText('You can build an early version now')).toBeInTheDocument();
     await user.click(within(dialog).getByRole('button', { name: /Continue/ }));
     expect(await within(dialog).findByText('This will be an early version of your voice')).toBeInTheDocument();
@@ -82,7 +72,7 @@ describe('Studio recorder guidance', () => {
 
   it('asks for a little more speech once the foundation passage is recorded', async () => {
     studioApi(studioSession({ takes: [take(49, 'foundation', 35)], usableSpeechS: 35, requiredSpeechS: 300 }));
-    const { dialog } = await resume();
+    const { dialog } = await resumeStudioSession();
     expect(await within(dialog).findByText(/Record a little more \(45 seconds in all\)/)).toBeInTheDocument();
   }); // prettier-ignore
 });

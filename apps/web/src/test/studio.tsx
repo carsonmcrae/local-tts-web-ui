@@ -9,10 +9,12 @@
  */
 import { screen, waitFor, within } from '@testing-library/react';
 import type { UserEvent } from '@testing-library/user-event';
+import userEvent from '@testing-library/user-event';
 import { expect } from 'vitest';
 import type { JobOut, SessionTake, VoiceSession } from '@/api/types';
 import type * as PcmModule from '@/lib/audio/pcmRecorder';
-import { json, kokoro, mockApi, preferences, voice, voiceProfile } from './render';
+import VoiceStudioPage from '@/features/studio/VoiceStudioPage';
+import { json, kokoro, mockApi, preferences, renderWithApp, voice, voiceProfile } from './render';
 
 /** What the fake microphone does next, and which inputs were opened. */
 export const mic: { startError: unknown; started: (string | undefined)[] } = {
@@ -172,4 +174,12 @@ export async function recordTake(
   );
   tick(3);
   await user.click(within(dialog).getByRole('button', { name: 'Stop' }));
+}
+
+/** Open Voice Studio and continue the session in progress; returns the wizard dialog. */
+export async function resumeStudioSession() {
+  const user = userEvent.setup();
+  renderWithApp(<VoiceStudioPage />);
+  await user.click(await screen.findByRole('button', { name: 'Continue' }));
+  return { user, dialog: await screen.findByRole('dialog', { name: 'Create a studio voice' }) };
 }

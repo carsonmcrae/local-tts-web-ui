@@ -7,25 +7,15 @@
  *   can teach with one optional pointer; and microphone problems shown as a message with a hint.
  * Does NOT belong: The full wizard (session.test.tsx) or the passage strip (recorder.test.tsx).
  */
-import { screen, within } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import { within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import type { SessionTake } from '@/api/types';
-import { renderWithApp } from '@/test/render';
-import { quality, studioApi, studioSession, take } from '@/test/studio';
+import { quality, resumeStudioSession, studioApi, studioSession, take } from '@/test/studio';
 import {
   MicrophoneError,
   describeMicrophoneError,
   explainMicrophoneError,
 } from '@/lib/audio/recorder';
-import VoiceStudioPage from '../VoiceStudioPage';
-
-async function resume() {
-  const user = userEvent.setup();
-  renderWithApp(<VoiceStudioPage />);
-  await user.click(await screen.findByRole('button', { name: 'Continue' }));
-  return { user, dialog: await screen.findByRole('dialog', { name: 'Create a studio voice' }) };
-}
 
 const foundationTake = (overrides: Partial<SessionTake> = {}): SessionTake => ({
   ...take(49, 'foundation', 50),
@@ -40,7 +30,7 @@ describe('Reviewing a take', () => {
       { code: 'cut_off', severity: 'warning' as const, message: 'The take ends mid-word.' },
     ];
     studioApi(studioSession({ takes: [foundationTake({ quality: quality(50, issues) })], requiredSpeechS: 300 }));
-    const { dialog } = await resume();
+    const { dialog } = await resumeStudioSession();
     const alert = await within(dialog).findByRole('alert');
     expect(alert).toHaveTextContent('The audio is distorted (clipping).');
     const notes = within(dialog).getByText('Also noticed').parentElement as HTMLElement;
@@ -56,7 +46,7 @@ describe('Reviewing a take', () => {
       studioSession({ takes: [foundationTake({ previous })], requiredSpeechS: 300 }),
       { 'POST /api/voice-sessions/': () => foundationTake({ durationS: 41 }) },
     );
-    const { user, dialog } = await resume();
+    const { user, dialog } = await resumeStudioSession();
     await user.click(await within(dialog).findByRole('button', { name: 'Previous passage' })); // to the foundation passage
     expect(await within(dialog).findByText(/Your previous take of this passage is kept/)).toBeInTheDocument();
     expect(within(dialog).getByRole('button', { name: 'Listen to the previous take' })).toBeInTheDocument();
@@ -66,7 +56,7 @@ describe('Reviewing a take', () => {
 
   it('says nothing about a previous take when there is none', async () => {
     studioApi(studioSession({ takes: [foundationTake()], requiredSpeechS: 300 }));
-    const { user, dialog } = await resume();
+    const { user, dialog } = await resumeStudioSession();
     await user.click(await within(dialog).findByRole('button', { name: 'Previous passage' })); // to the foundation passage
     await within(dialog).findByText('Recorded · 50 s');
     expect(within(dialog).queryByRole('button', { name: 'Keep the previous take' })).not.toBeInTheDocument();
@@ -83,7 +73,7 @@ describe('Session progress', () => {
       takes: [foundationTake(), take(1, 'narration-1')], usableSpeechS: 62, requiredSpeechS: 300,
       canBuild: true, tier: 'foundation', styles,
     })); // prettier-ignore
-    const { dialog } = await resume();
+    const { dialog } = await resumeStudioSession();
     const tiers = await within(dialog).findByRole('list', { name: 'Your voice so far' });
     const steps = within(tiers).getAllByRole('listitem');
     expect(steps.map((step) => step.getAttribute('aria-current'))).toEqual(['step', null, null]);
@@ -97,7 +87,7 @@ describe('Session progress', () => {
 
   it('keeps quiet about styles before the first good take', async () => {
     studioApi(studioSession({ requiredSpeechS: 300 }));
-    const { dialog } = await resume();
+    const { dialog } = await resumeStudioSession();
     await within(dialog).findByRole('list', { name: 'Your voice so far' });
     expect(within(dialog).queryByRole('list', { name: 'Speaking styles' })).not.toBeInTheDocument();
   });

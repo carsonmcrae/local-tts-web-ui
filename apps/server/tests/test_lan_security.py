@@ -63,6 +63,11 @@ REACHABLE = {
     "PATCH /api/documents/{document_id}/sections/{section_index}",
     "GET /api/documents/{document_id}/segments/{index}/audio", "POST /api/documents/{document_id}/segments/{index}/takes",
     "GET /api/documents/{document_id}/styles", "PUT /api/documents/{document_id}/styles",
+    "PUT /api/documents/{document_id}/shelf", "POST /api/library/organize", "GET /api/library/tags",
+    "GET /api/library/folders", "POST /api/library/folders", "PATCH /api/library/folders/{folder_id}",
+    "DELETE /api/library/folders/{folder_id}", "GET /api/library/collections", "POST /api/library/collections",
+    "PATCH /api/library/collections/{collection_id}", "DELETE /api/library/collections/{collection_id}",
+    "POST /api/library/collections/{collection_id}/documents",
 }  # fmt: skip
 SAMPLES = {"voice_id": "kokoro:af_heart", "engine_id": "kokoro", "key": "a" * 64}
 
@@ -225,6 +230,7 @@ def test_virtual_and_vpn_adapters_are_hidden_or_labelled(monkeypatch: pytest.Mon
         "Unplugged": [entry("192.168.9.9")], "vEthernet (WSL)": [entry("172.20.16.1")],
         "VirtualBox Host-Only Network": [entry("192.168.56.1")], "vEthernet (External)": [entry("192.168.2.4")],
         "WireGuard": [entry("10.8.0.2", "255.255.255.255")], "Public": [entry("8.8.4.4")],
+        "Odd": [entry("not an address")],
     }  # fmt: skip
     stats = {name: SimpleNamespace(isup=name != "Unplugged") for name in adapters}
     monkeypatch.setattr(network_module.psutil, "net_if_addrs", lambda: adapters)
@@ -269,6 +275,17 @@ def test_lan_mode_turns_itself_off_when_the_network_changes(
         await off_soon()
         assert not lan.enabled
         assert (await lan.disable()).turned_off is None  # switching it off by hand clears the notice
+        current.append(here(LAN_ADDRESS)[0])
+        with pytest.raises(Exception) as elsewhere:
+            await lan.enable("10.9.9.9", 8765, trusted=True)  # not one of this computer's addresses
+        assert getattr(elsewhere.value, "code", "") == "lan_address"
+        await lan.enable(LAN_ADDRESS, 8765, trusted=True)
+        watch = lan._watch
+        await asyncio.sleep(0.08)  # several checks pass with nothing changed (and no category to read here)
+        assert lan.enabled and watch is not None and not watch.done()
+        lan.listener.running = False  # the listener went away on its own: the watch ends without a reason
+        await asyncio.wait_for(watch, 2)
+        assert lan.status().turned_off is None
         current.pop()
         with pytest.raises(Exception) as only_vpn:
             await lan.enable(None, 8765, trusted=True)

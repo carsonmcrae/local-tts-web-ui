@@ -13,17 +13,21 @@ speech API's own network permission (test_speech_api.py).
 from __future__ import annotations
 
 import asyncio
+import socket
 import sqlite3
+from types import SimpleNamespace
 from typing import Any
 
 import httpx
 import pytest
+import uvicorn
 from fastapi.testclient import TestClient
 
 from lan_support import ORIGIN, FakeListener, here, paired, phone
 from ltts.container import Services
+from ltts.errors import ConflictError, NotFoundError
 from ltts.lan import listener as listener_module
-from ltts.lan.devices import ALPHABET, PairingCodes, PairingFailedError
+from ltts.lan.devices import ALPHABET, MAX_DEVICES, TOKEN_PREFIX, PairingCodes, PairingFailedError, Recognised
 from ltts.lan.listener import LanListener
 from ltts.lan.policy import open_to_unpaired, refused_remotely
 
@@ -155,6 +159,25 @@ def test_settings_say_other_devices_can_reach_the_app_while_lan_mode_is_on(clien
     lan.lan.listener.running = False  # type: ignore[misc]
     assert client.get("/api/system").json()["lanMode"] is False
     assert client.get("/api/speech-api").json()["networkMode"] is False
+    off = client.post("/api/lan/pairing")  # a pairing code needs LAN mode on
+    assert off.status_code == 409 and off.json()["error"]["code"] == "lan_off"
+
+
+def test_the_device_store_holds_twenty_devices_and_knows_what_it_never_paired(
+    client: TestClient, lan: Services
+) -> None:
+    store = lan.lan.devices
+    for number in range(MAX_DEVICES):
+        store.add(f"Device {number}", f"192.168.1.{number + 2}")
+    with pytest.raises(PairingFailedError) as full:
+        store.add("One too many", "192.168.1.99")
+    assert full.value.code == "device_limit" and len(store.list_all()) == MAX_DEVICES
+    assert store.identify("not-a-device-token", "192.168.1.2") == Recognised()
+    assert store.identify(TOKEN_PREFIX + "x" * 100, "192.168.1.2") == Recognised()  # far longer than any token
+    with pytest.raises(NotFoundError) as unknown:
+        store.get("0" * 32)
+    assert unknown.value.code == "device_not_found"
+    assert client.delete(f"/api/lan/devices/{'0' * 32}").json()["error"]["code"] == "device_not_found"
 
 
 def test_pairing_is_only_done_from_the_network_and_shows_a_qr_code(client: TestClient, lan: Services) -> None:
@@ -199,3 +222,81 @@ def test_the_listener_only_uses_this_computers_private_addresses(monkeypatch: py
     with pytest.raises(Exception) as refused:
         asyncio.run(lan.start("0.0.0.0", 8765))  # noqa: S104 - checking that it's refused
     assert getattr(refused.value, "code", "") == "lan_address"
+
+
+def test_the_listener_says_when_its_port_is_taken_or_its_server_never_starts(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(listener_module, "network_addresses", here)
+    monkeypatch.setattr(listener_module, "START_TIMEOUT_S", 0.2)
+    taken = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    taken.bind(("127.0.0.1", 0))
+    taken.listen(1)
+
+    class NeverStarts(listener_module._QuietServer):
+        async def serve(self, sockets: list[socket.socket] | None = None) -> None:
+            await asyncio.Event().wait()  # never reports that it started
+
+    async def scenario() -> None:
+        lan = LanListener(lambda: None)
+        with pytest.raises(ConflictError) as busy:
+            await lan.start("127.0.0.1", taken.getsockname()[1])
+        assert busy.value.code == "lan_port_busy" and not lan.running
+        monkeypatch.setattr(listener_module, "_QuietServer", NeverStarts)
+        with pytest.raises(ConflictError) as stuck:
+            await lan.start("127.0.0.1", 0)
+        assert stuck.value.code == "lan_not_started" and not lan.running and lan.port is None
+
+    try:
+        asyncio.run(scenario())
+    finally:
+        taken.close()
+    # The main server owns Ctrl+C: the LAN server installs no signal handlers of its own.
+    assert listener_module._QuietServer(uvicorn.Config(app=object())).install_signal_handlers() is None
+
+
+def test_stopping_forces_a_server_that_ignores_the_first_request(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(listener_module, "network_addresses", here)
+    monkeypatch.setattr(listener_module, "START_TIMEOUT_S", 0.2)
+    aborted: list[str] = []
+
+    class Connecting:
+        """A connection that has no transport yet."""
+
+    class Open:
+        transport = SimpleNamespace(abort=lambda: aborted.append("aborted"))
+
+    class Stubborn(listener_module._QuietServer):
+        """Stops only when forced: ``should_exit`` alone is ignored."""
+
+        def __init__(self, config: uvicorn.Config) -> None:
+            self.forced = asyncio.Event()
+            super().__init__(config)
+
+        @property
+        def force_exit(self) -> bool:
+            return self.forced.is_set()
+
+        @force_exit.setter
+        def force_exit(self, value: bool) -> None:
+            if value:
+                self.forced.set()
+
+        async def serve(self, sockets: list[socket.socket] | None = None) -> None:
+            self.servers = []
+            self.started = True
+            self.server_state.connections.update({Connecting(), Open()})  # type: ignore[arg-type]
+            try:
+                await self.forced.wait()
+            finally:
+                for sock in sockets or []:
+                    sock.close()
+
+    monkeypatch.setattr(listener_module, "_QuietServer", Stubborn)
+
+    async def scenario() -> None:
+        lan = LanListener(lambda: None)
+        await lan.start("127.0.0.1", 0)
+        assert lan.running
+        await lan.stop()
+        assert not lan.running and aborted == ["aborted", "aborted"]  # dropped on the first and the forced stop
+
+    asyncio.run(scenario())

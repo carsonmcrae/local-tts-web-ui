@@ -87,7 +87,7 @@ class SpeechApiStatus(ApiModel):
     allowed_voices: list[str]
     has_token: bool
     token_created_at: str | None
-    network_mode: bool  # whether this server accepts connections from other devices at all
+    network_mode: bool  # whether other devices can reach this server at all (network mode or LAN mode)
     port: int | None
     max_input_chars: int
     requests_per_minute: int

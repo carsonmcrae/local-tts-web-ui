@@ -90,7 +90,7 @@ scripts, screen readers and home automation on this computer read text aloud wit
 voices. It is **off** until you open **Speech API settings** and switch it on, and programs need a
 token, which is shown once (only a fingerprint of it is kept). Custom voices can't be used until
 you allow each one, web pages can never call it, and other devices are refused unless you allow
-them (which only matters in network mode). The section also shows when the API was last used, and
+them (which only matters while LAN mode or network mode is on). The section also shows when the API was last used, and
 the sidebar shows **Speech API in use** while a program is using it. See the
 [local speech API guide](https://github.com/carsonmcrae/ttsnative/blob/main/docs/guides/local-speech-api.md)
 for examples (curl, Python, the OpenAI SDK), limits and how it is protected.
@@ -99,8 +99,10 @@ for examples (curl, Python, the OpenAI SDK), limits and how it is protected.
 
 A summary of how the app treats your data: no accounts, analytics or telemetry; documents, recordings
 and generated audio stay on this computer; the only network requests are model downloads you start
-yourself; everything works offline once models are installed. If the server was started in network
-mode, a **Network access is on** warning appears here (see [Other Devices](Other-Devices)).
+yourself, web pages you choose to import and books you send to your own Audiobookshelf; everything
+works offline once models are installed. While LAN mode is on, a **LAN mode is on** warning appears
+here, and if the server was started in network mode, a **Network access is on** warning (see
+[Other Devices](Other-Devices)).
 
 ## About
 

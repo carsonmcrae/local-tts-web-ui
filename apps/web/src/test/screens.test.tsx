@@ -374,7 +374,7 @@ describe('Settings', () => {
       {
         version: '2.0.0', python: '3.12.10', platform: 'Windows 11', machine: 'AMD64', cpuCores: 16,
         memoryTotalBytes: 64 * 1024 ** 3, memoryAvailableBytes: 32 * 1024 ** 3, gpus: [{ vendor: 'NVIDIA', name: 'RTX', memoryMb: 10240 }],
-        onnxProviders: ['CPUExecutionProvider'], networkExposed: false, telemetry: false, limits: {},
+        onnxProviders: ['CPUExecutionProvider'], networkExposed: false, lanMode: false, telemetry: false, limits: {},
         storage: { dataDir: 'C:/data', freeBytes: 1, totalBytes: 2, modelsBytes: 3, audioCacheBytes: 4, audioCacheLimitBytes: 5, voicesBytes: 6, exportsBytes: 7, databaseBytes: 8 },
       },
       '2.0.0',

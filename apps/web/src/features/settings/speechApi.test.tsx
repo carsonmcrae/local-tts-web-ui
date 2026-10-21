@@ -186,7 +186,7 @@ describe('Local speech API settings', () => {
     await user.click(within(section).getByRole('button', { name: 'Copy command' }));
     expect(await screen.findByRole('alert')).toHaveTextContent('Copy failed');
     expect(section).toHaveTextContent('Up to 4,000 characters a request, 60 requests a minute');
-    expect(section).toHaveTextContent('accepting network connections now');
+    expect(section).toHaveTextContent('Other devices can reach TTSNative now');
     expect(within(section).getByRole('link', { name: 'Read the guide' })).toHaveAttribute('href', expect.stringContaining('docs/guides/local-speech-api.md')); // prettier-ignore
   });
 

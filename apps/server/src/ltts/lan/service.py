@@ -50,6 +50,10 @@ class LanService:
         self._app = app
 
     # -- state ---------------------------------------------------------------
+    @property
+    def enabled(self) -> bool:
+        return self.listener.running
+
     def status(self) -> LanStatus:
         running = self.listener.running
         return LanStatus(

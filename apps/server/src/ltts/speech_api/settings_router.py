@@ -31,7 +31,7 @@ def _port(request: Request) -> int | None:
 @router.get("")
 def get_speech_api(request: Request, services: ServicesDep) -> SpeechApiStatus:
     api = services.speech_api
-    return api.status(api.store.prune_voices(), _port(request))
+    return api.status(api.store.prune_voices(), _port(request), lan_mode=services.lan.enabled)
 
 
 @router.put("")
@@ -42,7 +42,7 @@ def save_speech_api(body: SpeechApiSettingsIn, request: Request, services: Servi
         "speech api settings saved",
         extra={"enabled": config.enabled, "allow_network": config.allow_network, "voices": len(config.allowed_voices)},
     )
-    return api.status(config, _port(request))
+    return api.status(config, _port(request), lan_mode=services.lan.enabled)
 
 
 @router.post("/token", status_code=201)

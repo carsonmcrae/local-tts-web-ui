@@ -53,7 +53,8 @@ class SystemInfo(ApiModel):
     memory_available_bytes: int
     gpus: list[GpuInfo]
     onnx_providers: list[str]
-    network_exposed: bool
+    network_exposed: bool  # started in network mode (--allow-network)
+    lan_mode: bool  # LAN mode is on: paired phones and tablets can reach the app
     storage: StorageInfo
     telemetry: bool = False
     limits: dict[str, int | float]
@@ -93,6 +94,7 @@ def system_info(services: ServicesDep) -> SystemInfo:
         gpus=list(detect_gpus()),
         onnx_providers=list(onnxruntime().get_available_providers()),
         network_exposed=not settings.is_loopback_only,
+        lan_mode=services.lan.enabled,
         storage=StorageInfo(
             data_dir=str(data),
             free_bytes=disk.free,

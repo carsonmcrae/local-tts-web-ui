@@ -216,7 +216,7 @@ class SpeechApi:
         return clips
 
     # -- settings ----------------------------------------------------------------
-    def status(self, config: SpeechApiConfig, port: int | None) -> SpeechApiStatus:
+    def status(self, config: SpeechApiConfig, port: int | None, *, lan_mode: bool = False) -> SpeechApiStatus:
         usage = self.usage.snapshot()
         return SpeechApiStatus(
             enabled=config.enabled,
@@ -224,7 +224,7 @@ class SpeechApi:
             allowed_voices=list(config.allowed_voices),
             has_token=config.token_hash is not None,
             token_created_at=config.token_created_at,
-            network_mode=self.settings.allow_network,
+            network_mode=self.settings.allow_network or lan_mode,
             port=port,
             max_input_chars=self.settings.speech_api_max_chars,
             requests_per_minute=self.settings.speech_api_requests_per_minute,

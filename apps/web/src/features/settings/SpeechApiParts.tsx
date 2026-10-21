@@ -261,8 +261,8 @@ export function NetworkPermission({
         token make speech with these voices, including any custom voices allowed above. Requests
         travel as plain HTTP, so others on the same network could read the text and the token.{' '}
         {status.networkMode
-          ? 'TTSNative is accepting network connections now.'
-          : 'TTSNative only listens on this computer right now, so this has no effect until it is started in network mode.'}
+          ? 'Other devices can reach TTSNative now (LAN mode or network mode is on).'
+          : 'TTSNative only listens on this computer right now, so this has no effect until you turn on LAN mode in Phones & tablets, or start it in network mode.'}
       </p>
       {status.allowNetwork ? (
         <Banner tone="warning">

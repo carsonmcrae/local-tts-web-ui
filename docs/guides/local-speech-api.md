@@ -152,10 +152,11 @@ as someone else. Deleting a voice also removes its permission. Voices of any oth
 
 - **This computer only.** The API refuses requests from other devices (`403`) unless you switch on
   **Allow other devices on my network**, which is off by default. Turning it on doesn't change how the
-  server listens: TTSNative still listens only on `127.0.0.1` unless it was started in
-  [network mode](lan-access.md), so the permission has no effect until then. In network mode, devices
-  on your network that have the token could make speech with the allowed voices, and requests travel
-  as plain HTTP, so others on the same network could read the text and the token.
+  server listens: TTSNative still listens only on `127.0.0.1` unless **LAN mode** is on (Settings →
+  Phones & tablets) or it was started in [network mode](lan-access.md), so the permission has no
+  effect until then. With either on, devices on your network that have the token could make speech
+  with the allowed voices (pairing isn't needed for `/v1`; the token is), and requests travel as plain
+  HTTP, so others on the same network could read the text and the token.
 - **No web pages.** Browsers mark every request a page makes (`Origin` and `Sec-Fetch-*` headers);
   the API refuses those, and it never sends CORS headers, so a website you visit can't use your voices
   even if it guesses the address. Programs and scripts don't send these headers.

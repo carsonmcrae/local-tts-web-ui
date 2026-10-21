@@ -22,7 +22,7 @@ afterEach(() => vi.unstubAllGlobals());
 const system: SystemInfo = {
   version: '2.0.0', python: '3.12.10', platform: 'Windows 11', machine: 'AMD64', cpuCores: 8,
   memoryTotalBytes: 16 * 1024 ** 3, memoryAvailableBytes: 8 * 1024 ** 3, gpus: [],
-  onnxProviders: ['CPUExecutionProvider'], networkExposed: true, telemetry: false, limits: {},
+  onnxProviders: ['CPUExecutionProvider'], networkExposed: true, lanMode: true, telemetry: false, limits: {},
   storage: { dataDir: 'C:/ltts', freeBytes: 50e9, totalBytes: 100e9, modelsBytes: 3e8, audioCacheBytes: 5e7,
     audioCacheLimitBytes: 1e8, voicesBytes: 1e6, exportsBytes: 2e6, databaseBytes: 3e5 },
 }; // prettier-ignore
@@ -188,6 +188,8 @@ describe('System sections', () => {
     api();
     renderSettings();
     expect(await screen.findByText('Network access is on')).toBeInTheDocument();
+    expect(screen.getByText('LAN mode is on')).toBeInTheDocument();
+    expect(diagnosticsReport(system, '2.0.0')).toContain('Network exposed: yes, LAN mode: on');
     const about = screen.getByRole('region', { name: 'About & diagnostics' });
     expect(within(about).getByText('None detected (CPU mode)')).toBeInTheDocument();
     expect(within(about).getByText('Python 3.12.10')).toBeInTheDocument();

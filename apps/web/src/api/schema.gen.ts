@@ -2532,6 +2532,8 @@ export type components = {
       cpuCores: number;
       /** Gpus */
       gpus: components['schemas']['GpuInfo'][];
+      /** Lanmode */
+      lanMode: boolean;
       /** Limits */
       limits: {
         [key: string]: number;

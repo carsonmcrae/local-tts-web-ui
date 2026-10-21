@@ -161,6 +161,14 @@ def test_removing_a_device_or_turning_lan_mode_off_takes_effect_at_once(client: 
     assert client.get("/api/lan").json()["pairing"] is None
 
 
+def test_settings_say_other_devices_can_reach_the_app_while_lan_mode_is_on(client: TestClient, lan: Services) -> None:
+    assert client.get("/api/system").json()["lanMode"] is True
+    assert client.get("/api/speech-api").json()["networkMode"] is True  # /v1 is on the LAN address too
+    lan.lan.listener.running = False  # type: ignore[misc]
+    assert client.get("/api/system").json()["lanMode"] is False
+    assert client.get("/api/speech-api").json()["networkMode"] is False
+
+
 def test_pairing_is_only_done_from_the_network_and_shows_a_qr_code(client: TestClient, lan: Services) -> None:
     code = lan.lan.codes.new().code
     here = client.post("/api/lan/pair", json={"code": code})

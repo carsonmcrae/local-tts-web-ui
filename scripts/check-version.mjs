@@ -2,45 +2,41 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 Carson McRae
 /**
- * Purpose: Keep the single product version consistent everywhere it appears.
- * Scope: Root and web package.json, the server's pyproject.toml and `ltts.__version__`, the worker's
- *   pyproject.toml, and the newest released heading in CHANGELOG.md.
- * Does NOT belong: Choosing or bumping versions (see docs/guides/release-process.md).
+ * Purpose: Keep the single product version consistent everywhere it appears, and never behind a
+ *   published release.
+ * Scope: Every file in scripts/lib/version-files.mjs plus the newest released heading in
+ *   CHANGELOG.md must hold the root package.json version, a stable MAJOR.MINOR.PATCH; when release
+ *   tags are available, that version may not be older than the newest one.
+ * Does NOT belong: Choosing or bumping versions (`npm run release:prepare`, see
+ *   docs/guides/release-process.md) or pull-request rules (check-changes.mjs).
  */
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
+import { releaseTags } from './lib/git.mjs';
 import { color, ok } from './lib/log.mjs';
 import { repoRoot } from './lib/paths.mjs';
+import { compareVersions, isStable } from './lib/semver.mjs';
+import { readVersions } from './lib/version-files.mjs';
 
-/** @param {string} file */
-const read = (file) => readFileSync(path.join(repoRoot, file), 'utf8');
+const found = readVersions();
+const changelog = readFileSync(path.join(repoRoot, 'CHANGELOG.md'), 'utf8');
+found.push({
+  file: 'CHANGELOG.md',
+  version: /^## \[(\d+\.\d+\.\d+)\]/m.exec(changelog)?.[1] ?? null,
+});
 
-const sources = {
-  'package.json': JSON.parse(read('package.json')).version,
-  'apps/web/package.json': JSON.parse(read('apps/web/package.json')).version,
-  'apps/server/pyproject.toml': /^version = "([^"]+)"/m.exec(
-    read('apps/server/pyproject.toml'),
-  )?.[1],
-  'apps/server/src/ltts/__init__.py': /__version__ = "([^"]+)"/.exec(
-    read('apps/server/src/ltts/__init__.py'),
-  )?.[1],
-  'apps/chatterbox-worker/pyproject.toml': /^version = "([^"]+)"/m.exec(
-    read('apps/chatterbox-worker/pyproject.toml'),
-  )?.[1],
-  'CHANGELOG.md': /^## \[(\d+\.\d+\.\d+)\]/m.exec(read('CHANGELOG.md'))?.[1],
+const expected = found[0]?.version ?? '';
+/** @param {string} message */
+const fail = (message) => {
+  console.error(`${color.red('✗')} ${message}`);
+  process.exitCode = 1;
 };
-
-const expected = sources['package.json'];
-const mismatched = Object.entries(sources).filter(([, version]) => version !== expected);
-if (!/^\d+\.\d+\.\d+$/.test(expected ?? '')) {
-  console.error(
-    `${color.red('✗')} package.json version "${expected}" is not semantic (MAJOR.MINOR.PATCH).`,
-  );
-  process.exit(1);
+if (!isStable(expected)) fail(`package.json version "${expected}" is not MAJOR.MINOR.PATCH.`);
+for (const { file, version } of found.filter((entry) => entry.version !== expected)) {
+  fail(`${file} has ${version ?? 'no version'}, expected ${expected}`);
 }
-if (mismatched.length) {
-  for (const [file, version] of mismatched)
-    console.error(`${color.red('✗')} ${file} has ${version ?? 'no version'}, expected ${expected}`);
-  process.exit(1);
+const newest = releaseTags()[0];
+if (newest && isStable(expected) && compareVersions(expected, newest) < 0) {
+  fail(`version ${expected} is older than the published v${newest}; versions never go backwards.`);
 }
-ok(`Version ${expected} is consistent across ${Object.keys(sources).length} files`);
+if (!process.exitCode) ok(`Version ${expected} is consistent across ${found.length} places`);

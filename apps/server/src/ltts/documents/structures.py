@@ -3,7 +3,8 @@
 """Purpose: Plain data structures passed between extraction, segmentation and storage.
 
 Scope: Extractor output (sections of blocks), segmentation output, and the limits object handed to
-sandboxed extractors. All are picklable so they can cross the extraction process boundary.
+sandboxed extractors. All are picklable so they can cross the extraction process boundary. A block
+(and its segments) can be page furniture, kept so the reader can see it and skipped when reading.
 Does NOT belong: API response models (``schemas.py``) or persistence (``repository.py``).
 """
 
@@ -28,12 +29,14 @@ class DocumentType(StrEnum):
 
 BlockKind = Literal["heading", "paragraph"]
 Boundary = Literal["sentence", "paragraph", "section"]
+Furniture = Literal["header", "footer", "page_number"]  # a PDF's running header or footer, or page number
 
 
 @dataclass(slots=True)
 class Block:
     kind: BlockKind
     text: str
+    furniture: Furniture | None = None
 
 
 @dataclass(slots=True)
@@ -71,6 +74,7 @@ class Segment:
     kind: BlockKind
     boundary: Boundary
     text: str
+    furniture: Furniture | None = None
 
 
 @dataclass(slots=True)

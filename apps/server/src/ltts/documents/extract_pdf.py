@@ -2,12 +2,13 @@
 # Copyright (c) 2026 Carson McRae
 """Purpose: Text-PDF extraction with PDFium (pypdfium2), tuned for listening rather than layout.
 
-Scope: Reads each page's text layer; removes running headers/footers and page numbers; rebuilds
-paragraphs across line and page breaks (de-hyphenating); groups paragraphs into chapters from the
-PDF outline, starting each chapter at its heading line when the heading is found on the outline's
-page (outlines only point at pages, and chapters often start partway down one), or into "Page N"
-sections when there is none; detects scanned/image-only PDFs and reports them instead of pretending
-they were read. Encrypted PDFs are rejected.
+Scope: Reads each page's text layer; sets running headers/footers and page numbers (found by
+``cleanup.py``) apart as blocks of their own marked as furniture, kept to be skipped when reading and
+never joined into the text; rebuilds paragraphs across line and page breaks (de-hyphenating); groups
+paragraphs into chapters from the PDF outline, starting each chapter at its heading line when the
+heading is found on the outline's page (outlines only point at pages, and chapters often start
+partway down one), or into "Page N" sections when there is none; detects scanned/image-only PDFs
+and reports them instead of pretending they were read. Encrypted PDFs are rejected.
 Does NOT belong: OCR (not supported) or generic text clean-up (``normalize.py``).
 """
 
@@ -15,34 +16,35 @@ from __future__ import annotations
 
 import math
 import re
-from collections import Counter
 from dataclasses import dataclass
 from pathlib import Path
 
 import pypdfium2 as pdfium
 
+from ltts.documents.cleanup import find_furniture, is_top
 from ltts.documents.normalize import clean_inline
-from ltts.documents.structures import Block, ExtractedSection, Extraction, ExtractionLimits
+from ltts.documents.structures import Block, ExtractedSection, Extraction, ExtractionLimits, Furniture
 from ltts.errors import DocumentExtractionError
 
 MIN_PAGE_CHARS = 20
-RUNNING_LINE_SHARE = 0.4
-EDGE_LINES = 2
-# Page-number lines: "12", "Page 12", "12 of 300", "12/300", "- 12 -" (any dash) and Roman numerals ("xiv").
-_PAGE_NUMBER_FORMS = (
-    re.compile(r"^(?:page\s*)?\d{1,4}(?:\s*(?:of|/)\s*\d{1,4})?$", re.IGNORECASE),
-    re.compile(r"^[-–—]\s*\d{1,4}\s*[-–—]$"),
-    re.compile(r"^[ivxlc]{1,6}$", re.IGNORECASE),
-)
 _SENTENCE_END = re.compile(r"[.!?:;\"”’)\]]$")
 _NEW_BLOCK_START = re.compile(r"^[A-Z0-9\"“‘(•\-–—]")
+# Paragraphs starting at the same line of the stream: a page's footer comes before a section starting on
+# the next page, and that page's header after the section start but before the page's text.
+_FOOTER_RANK, _START_RANK, _HEADER_RANK, _TEXT_RANK = range(4)
 
 
 @dataclass(slots=True)
 class _Paragraph:
     page: int
-    position: int  # where its first line sits in the document's line stream
+    position: int  # where its first line sits in the line stream (furniture: where its page starts or ends)
     text: str
+    furniture: Furniture | None = None
+    rank: int = _TEXT_RANK
+
+    def before(self, start: float) -> bool:
+        """Whether it comes before a section that starts at line ``start`` of the stream."""
+        return (self.position, self.rank) < (start, _START_RANK)
 
 
 @dataclass(frozen=True, slots=True)
@@ -54,41 +56,22 @@ class _Start:
     title: str
 
 
-def _is_page_number(line: str) -> bool:
-    return any(form.match(line) for form in _PAGE_NUMBER_FORMS)
+def _without_furniture(pages: list[list[str]], found: list[dict[int, Furniture]]) -> list[list[str]]:
+    return [[line for at, line in enumerate(lines) if at not in found[page]] for page, lines in enumerate(pages)]
 
 
-def _running_key(line: str) -> str:
-    return re.sub(r"\d+", "#", line.lower()).strip()
-
-
-def _edge_positions(count: int) -> set[int]:
-    """Line positions that may hold a running header/footer; short pages only use the outermost line."""
-    depth = EDGE_LINES if count > 2 * EDGE_LINES + 1 else 1
-    return {*range(min(depth, count)), *range(max(count - depth, 0), count)}
-
-
-def _strip_running_lines(pages: list[list[str]]) -> list[list[str]]:
-    """Drop page numbers and lines repeated at the top/bottom of many pages."""
-    repeated: set[str] = set()
-    if len(pages) >= 3:
-        counts: Counter[str] = Counter()
-        for lines in pages:
-            counts.update({_running_key(lines[i]) for i in _edge_positions(len(lines))})
-        threshold = max(2, math.ceil(len(pages) * RUNNING_LINE_SHARE))
-        repeated = {key for key, count in counts.items() if count >= threshold}
-
-    cleaned: list[list[str]] = []
-    for lines in pages:
-        edges = _edge_positions(len(lines))
-        cleaned.append(
-            [
-                line
-                for position, line in enumerate(lines)
-                if position not in edges or not (_is_page_number(line) or _running_key(line) in repeated)
-            ]
-        )
-    return cleaned
+def _furniture(pages: list[list[str]], found: list[dict[int, Furniture]], kept: list[list[str]]) -> list[_Paragraph]:
+    """Each furniture line as a paragraph of its own: a header where its page's text starts, a footer where it ends."""
+    paragraphs: list[_Paragraph] = []
+    start = 0
+    for page, lines in enumerate(pages):
+        end = start + len(kept[page])
+        for at, furniture in sorted(found[page].items()):
+            top = is_top(at, len(lines))
+            rank = _HEADER_RANK if top else _FOOTER_RANK
+            paragraphs.append(_Paragraph(page, start if top else end, lines[at], furniture, rank))
+        start = end
+    return paragraphs
 
 
 def _typical_width(pages: list[list[str]]) -> int:
@@ -207,33 +190,46 @@ def _outline_starts(pdf: pdfium.PdfDocument, page_count: int) -> list[tuple[int,
     return sorted(starts.items())
 
 
-def _block(text: str, first: bool, title: str) -> Block:
-    """A section's first block is its heading when it reads like one or is the outline's own title."""
+def _block(paragraph: _Paragraph, blocks: list[Block], title: str) -> Block:
+    """Furniture stays a paragraph of its own. A section's first text is its heading when it reads like one
+    or is the outline's own title."""
+    text = paragraph.text
+    if paragraph.furniture is not None:
+        return Block("paragraph", text, paragraph.furniture)
+    first = all(block.furniture is not None for block in blocks)
     looks_heading = len(text) < 80 and not _SENTENCE_END.search(text)
     is_title = bool(_tokens(title)) and _tokens(text) == _tokens(title)
     return Block("heading" if first and (looks_heading or is_title) else "paragraph", text)
 
 
 def _group(paragraphs: list[_Paragraph], starts: list[_Start]) -> list[ExtractedSection]:
-    if not paragraphs:
+    """Paragraphs (furniture among them, in reading order) into sections; furniture is never a section alone."""
+    text = [paragraph for paragraph in paragraphs if paragraph.furniture is None]
+    if not text:
         return []
     if len(starts) < 2:
         first_on_page: dict[int, int] = {}
-        for paragraph in paragraphs:
+        for paragraph in text:
             first_on_page.setdefault(paragraph.page, paragraph.position)
         starts = [_Start(position, page, f"Page {page + 1}") for page, position in sorted(first_on_page.items())]
-    elif starts[0].position > paragraphs[0].position:
-        starts = [_Start(paragraphs[0].position, paragraphs[0].page, "Opening pages"), *starts]
+    elif starts[0].position > text[0].position:
+        starts = [_Start(text[0].position, text[0].page, "Opening pages"), *starts]
     sections: list[ExtractedSection] = []
+    carried: list[Block] = []  # furniture before the first section with text
     bounds = [start.position for start in starts[1:]] + [math.inf]
     cursor = 0
     for start, end in zip(starts, bounds, strict=True):
         section = ExtractedSection(title=start.title, page=start.page + 1)
-        while cursor < len(paragraphs) and paragraphs[cursor].position < end:
-            section.blocks.append(_block(paragraphs[cursor].text, not section.blocks, start.title))
+        while cursor < len(paragraphs) and paragraphs[cursor].before(end):
+            section.blocks.append(_block(paragraphs[cursor], section.blocks, start.title))
             cursor += 1
-        if section.blocks:
+        if any(block.furniture is None for block in section.blocks):
+            section.blocks[:0], carried = carried, []
             sections.append(section)
+        elif sections:
+            sections[-1].blocks += section.blocks
+        else:
+            carried += section.blocks
     return sections
 
 
@@ -296,9 +292,11 @@ def extract_pdf_file(path: Path, title: str | None, limits: ExtractionLimits) ->
     warnings = []
     if blank:
         warnings.append(f"{blank} of {page_count} pages had no readable text (likely scanned images) and were skipped.")
-    lines = _strip_running_lines(pages)
+    found = find_furniture(pages, [title for _, title in starts])
+    lines = _without_furniture(pages, found)
     chapters, headings = _chapter_starts(lines, starts) if len(starts) >= 2 else ([], {})
     paragraphs = _paragraphs(lines, {chapter.position for chapter in chapters}, headings)
-    sections = _group(paragraphs, chapters)
+    in_order = sorted([*paragraphs, *_furniture(pages, found, lines)], key=lambda p: (p.position, p.rank))
+    sections = _group(in_order, chapters)
     usable_title = meta_title if meta_title and not meta_title.lower().startswith("microsoft") else None
     return Extraction(title=usable_title or title, sections=sections, page_count=page_count, warnings=warnings)

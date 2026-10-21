@@ -3,8 +3,10 @@
 """Purpose: Orchestrate document ingestion from a saved upload or pasted text to stored segments.
 
 Scope: Enforces document-count and concurrency limits, verifies the real file type, runs the
-sandboxed extractor, segments the result and persists it. Web pages are fetched (``url_import``)
-and then read like an uploaded HTML file. Temporary files are always removed.
+sandboxed extractor, segments the result, runs the automatic cleanup (``cleanup.py``: what to skip
+and which footnote markers to leave unread, stored with the document and noted in its warnings) and
+persists it. Web pages are fetched (``url_import``) and then read like an uploaded HTML file.
+Temporary files are always removed.
 Does NOT belong: HTTP concerns (``router.py``) or parsing (``extract_*``).
 """
 
@@ -20,6 +22,8 @@ from typing import NamedTuple
 
 from ltts.common import MB, ensure_free_space, new_id
 from ltts.config import Settings
+from ltts.documents import cleanup
+from ltts.documents.cleanup_store import Annotation, records
 from ltts.documents.extract_html import decode_html
 from ltts.documents.extract_text import text_to_extraction
 from ltts.documents.extractors import extract
@@ -29,8 +33,10 @@ from ltts.documents.sandbox import extract_isolated
 from ltts.documents.schemas import MAX_TITLE_CHARS, DocumentDetail
 from ltts.documents.segmenter import segment_extraction
 from ltts.documents.sniff import detect_type
-from ltts.documents.speech_marks import Annotation, Encoded, MarkHooks, apply, encode, fold, strip
+from ltts.documents.speech_marks import Annotation as MarkAnnotation
+from ltts.documents.speech_marks import Encoded, MarkHooks, apply, encode, fold, strip
 from ltts.documents.structures import DocumentType, Extraction, ExtractionLimits, SectionInfo, Segment
+from ltts.documents.styling import KINDS
 from ltts.documents.url_import import fetch_page
 from ltts.errors import BusyError, ConflictError, DocumentExtractionError
 
@@ -45,6 +51,14 @@ class _Source(NamedTuple):
 
 
 _BUSY_WAIT_S = 30.0
+
+
+def _checked(rows: list[Annotation]) -> list[Annotation]:
+    """The cleanup's annotations, checked like any other before they are stored."""
+    for _, kind, value in rows:
+        if not KINDS[kind](value):
+            raise ValueError(f"invalid {kind} annotation")
+    return rows
 
 
 def display_filename(filename: str) -> str:
@@ -148,7 +162,7 @@ class DocumentService:
 
     def _read_marks(
         self, segments: list[Segment], sections: list[SectionInfo], marks: Encoded
-    ) -> tuple[list[Segment], list[SectionInfo], list[Annotation], list[str]]:
+    ) -> tuple[list[Segment], list[SectionInfo], list[MarkAnnotation], list[str]]:
         """The sentences without their marks, and the annotations and warnings the marks make."""
         assert self._marks is not None  # noqa: S101 - only called when speech marks are enabled
         segments, sections = fold(segments, sections)
@@ -163,12 +177,15 @@ class DocumentService:
         doc_type, filename, size, sha256 = source
         segments, sections = segment_extraction(extraction)
         warnings: list[str] = list(extraction.warnings)
-        annotations: list[Annotation] = []
+        marked: list[MarkAnnotation] = []
         if marks is not None:
-            segments, sections, annotations, found = self._read_marks(segments, sections, marks)
+            segments, sections, marked, found = self._read_marks(segments, sections, marks)
             warnings += found
         if not segments:
             raise DocumentExtractionError("No readable text was found in this document.", code="empty_document")
+        findings = cleanup.find(segments, sections, paged=extraction.page_count is not None)
+        notice = cleanup.describe(findings.counts())
+        warnings += [notice] if notice else []
         all_text = " ".join(s.text for s in segments)
         fallback = clean_inline(segments[0].text)[:60]
         title = clean_inline(extraction.title or "")[:MAX_TITLE_CHARS] or fallback or "Untitled"
@@ -189,8 +206,9 @@ class DocumentService:
             },
             sections,
             segments,
+            _checked(records(findings)),
         )
-        for annotation in annotations:
+        for annotation in marked:
             assert self._marks is not None  # noqa: S101 - annotations only come from speech marks
             self._marks.annotate(document_id, annotation.index, annotation.kind, annotation.value)
         log.info(

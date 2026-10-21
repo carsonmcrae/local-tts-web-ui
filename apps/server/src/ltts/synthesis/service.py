@@ -9,7 +9,7 @@ text (the sentence's own pronunciations, the dictionary, normalisation) and buil
 (``render.py``). The job waits on the right engine's queue at the right priority, and the result is
 cached by a key that changes whenever the sound would. Offers a blocking API for export jobs and an
 async one that stops waiting (and releases queued work) when the HTTP client disconnects, plus
-candidate takes of one sentence.
+candidate takes of one sentence, and which sentences are skipped (left out of exports and playback).
 Does NOT belong: HTTP routing, export assembly or how a job is rendered (``render.py``).
 """
 
@@ -86,6 +86,10 @@ class SynthesisService:
             return SegmentPlan(voice_id)
         characters = self._casting.voices(document_id) if self._casting else None
         return self._styling.plan(document_id, index, text, voice_id, characters)
+
+    def skipped(self, document_id: str) -> set[int]:
+        """The sentences of a document that are never read (the cleanup's finds, or skipped by hand)."""
+        return self._styling.skipped(document_id) if self._styling else set()
 
     def _spoken(self, text: str, voice: ResolvedVoice, sound: Sound | None, plan: SegmentPlan | None = None) -> str:
         """What the engine is asked to say: the sentence's and the dictionary's pronunciations, speech

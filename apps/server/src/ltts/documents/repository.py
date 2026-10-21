@@ -2,10 +2,11 @@
 # Copyright (c) 2026 Carson McRae
 """Purpose: SQL access for documents, their segments and reading progress.
 
-Scope: Insert a fully segmented document atomically; list/get/delete; fetch a section's or a single
-segment's text; search a document's sentences; rename a section or move where it starts (keeping
-segments, counts and the longer "end of section" pause in step); save and read progress. Rows are
-mapped to API models here.
+Scope: Insert a fully segmented document atomically (with the sentence annotations its import made,
+such as the automatic cleanup); list/get/delete; fetch a section's or a single segment's text;
+search a document's sentences; rename a section or move where it starts (keeping segments, counts
+and the longer "end of section" pause in step); save and read progress. Rows are mapped to API
+models here.
 Does NOT belong: Validation or extraction (``service.py``).
 """
 
@@ -13,6 +14,7 @@ from __future__ import annotations
 
 import json
 import sqlite3
+from collections.abc import Sequence
 from dataclasses import asdict
 
 from ltts.common import utc_now
@@ -78,7 +80,14 @@ class DocumentRepository:
         with self._db.connect() as conn:
             return int(conn.execute("SELECT COUNT(*) FROM documents").fetchone()[0])
 
-    def insert(self, meta: dict[str, object], sections: list[SectionInfo], segments: list[Segment]) -> None:
+    def insert(
+        self,
+        meta: dict[str, object],
+        sections: list[SectionInfo],
+        segments: list[Segment],
+        annotations: Sequence[tuple[int, str, str]] = (),
+    ) -> None:
+        """Store a document with its sentences and their ``(sentence, kind, value)`` annotations (checked already)."""
         with self._db.connect() as conn:
             conn.execute(
                 """INSERT INTO documents (id, title, filename, file_type, size_bytes, char_count, word_count,
@@ -93,6 +102,10 @@ class DocumentRepository:
                     (meta["id"], s.index, s.section_index, s.paragraph_index, s.kind, s.boundary, s.text)
                     for s in segments
                 ],
+            )
+            conn.executemany(
+                "INSERT INTO segment_annotations (document_id, segment_idx, kind, value) VALUES (?, ?, ?, ?)",
+                [(meta["id"], index, kind, value) for index, kind, value in annotations],
             )
 
     def list_all(self) -> list[DocumentSummary]:

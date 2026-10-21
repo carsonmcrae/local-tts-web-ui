@@ -137,7 +137,7 @@ def test_annotations_are_validated_and_described(client: TestClient, services: S
     url = f"/api/documents/{doc_id}/styles"
     saved = client.put(url, json={"indexes": [5], "style": "calm", "pauseMs": 1500, "effect": "memory"}).json()
     assert saved["segments"] == [{"index": 5, "voiceId": None, "effect": "memory", "sound": None, "style": "calm",
-                                  "take": None, "pauseMs": 1500}]  # fmt: skip
+                                  "take": None, "pauseMs": 1500, "skip": None}]  # fmt: skip
     assert client.put(url, json={"indexes": [5], "style": "sarcastic"}).status_code == 422
     assert client.put(url, json={"indexes": [5], "pauseMs": 20_000}).status_code == 422
     with pytest.raises(ValueError, match="invalid take"):

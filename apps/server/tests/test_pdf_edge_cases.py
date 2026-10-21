@@ -19,9 +19,9 @@ import pytest
 
 from builders import make_pdf
 from ltts.documents import extract_pdf
+from ltts.documents.cleanup import is_page_number
 from ltts.documents.extract_pdf import (
     _group,
-    _is_page_number,
     _outline_starts,
     _Paragraph,
     _paragraphs,
@@ -51,7 +51,7 @@ LIMITS = ExtractionLimits(1_000_000, 50, 500, 20 * 1024 * 1024, 200)
     ],
 )
 def test_page_number_lines(line: str, is_number: bool) -> None:
-    assert _is_page_number(line) is is_number
+    assert is_page_number(line) is is_number
 
 
 def test_lines_join_across_hyphenation_and_lowercase_continuations() -> None:

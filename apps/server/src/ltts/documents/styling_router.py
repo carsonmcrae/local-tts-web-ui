@@ -2,8 +2,9 @@
 # Copyright (c) 2026 Carson McRae
 """Purpose: HTTP endpoints for how a document's sentences are read: styling, characters and takes.
 
-Scope: Read and change a document's sentence styling (voice, effect, sound, speaking style, take and
-pause) and its cast (the dialogue voice and whether quoted speech in narration is voiced apart).
+Scope: Read and change a document's sentence styling (voice, effect, sound, speaking style, take,
+pause and whether it is skipped) and its cast (the dialogue voice and whether quoted speech in
+narration is voiced apart). Review the automatic cleanup, undo it or apply it again.
 List the characters dialogue tags name and give each a voice; save a document's cast as a reusable
 preset and apply one to another document. Make a candidate take of one sentence to listen to before
 keeping it. Only one candidate is made at a time, so repeated clicks can't queue GPU work. Voices
@@ -23,6 +24,7 @@ from pydantic import Field
 from ltts.common import ApiModel
 from ltts.container import Services, ServicesDep
 from ltts.documents.casting import CastPresetIn, CastPresetOut, CharacterAssignment, CharacterOut
+from ltts.documents.cleanup_store import CleanupOut, CleanupStore
 from ltts.documents.styling import MAX_TAKE, CastUpdate, DocumentStylesOut, SegmentStyleUpdate
 from ltts.errors import BusyError, ConflictError
 from ltts.synthesis.scheduler import PRIORITY_PLAYBACK
@@ -64,10 +66,32 @@ def get_styles(document_id: DocumentId, services: ServicesDep) -> DocumentStyles
 
 @router.put("/documents/{document_id}/styles")
 def update_styles(document_id: DocumentId, body: SegmentStyleUpdate, services: ServicesDep) -> DocumentStylesOut:
-    """Set (or, with null, clear) a voice, effect, sound, style, take or pause on the chosen sentences."""
+    """Set (or, with null, clear) a voice, effect, sound, style, take, pause or skip on the chosen sentences."""
     _check_sentences(services, document_id, body.indexes)
     _check_voice(services, body.voice_id)
     return services.styling.update(document_id, body)
+
+
+@router.get("/documents/{document_id}/cleanup")
+def get_cleanup(document_id: DocumentId, services: ServicesDep) -> CleanupOut:
+    """What the automatic cleanup found (running headers, footers, page numbers, footnote markers) and
+    the sentences skipped by hand, each with whether it applies now."""
+    services.document_repo.get(document_id)
+    return CleanupStore(services.db).report(document_id)
+
+
+@router.post("/documents/{document_id}/cleanup/undo")
+def undo_cleanup(document_id: DocumentId, services: ServicesDep) -> CleanupOut:
+    """Read everything the cleanup skipped again; sentences skipped by hand stay skipped."""
+    services.document_repo.get(document_id)
+    return CleanupStore(services.db).undo(document_id)
+
+
+@router.post("/documents/{document_id}/cleanup/apply")
+def apply_cleanup(document_id: DocumentId, services: ServicesDep) -> CleanupOut:
+    """Skip everything the cleanup found again."""
+    services.document_repo.get(document_id)
+    return CleanupStore(services.db).apply(document_id)
 
 
 @router.put("/documents/{document_id}/cast")

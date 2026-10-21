@@ -157,6 +157,7 @@ def _block_segments(
             block.kind,
             last_boundary if i == len(parts) - 1 else "sentence",
             text,
+            block.furniture,
         )
         for i, text in enumerate(parts)
     ]

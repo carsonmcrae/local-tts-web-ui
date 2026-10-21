@@ -3,13 +3,13 @@
 """Purpose: Build audiobooks from a document as a background job that survives pauses, crashes and failures.
 
 Scope: Synthesises every sentence in the chosen chapter range at export priority (so live playback
-stays responsive) and saves each one as it finishes (``workspace.py``). A paused, failed, canceled
-or interrupted export (the app closed or crashed) resumes under the same job, generating only the
-sentences whose saved audio no longer matches, so a crash ten hours into a twenty-hour book costs
-one sentence, not ten hours. Only one export runs at a time; others wait their turn. When every
-sentence is saved, the parts become WAV or MP3 (one file or one per chapter, optional SRT), an M4B
-audiobook with chapters (``m4b.py``) or a read-along EPUB (``epub.py``), and the parts are removed.
-Canceling discards the parts; deleting removes everything.
+stays responsive), leaving out skipped ones as playback does, and saves each one as it finishes
+(``workspace.py``). A paused, failed, canceled or interrupted export (the app closed or crashed)
+resumes under the same job, generating only the sentences whose saved audio no longer matches, so a
+crash ten hours into a twenty-hour book costs one sentence, not ten hours. Only one export runs at a
+time; others wait their turn. When every sentence is saved, the parts become WAV or MP3 (one file or
+one per chapter, optional SRT), an M4B audiobook with chapters (``m4b.py``) or a read-along EPUB
+(``epub.py``), and the parts are removed. Canceling discards the parts; deleting removes everything.
 Does NOT belong: HTTP (``router.py``), synthesis internals or the output formats themselves.
 """
 
@@ -106,16 +106,18 @@ class ExportService:
     def _describe(self, job: JobOut) -> ExportOut:
         workspace = ExportWorkspace(self._settings.resolved_data_dir / "exports" / job.id)
         request = ExportRequest.model_validate(job.payload)
+        saved = set(workspace.existing())
         try:
-            total = len(self._rows(request))
+            rows = {row.index for row in self._rows(request)}
+            saved &= rows  # a sentence skipped since it was saved no longer counts
         except NotFoundError:
-            total = 0
+            rows = set()
         return ExportOut(
             job=job,
             title=str(job.payload.get("title") or ""),
             format=request.format,
-            sentences=total,
-            saved_sentences=len(workspace.existing()),
+            sentences=len(rows),
+            saved_sentences=len(saved),
             working_bytes=workspace.bytes_used(),
         )
 
@@ -183,11 +185,14 @@ class ExportService:
 
     # -- the job ---------------------------------------------------------------
     def _rows(self, req: ExportRequest) -> list[Row]:
+        """The sentences to export: those in the chosen sections that aren't skipped."""
+        skipped = self._synthesis.skipped(req.document_id)
         return [
             Row(index, section, text, boundary)
             for index, section, text, boundary in self._documents.all_segments(req.document_id)
             if (req.first_section is None or section >= req.first_section)
             and (req.last_section is None or section <= req.last_section)
+            and index not in skipped
         ]
 
     def _run(self, ctx: JobContext, req: ExportRequest, title: str) -> dict[str, Any]:

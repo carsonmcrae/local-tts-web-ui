@@ -3,8 +3,9 @@
 """Purpose: How each sentence of a document is read: the reader's choices, its characters and its context.
 
 Scope: Sentence annotations (``segment_annotations``, one row per sentence and kind: ``voice``,
-``effect``, ``sound``, ``style``, ``take``, ``pause`` in ms, ``speak_as`` from speech marks), validated
-by a registry so a new kind needs no new table; nothing is written into the document's text. The cast
+``effect``, ``sound``, ``style``, ``take``, ``pause`` in ms, ``speak_as`` from speech marks, ``skip``
+with its reason, and the cleanup's ``footnotes`` and ``cleanup`` finds, see ``cleanup_store.py``),
+validated by a registry so a new kind needs no new table; nothing is written into the text. The cast
 (``document_cast``): a dialogue voice, and whether quoted speech in a narrated sentence is voiced apart.
 Plans a sentence for synthesis: its voice is its own, else its tagged character's (``casting.py``), else
 the dialogue voice for quoted speech, else the reader's; its style is its own or what ``delivery.py``
@@ -26,6 +27,8 @@ from pydantic import Field
 
 from ltts.common import ApiModel
 from ltts.db import Database
+from ltts.documents.cleanup import SKIP_REASONS, SkipReason
+from ltts.documents.cleanup_store import is_pairs, is_record
 from ltts.documents.delivery import Line, Sentence, analyse
 from ltts.effects import EFFECTS, Effect
 
@@ -53,6 +56,9 @@ KINDS: dict[str, Callable[[str], bool]] = {
     "take": _int_in(1, MAX_TAKE),
     "pause": _int_in(0, MAX_PAUSE_MS),
     "speak_as": lambda value: len(value) <= 4_000,
+    "skip": lambda value: value in SKIP_REASONS,  # not read: a reason the cleanup found, or "manual"
+    "footnotes": is_pairs,  # footnote markers left unread: (written, spoken) replacements
+    "cleanup": is_record,  # what the import's cleanup found, kept so it can be applied again
 }
 _FIELDS = {"voice_id": "voice", "effect": "effect", "sound": "sound", "style": "style", "take": "take",
            "pause_ms": "pause"}  # fmt: skip
@@ -66,6 +72,7 @@ class SegmentStyleOut(ApiModel):
     style: Style | None = None
     take: int | None = None
     pause_ms: int | None = None
+    skip: SkipReason | None = None  # left out of playback and exports, and why
 
 
 class DocumentStylesOut(ApiModel):
@@ -85,6 +92,7 @@ class SegmentStyleUpdate(ApiModel):
     style: Style | None = None
     take: int | None = Field(default=None, ge=1, le=MAX_TAKE)
     pause_ms: int | None = Field(default=None, ge=0, le=MAX_PAUSE_MS)
+    skip: bool | None = None  # true: skip the sentences when reading (by hand); false or null: read them
 
 
 class CastUpdate(ApiModel):
@@ -145,6 +153,7 @@ class StylingStore:
             values: dict[str, Any] = {field: kinds.get(kind) for field, kind in _FIELDS.items()}
             values["take"] = int(values["take"]) if values["take"] else None
             values["pause_ms"] = int(values["pause_ms"]) if values["pause_ms"] is not None else None
+            values["skip"] = kinds.get("skip")
             if any(value is not None for value in values.values()):
                 segments.append(SegmentStyleOut(index=index, **values))
         dialogue, split = self._cast(document_id)
@@ -156,11 +165,21 @@ class StylingStore:
     # -- changing --------------------------------------------------------------
     def update(self, document_id: str, update: SegmentStyleUpdate) -> DocumentStylesOut:
         changes = {kind: getattr(update, field) for field, kind in _FIELDS.items() if field in update.model_fields_set}
+        if "skip" in update.model_fields_set:
+            changes["skip"] = "manual" if update.skip else None  # a reader's own skip outlasts undoing the cleanup
         with self._db.connect() as conn:
             for index in sorted(set(update.indexes)):
                 for kind, value in changes.items():
                     self._write(conn, document_id, index, kind, None if value is None else str(value))
         return self.get(document_id)
+
+    def skipped(self, document_id: str) -> set[int]:
+        """The sentences left out of playback and exports."""
+        with self._db.connect() as conn:
+            rows = conn.execute(
+                "SELECT segment_idx FROM segment_annotations WHERE document_id = ? AND kind = 'skip'", (document_id,)
+            ).fetchall()
+        return {row["segment_idx"] for row in rows}
 
     def annotate(self, document_id: str, index: int, kind: str, value: str | None) -> None:
         """Set (or with None clear) one kind on one sentence, such as speech marks found at import."""
@@ -235,7 +254,9 @@ class StylingStore:
             voice = speaker_voice
         else:
             voice = voice_id
-        replacements = tuple(tuple(pair) for pair in json.loads(kinds["speak_as"])) if "speak_as" in kinds else ()
+        # Footnote markers go first: "war¹" is no longer the word a pronunciation of "war" is looking for.
+        pairs = [pair for kind in ("footnotes", "speak_as") if kind in kinds for pair in json.loads(kinds[kind])]
+        replacements = tuple((written, spoken) for written, spoken in pairs)
         return SegmentPlan(
             voice_id=voice,
             effect=kinds.get("effect"),  # type: ignore[arg-type]  # validated on write

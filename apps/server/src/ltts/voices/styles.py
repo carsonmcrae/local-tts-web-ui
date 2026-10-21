@@ -50,6 +50,7 @@ STYLE_SOURCES: dict[str, tuple[str, ...]] = {
         "conversation-4",
         "conversation",
     ),
+    "calm": ("calm-and-reflective", "narration"),  # asides, whispers and quiet lines
 }
 PROMPTS_PER_STYLE = 3  # joined until the 15 s prompt is full
 # Passage groups in take-number order: takes 1-48 read the eight passages of each group in turn.

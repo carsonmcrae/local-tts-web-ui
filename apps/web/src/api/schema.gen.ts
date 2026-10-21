@@ -24,6 +24,40 @@ export type paths = {
     patch?: never;
     trace?: never;
   };
+  '/api/cast-presets': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List Presets */
+    get: operations['list_presets_api_cast_presets_get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/cast-presets/{preset_id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /** Delete Preset */
+    delete: operations['delete_preset_api_cast_presets__preset_id__delete'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/documents': {
     parameters: {
       query?: never;
@@ -108,9 +142,64 @@ export type paths = {
     get?: never;
     /**
      * Update Cast
-     * @description Choose the voice that reads quoted dialogue in this document (null: the reading voice).
+     * @description Choose the voice for quoted dialogue (null: the reading voice) and whether it is split from narration.
      */
     put: operations['update_cast_api_documents__document_id__cast_put'];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/documents/{document_id}/cast-presets': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Save Preset */
+    post: operations['save_preset_api_documents__document_id__cast_presets_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/documents/{document_id}/cast-presets/{preset_id}/apply': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Apply Preset */
+    post: operations['apply_preset_api_documents__document_id__cast_presets__preset_id__apply_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/documents/{document_id}/characters': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List Characters */
+    get: operations['list_characters_api_documents__document_id__characters_get'];
+    /**
+     * Assign Character
+     * @description Give a character a voice (or, with null, take it away); a name not found in the text is kept too.
+     */
+    put: operations['assign_character_api_documents__document_id__characters_put'];
     post?: never;
     delete?: never;
     options?: never;
@@ -224,6 +313,26 @@ export type paths = {
     patch?: never;
     trace?: never;
   };
+  '/api/documents/{document_id}/segments/{index}/takes': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Make Take
+     * @description Generate another take of one sentence to listen to; keep it by setting the sentence's take.
+     */
+    post: operations['make_take_api_documents__document_id__segments__index__takes_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/documents/{document_id}/styles': {
     parameters: {
       query?: never;
@@ -235,7 +344,7 @@ export type paths = {
     get: operations['get_styles_api_documents__document_id__styles_get'];
     /**
      * Update Styles
-     * @description Set (or, with null, clear) a voice, an effect or a sound on the chosen sentences.
+     * @description Set (or, with null, clear) a voice, effect, sound, style, take or pause on the chosen sentences.
      */
     put: operations['update_styles_api_documents__document_id__styles_put'];
     post?: never;
@@ -273,6 +382,23 @@ export type paths = {
     put?: never;
     /** Upload Document */
     post: operations['upload_document_api_documents_upload_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/documents/url': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Import Web Page */
+    post: operations['import_web_page_api_documents_url_post'];
     delete?: never;
     options?: never;
     head?: never;
@@ -1130,10 +1256,48 @@ export type components = {
       /** Takenumber */
       takeNumber: number;
     };
+    /** CastPresetIn */
+    CastPresetIn: {
+      /** Name */
+      name: string;
+    };
+    /** CastPresetOut */
+    CastPresetOut: {
+      /** Characters */
+      characters: {
+        [key: string]: string;
+      };
+      /** Createdat */
+      createdAt: string;
+      /** Id */
+      id: string;
+      /** Name */
+      name: string;
+    };
     /** CastUpdate */
     CastUpdate: {
       /** Dialoguevoiceid */
       dialogueVoiceId?: string | null;
+      /** Splitdialogue */
+      splitDialogue?: boolean | null;
+    };
+    /** CharacterAssignment */
+    CharacterAssignment: {
+      /** Name */
+      name: string;
+      /** Voiceid */
+      voiceId?: string | null;
+    };
+    /** CharacterOut */
+    CharacterOut: {
+      /** Lines */
+      lines: number;
+      /** Name */
+      name: string;
+      /** Sample */
+      sample: string | null;
+      /** Voiceid */
+      voiceId: string | null;
     };
     /**
      * Cleanup
@@ -1231,6 +1395,11 @@ export type components = {
       revision: string;
       /** Segments */
       segments: components['schemas']['SegmentStyleOut'][];
+      /**
+       * Splitdialogue
+       * @default true
+       */
+      splitDialogue: boolean;
     };
     /** DocumentSummary */
     DocumentSummary: {
@@ -1708,9 +1877,22 @@ export type components = {
     /** SegmentStyleOut */
     SegmentStyleOut: {
       /** Effect */
-      effect?: ('loudspeaker' | 'telephone' | 'radio' | 'hall' | 'distant' | 'robot') | null;
+      effect?:
+        | (
+            | 'loudspeaker'
+            | 'telephone'
+            | 'radio'
+            | 'hall'
+            | 'distant'
+            | 'robot'
+            | 'quiet'
+            | 'memory'
+          )
+        | null;
       /** Index */
       index: number;
+      /** Pausems */
+      pauseMs?: number | null;
       /** Sound */
       sound?:
         | (
@@ -1725,6 +1907,10 @@ export type components = {
             | 'shush'
           )
         | null;
+      /** Style */
+      style?: ('narration' | 'question' | 'lively' | 'dialogue' | 'calm') | null;
+      /** Take */
+      take?: number | null;
       /** Voiceid */
       voiceId?: string | null;
     };
@@ -1734,9 +1920,22 @@ export type components = {
      */
     SegmentStyleUpdate: {
       /** Effect */
-      effect?: ('loudspeaker' | 'telephone' | 'radio' | 'hall' | 'distant' | 'robot') | null;
+      effect?:
+        | (
+            | 'loudspeaker'
+            | 'telephone'
+            | 'radio'
+            | 'hall'
+            | 'distant'
+            | 'robot'
+            | 'quiet'
+            | 'memory'
+          )
+        | null;
       /** Indexes */
       indexes: number[];
+      /** Pausems */
+      pauseMs?: number | null;
       /** Sound */
       sound?:
         | (
@@ -1751,8 +1950,21 @@ export type components = {
             | 'shush'
           )
         | null;
+      /** Style */
+      style?: ('narration' | 'question' | 'lively' | 'dialogue' | 'calm') | null;
+      /** Take */
+      take?: number | null;
       /** Voiceid */
       voiceId?: string | null;
+    };
+    /** SentenceTakeOut */
+    SentenceTakeOut: {
+      /** Audiourl */
+      audioUrl: string;
+      /** Durations */
+      durationS: number;
+      /** Take */
+      take: number;
     };
     /** SessionCreate */
     SessionCreate: {
@@ -1828,6 +2040,18 @@ export type components = {
        * @enum {string}
        */
       source: 'recording' | 'import';
+    };
+    /** TakeRequest */
+    TakeRequest: {
+      /**
+       * Pace
+       * @default 1
+       */
+      pace: number;
+      /** Take */
+      take?: number | null;
+      /** Voiceid */
+      voiceId: string;
     };
     /** ValidationError */
     ValidationError: {
@@ -1949,6 +2173,11 @@ export type components = {
       /** Usablespeechs */
       usableSpeechS: number;
     };
+    /** WebPageRequest */
+    WebPageRequest: {
+      /** Url */
+      url: string;
+    };
   };
   responses: never;
   parameters: never;
@@ -1971,6 +2200,55 @@ export interface operations {
     responses: {
       /** @description Successful Response */
       200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  list_presets_api_cast_presets_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CastPresetOut'][];
+        };
+      };
+    };
+  };
+  delete_preset_api_cast_presets__preset_id__delete: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        preset_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      204: {
         headers: {
           [name: string]: unknown;
         };
@@ -2221,6 +2499,139 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['DocumentStylesOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  save_preset_api_documents__document_id__cast_presets_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        document_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CastPresetIn'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CastPresetOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  apply_preset_api_documents__document_id__cast_presets__preset_id__apply_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        document_id: string;
+        preset_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CharacterOut'][];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  list_characters_api_documents__document_id__characters_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        document_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CharacterOut'][];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  assign_character_api_documents__document_id__characters_put: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        document_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CharacterAssignment'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CharacterOut'][];
         };
       };
       /** @description Validation Error */
@@ -2557,6 +2968,42 @@ export interface operations {
       };
     };
   };
+  make_take_api_documents__document_id__segments__index__takes_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        document_id: string;
+        index: number;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['TakeRequest'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['SentenceTakeOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
   get_styles_api_documents__document_id__styles_get: {
     parameters: {
       query?: never;
@@ -2666,6 +3113,39 @@ export interface operations {
       cookie?: never;
     };
     requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DocumentDetail'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  import_web_page_api_documents_url_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['WebPageRequest'];
+      };
+    };
     responses: {
       /** @description Successful Response */
       201: {

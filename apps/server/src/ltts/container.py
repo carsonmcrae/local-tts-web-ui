@@ -18,6 +18,8 @@ from fastapi import Depends, Request
 from ltts.common import MB
 from ltts.db import Database
 from ltts.documents.bookmarks import BookmarkStore
+from ltts.documents.casting import CastingStore
+from ltts.documents.delivery import Sentence
 from ltts.documents.details import DocumentDetailsStore
 from ltts.documents.repository import DocumentRepository
 from ltts.documents.service import DocumentService
@@ -65,6 +67,7 @@ class Services:
     pronunciations: PronunciationStore
     bookmarks: BookmarkStore
     styling: StylingStore
+    casting: CastingStore
     details: DocumentDetailsStore
     audiobookshelf: Audiobookshelf
 
@@ -90,9 +93,11 @@ def build_services(
     registry = EngineRegistry(factory(settings, store), jobs)
     cache = AudioCache(settings.path("cache", "audio"), db, settings.audio_cache_max_mb * MB)
     pronunciations = PronunciationStore(db)
-    styling = StylingStore(db)
+    styling = StylingStore(db, lambda doc: [Sentence(s.index, s.paragraph_index, s.kind, s.text)
+                                             for s in documents.segments_detail(doc)])  # fmt: skip
+    casting = CastingStore(db, styling.lines, lambda doc: {s.index: s.text for s in documents.segments_detail(doc)})
     details = DocumentDetailsStore(settings, db)
-    synthesis = SynthesisService(registry, cache, documents, pronunciations.apply, styling)
+    synthesis = SynthesisService(registry, cache, documents, pronunciations.apply, styling, casting)
     voices = VoiceProfileService(settings, db, cache.purge_voice)
     registry.attach_custom_voices(voices.resolve, lambda: voices.as_voices(lambda: registry.is_ready(CLONING_ENGINE)))
     sessions = VoiceSessionService(settings, db, jobs)
@@ -116,6 +121,7 @@ def build_services(
         pronunciations=pronunciations,
         bookmarks=BookmarkStore(db),
         styling=styling,
+        casting=casting,
         details=details,
         audiobookshelf=Audiobookshelf(db, SecretStore(settings.path("secrets"))),
     )

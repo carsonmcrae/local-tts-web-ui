@@ -86,13 +86,13 @@ def test_the_build_makes_styles_that_move_into_the_profile(
             content=wav_bytes(speech_like(12)),
         )
     job = wait_job(client, client.post(f"/api/voice-sessions/{session_id}/build").json()["id"])
-    assert job["result"]["styles"] == ["narration", "question", "lively", "dialogue"]
+    assert job["result"]["styles"] == ["narration", "question", "lively", "dialogue", "calm"]
     assert dict(engines["chatterbox"].styled)["question"][0] == "025.flac"
     best = client.get(f"/api/voice-sessions/{session_id}").json()["candidates"][0]["index"]
     profile = client.post(
         f"/api/voice-sessions/{session_id}/finish", json={"candidate": best, "name": "Me", "consent": True}
     ).json()
-    assert profile["styles"] == ["dialogue", "lively", "narration", "question"]
+    assert profile["styles"] == ["calm", "dialogue", "lively", "narration", "question"]
     _, spec, revision = services.voices.resolve(profile["id"])
     assert dict(spec.styles)["question"].name == "question.safetensors" and "styles-" in revision
 
@@ -114,10 +114,16 @@ def test_a_saved_studio_voice_learns_its_styles_from_its_takes(
     started = client.post(f"/api/voice-profiles/{profile['id']}/styles")
     assert started.status_code == 202
     job = wait_job(client, started.json()["id"])
-    assert job["status"] == "succeeded" and job["result"]["styles"] == ["narration", "question", "lively", "dialogue"]
+    assert job["status"] == "succeeded" and job["result"]["styles"] == [
+        "narration",
+        "question",
+        "lively",
+        "dialogue",
+        "calm",
+    ]
     assert dict(engines["chatterbox"].styled)["question"][0] == "026.flac"  # take 26 read a question passage
     refreshed = client.get("/api/voice-profiles").json()[0]
-    assert refreshed["styles"] == ["dialogue", "lively", "narration", "question"]
+    assert refreshed["styles"] == ["calm", "dialogue", "lively", "narration", "question"]
     _, _, after = services.voices.resolve(profile["id"])
     assert after != before
 

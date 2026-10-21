@@ -164,6 +164,35 @@ MIGRATIONS: tuple[str, ...] = (
         config_json TEXT NOT NULL
     );
     """,
+    """
+    CREATE TABLE segment_annotations (
+        document_id TEXT NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+        segment_idx INTEGER NOT NULL,
+        kind TEXT NOT NULL,
+        value TEXT NOT NULL,
+        PRIMARY KEY (document_id, segment_idx, kind)
+    );
+    INSERT INTO segment_annotations SELECT document_id, segment_idx, 'voice', voice_id
+        FROM segment_styles WHERE voice_id IS NOT NULL;
+    INSERT INTO segment_annotations SELECT document_id, segment_idx, 'effect', effect
+        FROM segment_styles WHERE effect IS NOT NULL;
+    INSERT INTO segment_annotations SELECT document_id, segment_idx, 'sound', sound
+        FROM segment_styles WHERE sound IS NOT NULL;
+    DROP TABLE segment_styles;
+    ALTER TABLE document_cast ADD COLUMN split_dialogue INTEGER NOT NULL DEFAULT 1;
+    CREATE TABLE document_characters (
+        document_id TEXT NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+        name TEXT NOT NULL,
+        voice_id TEXT NOT NULL,
+        PRIMARY KEY (document_id, name)
+    );
+    CREATE TABLE cast_presets (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        mapping_json TEXT NOT NULL,
+        created_at TEXT NOT NULL
+    );
+    """,
 )
 
 

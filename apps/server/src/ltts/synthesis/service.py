@@ -2,32 +2,36 @@
 # Copyright (c) 2026 Carson McRae
 """Purpose: Produce audio for a document segment or arbitrary preview text, using the cache first.
 
-Scope: Rewrites display text into speech text, plans a document sentence (the voice that reads
-it, an effect, a sound before it; ``documents.styling``), builds the cache key, schedules synthesis on
-the engine's queue at the right priority, applies the effect, finalises the clip (fades + natural
-pause) and stores it.
-Exposes a blocking API for export jobs and an async API that stops waiting (and releases queued
-work) when the HTTP client disconnects.
-Does NOT belong: HTTP routing or export assembly.
+Scope: Plans a document sentence with ``documents.styling``: its voice (its own, its character's,
+the dialogue voice or the reader's), effect, sound, speaking style, take and pause, and narration and
+quoted speech voiced separately where the cast asks for it. It then rewrites display text into speech
+text (the sentence's own pronunciations, the dictionary, normalisation) and builds a render job
+(``render.py``). The job waits on the right engine's queue at the right priority, and the result is
+cached by a key that changes whenever the sound would. Offers a blocking API for export jobs and an
+async one that stops waiting (and releases queued work) when the HTTP client disconnects, plus
+candidate takes of one sentence.
+Does NOT belong: HTTP routing, export assembly or how a job is rendered (``render.py``).
 """
 
 from __future__ import annotations
 
 import asyncio
 import logging
+import re
 import threading
 import time
 from collections.abc import Awaitable, Callable
 from concurrent.futures import Future
 
-from ltts.audio import Float32Array, encode_wav, finalize_segment, read_audio
+from ltts.audio import Float32Array, encode_wav, read_audio
+from ltts.documents.casting import CastingStore
 from ltts.documents.normalize import speech_text
 from ltts.documents.repository import DocumentRepository
 from ltts.documents.styling import SegmentPlan, Sound, StylingStore
-from ltts.effects import Effect, apply_effect
 from ltts.engines.registry import EngineRegistry, ResolvedVoice
 from ltts.errors import AppError, SynthesisError
-from ltts.synthesis.cache import AudioCache, CachedAudio, cache_key
+from ltts.synthesis.cache import AudioCache, CachedAudio
+from ltts.synthesis.render import TAKE_ENGINES, Piece, RenderJob, render, tuned
 from ltts.synthesis.scheduler import EngineScheduler
 
 log = logging.getLogger("ltts.synthesis")
@@ -39,6 +43,17 @@ class ClientGoneError(Exception):
     """The requester disconnected before audio was ready."""
 
 
+def _constant(value: str) -> Callable[[re.Match[str]], str]:
+    return lambda _match: value
+
+
+def _replace(text: str, replacements: tuple[tuple[str, str], ...]) -> str:
+    """Whole-word replacements (the replacement is used literally, never as a pattern)."""
+    for written, spoken in replacements:
+        text = re.sub(rf"(?<!\w){re.escape(written)}(?!\w)", _constant(spoken), text)
+    return text
+
+
 class SynthesisService:
     def __init__(
         self,
@@ -47,12 +62,14 @@ class SynthesisService:
         documents: DocumentRepository,
         pronounce: Callable[[str], str] = lambda text: text,
         styling: StylingStore | None = None,
+        casting: CastingStore | None = None,
     ):
         self._registry = registry
         self._cache = cache
         self._documents = documents
         self._pronounce = pronounce  # the pronunciation dictionary, applied before normalising
         self._styling = styling
+        self._casting = casting
         self._schedulers: dict[str, EngineScheduler] = {}
         self._lock = threading.Lock()
 
@@ -62,69 +79,71 @@ class SynthesisService:
                 self._schedulers[engine_id] = EngineScheduler(engine_id)
             return self._schedulers[engine_id]
 
-    def _key(self, voice: ResolvedVoice, spoken: str, boundary: str, pace: float, effect: Effect | None) -> str:
-        # The effect is only part of the key when there is one, so plain audio keeps its earlier keys.
-        extra = {"effect": effect} if effect else {}
-        return cache_key(
-            engine=voice.engine.revision(),
-            voice=voice.voice_id,
-            voice_revision=voice.revision,
-            pace=round(pace, 2),
-            boundary=boundary,
-            text=spoken,
-            **extra,
-        )
+    # -- planning --------------------------------------------------------------
+    def plan_segment(self, document_id: str, index: int, text: str, voice_id: str) -> SegmentPlan:
+        """Which voices read a document sentence, and how (a plain plan without styling)."""
+        if self._styling is None:
+            return SegmentPlan(voice_id)
+        characters = self._casting.voices(document_id) if self._casting else None
+        return self._styling.plan(document_id, index, text, voice_id, characters)
 
-    def _render(
-        self, voice: ResolvedVoice, key: str, spoken: str, boundary: str, pace: float, effect: Effect | None
-    ) -> CachedAudio:
+    def _spoken(self, text: str, voice: ResolvedVoice, sound: Sound | None, plan: SegmentPlan | None = None) -> str:
+        """What the engine is asked to say: the sentence's and the dictionary's pronunciations, speech
+        normalisation, then the sound to make first (only for an engine that performs it)."""
+        written = _replace(text, plan.replacements) if plan and plan.replacements else text
+        spoken = speech_text(self._pronounce(written)) or "."
+        return f"[{sound}] {spoken}" if sound and voice.engine.id in SOUND_ENGINES else spoken
+
+    def job(self, voice: str | SegmentPlan, text: str, boundary: str, pace: float) -> RenderJob:
+        plan = voice if isinstance(voice, SegmentPlan) else SegmentPlan(voice)
+        pieces: list[Piece] = []
+        for position, (part_text, part_voice) in enumerate(
+            [(part.text, part.voice_id) for part in plan.parts] or [(text, plan.voice_id)]
+        ):
+            resolved = self._registry.resolve(part_voice)
+            sound = plan.sound if position == 0 else None
+            spec = tuned(resolved, plan.style, plan.take, plan.steady)
+            pieces.append(Piece(resolved, spec, self._spoken(part_text, resolved, sound, plan)))
+        return RenderJob(tuple(pieces), boundary, pace, plan.effect, plan.pause_ms)
+
+    def key_for(self, voice: str | SegmentPlan, text: str, boundary: str, pace: float) -> str:
+        """The cache key a render would use; it changes whenever the audio would (text, voice, styling, engine)."""
+        return self.job(voice, text, boundary, pace).key()
+
+    def supports_takes(self, plan: SegmentPlan) -> bool:
+        """Whether another take of this sentence can sound different (built-in voices are always the same)."""
+        voices = [part.voice_id for part in plan.parts] or [plan.voice_id]
+        return any(self._registry.resolve(voice).engine.id in TAKE_ENGINES for voice in voices)
+
+    # -- rendering -------------------------------------------------------------
+    def _render(self, job: RenderJob, key: str) -> CachedAudio:
         cached = self._cache.get(key)
         if cached is not None:
             return cached
         started = time.perf_counter()
-        clip = voice.engine.synthesize(spoken, voice.spec, pace)
-        if clip.samples.size == 0:
-            raise SynthesisError("The engine returned no audio for this passage.", code="empty_audio")
-        raw = apply_effect(effect, clip.samples, clip.sample_rate) if effect else clip.samples
-        samples = finalize_segment(raw, clip.sample_rate, boundary)
-        duration = len(samples) / clip.sample_rate
+        clip = render(job)
+        duration = len(clip.samples) / clip.sample_rate
         log.debug(
             "synthesised",
             extra={
-                "engine": voice.engine.id,
-                "chars": len(spoken),
+                "engine": job.engine_id,
+                "pieces": len(job.pieces),
                 "audio_s": round(duration, 2),
                 "elapsed_s": round(time.perf_counter() - started, 3),
             },
         )
-        return self._cache.put(key, encode_wav(samples, clip.sample_rate), duration, voice.engine.id, voice.voice_id)
+        return self._cache.put(key, encode_wav(clip.samples, clip.sample_rate), duration, job.engine_id, job.voice_id)
 
     def _submit(
-        self, voice_id: str, text: str, boundary: str, pace: float, priority: int, plan: SegmentPlan | None = None
+        self, voice: str | SegmentPlan, text: str, boundary: str, pace: float, priority: int
     ) -> tuple[Future[CachedAudio], str, str]:
-        voice = self._registry.resolve(voice_id)
-        effect = plan.effect if plan else None
-        spoken = self._spoken(text, voice, plan.sound if plan else None)
-        key = self._key(voice, spoken, boundary, pace, effect)
-        scheduler = self._scheduler(voice.engine.id)
-        future = scheduler.submit(key, priority, lambda: self._render(voice, key, spoken, boundary, pace, effect))
-        return future, key, voice.engine.id
+        job = self.job(voice, text, boundary, pace)
+        key = job.key()
+        future = self._scheduler(job.engine_id).submit(key, priority, lambda: self._render(job, key))
+        return future, key, job.engine_id
 
     def cached_or_none(self, voice_id: str, text: str, boundary: str, pace: float) -> CachedAudio | None:
-        voice = self._registry.resolve(voice_id)
-        return self._cache.get(self._key(voice, self._spoken(text, voice, None), boundary, pace, None))
-
-    def _spoken(self, text: str, voice: ResolvedVoice, sound: Sound | None) -> str:
-        """What the engine is asked to say: the dictionary's pronunciations, then speech normalisation,
-        after the sound to make first (only for an engine that performs it rather than reading it out)."""
-        spoken = speech_text(self._pronounce(text)) or "."
-        return f"[{sound}] {spoken}" if sound and voice.engine.id in SOUND_ENGINES else spoken
-
-    def key_for(self, voice: str | SegmentPlan, text: str, boundary: str, pace: float) -> str:
-        """The cache key a render would use; it changes whenever the audio would (text, voice, styling, engine)."""
-        plan = voice if isinstance(voice, SegmentPlan) else SegmentPlan(voice)
-        resolved = self._registry.resolve(plan.voice_id)
-        return self._key(resolved, self._spoken(text, resolved, plan.sound), boundary, pace, plan.effect)
+        return self._cache.get(self.key_for(voice_id, text, boundary, pace))
 
     def read(self, audio: CachedAudio) -> tuple[Float32Array, int]:
         """A rendered clip's samples (exports keep their own copy, so cache eviction can't lose them)."""
@@ -136,10 +155,6 @@ class SynthesisService:
         language, _, region = code.partition("-")
         return f"{language}-{region.upper()}" if region else language
 
-    def plan_segment(self, document_id: str, index: int, text: str, voice_id: str) -> SegmentPlan:
-        """Which voice reads a document sentence, with which effect and sound (none without styling)."""
-        return self._styling.plan(document_id, index, text, voice_id) if self._styling else SegmentPlan(voice_id)
-
     def render_blocking(
         self,
         voice: str | SegmentPlan,
@@ -150,8 +165,7 @@ class SynthesisService:
         canceled: Callable[[], bool],
     ) -> CachedAudio:
         """Audio for ``text`` read by a voice id, or as a document sentence's plan says."""
-        plan = voice if isinstance(voice, SegmentPlan) else SegmentPlan(voice)
-        future, key, engine_id = self._submit(plan.voice_id, text, boundary, pace, priority, plan)
+        future, key, engine_id = self._submit(voice, text, boundary, pace, priority)
         while True:
             try:
                 return future.result(timeout=0.5)
@@ -169,8 +183,7 @@ class SynthesisService:
         priority: int,
         disconnected: Callable[[], Awaitable[bool]],
     ) -> CachedAudio:
-        plan = voice if isinstance(voice, SegmentPlan) else SegmentPlan(voice)
-        future, key, engine_id = self._submit(plan.voice_id, text, boundary, pace, priority, plan)
+        future, key, engine_id = self._submit(voice, text, boundary, pace, priority)
         wrapped = asyncio.wrap_future(future)
         while True:
             done, _ = await asyncio.wait({wrapped}, timeout=0.25)

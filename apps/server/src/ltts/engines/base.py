@@ -94,6 +94,9 @@ class VoiceSpec:
     conditioning_path: Path | None = None
     delivery: Delivery = "natural"
     styles: tuple[tuple[str, Path], ...] = ()  # (style, file): prompts for questions, dialogue and more
+    style: str | None = None  # the style this sentence is read in (decided by the planner)
+    take: int = 0  # another take of the same sentence (a different seed); 0 is the first
+    steady: bool = False  # read evenly whatever the delivery (headings, lists, announcements)
 
 
 @dataclass(slots=True)

@@ -2,11 +2,18 @@
 # Copyright (c) 2026 Carson McRae
 """Purpose: Sound effects a reader can put on chosen sentences: a loudspeaker, a phone call, a radio.
 
-Scope: Six deterministic effects on a mono clip, in plain NumPy: ``loudspeaker`` (a public-address
-announcement: narrow band, driven, with slap echoes in a big space), ``telephone`` (narrow band, a
-little distortion), ``radio`` (broadcast band, compressed, faint static), ``hall`` (a large room),
-``distant`` (muffled, far away) and ``robot`` (ring-modulated, metallic). Every effect keeps the
-clip's speech loudness, stays below -1 dBFS, and may add a short tail for its echo. Noise and room
+Scope: Eight deterministic effects on a mono clip, in plain NumPy:
+- ``loudspeaker``: a public-address announcement: narrow band, driven, with slap echoes in a big space;
+- ``telephone``: narrow band, a little distortion;
+- ``radio``: broadcast band, compressed, faint static;
+- ``hall``: a large room;
+- ``distant``: muffled, far away;
+- ``robot``: ring-modulated, metallic;
+- ``quiet``: an aside or a near-whisper, softer and closer;
+- ``memory``: a flashback or dream, soft and roomy.
+
+Every effect keeps the clip's speech loudness (``quiet`` is deliberately softer), stays below
+-1 dBFS, and may add a short tail for its echo. Noise and room
 responses come from fixed seeds, so the same sentence always sounds the same (and caches).
 Does NOT belong: Choosing which sentences get an effect (``documents.styling``) or synthesis.
 """
@@ -20,8 +27,10 @@ import numpy as np
 
 from ltts.audio import Float32Array
 
-Effect = Literal["loudspeaker", "telephone", "radio", "hall", "distant", "robot"]
-EFFECTS: tuple[Effect, ...] = ("loudspeaker", "telephone", "radio", "hall", "distant", "robot")
+Effect = Literal["loudspeaker", "telephone", "radio", "hall", "distant", "robot", "quiet", "memory"]
+EFFECTS: tuple[Effect, ...] = ("loudspeaker", "telephone", "radio", "hall", "distant", "robot", "quiet", "memory")
+# Effects meant to sound softer than the voice around them; all others keep its loudness.
+_LEVEL: dict[str, float] = {"quiet": 0.45}
 PEAK = 10 ** (-1 / 20)
 
 
@@ -94,6 +103,14 @@ def _distant(x: np.ndarray, rate: int) -> np.ndarray:
     return 0.5 * _room(_band(x, rate, 90, 2_400), rate, 1.6, 0.55, seed=15)
 
 
+def _quiet(x: np.ndarray, rate: int) -> np.ndarray:
+    return _band(x, rate, 140, 7_000)
+
+
+def _memory(x: np.ndarray, rate: int) -> np.ndarray:
+    return _room(_band(x, rate, 120, 4_500), rate, 1.8, 0.3, seed=16)
+
+
 def _robot(x: np.ndarray, rate: int) -> np.ndarray:
     t = np.arange(x.size) / rate
     ringed = 0.75 * x * np.sin(2 * np.pi * 55 * t) + 0.25 * x
@@ -107,6 +124,8 @@ _EFFECTS: dict[Effect, Callable[[np.ndarray, int], np.ndarray]] = {
     "hall": _hall,
     "distant": _distant,
     "robot": _robot,
+    "quiet": _quiet,
+    "memory": _memory,
 }
 
 
@@ -123,7 +142,7 @@ def apply_effect(effect: Effect, samples: Float32Array, rate: int) -> Float32Arr
     wet = _EFFECTS[effect](dry, rate)
     level, before = _rms(wet), _rms(dry)
     if level > 0 and before > 0:
-        wet *= before / level
+        wet *= before / level * _LEVEL.get(effect, 1.0)
     peak = float(np.max(np.abs(wet)))
     if peak > PEAK:
         wet *= PEAK / peak

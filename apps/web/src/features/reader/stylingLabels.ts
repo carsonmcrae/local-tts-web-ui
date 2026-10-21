@@ -15,6 +15,8 @@ export const EFFECT_LABELS: Readonly<Record<SoundEffect, string>> = {
   hall: 'Large hall',
   distant: 'Far away',
   robot: 'Robot',
+  quiet: 'Quiet aside',
+  memory: 'Memory or dream',
 };
 
 export const SOUND_LABELS: Readonly<Record<VoiceSound, string>> = {

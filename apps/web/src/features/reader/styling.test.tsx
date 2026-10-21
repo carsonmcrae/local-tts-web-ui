@@ -22,6 +22,7 @@ const doc = documentDetail({ segmentCount: 4, sections: [] });
 const styles = (overrides: Partial<DocumentStyles> = {}): DocumentStyles => ({
   segments: [],
   dialogueVoiceId: null,
+  splitDialogue: true,
   revision: 'r1',
   ...overrides,
 });

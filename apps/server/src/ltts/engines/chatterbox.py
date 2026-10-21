@@ -68,6 +68,7 @@ LOAD_TIMEOUT_S = 600.0
 SYNTH_TIMEOUT_S = 300.0
 STUDIO_TIMEOUT_S = 600.0  # one measure or build call (the server batches takes to stay well inside it)
 ATTEMPTS = 3  # a clip that is implausibly short or long for its text is generated again, with another seed
+TAKE_STEP = 7_919  # seeds of successive takes are far apart, so retries of one take never repeat another
 # Sampling for each delivery; "natural" is Turbo's default. A lower temperature and top-k give steadier
 # prosody and longer, calmer pauses (the settings a published Turbo fine-tune scored best with).
 DELIVERY: dict[Delivery, dict[str, float]] = {
@@ -321,8 +322,8 @@ class ChatterboxEngine(Engine, VoiceBuilder):
     @override
     def synthesize(self, text: str, voice: VoiceSpec, pace: float) -> AudioClip:
         styles = dict(voice.styles)
-        style = styles.get(sentence_style(text)) or styles.get("narration")
-        seed = int(hashlib.sha256(text.encode("utf-8")).hexdigest()[:8], 16) % 2**31
+        style = styles.get(voice.style or sentence_style(text)) or styles.get("narration")
+        seed = (int(hashlib.sha256(text.encode("utf-8")).hexdigest()[:8], 16) + TAKE_STEP * voice.take) % 2**31
         best, best_ratio = self._attempt(text, voice, style, seed)
         for attempt in range(1, ATTEMPTS):
             if acceptable(best_ratio):
@@ -351,7 +352,7 @@ class ChatterboxEngine(Engine, VoiceBuilder):
                 reference=str(voice.reference_path) if voice.reference_path else None,
                 output=str(output),
                 seed=seed,
-                **DELIVERY[voice.delivery],
+                **DELIVERY["steady" if voice.steady else voice.delivery],
             )
             samples, rate = read_audio(output)
         finally:

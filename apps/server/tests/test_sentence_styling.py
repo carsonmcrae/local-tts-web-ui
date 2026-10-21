@@ -43,7 +43,8 @@ def test_every_effect_keeps_the_loudness_and_is_repeatable(effect: Any) -> None:
     speech = (speech_like(3) + 0.05 * rng.standard_normal(3 * SAMPLE_RATE)).astype(np.float32)
     out = apply_effect(effect, speech, SAMPLE_RATE)
     assert out.dtype == np.float32 and len(out) >= len(speech)
-    assert abs(rms_db(out) - rms_db(speech)) < 2.5
+    softer = 7.0 if effect == "quiet" else 0.0  # a quiet aside is meant to sound softer
+    assert abs(rms_db(out) - rms_db(speech) + softer) < 2.5
     assert np.max(np.abs(out)) <= 10 ** (-1 / 20) + 1e-6
     assert np.array_equal(out, apply_effect(effect, speech, SAMPLE_RATE))
 
@@ -109,6 +110,11 @@ def test_synthesis_follows_each_sentences_plan(client: TestClient, engines: dict
     assert engines["chatterbox"].calls[-1][0] == "[sigh] Nobody answered."
 
     client.put(f"/api/documents/{doc_id}/cast", json={"dialogueVoiceId": "chatterbox:alpha"})
+    audio(client, doc_id, 1)
+    # The quoted speech gets the dialogue voice and the narration around it keeps the reading voice.
+    assert engines["chatterbox"].calls[-1][0] == "Is anyone there?"
+    assert engines["kokoro"].calls[-1][0] == "she called."
+    client.put(f"/api/documents/{doc_id}/cast", json={"splitDialogue": False})
     audio(client, doc_id, 1)
     assert engines["chatterbox"].calls[-1][0] == '"Is anyone there?" she called.'
     before = len(engines["kokoro"].calls)

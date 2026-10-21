@@ -38,9 +38,12 @@ def apply_fades(samples: Float32Array, sample_rate: int, seconds: float = FADE_S
     return out
 
 
-def finalize_segment(samples: Float32Array, sample_rate: int, boundary: str) -> Float32Array:
-    """Fade the clip edges and append the pause that follows this kind of boundary."""
-    pause = np.zeros(int(sample_rate * PAUSE_SECONDS.get(boundary, 0.3)), dtype=np.float32)
+def finalize_segment(
+    samples: Float32Array, sample_rate: int, boundary: str, pause_s: float | None = None
+) -> Float32Array:
+    """Fade the clip edges and append the pause that follows this kind of boundary (or ``pause_s``)."""
+    seconds = PAUSE_SECONDS.get(boundary, 0.3) if pause_s is None else pause_s
+    pause = np.zeros(int(sample_rate * seconds), dtype=np.float32)
     clipped = np.clip(apply_fades(samples, sample_rate), -1.0, 1.0)
     return np.concatenate([clipped, pause])
 

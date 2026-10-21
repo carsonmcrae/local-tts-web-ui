@@ -39,7 +39,7 @@
     "test:scripts": "node --test \"scripts/**/*.test.mjs\"",
     "test:web": "npm run test --workspace @ltts/web",
     "test:server": "node scripts/uv-run.mjs --cwd apps/server run --frozen pytest",
-    "test:inference": "node scripts/uv-run.mjs --cwd apps/server run --frozen pytest -m inference",
+    "test:inference": "node scripts/uv-run.mjs --cwd apps/server run --frozen pytest -m inference -n 0",
     "test:coverage": "npm run test:coverage --workspace @ltts/web && node scripts/uv-run.mjs --cwd apps/server run --frozen pytest --cov --cov-report=term-missing",
     "test:e2e": "npm run build && playwright test",
     "lint": "npm run lint:web && npm run lint:server && npm run lint:repo",

@@ -1,16 +1,20 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 Carson McRae
 /**
- * Purpose: Style the sentences a reader selects in the text.
+ * Purpose: Act on what a reader selects in the text: style those sentences, or fix how a word is said.
  * Scope: Watches the text selection in the reading view and, while sentences are selected, shows a
  *   floating "Voice & effect" button beside it that opens the styling dialog for exactly those
- *   sentences (a selection that only touches a sentence's edge doesn't count).
- * Does NOT belong: The dialog itself (StyleSentencesDialog) or the cast dialog.
+ *   sentences (a selection that only touches a sentence's edge doesn't count), and for a word or
+ *   short phrase "Fix pronunciation", which opens the pronunciation dialog for it.
+ * Does NOT belong: The dialogs themselves (StyleSentencesDialog, FixPronunciationDialog) or the cast
+ *   dialog.
  */
-import { Sparkles } from 'lucide-react';
+import { AudioLines, Sparkles } from 'lucide-react';
 import { type RefObject, useEffect, useState } from 'react';
 import type { SentenceStyle } from '@/api/types';
 import { Button } from '@/components/ui/Button';
+import { FixPronunciationDialog } from '@/features/pronunciation/FixPronunciationDialog';
+import { selectedWord } from '@/features/pronunciation/pronunciationRules';
 import { StyleSentencesDialog } from './StyleSentencesDialog';
 
 /** The sentences a selection inside ``root`` touches, in reading order. */
@@ -35,6 +39,7 @@ export function selectedSentences(root: HTMLElement): number[] {
 
 interface Selected {
   indexes: number[];
+  text: string;
   top: number;
   left: number;
 }
@@ -55,8 +60,9 @@ function useSelectedSentences(root: RefObject<HTMLElement | null>): Selected | n
       const left = rect ? rect.left + rect.width / 2 : 0;
       setSelected({
         indexes,
+        text: document.getSelection()?.toString() ?? '',
         top: Math.max((rect?.top ?? 0) - 48, 8),
-        left: Math.min(Math.max(left, 96), window.innerWidth - 96),
+        left: Math.min(Math.max(left, 160), window.innerWidth - 160),
       });
     };
     document.addEventListener('selectionchange', update);
@@ -81,11 +87,19 @@ export function SelectionStyler({
 }>) {
   const selected = useSelectedSentences(root);
   const [editing, setEditing] = useState<number[] | null>(null);
+  const [fixing, setFixing] = useState<string | null>(null);
+  const word = selected ? selectedWord(selected.text) : null;
+  const fix = (picked: string, index: number | undefined) => {
+    // The dialog hands focus back to what had it: the sentence the word is in.
+    const sentence = root.current?.querySelector<HTMLElement>(`.reader-seg[data-index="${index}"]`);
+    sentence?.focus({ preventScroll: true });
+    setFixing(picked);
+  };
   return (
     <>
-      {selected && !editing ? (
+      {selected && !editing && fixing === null ? (
         <div
-          className="fixed z-40 -translate-x-1/2"
+          className="fixed z-40 flex -translate-x-1/2 gap-2"
           style={{ top: selected.top, left: selected.left }}
         >
           <Button
@@ -99,8 +113,27 @@ export function SelectionStyler({
             Voice & effect
             {selected.indexes.length > 1 ? ` (${selected.indexes.length})` : ''}
           </Button>
+          {word ? (
+            <Button
+              size="sm"
+              icon={<AudioLines size={14} />}
+              onMouseDown={(event) => event.preventDefault()}
+              onClick={() => fix(word, selected.indexes[0])}
+            >
+              Fix pronunciation
+            </Button>
+          ) : null}
         </div>
       ) : null}
+      {fixing === null ? null : (
+        <FixPronunciationDialog
+          documentId={documentId}
+          word={fixing}
+          voiceId={voiceId}
+          onClose={() => setFixing(null)}
+          onSaved={onChanged}
+        />
+      )}
       {editing ? (
         <StyleSentencesDialog
           documentId={documentId}

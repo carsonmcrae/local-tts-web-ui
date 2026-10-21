@@ -21,7 +21,7 @@ interface TrackRecord extends MusicTrack {
   bytes: number;
   sha256: string;
   source: string;
-  licence: MusicTrack['licence'] & { verifiedAt: string };
+  licence: MusicTrack['licence'] & { verifiedAt: string; archived: string };
   permits: { modification: boolean; redistribution: boolean; commercial: boolean };
 }
 
@@ -63,6 +63,9 @@ describe('music library', () => {
       expect(ALLOWED_LICENCES, track.id).toContain(track.licence.name);
       expect(track.licence.url).toMatch(/^https:\/\//);
       expect(track.licence.verifiedAt).toMatch(/^https:\/\//);
+      // An independent copy of the source page, as evidence that outlives the page itself.
+      expect(track.licence.archived.endsWith(`/${track.source}`), track.id).toBe(true);
+      expect(track.licence.archived).toMatch(/^https:\/\/web\.archive\.org\/web\/\d{14}\//);
       expect(track.source).toMatch(/^https:\/\//);
       expect(track.permits, track.id).toEqual({
         modification: true,
@@ -77,7 +80,13 @@ describe('music library', () => {
   it('credits every track in the notes that ship beside the music', () => {
     const credits = readFileSync(musicFile('CREDITS.md'), 'utf8');
     for (const track of RECORDS) {
-      for (const fact of [track.title, track.creator, track.source, track.licence.name])
+      for (const fact of [
+        track.title,
+        track.creator,
+        track.source,
+        track.licence.name,
+        track.sha256,
+      ])
         expect(credits, `${track.id}: ${fact}`).toContain(fact);
     }
   });

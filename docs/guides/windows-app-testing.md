@@ -42,6 +42,13 @@ candidate's Desktop workflow artifact:
 
 ## Latest results
 
+**2026-10-21, clean `windows-2025` runner, commit `4bac5e1` (with pull request #39 merged in):** every
+automated check above passed in one run: the shell checks, the installer build, all smoke-test checks,
+the close-and-crash persistence test (the window reached through the app's `--remote-debugging-port`
+switch; WebView2 there ignores the environment-variable and registry overrides), and the update path
+(notice with notes, wrong signature refused, interrupted download refused, verified update installed and
+reopened with the document kept). uv 0.13.4 built the runtime.
+
 **2026-10-21, CI build `2.1.0-dev.110` installed over dev.98 on this maintainer's Windows 11 PC (not a
 clean machine).**
 

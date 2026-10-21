@@ -8,7 +8,7 @@
  *   need no choice: styles/index.css adapts to them.
  * Does NOT belong: Colour tokens (styles/index.css) or light/dark (theme.ts).
  */
-import { useCallback, useEffect, useState } from 'react';
+import { useDeviceChoice } from './deviceChoice';
 
 export type ContrastChoice = 'system' | 'more';
 const STORAGE_KEY = 'ltts.contrast';
@@ -28,25 +28,5 @@ function apply(choice: ContrastChoice): void {
 }
 
 export function useContrast(): [ContrastChoice, (choice: ContrastChoice) => void] {
-  const [choice, setChoice] = useState<ContrastChoice>(readChoice);
-
-  useEffect(() => {
-    apply(choice);
-    if (!globalThis.matchMedia) return undefined;
-    const media = globalThis.matchMedia(QUERY);
-    const onChange = () => apply(readChoice());
-    media.addEventListener('change', onChange);
-    return () => media.removeEventListener('change', onChange);
-  }, [choice]);
-
-  const update = useCallback((next: ContrastChoice) => {
-    try {
-      globalThis.localStorage.setItem(STORAGE_KEY, next);
-    } catch {
-      // storage unavailable (private mode): the choice still applies for this session
-    }
-    setChoice(next);
-  }, []);
-
-  return [choice, update];
+  return useDeviceChoice(STORAGE_KEY, QUERY, readChoice, apply);
 }

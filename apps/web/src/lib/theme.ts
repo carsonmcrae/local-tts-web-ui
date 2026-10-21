@@ -6,7 +6,7 @@
  *   follows the OS setting live when "system" is selected. public/theme-boot.js applies it pre-paint.
  * Does NOT belong: Colour tokens (styles/index.css).
  */
-import { useCallback, useEffect, useState } from 'react';
+import { useDeviceChoice } from './deviceChoice';
 
 export type ThemeChoice = 'system' | 'light' | 'dark';
 const STORAGE_KEY = 'ltts.theme';
@@ -27,26 +27,5 @@ function apply(choice: ThemeChoice): void {
 }
 
 export function useTheme(): [ThemeChoice, (choice: ThemeChoice) => void] {
-  const [choice, setChoice] = useState<ThemeChoice>(readChoice);
-
-  useEffect(() => {
-    apply(choice);
-    if (!globalThis.matchMedia) return undefined;
-    const media = globalThis.matchMedia('(prefers-color-scheme: dark)');
-    // Read the stored choice at event time so every hook instance agrees on the latest setting.
-    const onChange = () => apply(readChoice());
-    media.addEventListener('change', onChange);
-    return () => media.removeEventListener('change', onChange);
-  }, [choice]);
-
-  const update = useCallback((next: ThemeChoice) => {
-    try {
-      globalThis.localStorage.setItem(STORAGE_KEY, next);
-    } catch {
-      // storage unavailable (private mode): the choice still applies for this session
-    }
-    setChoice(next);
-  }, []);
-
-  return [choice, update];
+  return useDeviceChoice(STORAGE_KEY, '(prefers-color-scheme: dark)', readChoice, apply);
 }

@@ -32,6 +32,7 @@ from ltts.voices.tuning import SAMPLE_TEXTS, tuning_takes
 
 PASSAGES = Path(styles.__file__).with_name("passages.json")
 
+
 @pytest.fixture
 def settings(settings: Settings) -> Settings:
     return settings.model_copy(update={"min_studio_speech_s": 20})

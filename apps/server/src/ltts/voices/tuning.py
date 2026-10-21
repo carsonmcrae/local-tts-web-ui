@@ -28,7 +28,8 @@ from ltts.common import utc_now
 from ltts.engines.base import TuningTake, VoiceTuner
 from ltts.errors import ConflictError, NotFoundError
 from ltts.jobs import JobContext, JobManager, JobOut
-from ltts.voices.profiles import CANDIDATE_FILE, TuningCandidate, VoiceProfileOut, VoiceProfileService
+from ltts.voices.adapters import CANDIDATE_ADAPTER, CANDIDATE_FILE, TuningCandidate
+from ltts.voices.profiles import VoiceProfileOut, VoiceProfileService
 from ltts.voices.studio import kept_takes
 from ltts.voices.styles import passage_text
 
@@ -98,7 +99,7 @@ class TuningService:
         shutil.rmtree(staging, ignore_errors=True)
         staging.mkdir(parents=True)
         try:
-            summary = self._train(context, engine, takes, voice.conditioning_path, staging / "adapter.safetensors")
+            summary = self._train(context, engine, takes, voice.conditioning_path, staging / CANDIDATE_ADAPTER)
             context.check()
             summary = summary.model_copy(update=self._compare(context, engine, profile_id, staging))
             (staging / CANDIDATE_FILE).write_text(summary.model_dump_json(by_alias=True), encoding="utf-8")
@@ -154,7 +155,7 @@ class TuningService:
     def _compare(self, context: JobContext, engine: VoiceTuner, profile_id: str, folder: Path) -> dict[str, float]:
         """The sample sentences read as the reader would, without and with the adapter, and how alike they sound."""
         _, current, _ = self._profiles.resolve(profile_id)
-        tuned = dataclasses.replace(current, adapter_path=folder / "adapter.safetensors")
+        tuned = dataclasses.replace(current, adapter_path=folder / CANDIDATE_ADAPTER)
         paths: list[Path] = []
         for index, text in enumerate(SAMPLE_TEXTS):
             for arm, voice in (("current", current), ("tuned", tuned)):
@@ -188,7 +189,7 @@ class TuningService:
         if self._profiles.tuning_candidate(profile_id) is None:
             raise NotFoundError("There's no fine-tune waiting to be kept.", code="tuning_not_found")
         folder = self._profiles.tuning_dir(profile_id)
-        self._profiles.set_adapter(profile_id, folder / "adapter.safetensors")
+        self._profiles.set_adapter(profile_id, folder / CANDIDATE_ADAPTER)
         shutil.rmtree(folder, ignore_errors=True)
         log.info("voice fine-tune kept", extra={"profile_id": profile_id})
         return self._profiles.get(profile_id)

@@ -36,6 +36,7 @@ from ltts.config import Settings
 from ltts.db import Database
 from ltts.engines.base import Delivery, VoiceInfo, VoiceSpec
 from ltts.errors import AppError, ConflictError, NotFoundError, UnsupportedDocumentError
+from ltts.voices.adapters import TuningCandidate, kept_adapter, replace_adapter, waiting_candidate
 from ltts.voices.cleanup import Cleanup, RecordingCheck, apply_cleanup, suggest_cleanup
 from ltts.voices.quality import QualityReport, analyze
 from ltts.voices.styles import styles_in, styles_revision
@@ -63,7 +64,6 @@ _STORES: dict[str, str] = {
     "shared": "A voice someone shared with you: its built voice and a short reference recording.",
 }
 SHARED = "shared"
-CANDIDATE_FILE = "candidate.json"  # in a profile's tuning folder: a fine-tune waiting to be compared
 _COLUMNS = (
     "id",
     "name",
@@ -83,20 +83,6 @@ _INSERT = (
     "INSERT INTO voice_profiles (id, name, engine_id, duration_s, sample_rate, quality_json, consent_statement, "
     "consented_at, source, created_at, kind, delivery, voice_file) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
 )
-
-
-class TuningCandidate(ApiModel):
-    """A finished fine-tune waiting for the owner to compare it with the voice as it is, and keep it or not."""
-
-    epochs: int  # epochs trained (training stops once the held-out takes stop improving)
-    best_epoch: int
-    loss_before: float  # mean loss per speech token on held-out takes: how surprised the model is by them
-    loss_after: float
-    gain: float  # relative drop in that loss (0.05 = 5 % closer to the held-out takes)
-    similarity_before: float  # how much the comparison sentences sound like the speaker, without and with it
-    similarity_after: float
-    texts: list[str]  # the comparison sentences; samples are served per sentence, without and with it
-    created_at: str
 
 
 class VoiceProfileOut(ApiModel):
@@ -226,27 +212,15 @@ class VoiceProfileService:
         return self.root / profile_id / "tuning"
 
     def adapter_path(self, profile_id: str) -> Path | None:
-        """The fine-tuned adapter the voice speaks with (``adapter-<id>.safetensors``), if it kept one."""
-        return next(iter(sorted((self.root / profile_id).glob("adapter-*.safetensors"))), None)
+        return kept_adapter(self.root / profile_id)
 
     def set_adapter(self, profile_id: str, source: Path | None) -> None:
-        """Give the voice the adapter at ``source`` (moved under a new name), or none; old audio is freed."""
-        old = self.adapter_path(profile_id)
-        if source is not None:
-            shutil.move(source, self.root / profile_id / f"adapter-{new_id()[:12]}.safetensors")
-        if old is not None:
-            old.unlink(missing_ok=True)
+        """Give the voice the adapter at ``source``, or none; audio made before is freed."""
+        replace_adapter(self.root / profile_id, source)
         self._purge_audio(f"custom:{profile_id}")
 
     def tuning_candidate(self, profile_id: str) -> TuningCandidate | None:
-        """A fine-tune waiting to be compared, when both its adapter and its summary are there."""
-        folder = self.tuning_dir(profile_id)
-        if not (folder / "adapter.safetensors").is_file() or not (folder / CANDIDATE_FILE).is_file():
-            return None
-        try:
-            return TuningCandidate.model_validate_json((folder / CANDIDATE_FILE).read_text(encoding="utf-8"))
-        except ValueError:
-            return None
+        return waiting_candidate(self.tuning_dir(profile_id))
 
     def analyze_file(self, path: Path) -> RecordingCheck:
         samples, rate = _decode(path, self._settings.max_voice_reference_s)

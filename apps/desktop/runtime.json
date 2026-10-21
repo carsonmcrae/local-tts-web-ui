@@ -1,0 +1,17 @@
+{
+  "//": "Purpose: What the Windows desktop app bundles beside its executable. Scope: The exact Python version (installed by the pinned uv, which verifies the download), the model artifacts shipped so reading works without a download, and parts of the Python standard library the server never uses. Does NOT belong: Python package pins (apps/server/uv.lock) or model URLs and checksums (apps/server/src/ltts/modelstore/manifest.json).",
+  "python": "3.12.14",
+  "bundledModels": ["kokoro-v1.0"],
+  "removeFromPython": [
+    "Lib/test",
+    "Lib/idlelib",
+    "Lib/tkinter",
+    "Lib/turtledemo",
+    "Lib/ensurepip",
+    "tcl",
+    "DLLs/_tkinter.pyd",
+    "DLLs/tcl86t.dll",
+    "DLLs/tk86t.dll",
+    "Scripts"
+  ]
+}

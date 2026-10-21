@@ -1,0 +1,65 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "TTSNative",
+  "mainBinaryName": "TTSNative",
+  "version": "../../../package.json",
+  "identifier": "com.ttsnative.desktop",
+  "build": {
+    "frontendDist": "../splash"
+  },
+  "app": {
+    "withGlobalTauri": true,
+    "windows": [],
+    "security": {
+      "csp": "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src ipc: http://ipc.localhost",
+      "capabilities": ["splash", "app"]
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["nsis"],
+    "publisher": "Carson McRae",
+    "copyright": "Copyright (c) 2026 Carson McRae. MIT License.",
+    "category": "Productivity",
+    "shortDescription": "Private, offline text-to-speech reader and voice studio",
+    "longDescription": "TTSNative reads PDF, Word, EPUB and text documents aloud with natural voices that run entirely on your computer. Nothing is uploaded and no account is needed.",
+    "homepage": "https://ttsnative.com",
+    "license": "MIT",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.png",
+      "icons/icon.ico"
+    ],
+    "resources": {
+      "../runtime/": "runtime/"
+    },
+    "createUpdaterArtifacts": true,
+    "windows": {
+      "allowDowngrades": false,
+      "webviewInstallMode": {
+        "type": "downloadBootstrapper",
+        "silent": true
+      },
+      "nsis": {
+        "installMode": "currentUser",
+        "installerIcon": "icons/icon.ico",
+        "installerHooks": "../windows/hooks.nsh",
+        "displayLanguageSelector": false,
+        "compression": "lzma"
+      }
+    }
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDI5QUVDQUJFNDUxODRBNDYKUldSR1NoaEZ2c3F1S1dpS1hEOG93dUIvN0xlWnB4ZHg4c2tzaG1KdEJMWlorMFVzbFFJMkNkVTAK",
+      "endpoints": [
+        "https://github.com/carsonmcrae/ttsnative/releases/latest/download/latest.json"
+      ],
+      "windows": {
+        "installMode": "passive"
+      }
+    }
+  }
+}

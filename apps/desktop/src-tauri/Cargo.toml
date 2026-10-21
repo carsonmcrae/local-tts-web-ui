@@ -1,0 +1,39 @@
+# Purpose: The TTSNative desktop shell: a Tauri 2 window that starts the bundled local server and shows
+#   the existing web UI, plus signed updates from GitHub Releases.
+# Scope: Rust crate manifest, exact pins for direct dependencies (each at least 14 days old when chosen,
+#   matching the repository's supply-chain cool-down) and the release profile.
+# Does NOT belong: The product version (tauri.conf.json reads it from the root package.json; the copy
+#   below is kept in step by scripts/lib/version-files.mjs) or the bundled runtime (scripts/desktop/).
+
+[package]
+name = "ttsnative-desktop"
+version = "2.0.0"
+description = "TTSNative for Windows"
+authors = ["Carson McRae"]
+license = "MIT"
+repository = "https://github.com/carsonmcrae/ttsnative"
+edition = "2021"
+rust-version = "1.85"
+publish = false
+
+[build-dependencies]
+tauri-build = { version = "=2.7.1", features = [] }
+
+[dependencies]
+tauri = { version = "=2.12.1", features = [] }
+tauri-plugin-opener = "=2.7.0"
+tauri-plugin-single-instance = "=2.5.2"
+tauri-plugin-updater = "=2.13.1"
+tauri-plugin-window-state = "=2.5.0"
+semver = "1.0.27"
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.145"
+
+[target.'cfg(windows)'.dependencies]
+win32job = "=2.0.3"
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = "s"
+strip = true

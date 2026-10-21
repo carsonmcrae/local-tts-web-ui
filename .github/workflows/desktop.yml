@@ -1,0 +1,126 @@
+# Purpose: Build and test the Windows desktop app on a clean Windows runner, for every change to it.
+# Scope: The desktop shell's formatting, lints and unit tests; then the full installer (web UI, bundled
+#   runtime with the verified Kokoro model, per-user NSIS installer) built WITHOUT the release updater
+#   key, an installer smoke test (silent install, speech, MP3 export, no console windows, restart,
+#   uninstall that keeps the user's data), and the installer kept as a workflow artifact for manual
+#   testing. Nothing is published, signed for updates or attached to a release.
+# Does NOT belong: Publishing releases (release.yml) or the cross-platform server tests (ci.yml).
+name: Desktop
+
+on:
+  pull_request:
+    paths:
+      - 'apps/**'
+      - 'scripts/desktop/**'
+      - 'scripts/lib/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/desktop.yml'
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: desktop-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  LTTS_UV_PINNED_ONLY: '1'
+  UV_LINK_MODE: copy
+  CARGO_TERM_COLOR: never
+  CARGO_INCREMENTAL: '0'
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  shell:
+    name: Desktop shell (fmt, clippy, tests)
+    runs-on: windows-2025
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Rust toolchain (rust-toolchain.toml)
+        working-directory: apps/desktop/src-tauri
+        run: rustup toolchain install && rustc --version
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            apps/desktop/src-tauri/target
+          key: cargo-shell-${{ runner.os }}-${{ hashFiles('apps/desktop/src-tauri/Cargo.toml', 'apps/desktop/src-tauri/Cargo.lock', 'apps/desktop/src-tauri/rust-toolchain.toml') }}
+      - name: Placeholder runtime (the installer job assembles the real one)
+        run: mkdir -p apps/desktop/runtime && echo placeholder > apps/desktop/runtime/README.txt
+      - name: Formatting
+        working-directory: apps/desktop/src-tauri
+        run: |
+          if ! cargo fmt --check; then
+            cargo fmt && git diff > "$RUNNER_TEMP/rustfmt.patch"
+            echo "::error::cargo fmt changed files; the rustfmt-patch artifact has the fix"
+            exit 1
+          fi
+      - name: Lints and unit tests
+        working-directory: apps/desktop/src-tauri
+        run: |
+          locked=$([ -f Cargo.lock ] && echo --locked || true)
+          cargo clippy $locked --all-targets -- -D warnings
+          cargo test $locked
+      - name: Keep the lockfile and any formatting fix
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: desktop-shell-files
+          path: |
+            apps/desktop/src-tauri/Cargo.lock
+            ${{ runner.temp }}/rustfmt.patch
+          if-no-files-found: ignore
+          retention-days: 7
+
+  installer:
+    name: Windows installer (build and smoke test)
+    needs: shell
+    runs-on: windows-2025
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0 # the build identifier counts commits since the last release tag
+      - uses: ./.github/actions/node-deps
+      - name: Rust toolchain (rust-toolchain.toml)
+        working-directory: apps/desktop/src-tauri
+        run: rustup toolchain install && rustc --version
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            apps/desktop/src-tauri/target
+          key: cargo-installer-${{ runner.os }}-${{ hashFiles('apps/desktop/src-tauri/Cargo.toml', 'apps/desktop/src-tauri/Cargo.lock', 'apps/desktop/src-tauri/rust-toolchain.toml') }}
+      - name: Cache the verified model and Python downloads
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .tools/desktop-cache
+          key: desktop-runtime-${{ hashFiles('apps/server/src/ltts/modelstore/manifest.json', 'apps/desktop/runtime.json', 'scripts/toolchain.json', 'apps/server/uv.lock') }}
+      - name: Build the installer (no updater key; never published)
+        run: npm run desktop:build
+      - name: Smoke test on this clean runner
+        run: |
+          version=$(cat dist/desktop/version.txt)
+          node scripts/desktop/smoke-test.mjs "dist/desktop/TTSNative-Setup-$version.exe" "$version"
+      - name: Keep the app's logs
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: desktop-logs
+          path: ~/AppData/Local/com.ttsnative.desktop/logs
+          if-no-files-found: ignore
+          retention-days: 7
+      - name: Keep the installer for manual testing
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ttsnative-windows-installer
+          path: dist/desktop/
+          retention-days: 14

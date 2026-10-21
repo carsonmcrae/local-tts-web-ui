@@ -7,15 +7,18 @@ sentence sound the same. A studio voice therefore keeps a small style prompt per
 narration, questions, lively lines and dialogue — built from the session's takes of matching
 passages (best first: long, clean, varied in pitch and typical of the speaker); the engine picks a
 sentence's style from its punctuation (``cloned_speech.sentence_style``), so a question rises like
-the speaker's own questions. Also maps take numbers back to the passage groups they read (for voices saved before
-styles existed) and builds the styles with a cloning engine.
+the speaker's own questions. Also maps take numbers back to the passages they read (for voices saved before
+styles existed) and to those passages' words (``passages.json``, a copy of the recording script the web app shows,
+for fine-tuning), and builds the styles with a cloning engine.
 Does NOT belong: The worker's token extraction (``ltts_chatterbox_worker.studio``), the build job
 (``studio.py``) or synthesis (the engine).
 """
 
 from __future__ import annotations
 
+import functools
 import hashlib
+import json
 import logging
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
@@ -72,6 +75,17 @@ def prompt_for_number(number: int) -> str | None:
     if 1 <= number <= 8 * len(_GROUPS):
         return f"{_GROUPS[(number - 1) // 8]}-{(number - 1) % 8 + 1}"
     return None
+
+
+@functools.cache
+def _passages() -> dict[str, str]:
+    data: dict[str, str] = json.loads(Path(__file__).with_name("passages.json").read_text(encoding="utf-8"))
+    return data
+
+
+def passage_text(prompt_id: str | None) -> str | None:
+    """The words of a recorded passage (``narration-1``, ``foundation``…), or None for an unknown one."""
+    return _passages().get(prompt_id) if prompt_id else None
 
 
 @dataclass(frozen=True, slots=True)

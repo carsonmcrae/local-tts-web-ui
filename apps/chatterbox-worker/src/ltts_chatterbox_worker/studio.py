@@ -6,10 +6,10 @@ Scope: ``measure`` returns each take's speaker embeddings (voice encoder and S3G
 spread; ``build`` turns one prompt take plus an optional session identity into Chatterbox Turbo
 conditioning and saves it as safetensors (no pickle); ``build_style`` turns a few takes of one
 speaking style (questions, conversation, lively lines) into T3 prompt tokens only, filling T3's whole
-15 s with speech by joining takes and shortening long pauses, since Turbo's inflection comes from that
-prompt; ``load_conditioning`` reads a voice back, optionally with a style's prompt in place of its own;
-``generate`` runs seeded and without autograd; ``audition`` generates seeded samples from a
-conditioning and scores each against a speaker embedding. Mirrors
+15 s with speech by joining takes and shortening long pauses (``prompt_tokens``), since Turbo's
+inflection comes from that prompt; ``load_conditioning`` reads a voice back, optionally with a style's
+prompt in place of its own; ``generate`` runs seeded and without autograd; ``audition`` generates
+seeded samples from a conditioning and scores each against a speaker embedding. Mirrors
 ``ChatterboxTurboTTS.prepare_conditionals``: loudness-normalised reference, the first 10 s for S3Gen's
 prompt and the first 15 s for T3's prompt tokens.
 Does NOT belong: The JSON-lines protocol (``__main__``), ranking takes or file management (the
@@ -53,7 +53,7 @@ def _unit(vector: np.ndarray) -> np.ndarray:
     return vector / norm if norm > 0 else vector
 
 
-def _load(model: Any, path: str) -> tuple[np.ndarray, np.ndarray]:
+def load_take(model: Any, path: str) -> tuple[np.ndarray, np.ndarray]:
     """The take at 24 kHz (loudness-normalised like prepare_conditionals) and at 16 kHz."""
     import librosa
     from chatterbox.models.s3gen import S3GEN_SR
@@ -95,7 +95,7 @@ def _pitch_spread(wav16: np.ndarray) -> tuple[float, float]:
 def measure(model: Any, paths: list[str]) -> list[dict[str, Any]]:
     takes = []
     for path in paths:
-        _, wav16 = _load(model, path)
+        _, wav16 = load_take(model, path)
         spread, voiced = _pitch_spread(wav16)
         takes.append(
             {
@@ -115,7 +115,7 @@ def build(model: Any, prompt: str, output: str, speaker_emb: list[float] | None,
     from chatterbox.models.s3gen import S3GEN_SR
     from safetensors.torch import save_file
 
-    wav24, wav16 = _load(model, prompt)
+    wav24, wav16 = load_take(model, prompt)
     with torch.inference_mode():
         gen = model.s3gen.embed_ref(wav24[: model.DEC_COND_LEN], S3GEN_SR, device=model.device)
         tokens, _ = model.s3gen.tokenizer.forward(
@@ -162,29 +162,31 @@ def _shorten_pauses(wav16: np.ndarray, sample_rate: int) -> np.ndarray:
     return np.asarray(frames[keep].reshape(-1), dtype=np.float32)
 
 
-def build_style(model: Any, prompts: list[str], output: str) -> float:
-    """T3 prompt tokens from takes of one style, joined until T3's 15 s are full; returns the seconds used."""
+def prompt_tokens(model: Any, takes: list[np.ndarray]) -> tuple[Any, float]:
+    """T3 prompt tokens from 16 kHz takes joined (pauses shortened) until T3's 15 s are full, and the seconds used."""
     import torch
     from chatterbox.models.s3tokenizer import S3_SR
-    from safetensors.torch import save_file
 
     gap = np.zeros(int(PAUSE_S * S3_SR), dtype=np.float32)
     pieces: list[np.ndarray] = []
-    for prompt in prompts:
-        _, wav16 = _load(model, prompt)
+    for wav16 in takes:
         pieces += [_shorten_pauses(wav16, S3_SR), gap]
         if sum(len(piece) for piece in pieces) >= model.ENC_COND_LEN:
             break
     audio = np.concatenate(pieces)[: model.ENC_COND_LEN]
     with torch.inference_mode():
         tokens, _ = model.s3gen.tokenizer.forward([audio], max_len=model.t3.hp.speech_cond_prompt_len)
+    return torch.atleast_2d(tokens).long().cpu(), round(len(audio) / S3_SR, 2)
+
+
+def build_style(model: Any, prompts: list[str], output: str) -> float:
+    """T3 prompt tokens from takes of one style, joined until T3's 15 s are full; returns the seconds used."""
+    from safetensors.torch import save_file
+
+    tokens, seconds = prompt_tokens(model, [load_take(model, prompt)[1] for prompt in prompts])
     Path(output).parent.mkdir(parents=True, exist_ok=True)
-    save_file(
-        {T3_TOKENS: torch.atleast_2d(tokens).long().cpu().contiguous()},
-        output,
-        {"format": STYLE_FORMAT, "version": STYLE_VERSION},
-    )
-    return round(len(audio) / S3_SR, 2)
+    save_file({T3_TOKENS: tokens.contiguous()}, output, {"format": STYLE_FORMAT, "version": STYLE_VERSION})
+    return seconds
 
 
 def _style_tokens(path: str) -> Any:
@@ -246,13 +248,15 @@ def generate(model: Any, text: str, settings: dict[str, Any], seed: int | None =
 
 
 def audition(model: Any, request: dict[str, Any]) -> list[float]:
-    """Seeded samples from a conditioning, each scored against ``speakerEmb`` (cosine, voice encoder)."""
+    """Seeded samples from a conditioning, each scored against ``speakerEmb`` (cosine, voice encoder), or
+    against the conditioning's own speaker when none is given (a saved voice)."""
     import librosa
     import soundfile as sf
     from chatterbox.models.s3tokenizer import S3_SR
 
     model.conds = load_conditioning(request["conditioning"], model.device)
-    target = _unit(np.asarray(request["speakerEmb"], dtype=np.float32))
+    speaker = request.get("speakerEmb") or model.conds.t3.speaker_emb.detach().float().cpu().numpy().reshape(-1)
+    target = _unit(np.asarray(speaker, dtype=np.float32))
     settings = sampling(request)
     scores = []
     for text, output in zip(request["texts"], request["outputs"], strict=True):

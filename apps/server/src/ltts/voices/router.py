@@ -5,7 +5,8 @@
 Scope: Analyse a recording without storing it (its quality and the cleanup it needs), preview a
 cleanup on it, create a profile from a raw WAV body (with explicit consent and an optional cleanup:
 noise reduction, rumble filter, tone), list/rename/delete profiles, change a profile's delivery,
-build a studio voice's speaking styles from its kept takes, export a voice as a ``.ttsvoice``
+build a studio voice's speaking styles from its kept takes, fine-tune it on them (start, play the
+comparison samples, keep or discard the result, remove a kept fine-tune), export a voice as a ``.ttsvoice``
 package (after an explicit confirmation) or import one shared with you (with explicit consent), and
 play back a profile's stored reference recording.
 Does NOT belong: Validation and storage rules (``profiles.py``).
@@ -30,6 +31,7 @@ from ltts.voices.blends import BlendIn, BlendOut
 from ltts.voices.cleanup import MAX_BASS_BOOST_DB, MAX_TREBLE_CUT_DB, Cleanup, RecordingCheck
 from ltts.voices.profiles import CONSENT_STATEMENT, VoiceProfileOut
 from ltts.voices.sharing import MAX_PACKAGE_BYTES, VoicePreview, package_name
+from ltts.voices.tuning import SAMPLE_TEXTS, Arm
 
 router = APIRouter(prefix="/api/voice-profiles", tags=["voice studio"])
 ProfileId = Annotated[str, Path(pattern=r"^[0-9a-f]{32}$")]
@@ -172,6 +174,39 @@ def restore_styles(profile_id: ProfileId, services: ServicesDep) -> VoiceProfile
 def build_styles(profile_id: ProfileId, services: ServicesDep) -> JobOut:
     """Teach a studio voice saved before speaking styles existed how the speaker asks, exclaims and talks."""
     return services.studio.refine(profile_id)
+
+
+@router.post("/{profile_id}/tuning", status_code=202)
+def start_tuning(profile_id: ProfileId, services: ServicesDep) -> JobOut:
+    """Fine-tune a studio voice on the takes it kept; the result waits to be compared and kept."""
+    return services.tuning.start(profile_id)
+
+
+@router.get("/{profile_id}/tuning/samples/{arm}/{index}", response_class=FileResponse)
+def tuning_sample(
+    profile_id: ProfileId,
+    arm: Arm,
+    index: Annotated[int, Path(ge=0, lt=len(SAMPLE_TEXTS))],
+    services: ServicesDep,
+) -> FileResponse:
+    """A comparison sentence read by the voice as it is (``current``) or with the waiting fine-tune (``tuned``)."""
+    return FileResponse(services.tuning.sample_path(profile_id, arm, index), media_type="audio/wav")
+
+
+@router.post("/{profile_id}/tuning/keep")
+def keep_tuning(profile_id: ProfileId, services: ServicesDep) -> VoiceProfileOut:
+    return services.tuning.keep(profile_id)
+
+
+@router.delete("/{profile_id}/tuning")
+def discard_tuning(profile_id: ProfileId, services: ServicesDep) -> VoiceProfileOut:
+    return services.tuning.discard(profile_id)
+
+
+@router.delete("/{profile_id}/adapter")
+def remove_tuning(profile_id: ProfileId, services: ServicesDep) -> VoiceProfileOut:
+    """Stop using a kept fine-tune: the voice speaks as it did before."""
+    return services.tuning.remove(profile_id)
 
 
 @router.get("/{profile_id}/export", response_class=Response, responses={200: {"content": {"application/zip": {}}}})

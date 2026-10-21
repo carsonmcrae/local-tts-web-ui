@@ -2,7 +2,8 @@
 // Copyright (c) 2026 Carson McRae
 /**
  * Purpose: React Query hooks for what a finished custom voice can do beyond reading.
- * Scope: Building a studio voice's speaking styles from its kept takes (a background job), the
+ * Scope: Building a studio voice's speaking styles from its kept takes (a background job),
+ *   fine-tuning it on them (a background job) and keeping, discarding or removing the result, the
  *   consent statement, the address that downloads a voice as a .ttsvoice package, and importing a
  *   package someone shared (refreshing the voice lists).
  * Does NOT belong: Creating voices or sessions (queries.ts) or the HTTP client (client.ts).
@@ -26,6 +27,37 @@ export function useRestoreStyles() {
   return useMutation({
     mutationFn: (profileId: string) =>
       api<VoiceProfile>(`/api/voice-profiles/${profileId}/styles/restore`, { method: 'POST' }),
+    onSuccess: () => {
+      void client.invalidateQueries({ queryKey: keys.profiles });
+      void client.invalidateQueries({ queryKey: keys.voices });
+    },
+  });
+}
+
+export function useStartTuning() {
+  return useMutation({
+    mutationFn: (profileId: string) =>
+      api<JobOut>(`/api/voice-profiles/${profileId}/tuning`, { method: 'POST' }),
+  });
+}
+
+export type TuningArm = 'current' | 'tuned';
+
+export function tuningSampleUrl(profileId: string, arm: TuningArm, index: number): string {
+  return `/api/voice-profiles/${profileId}/tuning/samples/${arm}/${index}`;
+}
+
+/** Keep the waiting fine-tune, discard it, or stop using a kept one; the voice lists refresh. */
+export function useTuningDecision() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, decision }: { id: string; decision: 'keep' | 'discard' | 'remove' }) =>
+      api<VoiceProfile>(
+        decision === 'remove'
+          ? `/api/voice-profiles/${id}/adapter`
+          : `/api/voice-profiles/${id}/tuning${decision === 'keep' ? '/keep' : ''}`,
+        { method: decision === 'keep' ? 'POST' : 'DELETE' },
+      ),
     onSuccess: () => {
       void client.invalidateQueries({ queryKey: keys.profiles });
       void client.invalidateQueries({ queryKey: keys.voices });

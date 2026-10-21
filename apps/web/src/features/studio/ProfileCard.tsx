@@ -3,7 +3,8 @@
 /**
  * Purpose: One custom voice profile in Voice Studio.
  * Scope: Name, kind (quick or studio), source, length, creation date, consent timestamp, what is
- *   stored; play the stored reference, choose the delivery, a studio voice's speaking styles, rename,
+ *   stored; play the stored reference, choose the delivery, a studio voice's speaking styles and
+ *   fine-tune, rename,
  *   use for reading, share it as a .ttsvoice file, and permanent deletion with an explicit
  *   confirmation.
  * Does NOT belong: Creation (the wizards).
@@ -30,6 +31,7 @@ import { DeliveryPicker } from './TestStep';
 import { useClipPlayer } from './useClipPlayer';
 import { ShareVoiceButton } from './VoiceSharing';
 import { VoiceStyles } from './VoiceStyles';
+import { VoiceTuning } from './VoiceTuning';
 
 function describe(profile: VoiceProfile): string {
   if (profile.kind === 'studio')
@@ -111,6 +113,7 @@ export function ProfileCard({
       </p>
       {engineReady ? <DeliveryPicker profile={profile} /> : null}
       {engineReady ? <VoiceStyles profile={profile} /> : null}
+      {engineReady ? <VoiceTuning profile={profile} /> : null}
       <div className="flex flex-wrap gap-2">
         {onThisComputer() ? ( // a voice's recording never travels to a phone over the network
           <Button

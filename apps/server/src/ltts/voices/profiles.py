@@ -9,8 +9,9 @@ chosen cleanup, trims and normalises the clip, and stores only that reference WA
 finished session's chosen take, its built voice file, its speaking styles (``styles.py``) and the
 session's takes there. Shared voices (imported ``.ttsvoice`` packages, ``sharing.py``) store the
 built voice, its styles, a short reference and where it came from. All have a delivery (sampling
-preset) that is part of the audio cache revision, as are a studio voice's styles. No model is trained and nothing
-leaves the machine. Deleting a profile removes its recordings, metadata and all audio made with it.
+preset) that is part of the audio cache revision, as are a studio voice's styles and the fine-tuned adapter it may
+keep (trained here on its takes, ``tuning.py``; one may also wait to be compared). Nothing leaves the machine.
+Deleting a profile removes its recordings, metadata and all audio made with it.
 Does NOT belong: Cloning inference (engine) or HTTP parsing (``router.py``).
 """
 
@@ -55,9 +56,14 @@ VoiceKind = Literal["quick", "studio"]
 _STORES: dict[str, str] = {
     "quick": "A trimmed copy of your reference recording (WAV). No model is trained or uploaded.",
     "studio": "Your session recordings (FLAC) and the voice built from them. No model is trained or uploaded.",
+    "tuned": (
+        "Your session recordings (FLAC), the voice built from them and a small fine-tune of the model, "
+        "trained on this computer. Nothing is uploaded."
+    ),
     "shared": "A voice someone shared with you: its built voice and a short reference recording.",
 }
 SHARED = "shared"
+CANDIDATE_FILE = "candidate.json"  # in a profile's tuning folder: a fine-tune waiting to be compared
 _COLUMNS = (
     "id",
     "name",
@@ -79,6 +85,20 @@ _INSERT = (
 )
 
 
+class TuningCandidate(ApiModel):
+    """A finished fine-tune waiting for the owner to compare it with the voice as it is, and keep it or not."""
+
+    epochs: int  # epochs trained (training stops once the held-out takes stop improving)
+    best_epoch: int
+    loss_before: float  # mean loss per speech token on held-out takes: how surprised the model is by them
+    loss_after: float
+    gain: float  # relative drop in that loss (0.05 = 5 % closer to the held-out takes)
+    similarity_before: float  # how much the comparison sentences sound like the speaker, without and with it
+    similarity_after: float
+    texts: list[str]  # the comparison sentences; samples are served per sentence, without and with it
+    created_at: str
+
+
 class VoiceProfileOut(ApiModel):
     id: str
     voice_id: str
@@ -97,6 +117,9 @@ class VoiceProfileOut(ApiModel):
     styles: list[str] = Field(default_factory=list)
     can_refine: bool = False  # a studio voice that kept its takes can (re)build its styles from them
     has_previous_styles: bool = False  # the styles before the last rebuild are kept and can be brought back
+    can_tune: bool = False  # ...and be fine-tuned on them
+    fine_tuned: bool = False  # it speaks with a fine-tuned adapter the owner kept
+    tuning: TuningCandidate | None = None  # a fine-tune waiting to be compared and kept or discarded
 
 
 @dataclass(frozen=True, slots=True)
@@ -196,8 +219,34 @@ class VoiceProfileService:
         return self.get(profile_id)
 
     def styles_changed(self, profile_id: str) -> None:
-        """A voice's styles were rebuilt: free the audio made with the old ones (it can't be served again)."""
+        """A voice's styles or adapter changed: free the audio made before (it can't be served again)."""
         self._purge_audio(f"custom:{profile_id}")
+
+    def tuning_dir(self, profile_id: str) -> Path:
+        return self.root / profile_id / "tuning"
+
+    def adapter_path(self, profile_id: str) -> Path | None:
+        """The fine-tuned adapter the voice speaks with (``adapter-<id>.safetensors``), if it kept one."""
+        return next(iter(sorted((self.root / profile_id).glob("adapter-*.safetensors"))), None)
+
+    def set_adapter(self, profile_id: str, source: Path | None) -> None:
+        """Give the voice the adapter at ``source`` (moved under a new name), or none; old audio is freed."""
+        old = self.adapter_path(profile_id)
+        if source is not None:
+            shutil.move(source, self.root / profile_id / f"adapter-{new_id()[:12]}.safetensors")
+        if old is not None:
+            old.unlink(missing_ok=True)
+        self._purge_audio(f"custom:{profile_id}")
+
+    def tuning_candidate(self, profile_id: str) -> TuningCandidate | None:
+        """A fine-tune waiting to be compared, when both its adapter and its summary are there."""
+        folder = self.tuning_dir(profile_id)
+        if not (folder / "adapter.safetensors").is_file() or not (folder / CANDIDATE_FILE).is_file():
+            return None
+        try:
+            return TuningCandidate.model_validate_json((folder / CANDIDATE_FILE).read_text(encoding="utf-8"))
+        except ValueError:
+            return None
 
     def analyze_file(self, path: Path) -> RecordingCheck:
         samples, rate = _decode(path, self._settings.max_voice_reference_s)
@@ -341,6 +390,9 @@ class VoiceProfileService:
         return profile, row["consent_statement"], files
 
     def _row(self, r: sqlite3.Row) -> VoiceProfileOut:
+        has_takes = r["kind"] == "studio" and self.takes_dir(r["id"]).is_dir()
+        tuned = bool(r["voice_file"]) and self.adapter_path(r["id"]) is not None
+        stores = SHARED if r["source"] == SHARED else "tuned" if tuned else r["kind"]
         return VoiceProfileOut(
             id=r["id"],
             voice_id=f"custom:{r['id']}",
@@ -354,10 +406,13 @@ class VoiceProfileService:
             created_at=r["created_at"],
             kind=r["kind"],
             delivery=r["delivery"],
-            stores=_STORES[SHARED if r["source"] == SHARED else r["kind"]],
+            stores=_STORES[stores],
             styles=list(styles_in(self.styles_dir(r["id"]))),
-            can_refine=r["kind"] == "studio" and self.takes_dir(r["id"]).is_dir(),
+            can_refine=has_takes,
             has_previous_styles=self.previous_styles_dir(r["id"]).is_dir(),
+            can_tune=has_takes and bool(r["voice_file"]),
+            fine_tuned=tuned,
+            tuning=self.tuning_candidate(r["id"]) if has_takes else None,
         )
 
     def list_all(self) -> list[VoiceProfileOut]:
@@ -410,12 +465,14 @@ class VoiceProfileService:
         if conditioning is not None and not conditioning.is_file():
             raise NotFoundError("This voice's built voice file is missing.", code="voice_not_found")
         styles = styles_in(self.styles_dir(profile_id)) if conditioning else {}
+        adapter = self.adapter_path(profile_id) if conditioning else None
         # A quick voice with the default delivery keeps its original revision, so its cached audio stays valid.
         parts = [
             profile.created_at,
             voice_file or "",
             "" if profile.delivery == "natural" else profile.delivery,
             styles_revision(styles),
+            adapter.stem if adapter else "",  # adapter-<id>: a new id each time one is kept
         ]
         spec = VoiceSpec(
             key=f"profile:{profile_id}",
@@ -423,6 +480,7 @@ class VoiceProfileService:
             conditioning_path=conditioning,
             delivery=profile.delivery,
             styles=tuple(styles.items()),
+            adapter_path=adapter,
         )
         return profile.engine_id, spec, "|".join(part for part in parts if part)
 

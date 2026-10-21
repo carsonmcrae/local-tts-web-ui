@@ -1086,6 +1086,26 @@ export type paths = {
     patch: operations['update_profile_api_voice_profiles__profile_id__patch'];
     trace?: never;
   };
+  '/api/voice-profiles/{profile_id}/adapter': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /**
+     * Remove Tuning
+     * @description Stop using a kept fine-tune: the voice speaks as it did before.
+     */
+    delete: operations['remove_tuning_api_voice_profiles__profile_id__adapter_delete'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/voice-profiles/{profile_id}/export': {
     parameters: {
       query?: never;
@@ -1157,6 +1177,64 @@ export type paths = {
      * @description Go back to the expression a voice had before its last rebuild (again to return to the newer one).
      */
     post: operations['restore_styles_api_voice_profiles__profile_id__styles_restore_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/voice-profiles/{profile_id}/tuning': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Start Tuning
+     * @description Fine-tune a studio voice on the takes it kept; the result waits to be compared and kept.
+     */
+    post: operations['start_tuning_api_voice_profiles__profile_id__tuning_post'];
+    /** Discard Tuning */
+    delete: operations['discard_tuning_api_voice_profiles__profile_id__tuning_delete'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/voice-profiles/{profile_id}/tuning/keep': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Keep Tuning */
+    post: operations['keep_tuning_api_voice_profiles__profile_id__tuning_keep_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/voice-profiles/{profile_id}/tuning/samples/{arm}/{index}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Tuning Sample
+     * @description A comparison sentence read by the voice as it is (``current``) or with the waiting fine-tune (``tuned``).
+     */
+    get: operations['tuning_sample_api_voice_profiles__profile_id__tuning_samples__arm___index__get'];
+    put?: never;
+    post?: never;
     delete?: never;
     options?: never;
     head?: never;
@@ -2662,6 +2740,30 @@ export type components = {
       /** Reason */
       reason?: ('expired' | 'address_changed') | null;
     };
+    /**
+     * TuningCandidate
+     * @description A finished fine-tune waiting for the owner to compare it with the voice as it is, and keep it or not.
+     */
+    TuningCandidate: {
+      /** Bestepoch */
+      bestEpoch: number;
+      /** Createdat */
+      createdAt: string;
+      /** Epochs */
+      epochs: number;
+      /** Gain */
+      gain: number;
+      /** Lossafter */
+      lossAfter: number;
+      /** Lossbefore */
+      lossBefore: number;
+      /** Similarityafter */
+      similarityAfter: number;
+      /** Similaritybefore */
+      similarityBefore: number;
+      /** Texts */
+      texts: string[];
+    };
     /** ValidationError */
     ValidationError: {
       /** Context */
@@ -2762,6 +2864,11 @@ export type components = {
        * @default false
        */
       canRefine: boolean;
+      /**
+       * Cantune
+       * @default false
+       */
+      canTune: boolean;
       /** Consentedat */
       consentedAt: string;
       /** Createdat */
@@ -2776,6 +2883,11 @@ export type components = {
       durationS: number;
       /** Engineid */
       engineId: string;
+      /**
+       * Finetuned
+       * @default false
+       */
+      fineTuned: boolean;
       /**
        * Haspreviousstyles
        * @default false
@@ -2803,6 +2915,7 @@ export type components = {
       stores: string;
       /** Styles */
       styles?: string[];
+      tuning?: components['schemas']['TuningCandidate'] | null;
       /** Voiceid */
       voiceId: string;
     };
@@ -5199,6 +5312,37 @@ export interface operations {
       };
     };
   };
+  remove_tuning_api_voice_profiles__profile_id__adapter_delete: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        profile_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['VoiceProfileOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
   export_voice_api_voice_profiles__profile_id__export_get: {
     parameters: {
       query?: {
@@ -5311,6 +5455,130 @@ export interface operations {
         content: {
           'application/json': components['schemas']['VoiceProfileOut'];
         };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  start_tuning_api_voice_profiles__profile_id__tuning_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        profile_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      202: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['JobOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  discard_tuning_api_voice_profiles__profile_id__tuning_delete: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        profile_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['VoiceProfileOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  keep_tuning_api_voice_profiles__profile_id__tuning_keep_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        profile_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['VoiceProfileOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  tuning_sample_api_voice_profiles__profile_id__tuning_samples__arm___index__get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        arm: 'current' | 'tuned';
+        index: number;
+        profile_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
       };
       /** @description Validation Error */
       422: {

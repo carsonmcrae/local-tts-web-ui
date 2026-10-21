@@ -9,7 +9,7 @@ typical they sound), builds and auditions the best few on the same sentences wit
 stores them with their match scores, then builds the speaking styles (questions, dialogue, lively
 lines, narration) from the takes of matching passages. ``finish`` turns one candidate into a
 profile. ``refine`` (the ``voice-styles`` job) builds the styles for a studio voice saved before
-they existed, from the takes it kept.
+they existed, from the takes it kept (``kept_takes``, which fine-tuning reads too).
 Does NOT belong: Takes and session storage (``sessions.py``), profiles (``profiles.py``) or inference.
 """
 
@@ -173,15 +173,11 @@ class StudioService:
         )
 
     def _refine(self, context: JobContext, profile_id: str, builder: VoiceBuilder) -> dict[str, Any]:
-        paths = sorted(self._profiles.takes_dir(profile_id).glob("*.flac"))
-        sources: list[tuple[str | None, QualityReport]] = []
-        for path in paths:
-            samples, rate = read_audio(path)
-            sources.append((prompt_for_number(_number(path)), analyze(trim_silence(samples, rate), rate, LEVEL_RULES)))
-        usable = [i for i, (_, quality) in enumerate(sources) if quality.ok and quality.speech_s >= 2]
-        if not usable:
+        kept = kept_takes(self._profiles.takes_dir(profile_id))
+        if not kept:
             raise ConflictError("This voice has no usable takes left to learn its styles from.", code="no_takes")
-        paths, sources = [paths[i] for i in usable], [sources[i] for i in usable]
+        paths = [path for path, _, _ in kept]
+        sources = [(prompt_id, quality) for _, prompt_id, quality in kept]
         features: list[TakeFeatures] = []
         for start in range(0, len(paths), BATCH):
             context.check()
@@ -264,6 +260,17 @@ class StudioService:
 
 def _number(path: Path) -> int:
     return int(path.stem) if path.stem.isdigit() else 0
+
+
+def kept_takes(folder: Path) -> list[tuple[Path, str | None, QualityReport]]:
+    """A saved studio voice's usable takes, in order, with the passage each read (None: imported) and its quality."""
+    takes = []
+    for path in sorted(folder.glob("*.flac")):
+        samples, rate = read_audio(path)
+        quality = analyze(trim_silence(samples, rate), rate, LEVEL_RULES)
+        if quality.ok and quality.speech_s >= 2:
+            takes.append((path, prompt_for_number(_number(path)), quality))
+    return takes
 
 
 def _style_takes(

@@ -2,10 +2,10 @@
 # Copyright (c) 2026 Carson McRae
 """Purpose: Tests for room tone in the pauses the app adds after sentences and between their pieces.
 
-Scope: A clip with an audible background gets that background (not silence) in its pause, at the same
-level, faded in and out, and the same every time; a clean clip and a clip that is all speech get
-silence; the pause after a rendered sentence and the gap between its narration and quoted speech carry
-it.
+Scope: A clip with an audible background gets steady noise at about its level (not silence) in its pause,
+faded in and out and the same every time, never copies of the clicks or murmur in its quiet moments; a
+clean clip and a clip that is all speech get silence; the pause after a rendered sentence and the gap
+between its narration and quoted speech carry it.
 Does NOT belong: Pauses inside speech (test_voice_styles.py, ``polish``).
 """
 
@@ -44,6 +44,17 @@ def test_a_clip_with_audible_hiss_keeps_it_through_the_pause() -> None:
     assert tone[0] == 0 and tone[-1] == 0  # faded in and out: no clicks against the clip's own fades
     assert np.array_equal(tone, room_tone(clip, RATE, 0.6))  # the same sentence always sounds the same
     assert np.max(np.abs(np.diff(middle))) < 10 ** (-48 / 20) * 12  # joined without jumps
+
+
+def test_clicks_and_murmur_in_the_quiet_moments_are_never_copied() -> None:
+    clip = _speech_with_hiss(-48.0, seconds=4.0)
+    quiet = np.flatnonzero(np.abs(clip) < 0.02)
+    clip[quiet[:: RATE // 7]] = 0.3  # lip clicks in the gaps
+    tone = room_tone(clip, RATE, 1.0)[int(RATE * 0.02) : -int(RATE * 0.02)]
+    rms = np.sqrt(np.mean(tone.astype(np.float64) ** 2))
+    assert np.max(np.abs(tone)) / rms < 6  # Gaussian-like noise, no copied spikes
+    frames = tone[: len(tone) - len(tone) % 240].reshape(-1, 240).astype(np.float64)
+    assert np.std(20 * np.log10(np.sqrt(np.mean(frames**2, axis=1)))) < 2.5  # steady, not murmuring
 
 
 def test_clean_clips_and_all_speech_get_silence() -> None:

@@ -4,87 +4,71 @@
 
 Scope: A cloned voice reproduces the hiss or hum of the recordings it was built from while it speaks, so
 the digital silence added after a sentence (and between a sentence's narration and quoted speech) makes
-that background switch off and on. ``room_tone`` finds a clip's quiet stretches and, when its background
-is audible, joins and repeats them with short crossfades to the length wanted, fading in and out; a clean
-clip (a built-in voice) gets true silence, as before. It is deterministic, so a sentence always sounds the
-same and exports match playback.
+that background switch off and on. ``room_tone`` measures the spectrum and level of a clip's quietest
+moments and, when its background is audible, makes steady noise with that spectrum, a little quieter,
+faded in and out. Nothing of the clip itself is copied, so breaths, lip noises and the tails of words in
+its quiet moments are never repeated. A clean clip (a built-in voice) gets true silence, as before. The
+noise is seeded from the clip, so a sentence always sounds the same and exports match playback.
 Does NOT belong: Trimming or shortening pauses inside speech (``engines/cloned_speech.polish``).
 """
 
 from __future__ import annotations
+
+import zlib
 
 import numpy as np
 import numpy.typing as npt
 
 Float32Array = npt.NDArray[np.float32]  # as in ``ltts.audio``, which uses this module
 
-FRAME_S = 0.01
+FRAME_S = 0.02
 AUDIBLE_DBFS = -66.0  # a quieter background is left as silence
 SPEECH_MARGIN_DB = 20.0  # the background must be this far below the speech to be background, not speech
-QUIET_DB = 4.0  # frames this close to the background's level count as background
-MIN_RUN_FRAMES = 3  # stretches shorter than 30 ms are left out (they are gaps between sounds)
-MIN_TONE_S = 0.08  # with less background than this to repeat, the pause stays silent
-CROSSFADE_S = 0.01
+QUIETEST = 10.0  # percent of the clip's frames, its quietest, that describe the background
+MIN_FRAMES = 4  # with fewer quiet frames than this (80 ms), the pause stays silent
+BELOW_DB = 2.0  # the fill sits this much under the measured background, so it never stands out
+SMOOTH_BINS = 5  # the background's spectrum is smoothed, so no tone of the clip is copied either
+FADE_S = 0.01
 
 
-def _frame_levels(samples: Float32Array, frame: int) -> np.ndarray:
+def _frames(samples: Float32Array, frame: int) -> np.ndarray:
     usable = len(samples) - len(samples) % frame
-    frames = samples[:usable].reshape(-1, frame).astype(np.float64)
-    return 20 * np.log10(np.sqrt(np.mean(frames**2, axis=1)) + 1e-12)
+    return samples[:usable].reshape(-1, frame).astype(np.float64)
 
 
-def _join(parts: list[Float32Array], overlap: int) -> Float32Array:
-    """Pieces of background joined end to start with equal-power crossfades (no clicks)."""
-    if not parts:
-        return np.zeros(0, dtype=np.float32)
-    out = parts[0].astype(np.float32)
-    for part in parts[1:]:
-        n = min(overlap, len(out) // 2, len(part) // 2)
-        if n < 2:
-            out = np.concatenate([out, part])
-            continue
-        t = np.linspace(0.0, np.pi / 2, n, dtype=np.float32)
-        mixed = out[-n:] * np.cos(t) + part[:n] * np.sin(t)
-        out = np.concatenate([out[:-n], mixed, part[n:]])
-    return out.astype(np.float32)
-
-
-def _background(samples: Float32Array, rate: int) -> Float32Array:
-    """The clip's quiet stretches joined together, or nothing when its background is inaudible."""
-    frame = max(int(rate * FRAME_S), 1)
-    if len(samples) < frame * MIN_RUN_FRAMES * 2:
-        return np.zeros(0, dtype=np.float32)
-    levels = _frame_levels(samples, frame)
-    floor, speech = float(np.percentile(levels, 10)), float(np.percentile(levels, 95))
+def _background(samples: Float32Array, rate: int) -> tuple[np.ndarray, float] | None:
+    """The smoothed magnitude spectrum and RMS of the clip's quietest frames, when its background is audible."""
+    frame = max(int(rate * FRAME_S), 2)
+    frames = _frames(samples, frame)[1:-1]  # the clip's own edges are faded, not background
+    if len(frames) < MIN_FRAMES * 3:
+        return None
+    levels = 20 * np.log10(np.sqrt(np.mean(frames**2, axis=1)) + 1e-12)
+    floor, speech = float(np.percentile(levels, QUIETEST)), float(np.percentile(levels, 95))
     if floor < AUDIBLE_DBFS or speech - floor < SPEECH_MARGIN_DB:
-        return np.zeros(0, dtype=np.float32)
-    quiet = levels <= floor + QUIET_DB
-    quiet[:1] = quiet[-1:] = False  # the clip's own edges are faded, not background
-    runs: list[Float32Array] = []
-    start = None
-    for index, is_quiet in enumerate([*quiet, False]):
-        if is_quiet and start is None:
-            start = index
-        elif not is_quiet and start is not None:
-            if index - start >= MIN_RUN_FRAMES:
-                runs.append(samples[start * frame : index * frame])
-            start = None
-    tone = _join(runs, int(rate * CROSSFADE_S))
-    return tone if len(tone) >= rate * MIN_TONE_S else np.zeros(0, dtype=np.float32)
+        return None
+    quiet = frames[levels <= floor]
+    if len(quiet) < MIN_FRAMES:
+        return None
+    power = np.mean(np.abs(np.fft.rfft(quiet * np.hanning(frame), axis=1)) ** 2, axis=0)
+    spectrum = np.sqrt(np.convolve(power, np.ones(SMOOTH_BINS) / SMOOTH_BINS, mode="same"))
+    return spectrum, float(np.sqrt(np.mean(quiet**2)))
 
 
 def room_tone(samples: Float32Array, rate: int, seconds: float) -> Float32Array:
-    """``seconds`` of the clip's own background (faded in and out), or of silence for a clean clip."""
+    """``seconds`` of steady noise shaped like the clip's background (faded in and out), or silence."""
     length = max(int(rate * seconds), 0)
-    background = _background(samples, rate) if length else np.zeros(0, dtype=np.float32)
-    if background.size == 0:
+    background = _background(samples, rate) if length else None
+    if background is None:
         return np.zeros(length, dtype=np.float32)
-    overlap = int(rate * CROSSFADE_S)
-    parts = [background]
-    while sum(len(part) for part in parts) - overlap * (len(parts) - 1) < length:
-        parts.append(background[::-1] if len(parts) % 2 else background)  # reversed copies repeat less audibly
-    tone = _join(parts, overlap)[:length].copy()
-    fade = min(int(rate * CROSSFADE_S), length // 2)
+    spectrum, rms = background
+    size = 1 << max(int(np.ceil(np.log2(length))), 1)
+    rng = np.random.default_rng(zlib.crc32(samples.tobytes()))  # the same clip always gets the same noise
+    white = np.fft.rfft(rng.standard_normal(size))
+    shape = np.interp(np.linspace(0, 1, len(white)), np.linspace(0, 1, len(spectrum)), spectrum)
+    noise = np.fft.irfft(white * shape, size)[:length]
+    level = float(np.sqrt(np.mean(noise**2)))
+    tone = (noise * (rms * 10 ** (-BELOW_DB / 20) / level if level > 0 else 0.0)).astype(np.float32)
+    fade = min(int(rate * FADE_S), length // 2)
     if fade:
         ramp = np.linspace(0.0, 1.0, fade, dtype=np.float32)
         tone[:fade] *= ramp

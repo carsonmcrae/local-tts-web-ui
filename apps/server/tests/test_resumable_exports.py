@@ -74,14 +74,16 @@ def test_a_paused_export_resumes_with_only_the_missing_sentences(
 ) -> None:
     doc_id = document(client)
     job_id: dict[str, str] = {}
+    known = threading.Event()  # the export can reach its third sentence before its id is known here
 
     def pause_after_three(n: int, _text: str) -> None:
-        if n == 3:
+        if n == 3 and known.wait(10):
             services.exports.pause(job_id["id"])
 
     hook(engines["kokoro"], pause_after_three)
     started = client.post("/api/exports", json=request(doc_id)).json()
     job_id["id"] = started["id"]
+    known.set()
     paused = wait_job(client, started["id"])
     assert paused["status"] == "paused"
     described = client.get(f"/api/exports/{started['id']}").json()

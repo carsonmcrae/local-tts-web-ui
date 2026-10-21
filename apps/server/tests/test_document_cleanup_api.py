@@ -13,6 +13,7 @@ Does NOT belong: The detection rules (test_document_cleanup.py) or the reader UI
 
 from __future__ import annotations
 
+import threading
 from typing import Any
 
 from fastapi.testclient import TestClient
@@ -159,13 +160,15 @@ def test_a_resumed_export_makes_a_saved_sentence_again_when_what_it_says_changed
 ) -> None:
     doc_id = paste(client, f"{WAR} Nobody came back. The town slept. Morning came.")
     job: dict[str, str] = {}
+    started = threading.Event()  # the export can reach its second sentence before its id is known here
 
     def pause_after_two(n: int, _text: str) -> None:
-        if n == 2:
+        if n == 2 and started.wait(10):
             services.exports.pause(job["id"])
 
     hook(engines["kokoro"], pause_after_two)
     job["id"] = start_export(client, doc_id)
+    started.set()
     assert wait_job(client, job["id"])["status"] == "paused"
     cleanup(client, doc_id, "undo")  # the first sentence, saved already, now reads its footnote marker
     skip(client, doc_id, [3], True)  # and the last one is left out

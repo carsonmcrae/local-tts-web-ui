@@ -200,3 +200,52 @@ when a choice changes the stack, a trust boundary, data storage or the setup exp
   - A whole sentence is styled.
   - Deleting a voice hands its sentences back.
   - The player refetches audio when styling changes.
+
+## ADR-14 (proposed, awaiting the owner's decision): A local language model may suggest speakers
+
+- **Status:** Proposed. This would amend ADR-6, so it is not in effect: the module exists and is
+  tested (`documents/speaker_suggestions.py`), but nothing in the app calls it until this is accepted.
+- **Context:** Dialogue tags (ADR-13, `delivery.py`) name the speaker of many quoted lines, but not of
+  untagged ones ("Quite sure."). Readers who cast characters have to assign those by hand. A small
+  local model can often tell from context who is speaking. ADR-6 keeps every LLM out of the pipeline
+  so document text can never act as instructions.
+- **Proposed decision:**
+  - **Off by default**, turned on in Settings with the address of a model server the reader already
+    runs. Only a loopback `http://` address is accepted (`127.0.0.1`, `localhost`, `[::1]`): no
+    cloud provider, no LAN host, no redirects, no proxies. The app never downloads a model.
+  - **Suggestions only.** The model is asked only about quoted lines without a speaker, and only to
+    choose among the names dialogue tags already found (or none). Its answer is parsed as JSON;
+    anything else (other lines, invented names, extra fields) is dropped. Suggestions are shown for the
+    reader to accept; nothing changes until they do.
+  - **No capabilities.** The request carries no tools or functions; the answer can't name a voice,
+    change a setting, read a file or trigger a request. Document text is sent only as a JSON value,
+    and the instructions say to treat it as text. Even a fully "injected" answer can do no more than
+    suggest a wrong speaker from the known names.
+- **Alternatives:** Keep ADR-6 as it is (manual casting only), the default if this isn't accepted; a
+  cloud model (rejected: sends book text off the computer); letting the model invent names (rejected:
+  an unchecked answer could then put arbitrary text in the cast).
+- **Consequences:** ADR-6 would read "no LLM in extraction, normalisation or synthesis; one optional,
+  local, suggestion-only use for speakers". The threat model gains a row for a compromised local model
+  server (worst case: wrong suggestions the reader can ignore).
+
+## ADR-15 (proposed, awaiting the owner's decision): Cloud voice providers, disabled and isolated
+
+- **Status:** Proposed. Nothing that talks to a cloud provider exists in the app.
+- **Context:** Some readers may want a commercial voice for a few documents. Sending text to a provider
+  is the opposite of TTSNative's promise (ADR-7), so it needs a deliberate boundary before any code.
+- **Proposed decision:**
+  - **No provider is built in or enabled.** A provider would be an engine marked `remote`, listed
+    under its own "Cloud voices (sends text off this computer)" heading, never a default voice, never
+    chosen automatically (exports, the speech API and reading fall back to local voices).
+  - **Per-provider, explicit consent** naming what is sent (the sentences being read) and where, given
+    before the first request and revocable; the key is stored like the Audiobookshelf key (encrypted
+    on Windows) and never shown again.
+  - **Per-document opt-in.** A document is read by a cloud voice only after the reader picks one for
+    it; studio voices and voice recordings are never uploaded.
+  - **Visible while it happens:** a "Sending text to <provider>" indicator, like the speech API's.
+  - **No spending surprises:** a per-provider character budget the reader sets, enforced before
+    sending.
+- **Alternatives:** Never support cloud voices (the default if this isn't accepted); a plugin system
+  (rejected: executable plugins are out, see ADR-12).
+- **Consequences:** If accepted, a provider is added as a reviewed engine with tests that no text is
+  sent without consent and that removing consent stops it immediately.

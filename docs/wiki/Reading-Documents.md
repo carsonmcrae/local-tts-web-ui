@@ -4,7 +4,7 @@
 
 | Format       | Extensions         | How it's read                                                                                                 |
 | ------------ | ------------------ | ------------------------------------------------------------------------------------------------------------- |
-| PDF          | `.pdf`             | Text PDFs. Lines are joined back into paragraphs; running headers, footers and page numbers are skipped.      |
+| PDF          | `.pdf`             | Text PDFs. Lines are joined back into paragraphs; running headers, page numbers and footnotes are skipped.    |
 | Word         | `.docx`            | Paragraphs and tables in document order; tables are read row by row. Macros and embedded objects are ignored. |
 | EPUB 2 and 3 | `.epub`            | The book's files in reading order. Scripts and styles are ignored.                                            |
 | Markdown     | `.md`, `.markdown` | Links are read as their text and images as their alt text. Code blocks are skipped with a short spoken note.  |
@@ -87,24 +87,40 @@ for them and skips them when reading. Nothing is deleted, and you can undo it.
 - **Page numbers**: "12", "Page 12", "12 of 300", "- 12 -" or Roman numerals at the top or bottom of
   a PDF page, when they count along with the pages. In other formats, paragraphs that only say
   "Page 12", "12 of 300" or "- 12 -", when at least three of them count up through the document.
+- **Footnotes** (PDFs): the lines a page ends with when they're set in noticeably smaller type than
+  the text, sit below all of it, and start with a number or symbol ("1", "12.", "\*", "†") that marks a
+  word on the same page ("ended.1", "war¹"). Each note is kept as a paragraph of its own after the
+  page's text. A note continued from the previous page, or set in the text's own size, is read.
 - **Footnote markers**: a superscript number after a word ("war¹") isn't spoken, though the word is.
   A number glued after punctuation ("ended.12") is left out only when the document has a Notes
-  section holding that note. Bracketed numbers such as "[12]" are never spoken anyway.
+  section, or a PDF footnote, holding that note.
+- **Citation markers**: numbers in brackets after a word or a punctuation mark, such as "[12]",
+  "[3, 4]", "[5–7]" or "[12, 15–17]", followed by a space, punctuation or the end of the sentence. The
+  document must have a References or Bibliography section, or at least three of them.
 
-It errs on the side of reading: PDFs of fewer than three pages are left alone, and years,
-measurements (20 m², 3.5 kg), decimals, list numbers, chapter numbers, chapter titles from the PDF's
-outline, verse numbers and a heading that appears on a couple of pages are kept.
+It errs on the side of reading: PDFs of fewer than three pages get no header or page-number finds,
+and years, measurements (20 m², 3.5 kg), decimals, list numbers, chapter numbers, chapter titles from
+the PDF's outline, verse numbers and a heading that appears on a couple of pages are kept. Brackets
+in code and mathematics are always read: `array[3]`, `x[i+1]`, `matrix[2][3]`, `list[-1]`, an
+interval such as [0, 1], "returns [3]", a reference list's own "[1] Smith", and any sentence with
+operators such as `=` or `+` in it, where superscripts aren't footnote markers either (a² + b² = c²).
 
 Skipped sentences stay in the text, greyed out and labelled **skipped**. Playback and exports both
-leave them out, and footnote markers stay in the text too: only what's spoken changes. A note at the
-top of the reader says what was skipped. Open it (**Review**) to see everything by reason and choose
-any sentence to show it in the text, press **Read them all again** to undo the cleanup, or
+leave them out, and footnote and citation markers stay in the text too: only what's spoken changes. A
+note at the top of the reader says what was skipped. Open it (**Review**) to see everything by reason
+and choose any sentence to show it in the text, press **Read them all again** to undo the cleanup, or
 **Skip them again** to put it back.
 
 To skip any sentence yourself, select it, choose **Voice & effect** and press **Skip when reading**.
 **Read this sentence** brings back a skipped one, including one the cleanup skipped. Sentences you
-skip yourself stay skipped when you undo the cleanup. Documents added before this version aren't
-changed.
+skip yourself stay skipped when you undo the cleanup.
+
+The listening time on library cards and in the reader counts only what is read aloud, and changes as
+soon as you skip a sentence, read one again or undo the cleanup.
+
+Documents added before this version aren't searched again. Numbers in brackets such as "[12]" are now
+read aloud in them (they used to be dropped, and array indexes with them); add a document again to
+have its citation markers and footnotes found.
 
 ## Pasting text
 

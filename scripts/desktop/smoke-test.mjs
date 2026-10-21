@@ -205,7 +205,10 @@ async function main() {
     await sleep(500);
   check(!existsSync(path.join(installDir, 'TTSNative.exe')), 'the app was removed');
   check(existsSync(path.join(dataDir, 'ltts.sqlite3')), `your data was kept (${dataDir})`);
-  check(spawnSync(REG, ['query', key]).status !== 0, 'Installed Apps no longer lists TTSNative');
+  // The uninstaller finishes in the background (it runs from a temporary copy of itself).
+  const listed = () => spawnSync(REG, ['query', key]).status === 0;
+  while (Date.now() < deadline + 30_000 && listed()) await sleep(500);
+  check(!listed(), 'Installed Apps no longer lists TTSNative');
 }
 
 try {

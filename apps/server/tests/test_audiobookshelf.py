@@ -4,9 +4,9 @@
 
 Scope: The API key is saved encrypted (or owner-only), never returned or sent to anyone but the
 configured server; settings validate the address; "test connection" lists libraries and folders;
-sending a finished M4B uploads it with its cover, title and author through a background job; a ZIP
-is refused; refused keys, redirects and unreachable servers fail with clear messages and never echo
-the key; forgetting removes the key.
+sending a finished M4B uploads it with its cover (when it has one), title and author through a
+background job, whatever the server answers; a ZIP is refused; refused keys, redirects and unreachable
+servers fail with clear messages and never echo the key; forgetting removes the key.
 Does NOT belong: Building the audiobook (test_audiobook_formats.py).
 """
 
@@ -21,6 +21,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from conftest import wait_job
+from ltts import secrets as secrets_module
 from ltts.container import Services
 from ltts.secrets import SecretStore
 
@@ -41,6 +42,30 @@ def test_the_secret_store_never_keeps_plain_text_on_windows(tmp_path: Path) -> N
         store.set("../escape", "x")
 
 
+def test_the_secret_store_protects_secrets_the_way_each_platform_can(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    store = SecretStore(tmp_path / "secrets")
+    monkeypatch.setattr(secrets_module, "_WINDOWS", False)  # macOS and Linux: a file only its owner may read
+    store.set("plain", KEY)
+    plain = tmp_path / "secrets" / "plain.bin"
+    assert plain.read_bytes() == KEY.encode() and store.get("plain") == KEY
+    if sys.platform != "win32":
+        assert plain.stat().st_mode & 0o777 == 0o600
+
+    def dpapi(data: bytes, *, protect: bool) -> bytes:
+        if not protect and data == b"from another account":
+            raise OSError("The secret couldn't be read on this account.")
+        return bytes(byte ^ 0x5A for byte in data)
+
+    monkeypatch.setattr(secrets_module, "_WINDOWS", True)  # Windows: DPAPI, for this account only
+    monkeypatch.setattr(secrets_module, "_dpapi", dpapi)
+    store.set("locked", KEY)
+    assert KEY.encode() not in (tmp_path / "secrets" / "locked.bin").read_bytes() and store.get("locked") == KEY
+    (tmp_path / "secrets" / "copied.bin").write_bytes(b"from another account")
+    assert store.get("copied") is None and store.has("copied")  # set, but unreadable here
+
+
 class FakeShelf:
     """A stand-in Audiobookshelf server that records what it received."""
 
@@ -55,6 +80,8 @@ class FakeShelf:
         if request.url.path == "/api/libraries":
             folder = {"id": "fol_1", "fullPath": "/audiobooks"}
             return httpx.Response(200, json={"libraries": [{"id": "lib_1", "name": "Books", "folders": [folder]}]})
+        if request.url.path == "/api/upload" and b'filename="cover' not in request.read():
+            return httpx.Response(200, text="uploaded")  # an answer that isn't JSON is as good as none
         return httpx.Response(200)
 
 
@@ -127,6 +154,17 @@ def test_sending_a_finished_export_uploads_it_with_its_cover(
     for field in (b'name="title"', b"Short", b'name="author"', b"A. Writer", b"lib_1", b"fol_1",
                   b'filename="Short.mp3"', b'filename="cover.png"'):  # fmt: skip
         assert field in body
+
+
+def test_an_export_without_a_cover_is_sent_on_its_own(client: TestClient, shelf: FakeShelf) -> None:
+    configure(client)
+    doc_id = client.post("/api/documents/text", json={"text": "One. Two.", "title": "Bare"}).json()["id"]
+    body = {"documentId": doc_id, "voiceId": "kokoro:alpha", "format": "mp3"}
+    export = wait_job(client, client.post("/api/exports", json=body).json()["id"])
+    sent = wait_job(client, client.post(f"/api/exports/{export['id']}/audiobookshelf").json()["id"])
+    assert sent["status"] == "succeeded" and sent["result"] == {"sent": "Bare.mp3"}
+    uploaded = shelf.requests[-1].read()
+    assert b'filename="Bare.mp3"' in uploaded and b"cover" not in uploaded
 
 
 def test_failures_are_clear_and_never_echo_the_key(

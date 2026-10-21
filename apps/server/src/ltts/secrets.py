@@ -21,6 +21,7 @@ from ltts.common import new_id
 
 _NAME = re.compile("^[a-z0-9-]{1,40}$")
 _UI_FORBIDDEN = 0x01
+_WINDOWS = sys.platform == "win32"  # DPAPI here; owner-only files elsewhere (tests exercise both ways)
 
 
 class _Blob(ctypes.Structure):
@@ -54,11 +55,11 @@ class SecretStore:
 
     def set(self, name: str, value: str) -> None:
         data = value.encode("utf-8")
-        blob = _dpapi(data, protect=True) if sys.platform == "win32" else data
+        blob = _dpapi(data, protect=True) if _WINDOWS else data
         target = self._path(name)
         temporary = self._folder / f".{new_id()}.tmp"
         temporary.write_bytes(blob)
-        if sys.platform != "win32":
+        if not _WINDOWS:
             temporary.chmod(0o600)
         temporary.replace(target)
 
@@ -68,7 +69,7 @@ class SecretStore:
             return None
         blob = path.read_bytes()
         try:
-            data = _dpapi(blob, protect=False) if sys.platform == "win32" else blob
+            data = _dpapi(blob, protect=False) if _WINDOWS else blob
         except OSError:
             return None
         return data.decode("utf-8")

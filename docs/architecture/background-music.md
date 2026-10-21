@@ -115,8 +115,15 @@ play:
   restart music is off with the track and both levels kept.
 - **Graph:** after every scenario only the volume gain stays wired (plus one source and one fade
   while a track plays); one context for the whole session; at most two sources audible at once.
-- **Long session:** 12 minutes, about 150 sentence ends, a track switch and a pause each minute: one
-  source live throughout, two new sources a minute and nothing else, JS heap 33 MB at both ends.
+- **Long session:** 12 minutes on a 481-sentence document (about 240 sentence ends), a track switch
+  and a 3 s pause every minute, memory read after a forced garbage collection: no dropout in 11,262
+  level samples (one every 50 ms), never more than two sources audible, one live between switches,
+  25 sources started in all and every retired one released, music peaking at -31 dBFS at the
+  default 10 %, JS heap flat (34–52 MB). Browser private memory went from 293 MB to 489 MB (peak
+  503 MB) and was flat from minute 7; the same session with narration only went from 250 MB to
+  346 MB and was still rising at 8 MB a minute (growth on the narration side, present without this
+  branch). The music's own share is therefore about 100 MB: the two decoded tracks the engine keeps
+  (36–69 MB each) plus the one playing.
 - **Elsewhere:** all tracks decode in Firefox 155; Playwright's Windows WebKit build has no Web Audio
   and shows the "isn't available" message (real Safari wasn't tested); no requests leave the machine.
 

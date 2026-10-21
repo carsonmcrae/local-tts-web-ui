@@ -10,8 +10,8 @@ adapters measured were made earlier by the fine-tuning experiment.
 Under today's design, a studio voice uses the audio of about 14 takes and two averaged numbers from
 the rest. Recording all 48 passages measured no better than an early voice built from 13 takes, or
 than one good take from the same session. The time that earns its place is the session's careful
-setup: the same microphone, a quiet room and clean takes. More passages don't add to it. The listening
-panel below is the real test, and it hasn't been scored yet.
+setup: the same microphone, a quiet room and clean takes. More passages don't add to it. The blind
+listening panel agreed (see [What the owner heard](#what-the-owner-heard-blind-panel-2026-10-21)).
 
 - **What a session is.** The owner's 48 takes are 7.6 minutes of audio (about 5.6 minutes of
   speech), not 30. The app's "30–45 minutes" is the time a session takes, including setup and
@@ -168,6 +168,56 @@ ten items, each read by A, A2, B, C, D and E under numbers shuffled for every it
 
 - If C doesn't beat A2 and B by ear, the 48-passage session isn't earning its time.
 - If D beats C on most items without more garbled marks, fine-tuning is worth pursuing.
+
+## What the owner heard (blind panel, 2026-10-21)
+
+One listener, ten items, each voice rated blind for likeness and naturalness (1–5):
+
+| Voice                       | Likeness    | Naturalness | Best (of 10) | Garbled |
+| --------------------------- | ----------- | ----------- | ------------ | ------- |
+| B: early voice, 13 takes    | 3.60 ± 0.32 | 3.50 ± 0.53 | 2            | 1       |
+| E: timbre from three takes  | 3.50 ± 0.44 | 3.30 ± 0.30 | 2            | 1       |
+| C: complete voice           | 3.40 ± 0.52 | 3.10 ± 0.54 | 3            | 1       |
+| D: C + fine-tune adapter    | 3.30 ± 0.59 | 3.10 ± 0.62 | 2            | 4       |
+| A2: one take of the session | 3.50 ± 0.44 | 2.50 ± 0.60 | 0            | 2       |
+| A: quick voice, another day | 1.70 ± 0.66 | 2.90 ± 0.74 | 1            | 1       |
+
+Paired sign tests over the items:
+
+- **B over A:** 9 better, 1 worse (p = 0.02): the studio session beats a quick clone clearly.
+- **C over A:** 7 better, 2 worse (p = 0.18).
+- **C over B:** 3 better, 4 worse, 3 tied: no difference.
+- **D over C:** 4 better, 5 worse, and D was marked garbled most often.
+
+So the panel agrees with the measurements:
+
+- careful recording is what makes a studio voice sound like the speaker;
+- about a dozen takes do as well as 42;
+- the fine-tune doesn't help yet.
+
+The owner's notes, checked:
+
+- **Questions and exclamations lacked inflection.** This is not the recordings.
+  - The owner's question takes moved 3.7–5.9 semitones and the exclamations up to 5.7, all clean
+    (35–38 dB signal-to-noise).
+  - The generated ones moved 1.7–2.9.
+  - Two levers were tried on six unseen sentences with three seeds each (clips in
+    `.tools/hardening/expressive/`):
+    - livelier sampling (temperature 0.95) lost the questions' rise (+1.6 → −0.5 st);
+    - a style prompt from the single most animated take was flatter still.
+  - Turbo has no expression control (it ignores `exaggeration`). The original Chatterbox 0.5B keeps
+    it, and testing that needs the owner's approval to download its weights.
+- **Unusual words** (gnocchi, quinoa, Nguyen) were garbled by every voice, including the quick clone.
+  Pronunciation comes from the engine's text model, not from the recordings. The pronunciation
+  dictionary (a respelling per word) is the fix today.
+- **Static during speech but silence in the pauses.** This was the app: it added digital silence
+  after sentences and between narration and quotes. Fixed: pauses now carry the clip's own room
+  tone, and digital silence in a passage fell from 8 % to the fades alone.
+- **Style changes didn't flow, and calm lines sounded least like the owner.** Each sentence takes
+  its style prompt on its own, with no memory of the one before. That is a limit of zero-shot
+  synthesis sentence by sentence; nothing was changed.
+- **An inner thought read like quoted speech.** Unquoted sentences are read as narration, and
+  inner monologue isn't detected. A sentence can be given the calm style by hand.
 
 ## Fine-tuning (`feat/voice-tune`), reviewed
 

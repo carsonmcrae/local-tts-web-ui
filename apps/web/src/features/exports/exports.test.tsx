@@ -14,9 +14,11 @@ import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { type ExportQueue, exportKeys } from '@/api/exportQueries';
+import { keys } from '@/api/queries';
 import type { ExportOut, JobOut, ShelfSettings } from '@/api/types';
-import { mockApi, renderWithApp } from '@/test/render';
+import { json, mockApi, renderWithApp } from '@/test/render';
 import ExportsPage from './ExportsPage';
+import { exportResult } from './exportText';
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -137,6 +139,29 @@ describe('Exports page', () => {
     expect(screen.getByRole('link', { name: 'Go to your library' })).toHaveAttribute('href', '/library'); // prettier-ignore
   });
 
+  it('explains when the list cannot be loaded', async () => {
+    mockApi({ 'GET /api/exports': json({ error: { code: 'io_error', message: 'The exports folder cannot be read.' } }, 500) }); // prettier-ignore
+    renderWithApp(<ExportsPage />);
+    expect(await screen.findByText('The exports folder cannot be read.')).toBeInTheDocument();
+  });
+
+  it('names an export without a title and counts its saved sentences before the total is known', async () => {
+    const waiting = job({ id: B, status: 'queued', progress: 0, message: 'Waiting its turn (2 exports ahead)…' }); // prettier-ignore
+    mockApi({
+      'GET /api/exports': [item({ job: waiting, title: '', sentences: 0, queuePosition: 3 })],
+    });
+    renderWithApp(<ExportsPage />);
+    const card = await screen.findByRole('article', { name: 'Untitled export' });
+    expect(within(card).getByRole('heading', { level: 3 })).toHaveTextContent('Untitled export');
+    expect(card).toHaveTextContent('3rd in line');
+    expect(card).toHaveTextContent('0 sentences saved');
+  });
+
+  it("reads a finished export's result only when it names the file", () => {
+    expect(exportResult(job({ result: { sizeBytes: 3e7, durationS: 3600 } }))).toBeNull();
+    expect(exportResult(job({ result: null }))).toBeNull();
+  });
+
   it('cancels a paused export only after confirming its saved sentences are discarded', async () => {
     let paused = job({ status: 'paused', progress: 0.4, message: 'Paused' });
     const { calls } = mockApi({
@@ -221,6 +246,33 @@ describe('Send to Audiobookshelf', () => {
     expect(
       screen.queryByRole('button', { name: 'Send to Audiobookshelf' }),
     ).not.toBeInTheDocument();
+  });
+
+  it('says why an upload failed, and offers to send again once a canceled one is over', async () => {
+    const upload = (id: string, status: JobOut['status'], message: string) =>
+      job({ id, kind: 'audiobookshelf', status, message });
+    const outcomes: Record<string, JobOut> = {
+      [C]: upload(C, 'failed', 'Audiobookshelf refused the file.'),
+      [D]: upload(D, 'canceled', 'Canceled'),
+    };
+    const started = [C, D];
+    mockApi({
+      'GET /api/exports': [exportsList[0]],
+      'GET /api/integrations/audiobookshelf': { configured: true, url: 'http://shelf.local', libraryId: 'lib', folderId: 'fold', hasKey: true }, // prettier-ignore
+      'POST /api/exports/': () => upload(started.shift() ?? '', 'queued', 'Waiting to start…'),
+      'GET /api/jobs/': (url: URL) => outcomes[url.pathname.split('/').pop() ?? ''],
+    });
+    const { queryClient } = renderWithApp(<ExportsPage />);
+    const user = userEvent.setup();
+    const send = await screen.findByRole('button', { name: 'Send to Audiobookshelf' });
+    await user.click(send);
+    const problem = await screen.findByText('Audiobookshelf refused the file.');
+    expect(problem).toHaveClass('text-danger');
+    expect(send).toBeEnabled();
+    await user.click(send); // the next upload is canceled before it starts: nothing to report
+    await waitFor(() => expect(queryClient.getQueryData(keys.job(D))).toMatchObject({ status: 'canceled' })); // prettier-ignore
+    expect(problem).toHaveTextContent('');
+    expect(send).toBeEnabled();
   });
 
   it('explains why an upload could not start', async () => {

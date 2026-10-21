@@ -12,11 +12,18 @@ import { Banner } from '@/components/ui/Feedback';
 import { formatBytes, pluralize } from '@/lib/format';
 
 const ORDINAL = new Intl.PluralRules('en-US', { type: 'ordinal' });
-const SUFFIX: Record<string, string> = { one: 'st', two: 'nd', few: 'rd', other: 'th' };
+const SUFFIX: Record<Intl.LDMLPluralRule, string> = {
+  zero: 'th',
+  one: 'st',
+  two: 'nd',
+  few: 'rd',
+  many: 'th',
+  other: 'th',
+};
 
 /** 1 → "Next in line", 3 → "3rd in line". */
 export function placeText(place: number): string {
-  return place === 1 ? 'Next in line' : `${place}${SUFFIX[ORDINAL.select(place)] ?? 'th'} in line`;
+  return place === 1 ? 'Next in line' : `${place}${SUFFIX[ORDINAL.select(place)]} in line`;
 }
 
 export function QueueNotice({ queue }: Readonly<{ queue: ExportQueue | undefined }>) {

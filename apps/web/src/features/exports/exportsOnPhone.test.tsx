@@ -37,12 +37,17 @@ describe('Exports on a paired phone', () => {
           job: job({ id: 'b'.repeat(32), status: 'paused', progress: 0.3, message: 'Paused' }),
           title: 'Old book', savedSentences: 120, workingBytes: 5_000_000, stale: true,
         }),
+        item({
+          job: job({ id: 'c'.repeat(32), status: 'running', progress: 0.5, message: 'Generated 4 of 8' }),
+          title: 'New book', savedSentences: 4, sentences: 8,
+        }),
       ],
       'GET /api/integrations/audiobookshelf': { configured: true, hasKey: true, url: 'http://shelf', libraryId: 'l', folderId: 'f' }, // prettier-ignore
     }); // prettier-ignore
     renderWithApp(<ExportsPage />);
     expect(await screen.findByRole('link', { name: /Download/ })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Resume/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Pause' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Delete file/ })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Cancel export/ })).not.toBeInTheDocument();
     expect(

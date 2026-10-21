@@ -165,6 +165,7 @@ function Reader({ doc }: Readonly<{ doc: DocumentDetail }>) {
               documentId={doc.id}
               styling={styling.data}
               activeIndex={isLoaded ? state.segmentIndex : null}
+              voiceId={state.voiceId}
               onChanged={stylingChanged}
             />
             {multiSection ? (
@@ -194,6 +195,7 @@ function Reader({ doc }: Readonly<{ doc: DocumentDetail }>) {
           documentId={doc.id}
           root={textRoot}
           styles={styleByIndex}
+          voiceId={state.voiceId}
           onChanged={stylingChanged}
         />
         <SectionPager

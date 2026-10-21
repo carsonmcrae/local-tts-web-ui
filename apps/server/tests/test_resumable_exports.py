@@ -58,6 +58,17 @@ def hook(engine: FakeEngine, on_call: Callable[[int, str], None]) -> None:
     engine.synthesize = synthesize  # type: ignore[method-assign]
 
 
+def paused_export(client: TestClient, services: Services, engine: FakeEngine, after: int) -> tuple[str, str]:
+    """Start an export that pauses itself after ``after`` sentences; returns (document, job)."""
+    doc_id = document(client)
+    job_id: dict[str, str] = {}
+    hook(engine, lambda n, _t: services.exports.pause(job_id["id"]) if n == after else None)
+    started = client.post("/api/exports", json=request(doc_id)).json()
+    job_id["id"] = started["id"]
+    wait_job(client, started["id"])
+    return doc_id, started["id"]
+
+
 def test_a_paused_export_resumes_with_only_the_missing_sentences(
     client: TestClient, services: Services, engines: dict[str, FakeEngine]
 ) -> None:
@@ -89,33 +100,23 @@ def test_a_paused_export_resumes_with_only_the_missing_sentences(
 def test_an_interrupted_export_resumes_after_a_restart(
     client: TestClient, services: Services, engines: dict[str, FakeEngine]
 ) -> None:
-    doc_id = document(client)
-    job_id: dict[str, str] = {}
-    hook(engines["kokoro"], lambda n, _t: services.exports.pause(job_id["id"]) if n == 4 else None)
-    started = client.post("/api/exports", json=request(doc_id)).json()
-    job_id["id"] = started["id"]
-    wait_job(client, started["id"])
-    services.jobs.mark(started["id"], JobStatus.INTERRUPTED, "Stopped when the app shut down.")  # as after a crash
+    _, job_id = paused_export(client, services, engines["kokoro"], after=4)
+    services.jobs.mark(job_id, JobStatus.INTERRUPTED, "Stopped when the app shut down.")  # as after a crash
     assert client.get("/api/exports").json()[0]["job"]["status"] == "interrupted"
     before = len(engines["kokoro"].calls)
-    client.post(f"/api/exports/{started['id']}/resume")
-    assert wait_job(client, started["id"])["status"] == "succeeded"
+    client.post(f"/api/exports/{job_id}/resume")
+    assert wait_job(client, job_id)["status"] == "succeeded"
     assert len(engines["kokoro"].calls) - before == 4
 
 
 def test_a_restyled_sentence_is_generated_again_on_resume(
     client: TestClient, services: Services, engines: dict[str, FakeEngine]
 ) -> None:
-    doc_id = document(client)
-    job_id: dict[str, str] = {}
-    hook(engines["kokoro"], lambda n, _t: services.exports.pause(job_id["id"]) if n == 3 else None)
-    started = client.post("/api/exports", json=request(doc_id)).json()
-    job_id["id"] = started["id"]
-    wait_job(client, started["id"])
+    doc_id, job_id = paused_export(client, services, engines["kokoro"], after=3)
     client.put(f"/api/documents/{doc_id}/styles", json={"indexes": [1], "effect": "radio"})  # a saved sentence
     before = len(engines["kokoro"].calls)
-    client.post(f"/api/exports/{started['id']}/resume")
-    assert wait_job(client, started["id"])["status"] == "succeeded"
+    client.post(f"/api/exports/{job_id}/resume")
+    assert wait_job(client, job_id)["status"] == "succeeded"
     assert len(engines["kokoro"].calls) - before == 6  # the five missing sentences and the restyled one
 
 

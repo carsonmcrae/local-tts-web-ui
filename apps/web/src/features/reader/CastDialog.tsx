@@ -1,39 +1,46 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 Carson McRae
 /**
- * Purpose: The document's cast: who reads its dialogue, and the sentences given their own voice or effect.
- * Scope: A "Voices & effects" button opening a dialog that explains how to style sentences (select
- *   text, or style the sentence being read), chooses the voice for all quoted dialogue, counts the
- *   styled sentences and clears them all. The player then fetches the new audio.
- * Does NOT belong: Styling chosen sentences (SentenceStyling) or synthesis.
+ * Purpose: The document's cast: who reads its dialogue and characters, and the sentences styled apart.
+ * Scope: A "Voices & effects" button opening a dialog that:
+ *   - explains how to style sentences (select text, or style the sentence being read);
+ *   - chooses the voice for all quoted dialogue, and whether quoted speech inside a narrated sentence
+ *     gets that voice while the narration keeps the reading voice;
+ *   - gives the book's characters their own voices (CharacterCast);
+ *   - counts the styled sentences and clears them all.
+ *   The player then fetches the new audio.
+ * Does NOT belong: Styling chosen sentences (StyleSentencesDialog) or synthesis.
  */
 import { Drama } from 'lucide-react';
 import { useState } from 'react';
 import { describeError } from '@/api/client';
 import { useVoices } from '@/api/queries';
-import { useDialogueVoice, useStyleSentences } from '@/api/stylingQueries';
+import { useCast, useStyleSentences } from '@/api/stylingQueries';
 import type { DocumentStyles, SentenceStyle } from '@/api/types';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
 import { Banner } from '@/components/ui/Feedback';
-import { Field, Select } from '@/components/ui/Field';
-import { StyleSentencesDialog } from './SentenceStyling';
+import { Field, Select, Switch } from '@/components/ui/Field';
+import { CharacterCast } from './CharacterCast';
+import { StyleSentencesDialog, voiceLabel } from './StyleSentencesDialog';
 
 export function CastButton({
   documentId,
   styling,
   activeIndex,
+  voiceId,
   onChanged,
 }: Readonly<{
   documentId: string;
   styling: DocumentStyles | undefined;
   activeIndex: number | null;
+  voiceId: string;
   onChanged: () => void;
 }>) {
   const [open, setOpen] = useState(false);
   const [styleActive, setStyleActive] = useState(false);
   const voices = useVoices();
-  const dialogue = useDialogueVoice(documentId);
+  const cast = useCast(documentId);
   const clear = useStyleSentences(documentId);
   const styled = styling?.segments ?? [];
   const byIndex = new Map<number, SentenceStyle>(styled.map((style) => [style.index, style]));
@@ -71,29 +78,39 @@ export function CastButton({
           )}
           <Field
             label="Dialogue voice"
-            hint="Reads every sentence with quoted speech, unless the sentence has its own voice."
+            hint="Reads quoted speech, unless the sentence or its character has a voice of its own."
           >
             {({ id, describedBy }) => (
               <Select
                 id={id}
                 aria-describedby={describedBy}
                 value={styling?.dialogueVoiceId ?? ''}
-                disabled={dialogue.isPending}
+                disabled={cast.isPending}
                 onChange={(event) =>
-                  dialogue.mutate(event.target.value || null, { onSuccess: onChanged })
+                  cast.mutate(
+                    { dialogueVoiceId: event.target.value || null },
+                    { onSuccess: onChanged },
+                  )
                 }
               >
                 <option value="">The reading voice</option>
                 {available.map((voice) => (
                   <option key={voice.id} value={voice.id}>
-                    {voice.category === 'custom'
-                      ? `${voice.name} (custom)`
-                      : `${voice.name} · ${voice.language}`}
+                    {voiceLabel(voice)}
                   </option>
                 ))}
               </Select>
             )}
           </Field>
+          <Switch
+            checked={styling?.splitDialogue ?? true}
+            onCheckedChange={(splitDialogue) =>
+              cast.mutate({ splitDialogue }, { onSuccess: onChanged })
+            }
+            label="Narrator reads the narration"
+            description='In “"Run!" she shouted.”, only the quoted words get the dialogue or character voice.'
+          />
+          <CharacterCast documentId={documentId} onChanged={onChanged} />
           {styled.length > 0 ? (
             <div className="flex flex-wrap items-center justify-between gap-2">
               <p className="text-muted">
@@ -111,6 +128,9 @@ export function CastButton({
                       voiceId: null,
                       effect: null,
                       sound: null,
+                      style: null,
+                      pauseMs: null,
+                      take: null,
                     },
                     { onSuccess: onChanged },
                   )
@@ -120,7 +140,7 @@ export function CastButton({
               </Button>
             </div>
           ) : null}
-          {dialogue.isError ? <Banner tone="error">{describeError(dialogue.error)}</Banner> : null}
+          {cast.isError ? <Banner tone="error">{describeError(cast.error)}</Banner> : null}
           {clear.isError ? <Banner tone="error">{describeError(clear.error)}</Banner> : null}
         </div>
       </Dialog>
@@ -129,6 +149,7 @@ export function CastButton({
           documentId={documentId}
           indexes={[activeIndex]}
           styles={byIndex}
+          voiceId={voiceId}
           onClose={() => setStyleActive(false)}
           onChanged={onChanged}
         />

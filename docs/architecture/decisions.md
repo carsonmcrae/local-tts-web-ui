@@ -127,3 +127,76 @@ when a choice changes the stack, a trust boundary, data storage or the setup exp
   anywhere unless the visitor picks an online voice (which is labelled). It sounds different from
   the app, so the page says so. Revisit when a small (under ~50 MB) model with a licence-clean
   phonemiser can be self-hosted within Pages' limits.
+
+## ADR-11: A studio voice keeps a style prompt per kind of sentence
+
+- **Context:** Chatterbox Turbo switches off its emotion conditioning, so a voice's rhythm and
+  inflection come almost entirely from the 15 s of prompt speech tokens (T3). A studio voice built
+  from one take read every sentence like that take, so questions and exclamations sounded flat
+  after a 30-minute session.
+- **Decision:**
+  - **Styles.** A studio voice stores small style files (T3 prompt tokens only) for narration,
+    questions, lively lines and dialogue. Each is built from up to three takes of matching passages
+    (exact passages first, then their group, ranked by length, noise, pitch movement and
+    typicality), joined to fill the whole 15 s with long pauses shortened.
+  - **Choosing a style.** At synthesis the engine picks the style from the sentence's punctuation
+    (or quoted speech). It swaps only T3's prompt, so S3Gen's prompt and the speaker identity (the
+    sound) stay the same.
+  - **Every sentence.** Each is seeded from its text, retried when its length is implausible for
+    its syllables, and polished: edges trimmed, long pauses shortened, loudness levelled to the
+    built-in voices.
+- **Alternatives:**
+  - **Emotion tags.** Reported to have no effect.
+  - **A per-sentence reference built from the session at synthesis time.** Slower, and it changes
+    the voice's sound.
+  - **Fine-tuning (LoRA on T3).** The likely next step (see docs/research/voice-quality.md), still
+    deferred for the reasons in ADR-9.
+- **Consequences:**
+  - New builds take a few seconds longer; saved voices can learn styles from their kept takes.
+  - The styles' file sizes and times are part of the voice's cache revision.
+  - The engine revision moved to `worker-2`, so cloned audio is generated again once.
+
+## ADR-12: Voices are shared as checked `.ttsvoice` packages, never with their recordings
+
+- **Context:** People want to send a voice they built to someone else's TTSNative. A voice is a set of
+  files; a received file is untrusted, and a voice can impersonate its speaker.
+- **Decision:**
+  - **Contents.** A package is a ZIP of exactly `manifest.json`, `reference.wav`, `voice.safetensors`
+    and `styles/<style>.safetensors`. The manifest holds the name, delivery, the creator's consent
+    statement and a SHA-256 per file. Session takes are never included.
+  - **Export** needs an explicit confirmation (`confirm=true`) after a warning.
+  - **Import** needs the importer's own consent. It reads only allow-listed names, each within a
+    size limit (never by archive paths), and verifies every checksum and the reference audio. It
+    checks each safetensors header (format, version, tensor names, types, shapes and byte ranges)
+    without loading a tensor.
+  - **Storage.** Imported voices are marked shared and keep their manifest as `origin.json`.
+- **Alternatives:**
+  - **Including the takes.** Rejected: a full recording session is far more than a voice needs, and
+    would enable training.
+  - **A signed format.** Deferred: there is no key infrastructure, and the consent check is the real
+    safeguard.
+- **Consequences:**
+  - A shared voice can't relearn its styles (it has no takes).
+  - Speech made with it still carries the Perth watermark.
+
+## ADR-13: The server plans each document sentence: voice, effect and sound
+
+- **Context:** Readers want characters in different voices and some lines to sound like an
+  announcement or a phone call. Playback and exports must sound the same.
+- **Decision:**
+  - **Storage.** Per-sentence styling (`segment_styles`: voice, effect, sound) and a document's
+    dialogue voice (`document_cast`) live in the database.
+  - **Planning.** The synthesis service plans each sentence: its own voice, then the dialogue
+    voice if it quotes speech, then the reading voice. Players and exports keep requesting audio the
+    same way.
+  - **Effects** are deterministic NumPy DSP applied before the sentence's pause. They are part of
+    the cache key only when set, so plain audio keeps its keys.
+  - **Sounds** (Turbo's tags) are sent only to engines that perform them.
+- **Alternatives:**
+  - **Splitting sentences at quotes for dialogue.** Deferred: it changes segmentation, cache keys
+    and highlighting.
+  - **Applying effects in the browser.** Rejected: exports wouldn't match.
+- **Consequences:**
+  - A whole sentence is styled.
+  - Deleting a voice hands its sentences back.
+  - The player refetches audio when styling changes.

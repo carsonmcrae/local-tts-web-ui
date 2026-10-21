@@ -90,11 +90,31 @@ without blank lines is read one paragraph per line. Pasted text is stored only o
 - **Section pager.** The line above the text shows "Section N of M", with **Adjust this section**
   beside it (see [Fixing a chapter](#fixing-a-chapter)); the buttons below the text go to the
   previous and next section.
-- **Click a sentence** to play from there.
+- **Click a sentence** to play from there (selecting text doesn't start playback).
 - **Player bar.** Previous and next sentence, previous and next section, and the position slider.
 - **Keyboard.** See [Keyboard Shortcuts](Keyboard-Shortcuts).
 
 While narration plays, the reader follows it into the next section.
+
+## Voices and effects
+
+Give characters their own voices, and announcements, calls or broadcasts the sound they'd have:
+
+- **Select any text** in the document and choose **Voice & effect** beside it. For the sentences you
+  selected, pick a **Voice** (any built-in voice, for example a British or American accent, or one of
+  your custom voices), an **Effect** (**Loudspeaker announcement**, **Telephone call**, **Radio**,
+  **Large hall**, **Far away** or **Robot**) and, for custom voices, a **Sound before it** (a laugh,
+  a sigh, a gasp…; experimental). When the sentences differ, **Keep as they are** leaves that choice
+  alone. **Clear styling** returns them to the reading voice.
+- **Voices & effects** (above the text) chooses a **Dialogue voice** that reads every sentence with
+  quoted speech, styles the sentence being read (handy on a phone or with the keyboard), and clears
+  all styling.
+
+Styled sentences are underlined with a soft tint; hover over one, or use a screen reader, to hear
+how it's styled. A sentence's own voice comes first, then the dialogue voice for quoted speech, then
+your reading voice. Exports sound the same as playback. A whole sentence is styled, so in
+`"Run!" she shouted.` the narration is read in the dialogue voice too. Deleting a custom voice hands
+its sentences back to the reading voice.
 
 ## Searching a document
 

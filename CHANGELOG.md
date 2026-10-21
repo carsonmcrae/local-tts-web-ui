@@ -8,6 +8,38 @@ All notable changes to this project are documented here. The format follows
 
 ### Added
 
+- **Expressive studio voices.** A studio voice keeps a speaking style for questions, lively lines,
+  dialogue and narration, learnt from your takes of the matching passages, and reads each sentence
+  in the style its punctuation asks for (the sound of the voice stays the same). Voices built
+  earlier get **Improve expression**, which learns the styles from the takes they kept.
+- **Natural sentence-to-sentence delivery for custom voices.** Each sentence is generated from a
+  seed taken from its text (so it always sounds the same) and is generated again when it comes out
+  implausibly short or long. Every sentence is then levelled to the built-in voices' loudness, with
+  silent edges trimmed and long pauses shortened.
+- **Studio recording guidance.** Every passage has **How to read it**: the inflection and pauses it
+  teaches. **Listen to this take** before recording again, and **All passages** jumps to any passage
+  and shows which are recorded, have advice or need another take.
+- **An early studio voice.** A longer foundation passage (about a minute) plus 45 seconds of speech
+  is enough to build an early version, with a clear warning that it's less complete than a full
+  session.
+- **Smarter take checks.** A take with no speech gets one message about the cause instead of every
+  measurement that follows from it. Full takes estimate how much of the passage was read (syllables
+  heard and speaking time, calibrated to the speaker) and compare background noise with the
+  speaker's other takes. Both are advice and never block a take.
+- **Share voices** as `.ttsvoice` files after confirming it's your voice (or the owner agreed). The
+  file holds the built voice, its styles and a short reference; your session recordings stay on the
+  computer. **Import a voice** needs your consent, and every file is checked: allowed names, sizes,
+  checksums, the audio and each safetensors header, with no code run.
+- **Characters and effects in the reader.** Select text and choose **Voice & effect** to read those
+  sentences:
+  - in another voice or accent;
+  - as a loudspeaker announcement, a telephone call, a radio broadcast, in a large hall, far away or
+    as a robot;
+  - with a sound before them (custom voices, experimental).
+
+  **Voices & effects** sets one voice for all quoted dialogue. Exports sound the same as playback.
+- Research notes on [cloned voice quality](docs/research/voice-quality.md) and
+  [feature suggestions](docs/research/feature-suggestions.md) from comparable open-source apps.
 - **Model integrity checks and repair.** Every model file is checked against its published SHA-256
   checksum before an engine loads it, including files installed long ago. A missing, incomplete or
   mismatched file puts the engine in a **Needs repair** state that names the file, and **Repair**
@@ -55,6 +87,11 @@ All notable changes to this project are documented here. The format follows
 
 ### Changed
 
+- The **Steady** delivery uses temperature 0.7 and top-k 600 for steadier prosody. Custom voices'
+  audio is generated again once (engine revision `worker-2`).
+- Background noise in a studio take is advice, not an error. Noisy takes still count but never give
+  the voice its sound.
+- Selecting text in the reader no longer starts playback from the sentence you clicked.
 - **Renamed to TTSNative** (formerly Local TTS), with a new identity: an N drawn as five waveform bars,
   the app icon and favicon, logos and a brand guide (`brand/`). The repository is now
   `carsonmcrae/ttsnative`; old GitHub links redirect. Internal identifiers are unchanged, so existing

@@ -79,15 +79,23 @@ covers microphone, Windows and room setup.
    [Cleaning up a recording](#cleaning-up-a-recording)); **Play original** and **Play cleaned up**
    let you compare. The cleanup you choose applies to every take in the session. Your takes are kept
    as recorded; the voice is built from cleaned-up copies.
-3. **Record.** Read 48 short passages in six styles (narration, storytelling, conversation, questions,
-   numbers and names, calm). Press **Record**, read the passage, then **Stop**. Each take is recorded
-   losslessly (browser noise suppression, echo cancellation and auto-gain are off), checked and saved
-   at once; a good take moves you to the next passage. Five minutes of usable speech unlocks the
-   build; ten or more is better. Recorded elsewhere? **Import a recording** splits a WAV, FLAC or
-   OGG file (up to 30 minutes) into takes at its pauses.
+3. **Record.** Start with the **foundation passage** (about a minute, read as one story), then 48
+   short passages in six styles (narration, storytelling, conversation, questions, numbers and names,
+   calm). Under each passage, **How to read it** says which inflection and pauses it teaches: where to
+   pause, which words to lean on, where a question rises. Press **Record**, read the passage, then
+   **Stop**. Each take is recorded losslessly (browser noise suppression, echo cancellation and
+   auto-gain are off), checked and saved at once; a good take moves you to the next passage.
+   **Listen to this take** plays it back before you decide whether to record it again, and **All
+   passages** jumps to any passage, showing which are recorded, have advice or need another take.
+   Five minutes of usable speech gives a complete voice; ten or more is better. Short on time? The
+   foundation passage plus 45 seconds of speech in all lets you build an **early version**: it works,
+   but questions, lively lines and some words sound less like you, and you can come back, record more
+   and build again. Recorded elsewhere? **Import a recording** splits a WAV, FLAC or OGG file (up to
+   30 minutes) into takes at its pauses.
 4. **Build.** Press **Build my voice**. The app measures every take, averages your voice across the
-   session, then builds and tests five voices from your best takes. This takes a minute or two with a
-   GPU, longer on a CPU, and needs the voice-cloning engine (this step offers to install it).
+   session, builds and tests five voices from your best takes, and learns your [speaking
+   styles](#expression). This takes a minute or two with a GPU, longer on a CPU, and needs the
+   voice-cloning engine (this step offers to install it).
 5. **Choose.** Listen to the samples of the three best voices, each with a match score, and pick the
    one that sounds most like the speaker.
 6. **Name & consent** and 7. **Try it**, as for a quick voice.
@@ -126,10 +134,42 @@ Each voice has a **Delivery**: **Steady** (even, good for long reading), **Natur
 or **Expressive** (more rise and fall, less even from sentence to sentence). Change it in the wizard's
 last step or on the voice card; audio made with the previous delivery is cleared.
 
+### Expression
+
+The cloning model takes a voice's rhythm and inflection from about 15 seconds of one recording, so a
+voice built from a single take reads every sentence the same way. A studio voice keeps a **speaking
+style** for each kind of sentence, learnt from your takes of the matching passages: **questions**
+(from the questions passages), **lively lines** (exclamations), **dialogue** (animated quoted speech)
+and **narration**. Each sentence is read in the style its punctuation asks for, so a question rises
+the way your own questions do. The voice's sound stays the same in every style.
+
+Studio voices built before this existed show **Improve expression** on their card: it learns the
+styles from the takes the voice kept (a minute or two with a GPU). The card lists the styles a voice
+has, and **Rebuild expression** learns them again.
+
+Every sentence a custom voice speaks is also checked: one that comes out far too short or too long for
+its text (cut off, or running on with noise) is generated again, and every sentence is levelled to the
+same loudness as the built-in voices, with silent edges trimmed and overly long pauses shortened.
+
+### Sharing a voice
+
+**Share** on a voice card saves the voice as a `.ttsvoice` file that someone else can import into
+their own TTSNative. It holds the built voice, its speaking styles and one short reference clip, plus
+the consent statement it was created under. Your session recordings stay on this computer. Anyone
+who has the file can make the voice say anything, so you confirm that it's your voice (or that its
+owner agreed to it being shared) before the download starts.
+
+**Import a voice** (top of Voice Studio) adds a `.ttsvoice` file someone shared with you, after you
+confirm you have the voice owner's permission. The app checks the file completely before saving it:
+only the expected files, within size limits, every checksum, the reference audio, and each voice file's
+format and contents (it never runs code from the file). Imported voices are marked **Shared**.
+
 ## Recording tips
 
 - Use a quiet room, keep the microphone about a hand's width away, and read at your normal pace.
 - Read continuously. More than half the recording being silence triggers a warning.
+- Follow **How to read it** under each passage: the varied inflection is what teaches the voice to
+  sound like you in questions, dialogue and lively lines.
 - Browsers only allow recording on `localhost` or HTTPS pages. On another device over your network,
   import a recording instead (see [Other Devices](Other-Devices)).
 - If the browser blocks the microphone, allow it in the browser's site settings and try again.
@@ -150,9 +190,23 @@ Your browser shows instant checks; the local server then repeats them, and its r
 
 Tone is measured on vowels only: "s" and "sh" sounds are naturally bright and are left out, so a good
 microphone close to the mouth isn't flagged. A tone or noise warning comes with a suggested
-[cleanup](#cleaning-up-a-recording). Studio takes skip the tone checks, since the microphone
-check covers them. A studio take only needs 3 seconds of speech, and the microphone check 2. Each problem comes with a
-plain-language fix, such as moving closer to the microphone.
+[cleanup](#cleaning-up-a-recording). Each problem comes with a plain-language fix, such as moving
+closer to the microphone.
+
+**Studio takes** are judged on what really went wrong, so a take you stop straight away gets one
+message (nothing was heard, or the take stopped before the reading started) instead of every
+measurement that follows from it. A take needs 3 seconds of speech; a very quiet voice is named as the
+cause of a short take. Two further checks are advice only, so the take still counts:
+
+- **Completeness:** the app estimates how much of the passage you read, from the syllables it hears and
+  how long you spoke, and after three takes it calibrates to your own pace. A take that seems to stop
+  early or skip a part says so.
+- **Background noise:** a lot of noise, or noise clearly louder than in your other takes (a fan, traffic,
+  voices), suggests recording that take again. Noisy takes still count towards your speech, but are
+  never used to give the voice its sound.
+
+Studio takes skip the tone checks, since the microphone check covers them, and the microphone check
+needs 2 seconds of speech.
 
 ## Consent and responsible use
 
@@ -178,12 +232,15 @@ survival through MP3 export hasn't been tested here. Kokoro's built-in voices ar
 
 For a quick voice, only a trimmed copy of the reference recording (a WAV of at most 30 seconds) is
 saved, in `data/voices/`, with the voice's name and details in the library database. A studio voice
-also keeps its session's takes (24-bit FLAC) and the voice built from them (a small safetensors file).
+also keeps its session's takes (24-bit FLAC), the voice built from them and its speaking styles (small
+safetensors files). A shared voice keeps the built voice, its styles, a short reference and where it
+came from (`origin.json`), but no takes.
 Sessions in progress live in `data/voices/sessions/`. No model is trained and nothing is uploaded.
 You can have up to 50 custom voices.
 
-Each voice card has **Play recording**, a **Delivery** choice and **Use for reading** (once the
-engine is installed), a rename button and a delete button. Studio voices are marked **Studio**.
+Each voice card has **Play recording**, a **Delivery** choice, the voice's
+[expression](#expression) and **Use for reading** (once the engine is installed), **Share**, a rename
+button and a delete button. Studio voices are marked **Studio**, imported ones **Shared**.
 
 ## Permanent deletion
 

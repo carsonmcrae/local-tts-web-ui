@@ -94,6 +94,51 @@ function voiceLabel(voice: VoiceInfo): string {
     : `${voice.name} · ${voice.language}`;
 }
 
+/** A picker with "keep as they are" (when the sentences differ), "none" and the given options. */
+function ChoiceField({
+  label,
+  hint,
+  value,
+  mixed,
+  onChange,
+  none,
+  options,
+}: Readonly<{
+  label: string;
+  hint: string;
+  value: string;
+  /** The sentences started out different here, so "keep as they are" stays on offer. */
+  mixed: boolean;
+  onChange: (value: string) => void;
+  none: string;
+  options: Readonly<Record<string, string>>;
+}>) {
+  return (
+    <Field label={label} hint={hint}>
+      {({ id, describedBy }) => (
+        <Select
+          id={id}
+          aria-describedby={describedBy}
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+        >
+          <KeepOption mixed={mixed} />
+          <option value={NONE}>{none}</option>
+          {Object.entries(options).map(([option, text]) => (
+            <option key={option} value={option}>
+              {text}
+            </option>
+          ))}
+        </Select>
+      )}
+    </Field>
+  );
+}
+
+function KeepOption({ mixed }: Readonly<{ mixed: boolean }>) {
+  return mixed ? <option value={KEEP}>Keep as they are (they differ)</option> : null;
+}
+
 export function StyleSentencesDialog({
   documentId,
   indexes,
@@ -110,9 +155,14 @@ export function StyleSentencesDialog({
   const voices = useVoices();
   const save = useStyleSentences(documentId);
   const current = indexes.map((index) => styles.get(index) ?? { index });
-  const [voice, setVoice] = useState(() => shared(current, 'voiceId'));
-  const [effect, setEffect] = useState(() => shared(current, 'effect'));
-  const [sound, setSound] = useState(() => shared(current, 'sound'));
+  const [initial] = useState(() => ({
+    voice: shared(current, 'voiceId'),
+    effect: shared(current, 'effect'),
+    sound: shared(current, 'sound'),
+  }));
+  const [voice, setVoice] = useState(initial.voice);
+  const [effect, setEffect] = useState(initial.effect);
+  const [sound, setSound] = useState(initial.sound);
   const available = (voices.data ?? []).filter((item) => item.available);
   const count = indexes.length === 1 ? 'this sentence' : `these ${indexes.length} sentences`;
 
@@ -133,8 +183,6 @@ export function StyleSentencesDialog({
     ...(effect === KEEP ? {} : { effect: chosen(effect) as SoundEffect | null }),
     ...(sound === KEEP ? {} : { sound: chosen(sound) as VoiceSound | null }),
   };
-  const keepOption = (value: string) =>
-    value === KEEP ? <option value={KEEP}>Keep as they are (they differ)</option> : null;
 
   return (
     <Dialog
@@ -174,7 +222,7 @@ export function StyleSentencesDialog({
               value={voice}
               onChange={(event) => setVoice(event.target.value)}
             >
-              {keepOption(voice)}
+              <KeepOption mixed={initial.voice === KEEP} />
               <option value={NONE}>The reading voice</option>
               {available.map((item) => (
                 <option key={item.id} value={item.id}>
@@ -184,48 +232,24 @@ export function StyleSentencesDialog({
             </Select>
           )}
         </Field>
-        <Field
+        <ChoiceField
           label="Effect"
           hint="For announcements, calls, broadcasts or a voice in another room."
-        >
-          {({ id, describedBy }) => (
-            <Select
-              id={id}
-              aria-describedby={describedBy}
-              value={effect}
-              onChange={(event) => setEffect(event.target.value)}
-            >
-              {keepOption(effect)}
-              <option value={NONE}>No effect</option>
-              {Object.entries(EFFECT_LABELS).map(([value, label]) => (
-                <option key={value} value={value}>
-                  {label}
-                </option>
-              ))}
-            </Select>
-          )}
-        </Field>
-        <Field
+          value={effect}
+          mixed={initial.effect === KEEP}
+          onChange={setEffect}
+          none="No effect"
+          options={EFFECT_LABELS}
+        />
+        <ChoiceField
           label="Sound before it"
           hint="Experimental, and only with custom (cloned) voices; other voices ignore it."
-        >
-          {({ id, describedBy }) => (
-            <Select
-              id={id}
-              aria-describedby={describedBy}
-              value={sound}
-              onChange={(event) => setSound(event.target.value)}
-            >
-              {keepOption(sound)}
-              <option value={NONE}>No sound</option>
-              {Object.entries(SOUND_LABELS).map(([value, label]) => (
-                <option key={value} value={value}>
-                  {label}
-                </option>
-              ))}
-            </Select>
-          )}
-        </Field>
+          value={sound}
+          mixed={initial.sound === KEEP}
+          onChange={setSound}
+          none="No sound"
+          options={SOUND_LABELS}
+        />
         {save.isError ? <Banner tone="error">{describeError(save.error)}</Banner> : null}
       </div>
     </Dialog>

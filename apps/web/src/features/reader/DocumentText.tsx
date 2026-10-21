@@ -89,7 +89,10 @@ function Sentence({
       title={styled}
       aria-describedby={describedBy}
       aria-current={active ? 'true' : undefined}
-      onClick={() => onSelect(segment.index)}
+      // Dragging across text to select it (to give it a voice or effect) mustn't start playback.
+      onClick={() => {
+        if (document.getSelection()?.isCollapsed !== false) onSelect(segment.index);
+      }}
       onKeyDown={onKeyDown}
     >
       {segment.text}

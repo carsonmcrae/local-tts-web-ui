@@ -46,6 +46,8 @@ TTSNative is free and open source (MIT). It was called **Local TTS** until versi
 - **Study and listening aids** — search inside a document, bookmarks with notes (exported as Markdown), a
   sleep timer, adjustable text size, spacing and typeface, a searchable and sortable library, and a fix for
   chapters that start in the wrong place.
+- **Characters and effects** — select text to read it in another voice or accent, as a loudspeaker
+  announcement, a phone call or a radio broadcast, or choose one voice for all dialogue; exports sound the same.
 - **Pronunciation dictionary** — teach every voice how to say character names and unusual words; only the
   sentences that contain a changed word are regenerated.
 - **Starts instantly, even for whole books** — sentences are generated just ahead of you and cached, so
@@ -53,8 +55,11 @@ TTSNative is free and open source (MIT). It was called **Local TTS** until versi
 - **54 natural voices** (Kokoro-82M) across English (US/UK), Spanish, French, Hindi, Italian, Portuguese,
   Japanese and Mandarin, with quality grades and side-by-side comparison on your own passage.
 - **Voice Studio (optional)** — create a voice from a 10–20 second recording or an existing clip, or record a
-  guided studio session (lossless, 48 passages, resumable) that the app builds into your most faithful voice
-  from the best takes. Live quality checks, explicit consent, a delivery setting and one-click permanent deletion.
+  guided studio session (lossless, a foundation passage plus 48 passages with reading hints, resumable, an early
+  version after about a minute) that the app builds into your most faithful voice, with its own speaking styles
+  for questions, dialogue and lively lines. Takes you can play back, checks that explain what went wrong
+  (completeness and background noise as advice), explicit consent, a delivery setting, sharing as a `.ttsvoice`
+  file and one-click permanent deletion.
 - **Export** — WAV or MP3, the whole document or selected chapters, one file or one per chapter, tagged with
   titles and track numbers, with optional sentence-timed subtitles (SRT).
 - **Private by design** — binds to `127.0.0.1`, works offline after setup, and never sends documents or

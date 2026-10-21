@@ -122,7 +122,7 @@ def _issue(code: str, severity: str, message: str) -> QualityIssue:
     return QualityIssue.model_validate({"code": code, "severity": severity, "message": message})
 
 
-def _no_speech(values: dict[str, float | None]) -> QualityIssue:
+def _no_speech(values: dict[str, float | None], recorded_s: float | None) -> QualityIssue:
     if (values["peak_dbfs"] or -120.0) < SILENT_PEAK_DBFS:
         return _issue(
             "no_sound",
@@ -130,11 +130,12 @@ def _no_speech(values: dict[str, float | None]) -> QualityIssue:
             "We couldn't hear anything. Check that the right microphone is selected and isn't muted, then "
             "read the passage aloud.",
         )
+    length = recorded_s or values["duration_s"] or 0
     return _issue(
         "no_speech",
         "error",
-        f"The take stopped after {values['duration_s'] or 0:.1f} s, before the reading started. Press Record, "
-        "read the whole passage, then press Stop.",
+        f"The take stopped after {length:.1f} s, before the reading started. Press Record, read the whole "
+        "passage, then press Stop.",
     )
 
 
@@ -196,8 +197,10 @@ def _completeness(coverage: float | None) -> list[QualityIssue]:
     ]
 
 
-def judge_take(samples: Float32Array, sample_rate: int, context: TakeContext) -> QualityReport:
-    """Measure a take and report the issues that explain it, the root cause first."""
+def judge_take(
+    samples: Float32Array, sample_rate: int, context: TakeContext, recorded_s: float | None = None
+) -> QualityReport:
+    """Measure a take (trimmed of silence; ``recorded_s`` is how long it ran) and report what explains it."""
     values = measure(samples, sample_rate)
     speech_s = values["speech_s"] or 0.0
     heard = syllables_heard(samples, sample_rate) if speech_s >= NO_SPEECH_S else 0
@@ -208,7 +211,7 @@ def judge_take(samples: Float32Array, sample_rate: int, context: TakeContext) ->
         "syllables_expected": context.syllables_expected,
     }
     if speech_s < NO_SPEECH_S:
-        return build_report(values, [_no_speech(values)])
+        return build_report(values, [_no_speech(values, recorded_s)])
     if speech_s < MIN_TAKE_SPEECH_S:
         return build_report(values, _short(values, context))
     pauses = (values["pause_ratio"] or 0.0) > 0.5 and (coverage is None or coverage >= INCOMPLETE)

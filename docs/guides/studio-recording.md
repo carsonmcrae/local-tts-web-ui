@@ -39,14 +39,19 @@ their voice. Recordings stay on this computer.
 ## Record (20–30 minutes)
 
 1. Press record and stay silent for **5 seconds** first. The app uses this to measure the room.
-2. Read the passages below. Speak as if you were talking to a friend, not reading a list: let your
-   voice rise and fall naturally. Each passage takes about 10–15 seconds.
+2. Read the **foundation passage** first, then the others below. Speak as if you were talking to a
+   friend, not reading a list: let your voice rise and fall naturally. Each passage takes about 10–15
+   seconds (the foundation passage about a minute), and the note in italics under it says which
+   inflection and pauses it teaches. Those differences are what let the voice ask questions, talk in
+   dialogue and sound lively the way you do.
 3. Pause for **2 seconds** between passages, so the app can split them.
 4. If you stumble, pause for 2 seconds and read the whole passage again. Keep going; the app keeps the
    cleanest take.
 5. Take breaks whenever you like. Stop recording, rest, and continue in a new recording.
 
-All 48 passages give about 10–12 minutes of speech, which is plenty. Five minutes is the minimum.
+All 48 passages give about 10–12 minutes of speech, which is plenty. Five minutes gives a complete
+voice. Short on time? The foundation passage plus 45 seconds of speech in all builds an early version
+that you can improve later by recording more.
 
 ## Export
 

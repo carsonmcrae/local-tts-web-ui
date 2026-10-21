@@ -259,7 +259,8 @@ class VoiceSessionService:
         samples, rate = audio
         trimmed = trim_silence(samples, rate)
         clip = trimmed if trimmed.size else samples
-        report = judge_take(clip, rate, context_for(self._earlier(session_id, number), text))
+        context = context_for(self._earlier(session_id, number), text)
+        report = judge_take(clip, rate, context, recorded_s=round(len(samples) / rate, 1))
         path = self.take_path(session_id, number)
         ensure_free_space(path.parent, TAKE_SPACE_BYTES, self._settings.min_free_disk_mb)
         sf.write(str(path), clip, rate, format="FLAC", subtype="PCM_24")

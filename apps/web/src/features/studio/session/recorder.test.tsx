@@ -9,21 +9,11 @@
  */
 import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { renderWithApp } from '@/test/render';
-import { quality, resetMicrophone, studioApi, studioSession, take } from '@/test/studio';
+import { quality, studioApi, studioSession, take } from '@/test/studio';
 import VoiceStudioPage from '../VoiceStudioPage';
 import { FOUNDATION_ID, maxTakeSeconds, PASSAGES } from './passages';
-
-vi.mock('@/lib/audio/pcmRecorder', async (importOriginal) => {
-  const { fakePcmModule } = await import('@/test/studio');
-  return fakePcmModule(await importOriginal());
-});
-
-afterEach(() => {
-  vi.unstubAllGlobals();
-  resetMicrophone();
-});
 
 async function resume() {
   const user = userEvent.setup();

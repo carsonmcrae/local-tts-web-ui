@@ -30,15 +30,8 @@ RATE = 24_000
 
 
 @pytest.fixture
-def settings(tmp_path: Path) -> Settings:
-    return Settings(
-        env="test",
-        data_dir=tmp_path / "data",
-        models_dir=tmp_path / "models",
-        warm_up_engines=False,
-        extra_allowed_hosts=["testserver"],
-        min_studio_speech_s=20,
-    )
+def settings(settings: Settings) -> Settings:
+    return settings.model_copy(update={"min_studio_speech_s": 20})
 
 
 def report(**fields: Any) -> QualityReport:

@@ -9,7 +9,6 @@
  */
 import { useQueryClient } from '@tanstack/react-query';
 import { Wand2 } from 'lucide-react';
-import { useEffect, useRef } from 'react';
 import { describeError } from '@/api/client';
 import { isJobActive, keys, useJob } from '@/api/queries';
 import { useBuildStyles } from '@/api/studioQueries';
@@ -17,6 +16,7 @@ import type { VoiceProfile } from '@/api/types';
 import { Button } from '@/components/ui/Button';
 import { Banner } from '@/components/ui/Feedback';
 import { JobProgress } from '@/features/jobs/JobProgress';
+import { useJobSucceeded } from '@/features/jobs/useJobSucceeded';
 
 const LABELS: Readonly<Record<string, string>> = {
   narration: 'narration',
@@ -29,15 +29,11 @@ export function VoiceStyles({ profile }: Readonly<{ profile: VoiceProfile }>) {
   const build = useBuildStyles();
   const job = useJob(build.data?.id);
   const client = useQueryClient();
-  const handled = useRef<string | null>(null);
 
-  useEffect(() => {
-    const finished = job.data;
-    if (finished?.status !== 'succeeded' || handled.current === finished.id) return;
-    handled.current = finished.id;
+  useJobSucceeded(job.data, () => {
     void client.invalidateQueries({ queryKey: keys.profiles });
     void client.invalidateQueries({ queryKey: keys.voices });
-  }, [job.data, client]);
+  });
 
   const styles = profile.styles ?? [];
   if (profile.kind !== 'studio' || (!profile.canRefine && styles.length === 0)) return null;

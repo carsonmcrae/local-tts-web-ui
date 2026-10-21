@@ -10,7 +10,6 @@
  */
 import { useQueryClient } from '@tanstack/react-query';
 import { Sparkles } from 'lucide-react';
-import { useEffect, useRef } from 'react';
 import { describeError } from '@/api/client';
 import { isJobActive, keys, useBuildVoice, useEngines, useJob } from '@/api/queries';
 import type { VoiceSession } from '@/api/types';
@@ -18,6 +17,7 @@ import { Button } from '@/components/ui/Button';
 import { Banner } from '@/components/ui/Feedback';
 import { EnginePanel } from '@/features/engines/EngineSetup';
 import { JobProgress } from '@/features/jobs/JobProgress';
+import { useJobSucceeded } from '@/features/jobs/useJobSucceeded';
 import { describeCleanup } from '../cleanup';
 import { EarlyVoiceNote } from './PassageParts';
 
@@ -29,16 +29,12 @@ export function BuildStep({
   const build = useBuildVoice();
   const job = useJob(build.data?.id ?? session.buildJobId);
   const client = useQueryClient();
-  const handled = useRef<string | null>(null);
   const engine = engines.data?.find((item) => item.supportsCloning);
   const usable = session.takes.filter((take) => take.quality.ok).length;
 
-  useEffect(() => {
-    const finished = job.data;
-    if (finished?.status !== 'succeeded' || handled.current === finished.id) return;
-    handled.current = finished.id;
+  useJobSucceeded(job.data, () => {
     void client.invalidateQueries({ queryKey: keys.session(session.id) }).then(onBuilt);
-  }, [job.data, client, session.id, onBuilt]);
+  });
 
   if (engine && engine.status !== 'ready') {
     return (

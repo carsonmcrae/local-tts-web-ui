@@ -64,7 +64,8 @@ local filesystem, and the integrity of installed model files and Python/npm depe
   process, but a memory-safety bug could still compromise that process.
 - **Network mode uses plain HTTP.** The token protects access but not confidentiality on the LAN, and
   browsers block microphone access on non-HTTPS origins. See [LAN access](../guides/lan-access.md).
-- **GPL components** (espeak-ng, phonemizer) are runtime dependencies; see the license inventory.
+- **GPL components** (espeak-ng, phonemizer) are runtime dependencies. The Windows installer redistributes
+  them with their licences, and each release attaches their source; see the license inventory.
 - **The Windows app is not Authenticode-signed yet.** Users must click through SmartScreen and can't
   tell a genuine installer from a renamed one by its publisher; the published checksums and build
   provenance are the check until a certificate is in place. The updater's own signature is enforced.

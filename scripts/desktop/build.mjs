@@ -57,6 +57,7 @@ function main() {
   step(`Building TTSNative ${version} for Windows…`);
   node([npmCli, 'run', 'build', '--workspace', '@ltts/web'], { env });
   node([path.join(repoRoot, 'scripts', 'desktop', 'build-runtime.mjs')], { env });
+  node([path.join(repoRoot, 'scripts', 'desktop', 'notices.mjs'), version], { env });
   const signed = Boolean(process.env.TAURI_SIGNING_PRIVATE_KEY);
   if (!signed) warn('TAURI_SIGNING_PRIVATE_KEY is not set: building without an updater signature.');
   rmSync(nsisDir, { recursive: true, force: true });

@@ -185,9 +185,11 @@ async function main() {
   copyApps(uv);
   writeFileSync(
     path.join(out, 'README.txt'),
-    'TTSNative runtime: the bundled Python, the local server, the web UI and the default voice model.\r\n' +
-      'Third-party licences: python\\LICENSE.txt, the packages in python\\Lib\\site-packages\\*.dist-info,\r\n' +
-      'web\\THIRD-PARTY-LICENSES.md and web\\FONT-LICENSES.txt. Kokoro model weights: Apache-2.0.\r\n',
+    [
+      'TTSNative runtime: the bundled Python, the local server, the web UI and the default voice model.',
+      'Third-party software, licences and the source code offer: THIRD-PARTY-NOTICES.txt.',
+      '',
+    ].join('\r\n'),
   );
   writeFileSync(
     path.join(out, 'runtime-manifest.json'),

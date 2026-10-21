@@ -35,6 +35,7 @@ would detach torch from the per-extra PyTorch index). `npm run security` audits 
 | transformers      | 5.2.0                   | 5.11.0            | Four high-severity advisories below (5.11 rather than 5.10.x, which crashed on torch 2.6)     |
 | torch, torchaudio | 2.6.0 (`+cu124`)        | 2.11.0 (`+cu126`) | 18 of the 19 advisories below; torchaudio has no release after 2.11, so torch stops there too |
 | Pillow            | No (diffusers needs it) | 13.0.0            | Nine advisories in 12.3.0, fixed only in 13.0.0 ([below](#pillow-13-2026-10-20))              |
+| virtualenv        | No (via s3tokenizer)    | 21.14.7           | CVE-2026-113725 in 21.14.5, fixed in 21.14.7 ([below](#virtualenv-21147-2026-10-21))          |
 
 The cu126 build supports the same GPUs as cu124 did (sm_50 to sm_90, Maxwell through Hopper). Linux
 wheels now need glibc 2.28 or newer.
@@ -115,6 +116,28 @@ the removed names; its `fromarray(mode=...)` calls are in diffusers and transfor
 worker never loads. gradio declares `pillow<13` but is never installed (`sys_platform == 'never'`), and
 diffusers accepts any Pillow. The licence is unchanged (MIT-CMU). Only Pillow moved in the lock, and its
 15 files match the SHA-256 digests PyPI publishes.
+
+### virtualenv 21.14.7 (2026-10-21)
+
+- **The advisory.** CVE-2026-113725 / GHSA-vxj4-q4g9-crj7 (CVSS 3.1 local, user interaction
+  required): before 21.14.7, the bash `activate` script that `virtualenv` writes escapes the
+  environment's name for only one of bash's two passes over the prompt, so a name containing
+  `\$(...)` runs as commands whenever bash draws the prompt. Published 2026-10-20.
+- **How it got here.** `s3tokenizer` 0.3.0 (a Chatterbox dependency) lists the developer tool
+  `pre-commit` as a runtime requirement, and `pre-commit` requires `virtualenv`. Nothing in the
+  Chatterbox environment imports `virtualenv` or `pre_commit` (checked in `chatterbox`,
+  `s3tokenizer` and the worker), the app never runs `virtualenv` or sources an activation script
+  (the environment is made by `uv sync` and the worker is started by its own `python.exe`), and the
+  environment's own activation scripts come from uv, not from this package. Triggering it needs
+  someone to create an environment with the `virtualenv` command, give it a name holding `\$(...)`,
+  and activate it in bash.
+- **The fix.** The lock moves to 21.14.7, the first fixed release (2026-10-12; no advisories are open
+  against it), through a per-package exception to the 14-day cool-down and a floor of
+  `virtualenv>=21.14.7` in `override-dependencies`. Nothing else in the lock changed, and
+  `s3tokenizer` stays at 0.3.0. The exception line in `pyproject.toml` says to drop it after
+  2026-10-27, when the release is two weeks old.
+- **Revisit.** Reassess if `s3tokenizer` drops the `pre-commit` requirement (then both packages can
+  leave the environment altogether), or if a newer advisory names 21.14.7.
 
 ### Verification
 

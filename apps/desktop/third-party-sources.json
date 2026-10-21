@@ -1,0 +1,165 @@
+{
+  "//": "Corresponding source the Windows installer owes for its GPL and LGPL parts, attached to each release by scripts/release/third-party-sources.mjs. Each entry is an unmodified upstream archive, pinned by size and SHA-256, and names the Python package (as locked in apps/server/uv.lock) whose shipped files it covers; scripts/release/third-party-sources.test.mjs fails when that package's version changes. Versions were confirmed against the installed files on 2026-10-21 (see docs/security/license-inventory.md).",
+  "sources": [
+    {
+      "component": "espeak-ng",
+      "version": "1.52.0 (tag commit 4870adfa25b1a32b4361592f1be8a40337c58d6c)",
+      "licence": "GPL-3.0-or-later (its speechPlayer and ucd-tools folders carry their own permissive licences)",
+      "url": "https://github.com/espeak-ng/espeak-ng/archive/refs/tags/1.52.0.tar.gz",
+      "sha256": "bb4338102ff3b49a81423da8a1a158b420124b055b60fa76cfb4b18677130a23",
+      "size": 17739803,
+      "for": "espeakng-loader 0.2.4",
+      "why": "Source of espeakng_loader/espeak-ng.dll and espeak-ng-data."
+    },
+    {
+      "component": "sonic",
+      "version": "fbf75c3d6d846bad3bb3d456cbc5d07d9fd8c104",
+      "licence": "Apache-2.0",
+      "url": "https://github.com/waywardgeek/sonic/archive/fbf75c3d6d846bad3bb3d456cbc5d07d9fd8c104.tar.gz",
+      "sha256": "715827b5a39b79e56e44397d7b845910df996d4cca74777b3b61629b1ddc98c1",
+      "size": 5361159,
+      "for": "espeakng-loader 0.2.4",
+      "why": "espeak-ng 1.52.0 (cmake/deps.cmake) fetches this exact commit and compiles it into espeak-ng.dll."
+    },
+    {
+      "component": "espeakng-loader (build scripts)",
+      "version": "0.2.4 (commit 146599e29be31bf17d99f0bcb7dbb2f92aef3d95)",
+      "licence": "MIT (the project's licence; this tree has no LICENSE file yet)",
+      "url": "https://github.com/thewh1teagle/espeakng-loader/archive/146599e29be31bf17d99f0bcb7dbb2f92aef3d95.tar.gz",
+      "sha256": "d6496114cd0608988f5291f54d2d15b50cb37b7f007af00bb62cf93be1b3ceca",
+      "size": 3935,
+      "for": "espeakng-loader 0.2.4",
+      "why": "build.sh, the build and PyPI workflows and hatch_build.py that produced the DLL, the data and the wheel (PyPI has no source archive for 0.2.4)."
+    },
+    {
+      "component": "phonemizer",
+      "version": "3.4.0",
+      "licence": "GPL-3.0-or-later",
+      "url": "https://files.pythonhosted.org/packages/bc/7d/5a96ddb130552f6365a090b5fd12ace803a95a858e3f67258f2ad13dc51f/phonemizer-3.4.0.tar.gz",
+      "sha256": "e13231980c50bc671ec0466379ba027260ad9d61929952d8ae9665b3d0f251eb",
+      "size": 93535,
+      "for": "phonemizer 3.4.0",
+      "why": "The phonemizer package in python/Lib/site-packages."
+    },
+    {
+      "component": "libsndfile",
+      "version": "1.2.2",
+      "licence": "LGPL-2.1-or-later",
+      "url": "https://github.com/libsndfile/libsndfile/archive/1.2.2.tar.gz",
+      "sha256": "ffe12ef8add3eaca876f04087734e6e8e029350082f3251f565fa9da55b52121",
+      "size": 684875,
+      "for": "soundfile 0.14.0",
+      "why": "_soundfile_data/libsndfile_x64.dll; the archive vcpkg built it from."
+    },
+    {
+      "component": "LAME (mp3lame)",
+      "version": "3.100",
+      "licence": "LGPL-2.0-or-later",
+      "url": "https://downloads.sourceforge.net/project/lame/lame/3.100/lame-3.100.tar.gz",
+      "sha256": "ddfe36cab873794038ae2c1210557ad34857a4b6bdc515785d1da9e175b1da1e",
+      "size": 1524133,
+      "for": "soundfile 0.14.0",
+      "why": "Statically linked into libsndfile_x64.dll."
+    },
+    {
+      "component": "mpg123",
+      "version": "1.32.9",
+      "licence": "LGPL-2.1",
+      "url": "https://downloads.sourceforge.net/project/mpg123/mpg123/1.32.9/mpg123-1.32.9.tar.bz2",
+      "sha256": "03b61e4004e960bacf2acdada03ed94d376e6aab27a601447bd4908d8407b291",
+      "size": 1118388,
+      "for": "soundfile 0.14.0",
+      "why": "Statically linked into libsndfile_x64.dll."
+    },
+    {
+      "component": "FLAC",
+      "version": "1.4.3",
+      "licence": "BSD-3-Clause (libFLAC)",
+      "url": "https://downloads.xiph.org/releases/flac/flac-1.4.3.tar.xz",
+      "sha256": "6c58e69cd22348f441b861092b825e591d0b822e106de6eb0ee4d05d27205b70",
+      "size": 1006728,
+      "for": "soundfile 0.14.0",
+      "why": "Statically linked into libsndfile_x64.dll; included so the LGPL library can be rebuilt completely."
+    },
+    {
+      "component": "libogg",
+      "version": "1.3.5",
+      "licence": "BSD-3-Clause",
+      "url": "https://downloads.xiph.org/releases/ogg/libogg-1.3.5.tar.gz",
+      "sha256": "0eb4b4b9420a0f51db142ba3f9c64b333f826532dc0f48c6410ae51f4799b664",
+      "size": 593071,
+      "for": "soundfile 0.14.0",
+      "why": "Statically linked into libsndfile_x64.dll; included so the LGPL library can be rebuilt completely."
+    },
+    {
+      "component": "libvorbis",
+      "version": "1.3.7",
+      "licence": "BSD-3-Clause",
+      "url": "https://downloads.xiph.org/releases/vorbis/libvorbis-1.3.7.tar.gz",
+      "sha256": "0e982409a9c3fc82ee06e08205b1355e5c6aa4c36bca58146ef399621b0ce5ab",
+      "size": 1658963,
+      "for": "soundfile 0.14.0",
+      "why": "Statically linked into libsndfile_x64.dll; included so the LGPL library can be rebuilt completely."
+    },
+    {
+      "component": "Opus",
+      "version": "1.5.2",
+      "licence": "BSD-3-Clause",
+      "url": "https://downloads.xiph.org/releases/opus/opus-1.5.2.tar.gz",
+      "sha256": "65c1d2f78b9f2fb20082c38cbe47c951ad5839345876e46941612ee87f9a7ce1",
+      "size": 7839412,
+      "for": "soundfile 0.14.0",
+      "why": "Statically linked into libsndfile_x64.dll; included so the LGPL library can be rebuilt completely."
+    },
+    {
+      "component": "vcpkg (port scripts and patches)",
+      "version": "b545373a9a536dc559dac8583467a21497a0e897",
+      "licence": "MIT",
+      "url": "https://github.com/microsoft/vcpkg/archive/b545373a9a536dc559dac8583467a21497a0e897.tar.gz",
+      "sha256": "e162b7148df9ef8ce6ff289a9708a466abcab6f2a8f9949c1c28ec33caab2e43",
+      "size": 4456430,
+      "for": "soundfile 0.14.0",
+      "why": "The ports and patches that built libsndfile, LAME, mpg123 and the codecs into libsndfile_x64.dll."
+    },
+    {
+      "component": "libsndfile-binaries (build scripts)",
+      "version": "tag 1.2.2 (commit a3e6f9769d0c7e91d2d036cf0fdbe5b4bbf18b87)",
+      "licence": "LGPL-2.1",
+      "url": "https://github.com/bastibe/libsndfile-binaries/archive/a3e6f9769d0c7e91d2d036cf0fdbe5b4bbf18b87.tar.gz",
+      "sha256": "90ef1652242cb3a4052d4f75885884f946403a32fbcf62ff5da8c49ac2b5ed76",
+      "size": 7372090,
+      "for": "soundfile 0.14.0",
+      "why": "The build workflow and vcpkg triplet for libsndfile_x64.dll, at the commit soundfile 0.14.0 pins."
+    },
+    {
+      "component": "lxml",
+      "version": "6.1.3",
+      "licence": "BSD-3-Clause",
+      "url": "https://files.pythonhosted.org/packages/23/ad/28ecd7cb894d172f3c9c80a075eeeb2017ac62e3632cee05a5f9493547eb/lxml-6.1.3.tar.gz",
+      "sha256": "45222d94ddd511536f3b2f7d9deae3b2339b4ce0f075f1ca25703b07cad9dd21",
+      "size": 4211198,
+      "for": "lxml 6.1.3",
+      "why": "Its etree and objectify modules statically link GNU libiconv; their source allows relinking them."
+    },
+    {
+      "component": "GNU libiconv (winlibs)",
+      "version": "1.17 (tag libiconv-1.17-1, commit 880a1fa8b5581e37e136a7b051947d3ea39097b6)",
+      "licence": "LGPL-2.1-or-later",
+      "url": "https://github.com/winlibs/libiconv/archive/880a1fa8b5581e37e136a7b051947d3ea39097b6.tar.gz",
+      "sha256": "89dd45d7f074ddae04dcd25cc4ceace3432c04b72dc36a6508854aac713f3eb6",
+      "size": 5313881,
+      "for": "lxml 6.1.3",
+      "why": "The iconv source compiled into lxml's Windows modules."
+    },
+    {
+      "component": "libxml2-win-binaries (build scripts)",
+      "version": "release 2026.05.17 (commit 4e8ae01f61145dc823ce2ae1d79f06241b7b46de)",
+      "licence": "No licence file (build scripts only)",
+      "url": "https://github.com/lxml/libxml2-win-binaries/archive/4e8ae01f61145dc823ce2ae1d79f06241b7b46de.tar.gz",
+      "sha256": "cd155987f5269d04acb549d8664b50b1ea0bf3580e1ab709587a03e4bda4396e",
+      "size": 4262,
+      "for": "lxml 6.1.3",
+      "why": "build.ps1, the workflow and the libiconv patch used to build that iconv."
+    }
+  ]
+}

@@ -3,7 +3,8 @@
 #   lacks finished user-facing notes (docs/releases/X.Y.Z.md) or a dated CHANGELOG entry, or was already
 #   published; runs the full check suite; builds the Windows installer signed for updates (and with
 #   Authenticode when its secrets exist), proves the update signature matches the app's public key and
-#   smoke-tests the installer on a clean runner; packages the source, the prebuilt web UI, SBOMs and
+#   smoke-tests the installer on a clean runner; packages the source, the prebuilt web UI, the
+#   corresponding source of the installer's GPL/LGPL parts, SBOMs and
 #   SHA256SUMS.txt with signed build provenance; creates the release as a draft, uploads everything,
 #   and only then makes it public and Latest (an incomplete release is never visible); finally asks
 #   the Pages workflow to refresh ttsnative.com.
@@ -80,6 +81,8 @@ jobs:
           node scripts/uv-run.mjs --cwd apps/chatterbox-worker export --frozen --no-dev --extra cpu --format cyclonedx1.5 -o "../../$out/sbom-chatterbox-worker.cdx.json" --quiet
           cp docs/media/ttsnative-demo.mp4 docs/media/ttsnative-promo.mp4 "$out/"
           cp "$RUNNER_TEMP/release-notes.md" "$out/release-notes.md"
+          # Corresponding source for the GPL/LGPL parts of the Windows installer (verified against the manifest).
+          node scripts/release/third-party-sources.mjs "$version" "$out"
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: release-common
@@ -176,7 +179,7 @@ jobs:
               --title "TTSNative $version" --notes-file "$RUNNER_TEMP/release-notes.md"
             gh release upload "$TAG" release-files/*
           fi
-          for file in latest.json "TTSNative-Setup-$version.exe" "TTSNative-Setup-$version.exe.sig" SHA256SUMS.txt; do
+          for file in latest.json "TTSNative-Setup-$version.exe" "TTSNative-Setup-$version.exe.sig" SHA256SUMS.txt "ttsnative-$version-third-party-sources.tar.gz"; do
             gh release view "$TAG" --json assets -q '.assets[].name' | grep -qxF "$file" || { echo "::error::$file is missing"; exit 1; }
           done
           gh release edit "$TAG" --draft=false --latest

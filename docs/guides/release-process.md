@@ -42,8 +42,9 @@ maintenance. The design behind this guide is in
    builds the installer signed for updates, checks that signature against the key in the app,
    smoke-tests the installer on a clean Windows runner, and then waits for approval of the `release`
    environment (if you configured reviewers). It creates the GitHub Release as a draft, attaches the
-   installer, `latest.json`, the source and web-UI archives, SBOMs, the runtime manifest and
-   `SHA256SUMS.txt` with signed provenance, checks they are all there, and only then publishes it.
+   installer, `latest.json`, the source and web-UI archives, the source of the installer's GPL and LGPL
+   parts, SBOMs, the runtime manifest and `SHA256SUMS.txt` with signed provenance, checks they are all
+   there, and only then publishes it.
 9. The reviewed notes become the release's description (with the developer changes folded away).
 10. ttsnative.com rebuilds: the download button points at the new installer, and the release history
     page shows the new notes.
@@ -103,6 +104,22 @@ original text below, run (after reviewing the files in `docs/releases/github/`):
 gh release edit v2.0.0 --notes-file docs/releases/github/v2.0.0.md
 gh release edit v1.0.0 --notes-file docs/releases/github/v1.0.0.md
 ```
+
+## Licences and the source offer
+
+The installer ships the licences it owes (`scripts/desktop/notices.mjs` writes
+`THIRD-PARTY-NOTICES.txt`; the build fails when a Python package has no licence). It also includes GPL
+and LGPL code (espeak-ng, phonemizer, libsndfile, LAME, mpg123, GNU libiconv), so every release
+attaches their corresponding source, `ttsnative-X.Y.Z-third-party-sources.tar.gz`, built from the
+archives pinned in `apps/desktop/third-party-sources.json`.
+
+- **When a dependency update changes one of those packages** (espeakng-loader, phonemizer, soundfile,
+  lxml), `npm run test:scripts` fails until the manifest is updated: find the source of the exact
+  binaries the new version ships, add or replace its entries with their size and SHA-256, and update
+  the `for` versions.
+- **When the release fails with a size or SHA-256 mismatch**, an upstream archive changed (GitHub can
+  regenerate its tag and commit archives). Download it again, check that its extracted contents match
+  the old archive, then update the size and hash in the manifest. Never skip the check.
 
 ## Testing a Windows build
 

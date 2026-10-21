@@ -30,13 +30,14 @@ const NOTES = {
   flatbuffers: 'Apache-2.0, Copyright Google Inc.: licenses\\Apache-2.0.txt.',
   ltts: 'TTSNative itself (MIT): LICENSE.txt.',
   onnxruntime:
-    'MIT, Microsoft: onnxruntime\\LICENSE, with third-party notices in onnxruntime\\ThirdPartyNotices.txt.',
+    'MIT, Microsoft: onnxruntime\\LICENSE, with third-party notices in onnxruntime\\ThirdPartyNotices.txt. onnxruntime.dll includes Eigen under MPL-2.0 (licenses\\MPL-2.0.txt): its source is at https://gitlab.com/libeigen/eigen, and the version used is named in https://github.com/microsoft/onnxruntime (cmake/deps.txt, at the tag of this onnxruntime version).',
 };
 /** Native code inside packages that brings licences of its own. */
 const NATIVE = {
   soundfile:
     'libsndfile_x64.dll contains libsndfile, LAME and mpg123 (LGPL-2.1-or-later; licenses\\LGPL-2.1.txt and _soundfile_data\\COPYING) and FLAC, Ogg, Vorbis and Opus (BSD-3-Clause). It is a separate library: you may replace python\\Lib\\site-packages\\_soundfile_data\\libsndfile_x64.dll with your own build of a compatible version.',
-  'espeakng-loader': 'espeak-ng: GPL-3.0-or-later (see the source offer above).',
+  'espeakng-loader':
+    'espeak-ng: GPL-3.0-or-later, with sonic (Apache-2.0) compiled in (see the source offer above).',
   phonemizer: 'GPL-3.0-or-later (see the source offer above).',
   lxml: 'Statically includes libxml2 and libxslt (MIT), zlib, and GNU libiconv (LGPL-2.1); see lxml-*.dist-info\\licenses\\LICENSES.txt and the source offer above.',
   pypdfium2:

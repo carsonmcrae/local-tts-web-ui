@@ -70,7 +70,7 @@ export class PcmRecorder {
       throw new MicrophoneError(
         'insecure',
         'Recording needs a secure page (localhost or HTTPS).',
-        'Open the app on this computer, or import a recording.',
+        'Voice Studio records only on the computer running TTSNative: open the app there.',
       );
     if (!navigator.mediaDevices?.getUserMedia || typeof AudioWorkletNode === 'undefined')
       throw new MicrophoneError(

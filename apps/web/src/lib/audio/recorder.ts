@@ -98,7 +98,7 @@ export class MicRecorder {
       throw new MicrophoneError(
         'insecure',
         'Recording needs a secure page (localhost or HTTPS).',
-        'Import a recording instead, or open the app on this computer.',
+        'Voice Studio records only on the computer running TTSNative: open the app there.',
       );
     if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined')
       throw new MicrophoneError(

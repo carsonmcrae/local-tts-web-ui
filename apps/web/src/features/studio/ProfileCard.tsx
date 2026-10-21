@@ -25,6 +25,7 @@ import { useToast } from '@/components/ui/Toast';
 import { usePlayer } from '@/features/player/PlayerProvider';
 import { useReadingVoice } from '@/features/player/useReadingVoice';
 import { formatRelativeDate } from '@/lib/format';
+import { onThisComputer } from '@/features/lan/LanIndicator';
 import { DeliveryPicker } from './TestStep';
 import { useClipPlayer } from './useClipPlayer';
 import { ShareVoiceButton } from './VoiceSharing';
@@ -111,19 +112,21 @@ export function ProfileCard({
       {engineReady ? <DeliveryPicker profile={profile} /> : null}
       {engineReady ? <VoiceStyles profile={profile} /> : null}
       <div className="flex flex-wrap gap-2">
-        <Button
-          size="sm"
-          icon={
-            playing ? (
-              <Square size={13} fill="currentColor" />
-            ) : (
-              <Play size={13} fill="currentColor" />
-            )
-          }
-          onClick={toggleReference}
-        >
-          {playing ? 'Stop' : 'Play recording'}
-        </Button>
+        {onThisComputer() ? ( // a voice's recording never travels to a phone over the network
+          <Button
+            size="sm"
+            icon={
+              playing ? (
+                <Square size={13} fill="currentColor" />
+              ) : (
+                <Play size={13} fill="currentColor" />
+              )
+            }
+            onClick={toggleReference}
+          >
+            {playing ? 'Stop' : 'Play recording'}
+          </Button>
+        ) : null}
         <Button
           size="sm"
           variant={isDefault ? 'subtle' : 'ghost'}

@@ -2,7 +2,8 @@
 /* Copyright (c) 2026 Carson McRae */
 /*
  * Purpose: Design-system foundation: semantic colour tokens (light + dark), typography, radii,
- *   shadows, focus rings, motion preferences and the reader's text styles.
+ *   shadows, focus rings, motion preferences, high contrast and forced colours, and the reader's
+ *   text styles.
  * Scope: Tailwind v4 entry point. Components use semantic utilities (bg-surface, text-muted,
  *   border-line, bg-accent…) rather than raw palette colours, so themes stay consistent.
  * Does NOT belong: Component-specific styling (kept in components via utilities).
@@ -41,6 +42,20 @@
   --shadow-color: 30 25 15;
 }
 
+/* High contrast (Settings → Appearance, or the OS asking for more contrast): text and lines darker,
+   highlights outlined, so nothing depends on a faint tint. */
+.contrast-more {
+  --muted: #2f2c27;
+  --subtle: #3b3833;
+  --line: #8c877d;
+  --line-strong: #4f4b44;
+  --accent: #3730a3;
+  --accent-hover: #312e81;
+  --accent-text: #312e81;
+  --highlight: rgb(55 48 163 / 0.22);
+  --highlight-line: #312e81;
+}
+
 .dark {
   --bg: #121316;
   --surface: #1a1b1f;
@@ -66,6 +81,20 @@
   --danger-soft: #2c1717;
   --overlay: rgb(0 0 0 / 0.6);
   --shadow-color: 0 0 0;
+}
+
+.dark.contrast-more {
+  --text: #ffffff;
+  --muted: #dad8d3;
+  --subtle: #c9c7c1;
+  --line: #6f6e75;
+  --line-strong: #a3a2a8;
+  --accent: #8f89ff;
+  --accent-hover: #a6a1ff;
+  --accent-fg: #0b0b0d;
+  --accent-text: #c9c6ff;
+  --highlight: rgb(170 166 255 / 0.3);
+  --highlight-line: #c9c6ff;
 }
 
 @theme inline {
@@ -127,6 +156,26 @@
     border-radius: 4px;
   }
 
+  /* Windows high contrast and other forced-colour modes: system colours, never colour-only cues. */
+  @media (forced-colors: active) {
+    :focus-visible {
+      outline: 3px solid Highlight;
+    }
+
+    .reader-seg[data-active='true'] {
+      forced-color-adjust: none;
+      background: Highlight;
+      color: HighlightText;
+      box-shadow: none;
+      outline: 2px solid HighlightText;
+    }
+
+    .reader-seg[data-styled='true'] {
+      background-image: none;
+      text-decoration: underline;
+    }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     *,
     *::before,
@@ -144,6 +193,8 @@
     @apply font-serif text-text;
     font-size: calc(clamp(1.0625rem, 0.98rem + 0.35vw, 1.25rem) * var(--reader-scale, 1));
     line-height: var(--reader-leading, 1.8);
+    letter-spacing: var(--reader-tracking, 0);
+    word-spacing: var(--reader-word-spacing, 0);
     max-width: 68ch;
     font-optical-sizing: auto;
   }

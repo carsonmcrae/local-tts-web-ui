@@ -145,8 +145,11 @@ cancels the timer.
 ## Reading text
 
 Settings → Appearance changes how the text looks on this device: **Text size** (Small to Extra
-large), **Line spacing** (Compact, Normal, Relaxed) and **Typeface** (Serif or Sans serif), with a
-preview.
+large), **Line spacing** (Compact, Normal, Relaxed), **Typeface** (Serif or Sans serif) and **Letter
+and word spacing** (Normal or Wider, which many readers with dyslexia find easier), with a preview.
+**Contrast → High** darkens text and lines and outlines the sentence being read; it also turns on by
+itself when your system asks for more contrast. In Windows high-contrast themes the app uses your
+theme's colours, and the sentence being read keeps a visible highlight.
 
 ## Resume
 

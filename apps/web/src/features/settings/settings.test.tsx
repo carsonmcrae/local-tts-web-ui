@@ -59,22 +59,39 @@ function renderSettings(route = '/settings') {
 }
 
 describe('Reading text', () => {
-  it('changes the size, spacing and typeface of the reading text on this device', async () => {
+  it('changes the size, spacing, letter spacing and typeface of the reading text on this device', async () => {
     api();
     const { user } = renderSettings();
     const appearance = await screen.findByRole('region', { name: 'Appearance' });
     await user.click(within(appearance).getByRole('radio', { name: 'Large' }));
     await user.click(within(appearance).getByRole('radio', { name: 'Relaxed' }));
     await user.click(within(appearance).getByRole('radio', { name: 'Sans serif' }));
+    await user.click(within(appearance).getByRole('radio', { name: 'Wider' }));
     const preview = within(appearance).getByLabelText('Reading text preview');
     expect(preview).toHaveAttribute('data-typeface', 'sans');
     expect(preview.style.getPropertyValue('--reader-scale')).toBe('1.15');
     expect(preview.style.getPropertyValue('--reader-leading')).toBe('2.05');
+    expect(preview.style.getPropertyValue('--reader-tracking')).toBe('0.06em');
+    expect(preview.style.getPropertyValue('--reader-word-spacing')).toBe('0.16em');
     expect(JSON.parse(localStorage.getItem('ltts.readingText') ?? '{}')).toEqual({
       size: 'large',
       spacing: 'relaxed',
       typeface: 'sans',
+      letters: 'wide',
     });
+  });
+
+  it('turns on high contrast for this device, and follows the system otherwise', async () => {
+    api();
+    const { user } = renderSettings();
+    const appearance = await screen.findByRole('region', { name: 'Appearance' });
+    const html = document.documentElement;
+    expect(html).not.toHaveClass('contrast-more');
+    await user.click(within(appearance).getByRole('radio', { name: 'High' }));
+    expect(html).toHaveClass('contrast-more');
+    expect(localStorage.getItem('ltts.contrast')).toBe('more');
+    await user.click(within(appearance).getByRole('radio', { name: 'Standard' }));
+    expect(html).not.toHaveClass('contrast-more');
   });
 
   it('reads only sensible saved values and still applies a change without storage', async () => {
@@ -82,7 +99,12 @@ describe('Reading text', () => {
       'ltts.readingText',
       JSON.stringify({ size: 'huge', spacing: 'compact', typeface: 7 }),
     );
-    expect(readReadingText()).toEqual({ size: 'medium', spacing: 'compact', typeface: 'serif' });
+    expect(readReadingText()).toEqual({
+      size: 'medium',
+      spacing: 'compact',
+      typeface: 'serif',
+      letters: 'normal',
+    });
     localStorage.setItem('ltts.readingText', '{not json');
     expect(readReadingText()).toEqual(DEFAULT_READING_TEXT);
     vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {

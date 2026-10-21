@@ -6,9 +6,9 @@ screens, an index on the left jumps between them.
 
 ## Appearance
 
-Choose the **System**, **Light** or **Dark** theme, and the reading text's **Text size**, **Line
-spacing** and **Typeface** (with a preview). These are saved on this device only, so each browser can
-have its own.
+Choose the **System**, **Light** or **Dark** theme, **Standard** or **High** contrast, and the
+reading text's **Text size**, **Line spacing**, **Typeface** and **Letter and word spacing** (with a
+preview). These are saved on this device only, so each browser can have its own.
 
 ## Playback
 

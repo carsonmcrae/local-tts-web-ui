@@ -123,7 +123,7 @@ def test_input_and_body_limits(client: TestClient, engines: dict[str, FakeEngine
 def test_unknown_voices_and_models_get_clear_errors(client: TestClient, engines: dict[str, FakeEngine]) -> None:
     token = switch_on(client)
     caller = program(client)
-    for voice in ("alloy", "kokoro:nope", "nope:alpha"):
+    for voice in ("whisper", "kokoro:nope", "nope:alpha"):
         unknown = speak(caller, token, voice=voice)
         assert unknown.status_code == 404 and error_code(unknown) == "voice_not_found"
         assert "/v1/voices" in unknown.json()["error"]["message"]

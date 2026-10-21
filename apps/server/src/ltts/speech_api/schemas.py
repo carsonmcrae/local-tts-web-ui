@@ -4,9 +4,10 @@
 
 Scope: The OpenAI-compatible ``/v1`` bodies (snake_case, as OpenAI clients send them): the speech
 request, validated strictly (no type coercion, fixed formats and ranges, voice ids limited to
-letters, digits, ``_``, ``-`` and ``:``; any other field is ignored), and the model and voice lists.
-Also the Settings bodies (camelCase, like the rest of ``/api``): the switches, the allowed custom
-voices, a new token (returned once), the status and the in-use activity.
+letters, digits, ``_``, ``-`` and ``:``; any other field is ignored), and the model and voice lists
+(each voice with the OpenAI voice name that also reaches it, if any). Also the Settings bodies
+(camelCase, like the rest of ``/api``): the switches, the allowed custom voices, a new token
+(returned once), the status and the in-use activity.
 Does NOT belong: Validation that needs state, such as the input length limit or allowed voices (``service.py``).
 """
 
@@ -55,6 +56,7 @@ class VoiceOut(BaseModel):
     language_code: str
     gender: str
     category: str
+    openai_name: str | None = None  # the OpenAI voice name that also reads with this voice, such as "alloy"
 
 
 class VoiceList(BaseModel):

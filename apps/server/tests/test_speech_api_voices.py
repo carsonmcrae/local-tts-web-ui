@@ -1,10 +1,12 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2026 Carson McRae
-"""Purpose: Tests for who may use which voices through the local speech API.
+"""Purpose: Tests for which voices the local speech API reads with, and who may use them.
 
-Scope: The token and voice checks around cloned voices: tokens that are altered, misplaced or
-revoked; custom voices that aren't allowed, with any model and in any spelling; odd ids and path
-tricks; blends; any voice that copies a recording; and permissions left behind by deleted voices.
+Scope: OpenAI's voice names (each a fixed built-in Kokoro voice, shown on that voice in the list, and
+never a custom voice whatever the owner allowed), and the token and voice checks around cloned
+voices: tokens that are altered, misplaced or revoked; custom voices that aren't allowed, with any
+model and in any spelling; odd ids and path tricks; blends; any voice that copies a recording; and
+permissions left behind by deleted voices.
 Does NOT belong: Switching the API on, the rate limit and settings (test_speech_api.py), or the audio
 and the limits (test_speech_api_audio.py, test_speech_api_load.py).
 """
@@ -21,9 +23,14 @@ from conftest import FakeEngine
 from ltts.config import Settings
 from ltts.container import Services
 from ltts.engines.base import VoiceSpec
+from ltts.engines.kokoro_voices import GRADES
 from ltts.engines.registry import ResolvedVoice
+from ltts.speech_api.service import OPENAI_VOICES
 from speech_api_support import KokoroVoices, app_with, auth, custom_voice, error_code, program, speak, switch_on
 
+# OpenAI's text-to-speech voices, as of 2026.
+NAMES = ["alloy", "ash", "ballad", "cedar", "coral", "echo", "fable", "marin", "nova", "onyx", "sage", "shimmer",
+         "verse"]  # fmt: skip
 BLENDS = "/api/voice-profiles/blends"
 Kokoro = tuple[TestClient, KokoroVoices, Services]
 
@@ -34,6 +41,57 @@ def kokoro(settings: Settings) -> Kokoro:
     engine = KokoroVoices()
     web, services = app_with(settings, engine, FakeEngine("chatterbox", cloning=True))
     return web, engine, services
+
+
+def test_each_openai_voice_name_stands_for_one_built_in_kokoro_voice() -> None:
+    assert sorted(OPENAI_VOICES) == NAMES
+    voices = list(OPENAI_VOICES.values())
+    assert len(set(voices)) == len(voices)  # one voice each, so two names never sound the same
+    for name, voice in OPENAI_VOICES.items():
+        engine, _, key = voice.partition(":")
+        assert engine == "kokoro" and key in GRADES and ":" not in name, name
+    namesakes = {name for name, voice in OPENAI_VOICES.items() if voice.endswith(f"_{name}")}
+    assert namesakes == {"alloy", "echo", "fable", "nova", "onyx"}  # Kokoro's own voices of those names
+
+
+def test_openai_voice_names_read_with_their_built_in_voice(kokoro: Kokoro) -> None:
+    web, engine, services = kokoro
+    token = switch_on(web)
+    caller = program(web)
+    for name in NAMES:
+        response = speak(caller, token, voice=name, input=f"Hello from {name}.", response_format="wav")
+        assert response.status_code == 200, name
+        assert engine.calls[-1][1] == OPENAI_VOICES[name].partition(":")[2]
+    assert services.speech_api.usage.snapshot().last_voice_id == "kokoro:am_puck"  # the voice "verse" read with
+    for model in ("tts-1", "tts-1-hd", "gpt-4o-mini-tts", "kokoro"):
+        assert speak(caller, token, model=model, voice="alloy").status_code == 200
+    mismatch = speak(caller, token, model="chatterbox", voice="alloy")
+    assert mismatch.status_code == 422 and error_code(mismatch) == "model_voice_mismatch"
+    for wrong in ("Alloy", "ALLOY", "alloy2", "openai:alloy", "kokoro:alloy", "whisper"):
+        assert error_code(speak(caller, token, voice=wrong)) == "voice_not_found", wrong
+
+    listed = {voice["id"]: voice for voice in caller.get("/v1/voices", headers=auth(token)).json()["data"]}
+    named = {voice["openai_name"]: voice_id for voice_id, voice in listed.items() if voice["openai_name"]}
+    assert named == OPENAI_VOICES and listed["kokoro:bf_emma"]["openai_name"] is None
+    assert not set(listed) & set(NAMES)  # shown on the voices, not added as voices of their own
+    models = caller.get("/v1/models", headers=auth(token)).json()["data"]
+    assert not {model["id"] for model in models} & set(NAMES)
+
+    engine.ready = False
+    assert error_code(speak(caller, token, voice="nova")) == "engine_not_installed"
+    offered = caller.get("/v1/voices", headers=auth(token)).json()["data"]
+    assert offered and not any(voice["openai_name"] for voice in offered)  # only voices that can be used
+
+
+def test_an_openai_voice_name_never_reaches_a_custom_voice(kokoro: Kokoro, monkeypatch: pytest.MonkeyPatch) -> None:
+    web, _engine, _services = kokoro
+    voice = custom_voice(web)
+    token = switch_on(web, allowedVoices=[voice])
+    caller = program(web)
+    assert speak(caller, token, voice=voice).status_code == 200  # allowed under its own id
+    monkeypatch.setitem(OPENAI_VOICES, "alloy", voice)  # even if the table pointed a name at it
+    refused = speak(caller, token, voice="alloy")
+    assert refused.status_code == 403 and error_code(refused) == "voice_not_allowed"
 
 
 def test_only_the_exact_current_token_is_accepted(client: TestClient) -> None:

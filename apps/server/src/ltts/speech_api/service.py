@@ -4,12 +4,13 @@
 
 Scope: The models and voices a client may use (every built-in voice of an installed engine, blends of
 them, and only the custom voices the owner allowed; any other kind of voice, and any voice that copies
-a recording, is refused), checking a requested model and voice, cleaning the input and splitting it
-with the document segmenter, rendering each sentence through the synthesis service (cache,
-pronunciation dictionary and engine queues included, at preview priority so reading in the app comes
-first), joining the sentences and encoding them. One request is synthesised at a time (another gets
-429), and a request that runs out of time or whose client disconnects releases its queued work and
-starts no further sentence. Also the status the Settings page shows.
+a recording, is refused), OpenAI's voice names as fixed stand-ins for built-in Kokoro voices, checking
+a requested model and voice, cleaning the input and splitting it with the document segmenter,
+rendering each sentence through the synthesis service (cache, pronunciation dictionary and engine
+queues included, at preview priority so reading in the app comes first), joining the sentences and
+encoding them. One request is synthesised at a time (another gets 429), and a request that runs out
+of time or whose client disconnects releases its queued work and starts no further sentence. Also the
+status the Settings page shows.
 Does NOT belong: HTTP concerns such as access checks and parsing (``router.py``) or stored settings
 (``store.py``).
 """
@@ -43,6 +44,25 @@ OPENAI_MODELS = ("tts-1", "tts-1-hd", "gpt-4o-mini-tts")  # accepted so OpenAI c
 MAX_SENTENCES = 200
 CUSTOM = "custom"  # cloned voices (custom:<id>): only those the owner allowed
 BLEND_PREFIX = "blend:"  # mixes of built-in voices, which copy no one: allowed like them
+# OpenAI's voice names, so clients that only offer those work unchanged. Each stands for one built-in
+# Kokoro voice, never a custom one: Kokoro's voice of the same name where it has one, otherwise a
+# well-graded voice of the same gender, each used once (docs/guides/local-speech-api.md has the table).
+OPENAI_VOICES: dict[str, str] = {
+    "alloy": "kokoro:af_alloy",
+    "ash": "kokoro:am_michael",
+    "ballad": "kokoro:bm_george",
+    "cedar": "kokoro:am_fenrir",
+    "coral": "kokoro:af_bella",
+    "echo": "kokoro:am_echo",
+    "fable": "kokoro:bm_fable",
+    "marin": "kokoro:af_heart",
+    "nova": "kokoro:af_nova",
+    "onyx": "kokoro:am_onyx",
+    "sage": "kokoro:af_sarah",
+    "shimmer": "kokoro:af_nicole",
+    "verse": "kokoro:am_puck",
+}
+OPENAI_NAMES = {voice: name for name, voice in OPENAI_VOICES.items()}
 CONTENT_TYPES = {
     "mp3": "audio/mpeg",
     "opus": "audio/ogg",
@@ -121,14 +141,16 @@ class SpeechApi:
             and (voice.category == "built-in" or voice.id.startswith(BLEND_PREFIX) or voice.id in allowed)
         ]
 
-    def check(self, config: SpeechApiConfig, request: SpeechRequest) -> None:
+    def check(self, config: SpeechApiConfig, request: SpeechRequest) -> SpeechRequest:
         """Refuse an unknown model, an unknown voice, or any voice that is neither one of an engine's
-        own built-in voices nor allowed by the owner (cloned voices are checked before they are read)."""
+        own built-in voices nor allowed by the owner (cloned voices are checked before they are read).
+        Returns the request to make, with an OpenAI voice name replaced by its built-in voice."""
         engines = self._engine_ids()
         if request.model not in (MODEL, *OPENAI_MODELS, *engines):
             raise NotFoundError("Unknown model. GET /v1/models lists the models you can use.", code="model_not_found")
-        voice = request.voice
-        allowed = voice in config.allowed_voices  # ids match exactly, case included
+        stand_in = OPENAI_VOICES.get(request.voice)
+        voice = stand_in or request.voice
+        allowed = stand_in is None and voice in config.allowed_voices  # ids match exactly, case included
         refused = ForbiddenError(
             "This voice isn't allowed for the speech API. Its owner can allow a custom voice in TTSNative's "
             "Settings, under Local speech API.",
@@ -140,7 +162,8 @@ class SpeechApi:
             resolved = self._engines.resolve(voice)
         except NotFoundError as exc:
             raise NotFoundError(
-                "Unknown voice. Use a TTSNative voice id such as kokoro:af_heart; GET /v1/voices lists them.",
+                "Unknown voice. Use a TTSNative voice id such as kokoro:af_heart, or an OpenAI voice name such "
+                "as alloy; GET /v1/voices lists them.",
                 code="voice_not_found",
             ) from exc
         engine, spec = resolved.engine, resolved.spec
@@ -156,6 +179,7 @@ class SpeechApi:
                 f"That voice isn't a {request.model} voice. Use the model {MODEL} for any voice.",
                 code="model_voice_mismatch",
             )
+        return request if stand_in is None else request.model_copy(update={"voice": voice})
 
     # -- synthesis -------------------------------------------------------------
     def sentences(self, text: str) -> list[tuple[str, str]]:

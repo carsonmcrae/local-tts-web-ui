@@ -199,7 +199,7 @@ def test_models_and_voices_can_be_discovered(client: TestClient, engines: dict[s
     assert [voice["id"] for voice in voices["data"]] == ["kokoro:alpha", "chatterbox:alpha"]
     assert voices["data"][0] == {
         "id": "kokoro:alpha", "object": "voice", "name": "Alpha", "engine": "kokoro", "language": "English (US)",
-        "language_code": "en-us", "gender": "female", "category": "built-in",
+        "language_code": "en-us", "gender": "female", "category": "built-in", "openai_name": None,
     }  # fmt: skip
     assert caller.get("/v1/audio/voices", headers=auth(token)).json() == voices
     engines["chatterbox"].ready = False  # voices of an engine that isn't installed are not offered

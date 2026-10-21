@@ -28,6 +28,7 @@ from ltts.container import ServicesDep
 from ltts.errors import AppError, BusyError, ForbiddenError, PayloadTooLargeError, UnsupportedDocumentError
 from ltts.speech_api.guard import bearer, from_browser, is_local
 from ltts.speech_api.schemas import ModelList, ModelOut, SpeechRequest, VoiceList, VoiceOut
+from ltts.speech_api.service import OPENAI_NAMES
 from ltts.speech_api.store import SpeechApiConfig
 from ltts.synthesis.service import ClientGoneError
 
@@ -128,6 +129,7 @@ def list_voices(services: ServicesDep, config: Access) -> VoiceList:
                 language_code=voice.language_code,
                 gender=voice.gender,
                 category=voice.category,
+                openai_name=OPENAI_NAMES.get(voice.id),
             )
             for voice in voices
         ]
@@ -148,7 +150,7 @@ async def create_speech(request: Request, services: ServicesDep, config: Access)
         raise RequestValidationError(
             exc.errors(include_input=False, include_context=False, include_url=False)
         ) from None
-    api.check(config, speech)
+    speech = api.check(config, speech)
     parts = api.sentences(speech.input)
     try:
         audio = await api.speak(speech, parts, request.is_disconnected)

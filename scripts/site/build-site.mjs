@@ -79,7 +79,7 @@ function main() {
     readFileSync(path.join(out, page), 'utf8'),
   );
   const wanted = new Set(
-    pages.flatMap((html) => [...html.matchAll(/images\/([\w.-]+)/g)].map((m) => m[1])),
+    pages.flatMap((html) => [...html.matchAll(/images\/([\w.-]+)/g)].map((m) => String(m[1]))),
   );
   mkdirSync(path.join(out, 'images'), { recursive: true });
   for (const file of wanted) {

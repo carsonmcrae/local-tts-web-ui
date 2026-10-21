@@ -56,6 +56,39 @@ animated quoted lines, and questions and exclamations prefer the passages that a
 These are single samples, so they show a direction rather than a measured gain. Listening is the
 real test.
 
+## Repeatable A/B comparisons
+
+Every quality change should be judged by ear, blind, on the same sentences. `ltts voice-ab` makes that
+repeatable:
+
+```bash
+node scripts/uv-run.mjs run --frozen --project apps/server ltts voice-ab compare custom:<before> custom:<after> --reference data/voices/<id>/reference.wav
+```
+
+- Both voices read the same sentences (a built-in set covering narration, questions, an exclamation,
+  quoted dialogue, numbers, names, a long sentence and a calm aside; or `--sentences file.txt`) through
+  the normal synthesis path, so styles, pronunciations and loudness levelling apply as in the app.
+- Each pair is written as **X** and **Y** in an order shuffled by `--seed`; `key.json` records which is
+  which, and the same seed gives the same order.
+- `metrics.csv` has plain measurements per clip: length, syllables per second, speech loudness, pause
+  share, clipping and, with `--reference` and the cloning engine installed, how close the speaker
+  sounds to the reference (the cosine of both of Chatterbox's speaker embeddings, averaged).
+- `listen.html` is a local page with the pairs and a choice per pair; it loads nothing from anywhere.
+  Save the answers, then `ltts voice-ab score <folder> answers.json` unblinds them and reports how often
+  each voice was preferred, with its mean similarity.
+
+Similarity is a sanity check, not a verdict: two voices within about 0.02 of each other are a matter
+for the listening test.
+
+## What the session is, and isn't
+
+A studio session doesn't train anything. Chatterbox Turbo speaks from a short reference (S3Gen uses
+about the first 10 s, T3 about 15 s of prompt tokens) plus, in TTSNative, short style prompts. The
+session's job is to choose those well: it averages the speaker's identity over all takes, ranks the
+takes as prompts and builds speaking styles from passages that contain questions, exclamations and
+dialogue. More takes give more to choose from and a steadier identity, not a "trained" model; the app
+says so wherever the session is described.
+
 ## Next steps
 
 1. **LoRA fine-tune of Turbo's T3 on the session (largest remaining gain, L).** There is one

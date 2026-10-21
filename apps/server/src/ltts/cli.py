@@ -18,6 +18,7 @@ import sys
 import threading
 import webbrowser
 from pathlib import Path
+from typing import Any
 
 from ltts import __version__
 from ltts.config import Settings
@@ -134,6 +135,45 @@ def _doctor(_: argparse.Namespace) -> int:
     return 0
 
 
+def _voice_ab(args: argparse.Namespace) -> int:
+    """Compare two voices blind on the same sentences (``compare``), or unblind a listener's answers (``score``)."""
+    from ltts.voices import ab_test
+
+    if args.action == "score":
+        print(ab_test.score(Path(args.target), Path(args.answers)).summary())
+        return 0
+    import soundfile as sf
+
+    from ltts.common import utc_now
+    from ltts.container import build_services
+
+    settings = Settings()
+    services = build_services(settings)
+    lines = Path(args.sentences).read_text("utf-8").splitlines() if args.sentences else ab_test.DEFAULT_SENTENCES
+    sentences = [line.strip() for line in lines if line.strip()][:40]
+    stamp = utc_now()[:19].replace(":", "").replace("-", "")
+    folder = Path(args.out) if args.out else settings.path("comparisons", stamp)
+
+    def synthesise(voice: str, text: str) -> tuple[Any, int]:
+        audio = services.synthesis.render_blocking(voice, text, "sentence", args.pace, 0, lambda: False)
+        samples, rate = sf.read(audio.path, dtype="float32")
+        return samples, int(rate)
+
+    similarity = None
+    if args.reference:
+        builder = services.engines.voice_builder("chatterbox")
+        reference = Path(args.reference)
+        similarity = lambda clips: ab_test.similarity_to(builder, reference, clips)  # noqa: E731
+    try:
+        rows = ab_test.compare(synthesise, (args.target, args.answers), folder, sentences, args.seed, similarity)
+    finally:
+        for engine in services.engines.all():
+            engine.close()
+    print(f"Wrote {len(rows)} clips to {folder}.")
+    print(f"Open {folder / 'listen.html'}, save your answers, then run: ltts voice-ab score {folder} answers.json")
+    return 0
+
+
 def _openapi(_: argparse.Namespace) -> int:
     from ltts.app import create_app
 
@@ -160,6 +200,21 @@ def main(argv: list[str] | None = None) -> int:
     models.set_defaults(func=_models)
     sub.add_parser("doctor", help="print environment diagnostics").set_defaults(func=_doctor)
     sub.add_parser("openapi", help="print the OpenAPI schema").set_defaults(func=_openapi)
+    ab = sub.add_parser(
+        "voice-ab",
+        help="blind A/B comparison of two voices",
+        description="compare VOICE_A VOICE_B: read test sentences with both voices into a blind listening page; "
+        "score FOLDER ANSWERS: unblind the answers saved from that page",
+    )
+    ab.add_argument("action", choices=["compare", "score"])
+    ab.add_argument("target", help="compare: voice A's id (e.g. custom:<id>); score: the comparison folder")
+    ab.add_argument("answers", help="compare: voice B's id; score: the answers.json saved from the page")
+    ab.add_argument("--sentences", help="a text file with one sentence per line (default: a built-in set)")
+    ab.add_argument("--reference", help="a recording of the real speaker, to measure similarity (cloning engine)")
+    ab.add_argument("--out", help="where to write the comparison (default: <data>/comparisons/<time>)")
+    ab.add_argument("--seed", type=int, default=0, help="shuffles which voice is X and which is Y")
+    ab.add_argument("--pace", type=float, default=1.0)
+    ab.set_defaults(func=_voice_ab)
     args = parser.parse_args(argv)
     return int(args.func(args))
 

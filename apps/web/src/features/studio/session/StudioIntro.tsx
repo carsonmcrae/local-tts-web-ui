@@ -15,7 +15,9 @@ export function StudioIntro() {
       <Point icon={<Sparkles size={16} />} title="Built from your best takes">
         You’ll read short passages in different styles. The app measures every take, averages your
         voice across the whole session, then builds and tests a few voices from your best takes so
-        you can pick the one that sounds most like you. No model is trained.
+        you can pick the one that sounds most like you. When it speaks, the engine listens to about
+        10–15 seconds of your best take plus short style samples; the rest of the session is how
+        those are chosen. No model is trained.
       </Point>
       <Point icon={<Mic size={16} />} title="A good microphone makes the biggest difference">
         Use a USB or XLR microphone, a hand’s width from your mouth and aimed slightly to the side.

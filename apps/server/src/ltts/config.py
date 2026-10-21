@@ -33,6 +33,8 @@ class Settings(BaseSettings):
     data_dir: Path = REPO_ROOT / "data"
     models_dir: Path | None = Field(default=None, description="Defaults to <data_dir>/models")
     engines_dir: Path | None = Field(default=None, description="Defaults to <data_dir>/engines")
+    # Read-only models shipped with the desktop app, used until the user's own copy exists.
+    bundled_models_dir: Path | None = None
 
     # Network exposure. Loopback only unless the user explicitly opts in (see docs/guides/lan-access.md).
     host: str = "127.0.0.1"

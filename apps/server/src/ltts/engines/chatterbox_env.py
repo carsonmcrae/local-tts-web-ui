@@ -23,13 +23,15 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from ltts.common import utc_now
+from ltts.common import NO_CONSOLE_WINDOW, utc_now
 from ltts.config import REPO_ROOT
 from ltts.errors import EngineUnavailableError
 from ltts.jobs import JobContext
 
 log = logging.getLogger("ltts.engines.chatterbox")
-PROJECT_DIR = REPO_ROOT / "apps" / "chatterbox-worker"
+# The desktop app ships the worker project and keeps uv's Python downloads in the user's folder.
+PROJECT_DIR = Path(os.environ.get("LTTS_WORKER_PROJECT_DIR") or REPO_ROOT / "apps" / "chatterbox-worker")
+PYTHON_INSTALL_DIR = Path(os.environ.get("LTTS_UV_PYTHON_DIR") or REPO_ROOT / ".tools" / "python")
 INSTALL_FAILED = "Installing the Chatterbox runtime failed. Check your connection and the server log, then retry."
 UPDATE_FAILED = (
     "Updating the Chatterbox runtime failed. Your installation was not removed; check your connection and the "
@@ -79,13 +81,14 @@ def sync_environment(uv: str, project_dir: Path, venv: Path, extra: str, context
     the environment, so a dropped connection or a full disk during download leaves the old packages in place.
     """
     env = {**os.environ, "UV_PROJECT_ENVIRONMENT": str(venv),
-           "UV_PYTHON_INSTALL_DIR": str(REPO_ROOT / ".tools" / "python"), "UV_NO_PROGRESS": "1"}  # fmt: skip
+           "UV_PYTHON_INSTALL_DIR": str(PYTHON_INSTALL_DIR), "UV_NO_PROGRESS": "1"}  # fmt: skip
     # Popen's encoding argument needs Python 3.6; the server requires 3.11.
     # The argv is fixed, and uv verifies every package hash against the committed lockfile.
     # nosemgrep: python.lang.compatibility.python36.python36-compatibility-Popen2
     proc = subprocess.Popen(  # noqa: S603
         [uv, "sync", "--frozen", "--no-dev", "--project", str(project_dir), "--extra", extra],
         cwd=project_dir, env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, encoding="utf-8",
+        creationflags=NO_CONSOLE_WINDOW,
     )  # fmt: skip
     tail: list[str] = []
     for line in proc.stdout or ():

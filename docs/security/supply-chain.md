@@ -136,6 +136,11 @@ diffusers accepts any Pillow. The licence is unchanged (MIT-CMU). Only Pillow mo
   `virtualenv>=21.14.7` in `override-dependencies`. Nothing else in the lock changed, and
   `s3tokenizer` stays at 0.3.0. The exception line in `pyproject.toml` says to drop it after
   2026-10-27, when the release is two weeks old.
+- **Still installed.** `uv sync --no-dev` leaves out only this project's own development group; it
+  can't drop `pre-commit` or `virtualenv`, because `s3tokenizer` declares `pre-commit` as a runtime
+  requirement. Both stay in the environment, `virtualenv` at 21.14.7 and unused. Removing them would
+  take an override that marks `pre-commit` as never installed, as this file already does for gradio;
+  that is a change for a later release, not a release-week one.
 - **Revisit.** Reassess if `s3tokenizer` drops the `pre-commit` requirement (then both packages can
   leave the environment altogether), or if a newer advisory names 21.14.7.
 

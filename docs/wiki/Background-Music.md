@@ -1,14 +1,24 @@
-# Background music
+# Background music and the audio mixer
 
 TTSNative can play quiet music under the narration: ambient pads, a fantasy theme, lo-fi, a piano
 piece or the sound of rain. It is off unless you turn it on, it has its own volume, and it never
 changes the narration.
 
-## Turn it on
+## The audio mixer
+
+The **Audio mixer** button (three sliders) in the player at the bottom opens every sound level in one
+place. On a phone it is next to the play controls; on a wider screen it is at the end of the position
+bar.
+
+- **Narration**: how loud the voice is, from 0 to 100 %. It starts at 100 % and is remembered on this
+  device. On iPhone and iPad the narration follows the device's own volume buttons instead, and the
+  mixer says so.
+- **Background music**: on or off for this narration, its volume, and the track.
+
+## Turn music on
 
 1. Start reading a document.
-2. In the player at the bottom, select the **music note** button. On a phone it is next to the play
-   controls; on a wider screen it is at the end of the position bar.
+2. Open the **Audio mixer**.
 3. Turn on **Background music**.
 
 The music fades in. It plays while the narration plays, fades out when you pause, and carries on from
@@ -21,7 +31,7 @@ TTSNative remembers which track you chose and how loud you like it, but never tu
 
 ## Choose a track
 
-Select **Browse** in the music panel to open the library:
+Select **Browse** in the audio mixer to open the library:
 
 - **Categories** (Ambient, Fantasy, Cinematic, Lo-fi, Focus, Nature) narrow the list.
 - **Preview** (the play button beside a track) lets you hear a track for up to 20 seconds. If music is
@@ -31,9 +41,9 @@ Select **Browse** in the music panel to open the library:
 
 ## Volume
 
-**Music volume** goes from 0 to 100 %. It starts at 10 %, which keeps the music well below the voice.
-It is separate from the narration: the music slider never changes how loud the narration is, and the
-narration's volume never changes the music. Your choice is saved on this device; another computer or
+The music's volume goes from 0 to 100 %. It starts at 10 %, which keeps the music well below the
+voice. It is separate from the narration: the music slider never changes how loud the narration is,
+and the narration slider never changes the music. Both are saved on this device; another computer or
 phone keeps its own.
 
 ## The library
@@ -69,4 +79,5 @@ Exports contain the narration only. Music isn't added to exported files.
   track or turn music on again.
 - **"Background music isn't available in this browser."**: the browser can't play music this way.
   Narration still works. Use a current version of Chrome, Edge, Firefox or Safari.
-- **The music is too loud or too quiet**: adjust **Music volume**, not the narration volume.
+- **The music is too loud or too quiet**: adjust the music's volume in the audio mixer, not the
+  narration's.

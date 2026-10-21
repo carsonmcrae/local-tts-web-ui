@@ -32,6 +32,8 @@
     "release:prepare": "node scripts/release/prepare.mjs",
     "desktop:build": "node scripts/desktop/build.mjs",
     "desktop:runtime": "node scripts/desktop/build-runtime.mjs",
+    "desktop:smoke-test": "node scripts/desktop/smoke-test.mjs",
+    "desktop:update-test": "node scripts/desktop/update-test.mjs",
     "test": "npm run test:scripts && npm run test:web && npm run test:server",
     "test:scripts": "node --test \"scripts/**/*.test.mjs\"",
     "test:web": "npm run test --workspace @ltts/web",

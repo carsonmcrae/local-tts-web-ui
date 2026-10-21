@@ -1,5 +1,8 @@
 # Installation
 
+On Windows 11 you can install the [Windows app](Windows-App) instead, with no developer tools. This
+page covers running TTSNative from its source code (Windows, macOS and Linux).
+
 ## Requirements
 
 You need **Node.js 22.22 or newer** and **Git**. You don't need to install Python yourself: the first

@@ -18,7 +18,9 @@ By design, the server logs identifiers only, never document text, recordings or 
 ## What is downloaded, and from where
 
 Downloads only happen when you install or update the app (`npm install` and the first `npm run dev`
-afterwards) and when you install an optional engine. After that, the app works fully offline.
+afterwards) and when you install an optional engine. After that, the app works fully offline. The
+[Windows app](Windows-App) also checks GitHub for new official versions (Settings → About can turn this
+off); the check is an ordinary download of a small public file and carries no information about you.
 
 | What                                    | When                                          | From                                                               | Checked by                                                      |
 | --------------------------------------- | --------------------------------------------- | ------------------------------------------------------------------ | --------------------------------------------------------------- |
@@ -28,6 +30,8 @@ afterwards) and when you install an optional engine. After that, the app works f
 | Chatterbox Turbo weights (about 3 GB)   | Only if you install voice cloning             | Resemble AI's repository on Hugging Face, at a pinned revision     | Pinned URL, exact size and SHA-256                              |
 | Chatterbox runtime (PyTorch and others) | Only if you install voice cloning             | PyTorch from `download.pytorch.org`, other packages from PyPI      | Exact versions from the worker's lockfile                       |
 | npm packages                            | `npm install`                                 | The npm registry                                                   | Exact versions in `package-lock.json`; install scripts disabled |
+| Update check (Windows app only)         | At most twice a day; can be turned off        | `latest.json` of the latest GitHub Release                         | Sends nothing about you or your documents                       |
+| Updates (Windows app only)              | When you choose Install and restart           | The installer attached to that GitHub Release                      | Signature checked against the key built into the app            |
 
 Model files are only fetched over HTTPS from approved hosts (GitHub and Hugging Face), checked again on
 every redirect, and installed only after their size and SHA-256 match. If a host isn't approved or a

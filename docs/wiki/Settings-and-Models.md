@@ -88,6 +88,11 @@ mode, a **Network access is on** warning appears here (see [Other Devices](Other
 CPU count and RAM), the GPU (or "None detected (CPU mode)"), who made the app and its licence, with a
 link to the source code and how to credit the project.
 
+**Version** shows whether this is a stable release or a development build. In the
+[Windows app](Windows-App) you can **Check for updates**, turn automatic checks on or off, and open
+the data and log folders. **What's new** and **Release history** show the notes of every version,
+also offline.
+
 **Copy diagnostics** copies a short report to the clipboard: versions, platform, memory, GPUs, ONNX
 Runtime providers, disk use and whether network access is on. It contains no documents or personal
 data. Paste it into bug reports.

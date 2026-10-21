@@ -1,51 +1,121 @@
 # Release process
 
-The project follows [Semantic Versioning](https://semver.org/): MAJOR for breaking changes to data,
-APIs or setup, MINOR for features, PATCH for fixes.
+TTSNative follows [Semantic Versioning](https://semver.org/): **major** for changes that break data,
+setup or behaviour people rely on, **minor** for anything new, **patch** for fixes, security fixes and
+maintenance. The design behind this guide is in
+[desktop-and-releases.md](../architecture/desktop-and-releases.md) (ADR-15 to ADR-17).
 
-One version number appears in six places and `npm run lint:repo` (`scripts/check-version.mjs`) fails if
-they disagree: root and web `package.json`, `apps/server/pyproject.toml`, `ltts/__init__.py`,
-`apps/chatterbox-worker/pyproject.toml`, and the newest `CHANGELOG.md` heading. The UI shows both the web
-and server versions in **Settings → About**.
+## The flow
 
-## Steps
-
-1. On a branch, add changes under a new `## [x.y.z] - Unreleased` heading in `CHANGELOG.md`.
-2. Bump the version in the six places above.
-3. Run `npm run check`, `npm run test:inference` and `npm run test:e2e`; record anything that could not run.
-   Before a major or minor release, also do the [clean-install check](#clean-install-check).
-4. Open a pull request; merge after CI is green and review is done.
-5. In the same pull request (or a follow-up), replace `Unreleased` with the release date.
-6. On an up-to-date `main`, create and push an annotated tag:
+1. Development happens on a branch.
+2. The pull request adds a **change file** (`npm run change -- minor`) that declares its bump and its
+   notes: plain-language entries for users, technical ones for developers. See
+   [.changes/README.md](../../.changes/README.md). Nobody edits version numbers or `CHANGELOG.md`.
+3. CI checks the change file, the version, the code and, for app changes, builds and smoke-tests the
+   Windows installer (an artifact for testing; nothing is published).
+4. The pull request is reviewed and merged. Each CI run on `main` shows the next version in its summary
+   (`npm run release:status` shows it locally).
+5. **Preparing a release** (when you decide to ship):
 
    ```bash
-   git tag -a v2.0.1 -m "TTSNative 2.0.1"
-   git push origin v2.0.1
+   git switch main && git pull --tags && git switch -c release/next
+   npm run release:prepare
    ```
 
-The [Release workflow](../../.github/workflows/release.yml) does the rest. It:
+   This sets the next version in every version file, adds the dated `CHANGELOG.md` entry, drafts
+   `docs/releases/X.Y.Z.md` and deletes the consumed change files. Rewrite the draft's summary in two or
+   three plain sentences, check every line against what really shipped, delete the draft line, rename
+   the branch to `release/vX.Y.Z`, then commit and open a pull request. CI refuses the release pull
+   request unless the version is exactly the one the change files lead to, the notes are finished, and
+   the version was never used.
 
-- refuses the tag unless it matches `package.json` and a dated `CHANGELOG.md` entry
-  (`scripts/release-notes.mjs`)
-- runs `npm run check` through the real bootstrap
-- packages the source archive, the prebuilt web UI, CycloneDX SBOMs for the web app, the server and the
-  Chatterbox worker, the demo and showcase videos and `SHA256SUMS.txt`
-- signs build provenance for every file
-- publishes the release with the changelog entry as its notes
+6. Merge the release pull request.
+7. **Publishing** is your explicit approval: tag the merge commit and push the tag.
 
-To publish an existing tag again (for example after fixing the workflow), run the workflow manually with
-that tag. Anyone can verify a download:
+   ```bash
+   git switch main && git pull
+   git tag -a vX.Y.Z -m "TTSNative X.Y.Z"
+   git push origin vX.Y.Z
+   ```
+
+8. The [Release workflow](../../.github/workflows/release.yml) verifies the tag, runs every check,
+   builds the installer signed for updates, checks that signature against the key in the app,
+   smoke-tests the installer on a clean Windows runner, and then waits for approval of the `release`
+   environment (if you configured reviewers). It creates the GitHub Release as a draft, attaches the
+   installer, `latest.json`, the source and web-UI archives, SBOMs, the runtime manifest and
+   `SHA256SUMS.txt` with signed provenance, checks they are all there, and only then publishes it.
+9. The reviewed notes become the release's description (with the developer changes folded away).
+10. ttsnative.com rebuilds: the download button points at the new installer, and the release history
+    page shows the new notes.
+11. Installed copies of the Windows app find the update at their next check.
+
+If anything fails, nothing is published; fix the cause and run the workflow again for the same tag
+(**Actions → Release → Run workflow**). A published version is never replaced or reused, and tags
+matching `v*` are protected.
+
+## One-time setup before the first Windows release
+
+These need the repository owner; none of them is in the repository.
+
+1. **Updater signing key.** A key pair was generated for this project on the maintainer's computer
+   (`C:\Users\wcars\.ttsnative-release\updater.key` with its password in `updater.key.password`); its
+   public key is already in `apps/desktop/src-tauri/tauri.conf.json`. Store both files in your password
+   manager, then in **Settings → Environments** create an environment named `release` and add two
+   environment secrets: `TAURI_SIGNING_PRIVATE_KEY` (the contents of `updater.key`) and
+   `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`. Delete the local copies afterwards if you like.
+   _If you'd rather create your own key_, run `npx tauri signer generate -w <path>` and replace
+   `plugins.updater.pubkey` before the first release; after that, the key can never change without
+   breaking updates for installed copies. **Losing the private key means existing installations can't
+   update themselves any more.**
+2. **Approval.** In the `release` environment, add yourself as a required reviewer and limit it to tags
+   matching `v*`. Each release build then waits for your approval before the signing key is used.
+3. **Windows code signing (Authenticode), when you're ready.** Without it, SmartScreen warns on download
+   and first run. Options in 2026:
+   - **Azure Artifact Signing** (formerly Trusted Signing): about $10 a month; individuals in the US
+     and Canada can verify their identity; no hardware token. Install its signing tool in the
+     release job, set the repository variable `TTSNATIVE_WINDOWS_SIGN_COMMAND` to the tool's command
+     with `%1` for the file (for example
+     `artifact-signing-cli -e https://wus2.codesigning.azure.net -a <account> -c <profile> -d TTSNative %1`)
+     and add `AZURE_CLIENT_ID`, `AZURE_CLIENT_SECRET` and `AZURE_TENANT_ID` to the `release` environment.
+   - **SignPath Foundation**: free for open-source projects that meet its conditions; the publisher
+     shown is "SignPath Foundation".
+   - **OV/EV certificates** from a CA: the key must live on a hardware token or cloud HSM; reputation
+     with SmartScreen still builds over time.
+
+   The build signs the app, the server's executables and the installer before the updater signature
+   is computed. Until then the website's install steps explain the SmartScreen warning.
+
+## Changes that predate change files
+
+Everything merged after 2.0.0 and before change files existed is described for developers under
+`[Unreleased]` in `CHANGELOG.md` and for users in `.changes/merged-since-2.0.0.md`; the next
+`release:prepare` folds both into that release. Branches started before change files existed should
+move any lines they added under `[Unreleased]` into a change file (user entries plus Technical).
+
+## Historical releases
+
+`docs/releases/1.0.0.md` and `2.0.0.md` hold plain-language notes for the two earlier releases (both
+published under the name Local TTS); they appear in the app and on the website. Their GitHub Release
+descriptions were left as they are. To replace them with the plain-language notes, keeping the
+original text below, run (after reviewing the files in `docs/releases/github/`):
 
 ```bash
-sha256sum --check --ignore-missing SHA256SUMS.txt
-gh attestation verify ttsnative-2.0.1-source.tar.gz --repo carsonmcrae/ttsnative
+gh release edit v2.0.0 --notes-file docs/releases/github/v2.0.0.md
+gh release edit v1.0.0 --notes-file docs/releases/github/v1.0.0.md
 ```
 
-Tags matching `v*` are protected: they can't be moved or deleted.
+## Testing a Windows build
 
-## Clean-install check
+Every pull request that changes the app runs the **Desktop** workflow: download the
+`ttsnative-windows-installer` artifact from the run to test the installer by hand. To build locally you
+need Rust (the version in `apps/desktop/src-tauri/rust-toolchain.toml`) and the Visual Studio C++ build
+tools, then `npm run desktop:build` (the installer lands in `dist/desktop/`). Such builds are labelled
+as development builds in Settings → About and can't be offered as updates. Before a major or minor
+release, also run the checklist in [windows-app-testing.md](windows-app-testing.md).
 
-This proves the documented quick start works on a machine with nothing but Node.js and Git. It uses a new
+## Clean-install check (source)
+
+This proves the developer quick start works on a machine with nothing but Node.js and Git. It uses a new
 folder, empty npm and uv caches, the checksum-pinned uv download (not a uv already on `PATH`) and uv's own
 Python (not one already installed), on ports that don't clash with a running copy:
 

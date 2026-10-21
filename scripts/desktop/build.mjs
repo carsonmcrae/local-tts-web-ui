@@ -79,6 +79,10 @@ function main() {
       'nsis',
       '--config',
       JSON.stringify(override),
+      // Test builds only (update-test.mjs): another update key and a local update address.
+      ...(process.env.TTSNATIVE_TAURI_CONFIG
+        ? ['--config', process.env.TTSNATIVE_TAURI_CONFIG]
+        : []),
     ],
     { cwd: desktopDir, env },
   );

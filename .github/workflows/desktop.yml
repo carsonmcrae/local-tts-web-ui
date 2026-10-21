@@ -2,8 +2,9 @@
 # Scope: The desktop shell's formatting, lints and unit tests; then the full installer (web UI, bundled
 #   runtime with the verified Kokoro model, per-user NSIS installer) built WITHOUT the release updater
 #   key, an installer smoke test (silent install, speech, MP3 export, no console windows, restart,
-#   uninstall that keeps the user's data), and the installer kept as a workflow artifact for manual
-#   testing. Nothing is published, signed for updates or attached to a release.
+#   uninstall that keeps the user's data), the installer kept as a workflow artifact for manual testing,
+#   and the update path between two builds signed with a throwaway key (scripts/desktop/update-test.mjs).
+#   Nothing is published, signed with the release key or attached to a release.
 # Does NOT belong: Publishing releases (release.yml) or the cross-platform server tests (ci.yml).
 name: Desktop
 
@@ -110,3 +111,31 @@ jobs:
           name: ttsnative-windows-installer
           path: dist/desktop/
           retention-days: 14
+
+  update:
+    name: Update path (two builds, verified update)
+    needs: shell
+    runs-on: windows-2025
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/node-deps
+      - uses: ./.github/actions/rust
+        with:
+          cache-name: installer
+      - name: Cache the verified model and Python downloads
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .tools/desktop-cache
+          key: desktop-runtime-${{ hashFiles('apps/server/src/ltts/modelstore/manifest.json', 'apps/desktop/runtime.json', 'scripts/toolchain.json', 'apps/server/uv.lock') }}
+      - name: Install A, refuse a bad and a broken update, then update to B (throwaway key)
+        run: npm run desktop:update-test
+      - name: Keep the app's logs
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: desktop-update-logs
+          path: ~/AppData/Local/com.ttsnative.desktop/logs
+          if-no-files-found: ignore
+          retention-days: 7

@@ -57,7 +57,9 @@ npm run dev
 
 1. Branch from `main`; keep the change focused.
 2. Add or update tests; run `npm run check` (and `test:inference` / `test:e2e` for playback or UI changes).
-3. Update docs and `CHANGELOG.md` under `Unreleased`.
+3. Update docs, and add a change file: `npm run change -- <major|minor|patch|none>` writes
+   `.changes/<branch>.md`; fill in what changes for people (plain language) and for developers. Don't
+   edit version numbers or `CHANGELOG.md`; releases do that (see [.changes/README.md](.changes/README.md)).
 4. Fill in the PR template, including anything you could not test.
 
 By contributing you agree your contributions are licensed under the [MIT License](LICENSE).

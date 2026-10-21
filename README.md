@@ -64,7 +64,12 @@ TTSNative is free and open source (MIT). It was called **Local TTS** until versi
 
 ## Quick start
 
-You need **Node.js 22.22 or newer** and Git. That's all — the first run installs everything else inside
+**Windows 11:** from version 2.1.0, releases include a Windows installer: no developer tools needed,
+updates arrive in the app, and your data stays in your user folder. Download it from
+[ttsnative.com](https://ttsnative.com) once a release with the installer is out, and see the
+[Windows app guide](docs/wiki/Windows-App.md).
+
+**From source** (Windows, macOS, Linux, and for development): you need **Node.js 22.22 or newer** and Git. That's all — the first run installs everything else inside
 this folder.
 
 ```bash
@@ -134,17 +139,20 @@ or that the speaker gave permission; generated audio carries Resemble AI's inaud
   settings, keyboard shortcuts, troubleshooting and FAQ.
 - **Reference ([docs/](docs/))**: [architecture](docs/architecture/overview.md),
   [configuration](docs/guides/configuration.md), [security](docs/security/threat-model.md),
-  [testing](docs/guides/testing.md), [releases](docs/guides/release-process.md) and
+  [testing](docs/guides/testing.md), [releases](docs/guides/release-process.md), the
+  [Windows app and updates](docs/architecture/desktop-and-releases.md) and
   [the website's domain](docs/guides/custom-domain.md).
-- **[Changelog](CHANGELOG.md)** and **[releases](https://github.com/carsonmcrae/ttsnative/releases)**: every release lists its changes and
-  ships checksums, SBOMs and signed build provenance.
+- **[Release notes](docs/releases/)**, **[changelog](CHANGELOG.md)** and
+  **[releases](https://github.com/carsonmcrae/ttsnative/releases)**: every release has plain-language notes
+  (also in the app and on the website), a developer changelog, checksums, SBOMs and signed build provenance.
 
 ## Privacy
 
 No telemetry, analytics or accounts (ONNX Runtime's default telemetry is switched off). Documents,
 recordings and generated audio stay in the `data/` folder. The only network requests are the downloads
 you start (setup and optional engines) from GitHub, PyPI, npm and Hugging Face, using pinned URLs with
-checksums; like any download, those hosts see your IP address. After that the app works fully offline. See [SECURITY.md](SECURITY.md) and the
+checksums; like any download, those hosts see your IP address. The Windows app also checks GitHub
+Releases for a new official version at most twice a day (you can turn it off). After that the app works fully offline. See [SECURITY.md](SECURITY.md) and the
 [threat model](docs/security/threat-model.md).
 
 ## Screenshots
@@ -176,6 +184,9 @@ streamed to the browser, which plays it and highlights the matching text. Detail
 | `npm run doctor`                               | Diagnose the environment                                  |
 | `npm run security` · `npm run licenses`        | Dependency audits · licence inventory                     |
 | `npm run media:demo` · `media:promo`           | Re-record the demo video · re-render the showcase video   |
+| `npm run change -- <bump>`                     | Start the change file every pull request needs            |
+| `npm run release:status` · `release:prepare`   | Next version from the change files · prepare a release    |
+| `npm run desktop:build`                        | Build the Windows installer (needs Rust + MSVC)           |
 
 See [CONTRIBUTING.md](CONTRIBUTING.md), [testing](docs/guides/testing.md),
 [configuration](docs/guides/configuration.md), [performance](docs/guides/performance.md) and

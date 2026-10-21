@@ -1,6 +1,6 @@
 # Purpose: Build and test the Windows desktop app on a clean Windows runner, for every change to it.
 # Scope: The desktop shell's formatting, lints, unit tests and cargo-deny (advisories, licences,
-#   sources for the Windows build); then the full installer (web UI, bundled
+#   sources for the Windows build); beside them the full installer (web UI, bundled
 #   runtime with the verified Kokoro model, per-user NSIS installer) built WITHOUT the release updater
 #   key, an installer smoke test (silent install, speech, MP3 export, no console windows, restart,
 #   uninstall that keeps the user's data), everything a person did surviving a close and a crash
@@ -99,7 +99,6 @@ jobs:
 
   installer:
     name: Windows installer (build and smoke test)
-    needs: shell
     runs-on: windows-2025
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -110,8 +109,16 @@ jobs:
         with:
           cache-name: installer
           runtime-cache: 'true'
+          save: later
       - name: Build the installer (no updater key; never published)
         run: npm run desktop:build
+      # Saved now rather than when the job ends, so a failing test below still leaves warm caches
+      # for the next run (this job saves the cache the update job shares).
+      - uses: ./.github/actions/rust
+        with:
+          cache-name: installer
+          runtime-cache: 'true'
+          save: now
       - name: Smoke test on this clean runner
         run: |
           version=$(cat dist/desktop/version.txt)
@@ -139,7 +146,6 @@ jobs:
 
   update:
     name: Update path (two builds, verified update)
-    needs: shell
     runs-on: windows-2025
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -150,6 +156,7 @@ jobs:
         with:
           cache-name: installer
           runtime-cache: 'true'
+          save: never # the installer job saves the cache both jobs share
       - name: Install A, refuse a bad and a broken update, then update to B (throwaway key)
         run: npm run desktop:update-test
       - name: Keep the app's logs

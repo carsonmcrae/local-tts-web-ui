@@ -1,10 +1,12 @@
 # Purpose: Install the desktop shell's pinned Rust toolchain and cache Cargo downloads and build output.
 # Scope: The toolchain from apps/desktop/src-tauri/rust-toolchain.toml and a cache keyed by the caller's
-#   name plus the manifest, lockfile and toolchain; optionally the verified Python and model downloads
-#   the runtime build reuses. Used by the desktop and release workflows.
+#   name, the toolchain, then the manifest and lockfile (a lockfile change starts from the newest cache
+#   for the same toolchain; the copied runtime and the built installer are left out); optionally the
+#   verified Python and model downloads the runtime build reuses. When the caches are saved is the
+#   caller's choice (`save`). Used by the desktop and release workflows.
 # Does NOT belong: Building or testing (the calling job does that).
 name: Rust toolchain and Cargo cache
-description: Install the pinned Rust toolchain and restore the Cargo cache for the desktop shell.
+description: Install the pinned Rust toolchain and restore (or save) the desktop shell's caches.
 inputs:
   cache-name:
     description: Distinguishes the caches of jobs that build differently (checks versus release builds).
@@ -12,22 +14,88 @@ inputs:
   runtime-cache:
     description: Also restore the verified Python and model downloads (.tools/desktop-cache).
     default: 'false'
+  save:
+    description: >-
+      When the caches are saved. `job-success`: at the end of a job that passed. `later`: restore only,
+      then call this action again with `save: now` right after the build, so a test that fails afterwards
+      still leaves warm caches. `now`: save what the earlier call restored (a cache it restored under the
+      exact key is skipped). `never`: restore only.
+    default: job-success
 runs:
   using: composite
   steps:
     - name: Rust toolchain (rust-toolchain.toml)
+      if: inputs.save != 'now'
       working-directory: apps/desktop/src-tauri
       shell: bash
       run: rustup toolchain install && rustc --version
-    - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+    - name: Cache keys and paths
+      if: inputs.save != 'now'
+      shell: bash
+      env:
+        CARGO_PREFIX: cargo-${{ inputs.cache-name }}-${{ runner.os }}-${{ hashFiles('apps/desktop/src-tauri/rust-toolchain.toml') }}-
+        CARGO_FILES: ${{ hashFiles('apps/desktop/src-tauri/Cargo.toml', 'apps/desktop/src-tauri/Cargo.lock') }}
+        RUNTIME_PREFIX: desktop-runtime-${{ hashFiles('apps/server/src/ltts/modelstore/manifest.json', 'apps/desktop/runtime.json', 'scripts/toolchain.json') }}-
+        RUNTIME_FILES: ${{ hashFiles('apps/server/uv.lock') }}
+      run: |
+        {
+          echo "DESKTOP_CARGO_CACHE_PREFIX=$CARGO_PREFIX"
+          echo "DESKTOP_CARGO_CACHE_KEY=$CARGO_PREFIX$CARGO_FILES"
+          echo "DESKTOP_RUNTIME_CACHE_PREFIX=$RUNTIME_PREFIX"
+          echo "DESKTOP_RUNTIME_CACHE_KEY=$RUNTIME_PREFIX$RUNTIME_FILES"
+          echo "DESKTOP_CARGO_CACHE_PATHS<<PATHS"
+          echo "~/.cargo/registry"
+          echo "~/.cargo/git"
+          echo "apps/desktop/src-tauri/target"
+          echo "!apps/desktop/src-tauri/target/release/bundle"
+          echo "!apps/desktop/src-tauri/target/release/runtime"
+          echo "PATHS"
+        } >> "$GITHUB_ENV"
+    - name: Cargo cache (saved when the job passes)
+      if: inputs.save == 'job-success'
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
-        path: |
-          ~/.cargo/registry
-          ~/.cargo/git
-          apps/desktop/src-tauri/target
-        key: cargo-${{ inputs.cache-name }}-${{ runner.os }}-${{ hashFiles('apps/desktop/src-tauri/Cargo.toml', 'apps/desktop/src-tauri/Cargo.lock', 'apps/desktop/src-tauri/rust-toolchain.toml') }}
-    - if: inputs.runtime-cache == 'true'
+        path: ${{ env.DESKTOP_CARGO_CACHE_PATHS }}
+        key: ${{ env.DESKTOP_CARGO_CACHE_KEY }}
+        restore-keys: ${{ env.DESKTOP_CARGO_CACHE_PREFIX }}
+    - name: Runtime downloads cache (saved when the job passes)
+      if: inputs.save == 'job-success' && inputs.runtime-cache == 'true'
       uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: .tools/desktop-cache
-        key: desktop-runtime-${{ hashFiles('apps/server/src/ltts/modelstore/manifest.json', 'apps/desktop/runtime.json', 'scripts/toolchain.json', 'apps/server/uv.lock') }}
+        key: ${{ env.DESKTOP_RUNTIME_CACHE_KEY }}
+        restore-keys: ${{ env.DESKTOP_RUNTIME_CACHE_PREFIX }}
+    - name: Restore the Cargo cache
+      id: cargo
+      if: inputs.save == 'later' || inputs.save == 'never'
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ env.DESKTOP_CARGO_CACHE_PATHS }}
+        key: ${{ env.DESKTOP_CARGO_CACHE_KEY }}
+        restore-keys: ${{ env.DESKTOP_CARGO_CACHE_PREFIX }}
+    - name: Restore the runtime downloads
+      id: runtime
+      if: (inputs.save == 'later' || inputs.save == 'never') && inputs.runtime-cache == 'true'
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: .tools/desktop-cache
+        key: ${{ env.DESKTOP_RUNTIME_CACHE_KEY }}
+        restore-keys: ${{ env.DESKTOP_RUNTIME_CACHE_PREFIX }}
+    - name: Remember which caches were restored exactly
+      if: inputs.save == 'later'
+      shell: bash
+      run: |
+        echo "DESKTOP_CARGO_CACHE_HIT=${{ steps.cargo.outputs.cache-hit }}" >> "$GITHUB_ENV"
+        echo "DESKTOP_RUNTIME_CACHE_HIT=${{ steps.runtime.outputs.cache-hit }}" >> "$GITHUB_ENV"
+    - name: Save the Cargo cache
+      if: inputs.save == 'now' && env.DESKTOP_CARGO_CACHE_HIT != 'true'
+      uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ env.DESKTOP_CARGO_CACHE_PATHS }}
+        key: ${{ env.DESKTOP_CARGO_CACHE_KEY }}
+    - name: Save the runtime downloads
+      if: inputs.save == 'now' && inputs.runtime-cache == 'true' && env.DESKTOP_RUNTIME_CACHE_HIT != 'true'
+      uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: .tools/desktop-cache
+        key: ${{ env.DESKTOP_RUNTIME_CACHE_KEY }}

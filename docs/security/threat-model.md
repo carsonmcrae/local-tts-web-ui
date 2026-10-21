@@ -16,6 +16,8 @@ local filesystem, and the integrity of installed model files and Python/npm depe
 3. **Internet → model store / package managers.** Downloads during setup and engine installation.
 4. **Server ↔ cloning worker.** A separate process with large third-party dependencies.
 5. **LAN (opt-in only).** Other devices when network mode is enabled.
+6. **Windows app: page ↔ desktop shell.** The UI page may call a few app commands.
+7. **Internet → installed app (updates).** Update information and installers from GitHub Releases.
 
 ## Threats and mitigations
 
@@ -44,6 +46,10 @@ local filesystem, and the integrity of installed model files and Python/npm depe
 | Slow or hostile patterns in user text (ReDoS)             | Pronunciation rules and searches are plain text: the server escapes every rule, matches whole words with one compiled pattern and caps rules (500) and lengths; search, and marking matches in the browser, are plain substring tests                                                                                | `test_reader_features.py`, `search.test.tsx`           |
 | Malicious studio voice files                              | Built voices are safetensors (tensors only, no pickle), checked for this app's format marker before loading, written and read only under `data/voices/`                                                                                                                                                              | `test_inference.py`                                    |
 
+| A page in the Windows app calls the shell beyond its needs | Capabilities grant the loopback origin only version, folders and update commands (no file system, shell or HTTP); only the start-up screen and the server's own origin load in the window; other links open in the browser and no second web view can open | code review, `desktop.yml` smoke test |
+| A forged or tampered update | Updates only from the latest GitHub Release over HTTPS; minisign signature checked against the public key built into the app (cannot be disabled); only a newer SemVer; installed only after the user confirms; the release workflow proves the signature against that key before publishing | `verify-update-signature.test.mjs`, `update-test.mjs` |
+| A global setting or environment variable redirects the installed app | The shell removes inherited `LTTS_*` variables, runs Python isolated (`-I`) and uses its own runtime in release builds (`TTSNATIVE_RUNTIME_DIR` works in debug builds only) | code review |
+
 ## Residual risks
 
 - **Only Linux has a per-process memory limit** in the sandbox (`RLIMIT_AS`). Windows has no
@@ -59,5 +65,10 @@ local filesystem, and the integrity of installed model files and Python/npm depe
 - **Network mode uses plain HTTP.** The token protects access but not confidentiality on the LAN, and
   browsers block microphone access on non-HTTPS origins. See [LAN access](../guides/lan-access.md).
 - **GPL components** (espeak-ng, phonemizer) are runtime dependencies; see the license inventory.
+- **The Windows app is not Authenticode-signed yet.** Users must click through SmartScreen and can't
+  tell a genuine installer from a renamed one by its publisher; the published checksums and build
+  provenance are the check until a certificate is in place. The updater's own signature is enforced.
+- **The updater key is a single point of trust.** Whoever holds it can sign updates that installed
+  copies accept; it lives only in the `release` environment's secrets behind a required reviewer.
 - **The Chatterbox environment** contains a large third-party dependency tree (PyTorch, transformers).
   It is isolated, locked and only installed on request, but it is not audited line by line.

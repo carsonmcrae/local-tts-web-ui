@@ -12,6 +12,8 @@
     "DLLs/_tkinter.pyd",
     "DLLs/tcl86t.dll",
     "DLLs/tk86t.dll",
-    "Scripts"
+    "Scripts",
+    "include",
+    "libs"
   ]
 }

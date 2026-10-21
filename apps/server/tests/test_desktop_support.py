@@ -2,7 +2,8 @@
 # Copyright (c) 2026 Carson McRae
 """Purpose: Tests for what the server provides to the Windows desktop app.
 
-Scope: Stopping cleanly when the desktop app closes stdin (``serve --exit-with-stdin``), the read-only
+Scope: Stopping cleanly when the desktop app closes stdin (``serve --exit-with-stdin``; polled, never
+read, on Windows), the read-only
 models folder bundled with the app (used until the user's own copy exists, never removed from the
 app, repaired by copying intact files and downloading only damaged ones), the desktop's worker and
 Python locations, and that helper processes never open console windows.
@@ -17,6 +18,7 @@ import io
 import json
 import signal
 import sys
+import types
 from pathlib import Path
 from typing import Any
 
@@ -71,7 +73,7 @@ def _refuse(request: httpx.Request) -> httpx.Response:
 def test_stdin_watch_raises_sigint_once_the_pipe_closes(monkeypatch: pytest.MonkeyPatch) -> None:
     raised: list[int] = []
     monkeypatch.setattr(lifecycle.signal, "raise_signal", raised.append)
-    lifecycle.stop_when_stdin_closes(io.StringIO("still open\n")).join(timeout=5)
+    lifecycle.stop_when_stdin_closes(io.StringIO("still open\n"), windows=False).join(timeout=5)
     assert raised == [signal.SIGINT]
 
 
@@ -83,7 +85,35 @@ def test_an_unreadable_stdin_counts_as_closed(monkeypatch: pytest.MonkeyPatch) -
     raised: list[int] = []
     monkeypatch.setattr(lifecycle.signal, "raise_signal", raised.append)
     monkeypatch.setattr(lifecycle.sys, "stdin", Broken())
-    lifecycle.stop_when_stdin_closes().join(timeout=5)
+    lifecycle.stop_when_stdin_closes(windows=False).join(timeout=5)
+    assert raised == [signal.SIGINT]
+
+
+def test_on_windows_the_pipe_is_polled_never_read(monkeypatch: pytest.MonkeyPatch) -> None:
+    """A thread blocked reading a pipe stalls DLL loading on Windows, so the watcher only peeks."""
+    peeks: list[tuple[int, int]] = []
+
+    def peek(handle: int, size: int) -> tuple[int, int]:
+        peeks.append((handle, size))
+        if len(peeks) == 3:
+            raise BrokenPipeError("the desktop app closed the pipe")
+        return (0, 0)
+
+    monkeypatch.setitem(sys.modules, "_winapi", types.SimpleNamespace(PeekNamedPipe=peek))
+    monkeypatch.setitem(sys.modules, "msvcrt", types.SimpleNamespace(get_osfhandle=lambda fd: fd + 1000))
+    monkeypatch.setattr(lifecycle, "POLL_S", 0.01)
+    raised: list[int] = []
+    monkeypatch.setattr(lifecycle.signal, "raise_signal", raised.append)
+
+    class Pipe(io.StringIO):
+        def fileno(self) -> int:
+            return 7
+
+        def read(self, size: int | None = -1) -> str:
+            raise AssertionError("the pipe must not be read")
+
+    lifecycle.stop_when_stdin_closes(Pipe(), windows=True).join(timeout=5)
+    assert peeks == [(1007, 0)] * 3
     assert raised == [signal.SIGINT]
 
 

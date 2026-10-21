@@ -25,7 +25,7 @@ from typing import Any
 import httpx
 import pytest
 
-from ltts import cli, common, lifecycle
+from ltts import __version__, cli, common, lifecycle
 from ltts.engines import chatterbox_env
 from ltts.errors import ConflictError
 from ltts.modelstore.store import MARKER, ModelStore
@@ -186,3 +186,10 @@ def test_the_desktop_app_sets_the_worker_and_python_locations(monkeypatch: pytes
 def test_helper_processes_never_open_a_console_window() -> None:
     expected = 0x08000000 if sys.platform == "win32" else 0
     assert expected == common.NO_CONSOLE_WINDOW
+
+
+def test_the_server_reports_the_desktop_apps_build_version(settings: Any, client: Any) -> None:
+    assert client.get("/api/health").json()["version"] == __version__
+    settings.build_version = "2.1.0-dev.4+feat-x.abc1234"
+    assert client.get("/api/health").json()["version"] == "2.1.0-dev.4+feat-x.abc1234"
+    assert client.get("/api/system").json()["version"] == "2.1.0-dev.4+feat-x.abc1234"

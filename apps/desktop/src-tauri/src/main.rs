@@ -164,9 +164,10 @@ fn main() {
             let paths = Paths::resolve(app.handle())?;
             paths.ensure()?;
             let prefs = prefs::Store::load(paths.prefs());
+            let version = app.package_info().version.to_string();
             app.manage(AppState {
                 paths,
-                backend: Backend::new(),
+                backend: Backend::new(version),
                 prefs,
             });
             create_window(app.handle())?;

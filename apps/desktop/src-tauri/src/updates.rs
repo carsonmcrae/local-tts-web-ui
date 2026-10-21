@@ -92,7 +92,7 @@ pub async fn update_install(app: AppHandle, on_event: Channel<InstallEvent>) -> 
     let update = updater
         .check()
         .await
-        .map_err(|error| unreachable_message(&error))?
+        .map_err(|error| explain(&app, UNREACHABLE, &error))?
         .ok_or_else(|| "TTSNative is already up to date.".to_string())?;
     let progress = on_event.clone();
     let verifying = on_event.clone();
@@ -108,9 +108,7 @@ pub async fn update_install(app: AppHandle, on_event: Channel<InstallEvent>) -> 
             },
         )
         .await
-        .map_err(|error| {
-            format!("The update couldn't be downloaded and verified, so nothing was changed. ({error})")
-        })?;
+        .map_err(|error| explain(&app, NOT_VERIFIED, &error))?;
     let _ = on_event.send(InstallEvent::Installing);
     let state = app.state::<AppState>();
     crate::backend::note(&state.paths, &format!("installing update {}", update.version));
@@ -118,9 +116,7 @@ pub async fn update_install(app: AppHandle, on_event: Channel<InstallEvent>) -> 
     // On Windows this launches the verified installer and exits; the installer restarts TTSNative.
     if let Err(error) = update.install(bytes) {
         crate::launch(app.clone());
-        return Err(format!(
-            "The update couldn't be started, so TTSNative kept the current version. ({error})"
-        ));
+        return Err(explain(&app, NOT_STARTED, &error));
     }
     Ok(())
 }
@@ -134,7 +130,7 @@ async fn fetch(app: &AppHandle) -> Result<Option<FoundUpdate>, String> {
             notes: update.body.clone(),
         })),
         Ok(None) => Ok(None),
-        Err(error) => Err(unreachable_message(&error)),
+        Err(error) => Err(explain(app, UNREACHABLE, &error)),
     }
 }
 
@@ -157,8 +153,15 @@ fn is_newer(candidate: &str, current: &semver::Version) -> bool {
     semver::Version::parse(candidate).is_ok_and(|version| version > *current)
 }
 
-fn unreachable_message(error: &tauri_plugin_updater::Error) -> String {
-    format!("TTSNative couldn't check for updates. Check your internet connection, or download the latest version from ttsnative.com. ({error})")
+const NOT_VERIFIED: &str = "The update couldn't be downloaded and verified, so nothing was changed.";
+const NOT_STARTED: &str = "The update couldn't be started, so TTSNative kept the current version.";
+const UNREACHABLE: &str = "TTSNative couldn't check for updates. Check your internet connection, or download the \
+     latest version from ttsnative.com.";
+
+/// The plain explanation for people; the technical reason goes to `logs/desktop.log` for bug reports.
+fn explain(app: &AppHandle, message: &str, error: &dyn std::fmt::Display) -> String {
+    crate::backend::note(&app.state::<AppState>().paths, &format!("{message} ({error})"));
+    message.to_string()
 }
 
 #[cfg(test)]

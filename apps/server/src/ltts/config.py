@@ -35,6 +35,9 @@ class Settings(BaseSettings):
     engines_dir: Path | None = Field(default=None, description="Defaults to <data_dir>/engines")
     # Read-only models shipped with the desktop app, used until the user's own copy exists.
     bundled_models_dir: Path | None = None
+    # The desktop app's version (a release number or a development identifier), so every version the
+    # app shows is the same; the package version otherwise.
+    build_version: str | None = Field(default=None, max_length=120)
 
     # Network exposure. Loopback only unless the user explicitly opts in (see docs/guides/lan-access.md).
     host: str = "127.0.0.1"

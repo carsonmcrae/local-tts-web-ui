@@ -56,13 +56,16 @@ impl StartError {
 }
 
 pub struct Backend {
+    /// This build's version, so the server reports the same one the app shows.
+    version: String,
     status: Mutex<Status>,
     running: Mutex<Option<Running>>,
 }
 
 impl Backend {
-    pub fn new() -> Self {
+    pub fn new(version: String) -> Self {
         Self {
+            version,
             status: Mutex::new(Status::Starting),
             running: Mutex::new(None),
         }
@@ -171,7 +174,8 @@ impl Backend {
             .env("LTTS_BUNDLED_MODELS_DIR", runtime.join("models"))
             .env("LTTS_UV_BIN", runtime.join("uv").join("uv.exe"))
             .env("LTTS_WORKER_PROJECT_DIR", runtime.join("worker"))
-            .env("LTTS_UV_PYTHON_DIR", paths.tools().join("python"));
+            .env("LTTS_UV_PYTHON_DIR", paths.tools().join("python"))
+            .env("LTTS_BUILD_VERSION", &self.version);
         let errors = log
             .try_clone()
             .map_err(|error| StartError::new("TTSNative couldn't write its log file.", Some(error.to_string())))?;

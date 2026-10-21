@@ -161,6 +161,32 @@ Both Python projects use a rolling window (`exclude-newer = "14 days"`, uv 0.9.1
 re-lock always considers releases at least 14 days old without a date to bump. npm applies the same
 rule to new resolutions through `min-release-age=14` in `.npmrc` (npm 11.10 or newer).
 
+### Windows app (2026-10-21 review)
+
+Everything the installer ships was checked against OSV.dev, pip-audit and npm audit, and the installed
+files against their packages: every file in the 41 locked Python packages matches the SHA-256 recorded by
+its hash-checked wheel, nothing outside the lock is installed (pip, which came with Python, is now
+removed), and no secrets, keys or personal paths are in the install. The Python server and npm sets have no
+known advisories.
+
+- **Rust:** `tauri-plugin-updater`'s default `zip` feature compiled `zip` 4.6.1 (RUSTSEC-2026-0367,
+  -0368, -0369; fixed only in zip 9). It was unreachable (zip handling runs only on archives whose
+  signature already matched, and TTSNative's updates are `.exe` files), and the feature is now off, so
+  zip is no longer compiled. Transitive crates follow the 14-day cool-down through
+  `scripts/desktop/cargo-cooldown.mjs`, except where the newer release is a security fix (`rustls`
+  0.23.46, `rustls-webpki` 0.103.16, `webpki-root-certs` 1.0.10). cargo-deny checks the Windows build in CI
+  (`apps/desktop/src-tauri/deny.toml`); the remaining RustSec notices (`glib`, `proc-macro-error`,
+  `zbus_names`, `zvariant`) are Linux-only and not compiled for Windows.
+- **uv 0.12.21 (GHSA-hq85-5cpj-mr62, critical, published 2026-10-20):** uv's bundled root store still
+  trusts the emSign ECC Root CA - G3 (the same compromise certifi 2026.10.19 fixes). The shipped uv runs
+  only when someone installs the optional voice-cloning engine; package and Python downloads are pinned by
+  hash, so a forged certificate could at most observe or block that download, not change it. The fix,
+  uv 0.13.4, is inside the cool-down and a minor-version upgrade of the bootstrap for every developer;
+  **pending the maintainer's decision** to take it through a security exception (update
+  `scripts/toolchain.json`, run the clean-install check, rebuild the installer).
+- **Licences:** see [license-inventory.md](license-inventory.md) for what the installer ships and the
+  GPL/LGPL source offer.
+
 ## Updating dependencies
 
 1. Let Dependabot propose updates (or bump manually), never adopting a release younger than 14 days.

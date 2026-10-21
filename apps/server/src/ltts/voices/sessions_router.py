@@ -4,8 +4,9 @@
 
 Scope: Check a microphone test clip (its quality and the cleanup it needs); create (with an optional
 cleanup: noise reduction, rumble filter, tone), list, read and delete draft sessions; save (raw WAV,
-FLAC or OGG body) or delete numbered takes; import a long recording; start the voice build job; play
-a candidate's test samples; and finish a session into a voice profile (with explicit consent).
+FLAC or OGG body, with the passage it reads), play back or delete numbered takes; import a long
+recording; start the voice build job; play a candidate's test samples; and finish a session into a
+voice profile (with explicit consent).
 Does NOT belong: Session storage and the build itself (``sessions.py``, ``studio.py``).
 """
 
@@ -30,6 +31,7 @@ router = APIRouter(prefix="/api/voice-sessions", tags=["voice studio"])
 SessionId = Annotated[str, Path(pattern=r"^[0-9a-f]{32}$")]
 TakeNumber = Annotated[int, Path(ge=1, le=999)]
 MAX_TAKE_BYTES = 20 * MB
+MAX_PASSAGE_CHARS = 1_200
 MAX_IMPORT_BYTES = 600 * MB  # 30 minutes of 48 kHz, 24-bit stereo WAV fits
 
 
@@ -74,12 +76,21 @@ async def save_take(
     request: Request,
     services: ServicesDep,
     prompt_id: Annotated[str | None, Query(alias="promptId", pattern=r"^[a-z0-9-]{1,40}$")] = None,
+    text: Annotated[str | None, Query(max_length=MAX_PASSAGE_CHARS)] = None,
 ) -> TakeOut:
     target = await receive_upload(request, services, MAX_TAKE_BYTES)
     try:
-        return await run_in_threadpool(services.voice_sessions.put_take, session_id, number, target, prompt_id)
+        return await run_in_threadpool(services.voice_sessions.put_take, session_id, number, target, prompt_id, text)
     finally:
         target.unlink(missing_ok=True)
+
+
+@router.get(
+    "/{session_id}/takes/{number}/audio", response_class=Response, responses={200: {"content": {"audio/wav": {}}}}
+)
+def take_audio(session_id: SessionId, number: TakeNumber, services: ServicesDep) -> Response:
+    audio = services.voice_sessions.take_audio(session_id, number)
+    return Response(content=audio, media_type="audio/wav", headers={"Cache-Control": "no-store"})
 
 
 @router.delete("/{session_id}/takes/{number}", status_code=204)

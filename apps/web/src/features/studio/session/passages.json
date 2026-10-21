@@ -1,242 +1,345 @@
 [
   {
+    "id": "foundation",
+    "number": 49,
+    "style": "Foundation",
+    "text": "Good morning, and welcome. Have you ever noticed how a single sound can bring back a whole memory? For me, it's rain on a tin roof. The moment I hear it, I'm eight years old again, sitting on my grandmother's porch with a cup of cocoa. \"Don't spill it,\" she'd say, laughing, \"or the cat will want some too!\" Those summers felt endless. We picked blackberries until our fingers turned purple, counted the seconds between lightning and thunder, one, two, three, four, and argued about whether the storm was coming closer. Some evenings were loud and busy; others were so quiet you could hear the clock ticking in the kitchen. Now, whenever it rains, I slow down a little. I make something warm to drink, open the window just a crack, and listen. It's funny, isn't it? The simplest things stay with us the longest.",
+    "hint": "Read it in one go, like a story told to a friend (about a minute). Let the opening question rise, laugh a little in the grandmother's line, count “one, two, three, four” slowly, and slow down for the calm ending. This passage alone is enough to build a first version of your voice."
+  },
+  {
     "id": "narration-1",
+    "number": 1,
     "style": "Narration",
-    "text": "The library opens at nine, but most mornings the first visitors arrive a little early. They wait on the stone steps with coffee in hand, talking quietly about the books they plan to find."
+    "text": "The library opens at nine, but most mornings the first visitors arrive a little early. They wait on the stone steps with coffee in hand, talking quietly about the books they plan to find.",
+    "hint": "Steady, even narration. Pause briefly after “nine” and let the last sentence settle down on “find”."
   },
   {
     "id": "narration-2",
+    "number": 2,
     "style": "Narration",
-    "text": "Rivers shape the land slowly. Over thousands of years, water carves valleys, moves stones, and carries soil far downstream, where it builds the wide, flat plains that farmers depend on."
+    "text": "Rivers shape the land slowly. Over thousands of years, water carves valleys, moves stones, and carries soil far downstream, where it builds the wide, flat plains that farmers depend on.",
+    "hint": "Calm and informative. Give each item in “carves valleys, moves stones, and carries soil” a small lift, and fall on the last."
   },
   {
     "id": "narration-3",
+    "number": 3,
     "style": "Narration",
-    "text": "Before the bridge was built, the only way across was a small ferry. It ran every half hour in summer, and only twice a day once the cold weather arrived."
+    "text": "Before the bridge was built, the only way across was a small ferry. It ran every half hour in summer, and only twice a day once the cold weather arrived.",
+    "hint": "An easy storytelling pace. Pause after “built”, and contrast “every half hour” with “only twice a day”."
   },
   {
     "id": "narration-4",
+    "number": 4,
     "style": "Narration",
-    "text": "Good bread needs very little: flour, water, salt, and time. The dough rests overnight, and by morning it has risen, ready to be shaped and baked until the crust turns golden."
+    "text": "Good bread needs very little: flour, water, salt, and time. The dough rests overnight, and by morning it has risen, ready to be shaped and baked until the crust turns golden.",
+    "hint": "Pause at the colon, then read “flour, water, salt, and time” as a slow list that falls on “time”."
   },
   {
     "id": "narration-5",
+    "number": 5,
     "style": "Narration",
-    "text": "The museum's newest exhibit traces the history of maps, from rough sketches on clay tablets to the detailed satellite images we now carry in our pockets every day."
+    "text": "The museum's newest exhibit traces the history of maps, from rough sketches on clay tablets to the detailed satellite images we now carry in our pockets every day.",
+    "hint": "One long, flowing sentence: keep it moving, take a small breath after “maps”, and fall gently at the end."
   },
   {
     "id": "narration-6",
+    "number": 6,
     "style": "Narration",
-    "text": "In early spring, the garden looks bare. Then, almost overnight, small green shoots push through the soil, and within a few weeks the beds are full of colour."
+    "text": "In early spring, the garden looks bare. Then, almost overnight, small green shoots push through the soil, and within a few weeks the beds are full of colour.",
+    "hint": "Start a little flat on “the garden looks bare”, then brighten on “Then, almost overnight”: a change of mood."
   },
   {
     "id": "narration-7",
+    "number": 7,
     "style": "Narration",
-    "text": "Most of the town's old houses were built from local timber. Their wide porches face the street, a reminder of a time when neighbours spent long evenings outside together."
+    "text": "Most of the town's old houses were built from local timber. Their wide porches face the street, a reminder of a time when neighbours spent long evenings outside together.",
+    "hint": "Warm and unhurried. Lean slightly on “a reminder of a time” and let the last words trail off softly."
   },
   {
     "id": "narration-8",
+    "number": 8,
     "style": "Narration",
-    "text": "The train left the station on time, winding through the hills as the sun came up. By noon, the forests had given way to open fields and distant mountains."
+    "text": "The train left the station on time, winding through the hills as the sun came up. By noon, the forests had given way to open fields and distant mountains.",
+    "hint": "An even travelling pace, with a clear pause after “By noon”."
   },
   {
     "id": "storytelling-1",
+    "number": 9,
     "style": "Storytelling",
-    "text": "She opened the letter slowly, almost afraid to read it. Then her face changed completely. \"I got the job,\" she whispered, and then, much louder, \"I actually got the job!\""
+    "text": "She opened the letter slowly, almost afraid to read it. Then her face changed completely. \"I got the job,\" she whispered, and then, much louder, \"I actually got the job!\"",
+    "hint": "Build suspense: slow and hesitant at first, whisper “I got the job”, then let the last line burst out, loud and joyful."
   },
   {
     "id": "storytelling-2",
+    "number": 10,
     "style": "Storytelling",
-    "text": "The storm hit just after midnight. Thunder shook the windows, the lights flickered once, twice, and then the whole house went dark. For a moment, nobody said a word."
+    "text": "The storm hit just after midnight. Thunder shook the windows, the lights flickered once, twice, and then the whole house went dark. For a moment, nobody said a word.",
+    "hint": "Dramatic: speed up through “once, twice, and then”, pause before “the whole house went dark”, and say the last sentence quietly."
   },
   {
     "id": "storytelling-3",
+    "number": 11,
     "style": "Storytelling",
-    "text": "Grandpa leaned back in his chair and smiled. \"Let me tell you about the summer I tried to build a boat,\" he said. \"It floated for exactly three minutes.\""
+    "text": "Grandpa leaned back in his chair and smiled. \"Let me tell you about the summer I tried to build a boat,\" he said. \"It floated for exactly three minutes.\"",
+    "hint": "Two voices: your own for the narration, a warm, older voice for Grandpa. Smile on “exactly three minutes”."
   },
   {
     "id": "storytelling-4",
+    "number": 12,
     "style": "Storytelling",
-    "text": "We had been walking for hours when we finally reached the top. The wind was cold and our legs were tired, but the view stretched for miles, and it was worth every single step."
+    "text": "We had been walking for hours when we finally reached the top. The wind was cold and our legs were tired, but the view stretched for miles, and it was worth every single step.",
+    "hint": "Sound tired at the start, then open up with relief on “the view stretched for miles”. Stress “every single step”."
   },
   {
     "id": "storytelling-5",
+    "number": 13,
     "style": "Storytelling",
-    "text": "The dog heard the car before anyone else. He raced to the door, tail wagging wildly, and when it finally opened, he jumped up as if he hadn't seen us in years."
+    "text": "The dog heard the car before anyone else. He raced to the door, tail wagging wildly, and when it finally opened, he jumped up as if he hadn't seen us in years.",
+    "hint": "Lively and fond. Quicken on “tail wagging wildly” and land the ending with a smile."
   },
   {
     "id": "storytelling-6",
+    "number": 14,
     "style": "Storytelling",
-    "text": "Nobody expected the old piano to still work. But when Maya pressed the first key, a clear, warm note filled the room, and everyone turned to listen."
+    "text": "Nobody expected the old piano to still work. But when Maya pressed the first key, a clear, warm note filled the room, and everyone turned to listen.",
+    "hint": "Start doubtful and quiet, soften with wonder on “a clear, warm note”, and slow down for the last words."
   },
   {
     "id": "storytelling-7",
+    "number": 15,
     "style": "Storytelling",
-    "text": "I was sure I'd locked the door. I checked my pockets, my bag, the car. Nothing. And then I saw the keys, hanging right there in the lock, exactly where I had left them."
+    "text": "I was sure I'd locked the door. I checked my pockets, my bag, the car. Nothing. And then I saw the keys, hanging right there in the lock, exactly where I had left them.",
+    "hint": "Rising frustration: short, clipped words for “my pockets, my bag, the car. Nothing.” Then a sheepish, slower ending."
   },
   {
     "id": "storytelling-8",
+    "number": 16,
     "style": "Storytelling",
-    "text": "The crowd went silent as the runner rounded the final corner. She was falling behind, but somehow, in the last few metres, she found one more burst of speed and crossed the line first."
+    "text": "The crowd went silent as the runner rounded the final corner. She was falling behind, but somehow, in the last few metres, she found one more burst of speed and crossed the line first.",
+    "hint": "Hushed tension at first, getting faster and louder towards “crossed the line first”."
   },
   {
     "id": "conversation-1",
+    "number": 17,
     "style": "Conversation",
-    "text": "Honestly, I don't mind driving. It's a nice change, and if we leave around eight, we'll miss most of the traffic. You can pick the music, though. That's only fair."
+    "text": "Honestly, I don't mind driving. It's a nice change, and if we leave around eight, we'll miss most of the traffic. You can pick the music, though. That's only fair.",
+    "hint": "Relaxed and friendly, like talking to a passenger. A light, playful tone on “That's only fair.”"
   },
   {
     "id": "conversation-2",
+    "number": 18,
     "style": "Conversation",
-    "text": "Oh, that reminds me, did you ever hear back about the apartment? I know you were really hoping for the one near the park. Fingers crossed, right?"
+    "text": "Oh, that reminds me, did you ever hear back about the apartment? I know you were really hoping for the one near the park. Fingers crossed, right?",
+    "hint": "Casual, remembering something mid-thought on “Oh, that reminds me”. Let “right?” rise at the end."
   },
   {
     "id": "conversation-3",
+    "number": 19,
     "style": "Conversation",
-    "text": "So here's the plan. I'll grab the groceries on my way home, you start the pasta, and we'll eat around seven. Sound good? Great. See you then."
+    "text": "So here's the plan. I'll grab the groceries on my way home, you start the pasta, and we'll eat around seven. Sound good? Great. See you then.",
+    "hint": "Brisk and practical. “Sound good?” rises, “Great.” falls, and a short pause comes before “See you then.”"
   },
   {
     "id": "conversation-4",
+    "number": 20,
     "style": "Conversation",
-    "text": "I tried that new place downtown last night. The food was fine, nothing special, but the dessert? Wow. I'd go back just for that chocolate cake."
+    "text": "I tried that new place downtown last night. The food was fine, nothing special, but the dessert? Wow. I'd go back just for that chocolate cake.",
+    "hint": "Unimpressed at first (“nothing special”), then a real pause before “Wow.” and genuine delight."
   },
   {
     "id": "conversation-5",
+    "number": 21,
     "style": "Conversation",
-    "text": "No, no, it's totally okay. These things happen. Let's just move it to next week. Tuesday works for me, or Thursday afternoon, whatever's easier for you."
+    "text": "No, no, it's totally okay. These things happen. Let's just move it to next week. Tuesday works for me, or Thursday afternoon, whatever's easier for you.",
+    "hint": "Reassuring and kind. Say “No, no” softly, and give “Tuesday” and “Thursday afternoon” each a small lift."
   },
   {
     "id": "conversation-6",
+    "number": 22,
     "style": "Conversation",
-    "text": "You know what's funny? I spent all weekend looking for my glasses, and they were on my head the entire time. I'm not even a little embarrassed. Okay, maybe a little."
+    "text": "You know what's funny? I spent all weekend looking for my glasses, and they were on my head the entire time. I'm not even a little embarrassed. Okay, maybe a little.",
+    "hint": "Amused: let a smile come through, and pause briefly before “Okay, maybe a little.”"
   },
   {
     "id": "conversation-7",
+    "number": 23,
     "style": "Conversation",
-    "text": "Thanks so much for helping with the move. I really couldn't have done it without you. Next time you need anything, and I mean anything, just let me know."
+    "text": "Thanks so much for helping with the move. I really couldn't have done it without you. Next time you need anything, and I mean anything, just let me know.",
+    "hint": "Sincere thanks. Stress “really” and “anything”, with small pauses around “and I mean anything”."
   },
   {
     "id": "conversation-8",
+    "number": 24,
     "style": "Conversation",
-    "text": "Well, I think it went pretty well, all things considered. A couple of questions caught me off guard, but I stayed calm, and they said they'd call by Friday."
+    "text": "Well, I think it went pretty well, all things considered. A couple of questions caught me off guard, but I stayed calm, and they said they'd call by Friday.",
+    "hint": "Thoughtful and a little relieved: softer on “all things considered”, confident at the end."
   },
   {
     "id": "questions-and-surprise-1",
+    "number": 25,
     "style": "Questions and surprise",
-    "text": "Wait, you're telling me the whole thing was planned from the start? The surprise party, the fake meeting, all of it? I can't believe nobody said a thing!"
+    "text": "Wait, you're telling me the whole thing was planned from the start? The surprise party, the fake meeting, all of it? I can't believe nobody said a thing!",
+    "hint": "Growing disbelief: each question rises higher than the last, and the final line is an exclamation."
   },
   {
     "id": "questions-and-surprise-2",
+    "number": 26,
     "style": "Questions and surprise",
-    "text": "Have you ever wondered why the sky turns orange at sunset? Or why the ocean looks blue on some days and grey on others? The answers are surprisingly simple."
+    "text": "Have you ever wondered why the sky turns orange at sunset? Or why the ocean looks blue on some days and grey on others? The answers are surprisingly simple.",
+    "hint": "Curious questions that rise at the end, then a last sentence that falls with a knowing tone."
   },
   {
     "id": "questions-and-surprise-3",
+    "number": 27,
     "style": "Questions and surprise",
-    "text": "What would you do with an entire free day? Would you sleep in, go for a long walk, call an old friend, or finally finish that book on your nightstand?"
+    "text": "What would you do with an entire free day? Would you sleep in, go for a long walk, call an old friend, or finally finish that book on your nightstand?",
+    "hint": "A dreamy, open question. Let each option in the list rise a little and the last one fall gently."
   },
   {
     "id": "questions-and-surprise-4",
+    "number": 28,
     "style": "Questions and surprise",
-    "text": "Really? Tomorrow? That's amazing news! Does anyone else know yet, or am I the first? Oh, we absolutely have to celebrate this weekend."
+    "text": "Really? Tomorrow? That's amazing news! Does anyone else know yet, or am I the first? Oh, we absolutely have to celebrate this weekend.",
+    "hint": "Pure excitement: short questions with a big rise (“Really? Tomorrow?”), then a bright, celebrating ending."
   },
   {
     "id": "questions-and-surprise-5",
+    "number": 29,
     "style": "Questions and surprise",
-    "text": "Is it just me, or is it getting colder in here? Did someone leave the window open again? I'm sure it was closed when I left this morning."
+    "text": "Is it just me, or is it getting colder in here? Did someone leave the window open again? I'm sure it was closed when I left this morning.",
+    "hint": "Puzzled and a little annoyed: the questions rise, and the last sentence is flat and certain."
   },
   {
     "id": "questions-and-surprise-6",
+    "number": 30,
     "style": "Questions and surprise",
-    "text": "Can you believe how fast this year went by? It feels like we were just planning the summer trip, and now the holidays are almost here."
+    "text": "Can you believe how fast this year went by? It feels like we were just planning the summer trip, and now the holidays are almost here.",
+    "hint": "Surprised and wistful on the opening question, then slow and reflective."
   },
   {
     "id": "questions-and-surprise-7",
+    "number": 31,
     "style": "Questions and surprise",
-    "text": "Which way is the station from here? Left at the lights, or straight past the church? I'm completely turned around, and my phone just died."
+    "text": "Which way is the station from here? Left at the lights, or straight past the church? I'm completely turned around, and my phone just died.",
+    "hint": "Lost and slightly stressed: quick questions, and a sigh in your voice on “and my phone just died”."
   },
   {
     "id": "questions-and-surprise-8",
+    "number": 32,
     "style": "Questions and surprise",
-    "text": "Oh no, I completely forgot! The meeting was today? At three? I'm so sorry. Is there any way we could still catch the end of it?"
+    "text": "Oh no, I completely forgot! The meeting was today? At three? I'm so sorry. Is there any way we could still catch the end of it?",
+    "hint": "Panic, then apology: fast and loud on “I completely forgot!”, softer and sincere on “I'm so sorry”."
   },
   {
     "id": "numbers-names-and-lists-1",
+    "number": 33,
     "style": "Numbers, names and lists",
-    "text": "Your order number is four, seven, two, nine, one. It should arrive on Thursday, the fourteenth of March, between ten in the morning and two in the afternoon."
+    "text": "Your order number is four, seven, two, nine, one. It should arrive on Thursday, the fourteenth of March, between ten in the morning and two in the afternoon.",
+    "hint": "Read the order number digit by digit with short, even pauses, then slow and clear for the date and times."
   },
   {
     "id": "numbers-names-and-lists-2",
+    "number": 34,
     "style": "Numbers, names and lists",
-    "text": "For the recipe, you'll need two cups of flour, one teaspoon of baking soda, half a cup of sugar, three eggs, and a pinch of salt."
+    "text": "For the recipe, you'll need two cups of flour, one teaspoon of baking soda, half a cup of sugar, three eggs, and a pinch of salt.",
+    "hint": "A recipe list: pause briefly after each ingredient, and fall on “a pinch of salt”."
   },
   {
     "id": "numbers-names-and-lists-3",
+    "number": 35,
     "style": "Numbers, names and lists",
-    "text": "The meeting has moved to room three-oh-five on the third floor. Please bring your laptop, the quarterly report, and any questions you'd like to raise."
+    "text": "The meeting has moved to room three-oh-five on the third floor. Please bring your laptop, the quarterly report, and any questions you'd like to raise.",
+    "hint": "Clear and businesslike: say “three-oh-five” crisply, then a steady list."
   },
   {
     "id": "numbers-names-and-lists-4",
+    "number": 36,
     "style": "Numbers, names and lists",
-    "text": "Flight two-eighteen to Vancouver is now boarding at gate twenty-six. Passengers in rows twenty through thirty-five, please make your way to the gate."
+    "text": "Flight two-eighteen to Vancouver is now boarding at gate twenty-six. Passengers in rows twenty through thirty-five, please make your way to the gate.",
+    "hint": "Like an announcement: clear and a little formal, with pauses after the flight number and the gate."
   },
   {
     "id": "numbers-names-and-lists-5",
+    "number": 37,
     "style": "Numbers, names and lists",
-    "text": "The museum is open Tuesday through Sunday, from nine thirty until five. Tickets cost fifteen dollars for adults and eight for students, and children under six get in free."
+    "text": "The museum is open Tuesday through Sunday, from nine thirty until five. Tickets cost fifteen dollars for adults and eight for students, and children under six get in free.",
+    "hint": "Informative and friendly. Keep the prices clearly apart and smile on “get in free”."
   },
   {
     "id": "numbers-names-and-lists-6",
+    "number": 38,
     "style": "Numbers, names and lists",
-    "text": "Our team this season includes Priya, Marcus, Elena, Jonah, and Wei. Together, they scored forty-three goals in twelve games, a new club record."
+    "text": "Our team this season includes Priya, Marcus, Elena, Jonah, and Wei. Together, they scored forty-three goals in twelve games, a new club record.",
+    "hint": "Say each name distinctly with a small pause between them, and sound proud on “a new club record”."
   },
   {
     "id": "numbers-names-and-lists-7",
+    "number": 39,
     "style": "Numbers, names and lists",
-    "text": "In nineteen sixty-nine, hundreds of millions of people watched as astronauts stepped onto the surface of the moon, almost four hundred thousand kilometres away."
+    "text": "In nineteen sixty-nine, hundreds of millions of people watched as astronauts stepped onto the surface of the moon, almost four hundred thousand kilometres away.",
+    "hint": "Documentary narration: steady and in awe, with weight on “four hundred thousand kilometres”."
   },
   {
     "id": "numbers-names-and-lists-8",
+    "number": 40,
     "style": "Numbers, names and lists",
-    "text": "To reset the device, hold the power button for ten seconds, wait until the light blinks twice, then press it once more. The whole process takes about a minute."
+    "text": "To reset the device, hold the power button for ten seconds, wait until the light blinks twice, then press it once more. The whole process takes about a minute.",
+    "hint": "Step-by-step instructions: calm, with a clear pause between the steps."
   },
   {
     "id": "calm-and-reflective-1",
+    "number": 41,
     "style": "Calm and reflective",
-    "text": "There's something peaceful about early mornings. The house is quiet, the light is soft, and for a little while, it feels like the whole day is still waiting to begin."
+    "text": "There's something peaceful about early mornings. The house is quiet, the light is soft, and for a little while, it feels like the whole day is still waiting to begin.",
+    "hint": "Soft and slow. Let your voice relax and leave space after each comma."
   },
   {
     "id": "calm-and-reflective-2",
+    "number": 42,
     "style": "Calm and reflective",
-    "text": "Take a slow breath in, and let it out gently. Notice the weight of your hands, the sounds around you, and the steady rhythm of your own breathing."
+    "text": "Take a slow breath in, and let it out gently. Notice the weight of your hands, the sounds around you, and the steady rhythm of your own breathing.",
+    "hint": "Very calm, like a guided meditation. Breathe where the sentence breathes, and lower your voice slightly."
   },
   {
     "id": "calm-and-reflective-3",
+    "number": 43,
     "style": "Calm and reflective",
-    "text": "Some of the best conversations happen late at night, when there's nowhere to be and no reason to hurry. Words come slowly, and people say what they really mean."
+    "text": "Some of the best conversations happen late at night, when there's nowhere to be and no reason to hurry. Words come slowly, and people say what they really mean.",
+    "hint": "Quiet and close, as if late at night. Slow down on “say what they really mean”."
   },
   {
     "id": "calm-and-reflective-4",
+    "number": 44,
     "style": "Calm and reflective",
-    "text": "I used to think happiness was something you found. Now I think it's something you notice, in small moments, like warm sunlight on a cold afternoon."
+    "text": "I used to think happiness was something you found. Now I think it's something you notice, in small moments, like warm sunlight on a cold afternoon.",
+    "hint": "A reflective contrast: “found” and “notice” carry the meaning, so give them gentle weight."
   },
   {
     "id": "calm-and-reflective-5",
+    "number": 45,
     "style": "Calm and reflective",
-    "text": "The lake was perfectly still that evening. We sat on the dock without talking, watching the colours fade from the sky, until the first stars appeared."
+    "text": "The lake was perfectly still that evening. We sat on the dock without talking, watching the colours fade from the sky, until the first stars appeared.",
+    "hint": "A hushed evening tone, slow and even, with a soft fall on “until the first stars appeared”."
   },
   {
     "id": "calm-and-reflective-6",
+    "number": 46,
     "style": "Calm and reflective",
-    "text": "Learning anything new takes patience. At first, every step feels clumsy and slow. But little by little, what once seemed impossible becomes something you simply do."
+    "text": "Learning anything new takes patience. At first, every step feels clumsy and slow. But little by little, what once seemed impossible becomes something you simply do.",
+    "hint": "Encouraging and patient, a little brighter on “becomes something you simply do”."
   },
   {
     "id": "calm-and-reflective-7",
+    "number": 47,
     "style": "Calm and reflective",
-    "text": "When the snow falls at night, the whole town seems to hold its breath. The streets go quiet, the lamps glow softly, and everything feels a little more gentle."
+    "text": "When the snow falls at night, the whole town seems to hold its breath. The streets go quiet, the lamps glow softly, and everything feels a little more gentle.",
+    "hint": "Gentle and hushed, almost a whisper on “hold its breath”, and warm on the last line."
   },
   {
     "id": "calm-and-reflective-8",
+    "number": 48,
     "style": "Calm and reflective",
-    "text": "Thank you for listening. Whatever today brings, I hope it holds a few quiet moments, a good conversation, and at least one reason to smile."
+    "text": "Thank you for listening. Whatever today brings, I hope it holds a few quiet moments, a good conversation, and at least one reason to smile.",
+    "hint": "A warm sign-off: smile while you read, and let the final words land softly."
   }
 ]

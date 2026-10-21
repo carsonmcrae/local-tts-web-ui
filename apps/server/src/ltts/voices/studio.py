@@ -36,6 +36,7 @@ BATCH = 8
 SEED = 1234
 TYPICAL = 0.75  # takes less similar than this to the session's speaker are left out (noise, another voice)
 MIN_PROMPT_SPEECH_S = 6.0  # the voice's sound comes from a take's first 10 s, so prefer longer takes
+NOISY_SNR_DB = 12.0
 AUDITION_TEXTS = (
     "I never expected the little bookshop on the corner to become my favourite place in town.",
     "Wait, are you serious? You finished the whole thing in one weekend? That's incredible!",
@@ -83,7 +84,9 @@ def rank_prompts(
             - bright
         )
 
-    typical = [i for i in range(len(takes)) if similarity[i] >= TYPICAL] or list(range(len(takes)))
+    # Noisy takes still count towards the session's speech, but never give the voice its sound.
+    clean = [i for i in range(len(takes)) if takes[i].quality.snr_db >= NOISY_SNR_DB] or list(range(len(takes)))
+    typical = [i for i in clean if similarity[i] >= TYPICAL] or clean
     long_enough = [i for i in typical if takes[i].quality.speech_s >= MIN_PROMPT_SPEECH_S] or typical
     return sorted(long_enough, key=score, reverse=True)
 
@@ -108,10 +111,11 @@ class StudioService:
         session = self._sessions.get(session_id)
         if active := self._jobs.find_active(BUILD_JOB, session_id):
             return active
-        if session.usable_speech_s < session.required_speech_s:
+        if not session.can_build:
             minutes = session.required_speech_s / 60
             raise ConflictError(
-                f"Record at least {minutes:.0f} minutes of usable speech before building the voice.",
+                f"Record at least {minutes:.0f} minutes of usable speech, or the foundation passage and "
+                f"{session.minimum_speech_s:.0f} seconds in all, before building the voice.",
                 code="not_enough_speech",
             )
         builder = self._builder()

@@ -739,6 +739,23 @@ export type paths = {
     patch?: never;
     trace?: never;
   };
+  '/api/voice-sessions/{session_id}/takes/{number}/audio': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Take Audio */
+    get: operations['take_audio_api_voice_sessions__session_id__takes__number__audio_get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/voice-sessions/microphone-check': {
     parameters: {
       query?: never;
@@ -1239,10 +1256,14 @@ export type components = {
       brightnessDb?: number | null;
       /** Clippingratio */
       clippingRatio: number;
+      /** Coverage */
+      coverage?: number | null;
       /** Durations */
       durationS: number;
       /** Issues */
       issues: components['schemas']['QualityIssue'][];
+      /** Noisedbfs */
+      noiseDbfs?: number | null;
       /** Ok */
       ok: boolean;
       /** Pauseratio */
@@ -1255,6 +1276,10 @@ export type components = {
       snrDb: number;
       /** Speechs */
       speechS: number;
+      /** Syllablesexpected */
+      syllablesExpected?: number | null;
+      /** Syllablesheard */
+      syllablesHeard?: number | null;
     };
     /** ReadingProgress */
     ReadingProgress: {
@@ -1510,13 +1535,19 @@ export type components = {
     VoiceSessionOut: {
       /** Buildjobid */
       buildJobId: string | null;
+      /** Canbuild */
+      canBuild: boolean;
       /** Candidates */
       candidates: components['schemas']['CandidateOut'][];
       cleanup: components['schemas']['Cleanup'] | null;
+      /** Complete */
+      complete: boolean;
       /** Createdat */
       createdAt: string;
       /** Id */
       id: string;
+      /** Minimumspeechs */
+      minimumSpeechS: number;
       /** Requiredspeechs */
       requiredSpeechS: number;
       /** Takes */
@@ -3057,6 +3088,7 @@ export interface operations {
     parameters: {
       query?: {
         promptId?: string | null;
+        text?: string | null;
       };
       header?: never;
       path: {
@@ -3105,6 +3137,38 @@ export interface operations {
           [name: string]: unknown;
         };
         content?: never;
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  take_audio_api_voice_sessions__session_id__takes__number__audio_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        number: number;
+        session_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'audio/wav': unknown;
+        };
       };
       /** @description Validation Error */
       422: {

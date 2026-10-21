@@ -5,11 +5,11 @@
 Scope: Measures speech duration, loudness, peak/clipping, pause share, an estimated signal-to-noise
 ratio and the microphone's tone on vowels (sibilants like "s" and "sh" are left out, since they are
 naturally bright): brightness (4-8 kHz against 2-4 kHz) and body (low end against presence). Turns
-them into blocking errors or advisory warnings with plain-language fixes. Three rule sets: a quick
-voice's single clip, a studio session take (tone is checked once, in the microphone check), and a
-microphone check. The browser runs the clip checks live, but this server-side result is
-authoritative.
-Does NOT belong: Suggesting or applying a cleanup (``cleanup.py``) or storing profiles (``profiles.py``).
+them into blocking errors or advisory warnings with plain-language fixes. Two rule sets: a quick
+voice's single clip and a microphone check; the level rules are shared with the studio take verdict.
+The browser runs the clip checks live, but this server-side result is authoritative.
+Does NOT belong: Suggesting or applying a cleanup (``cleanup.py``), judging a studio session take
+(``take_checks.py``) or storing profiles (``profiles.py``).
 """
 
 from __future__ import annotations
@@ -53,6 +53,12 @@ class QualityReport(ApiModel):
     # Tone on vowels; None when there was too little voiced speech or for reports saved before these existed.
     brightness_db: float | None = None
     body_db: float | None = None
+    # The background between words (quietest frames), in dBFS; None for reports saved before it existed.
+    noise_dbfs: float | None = None
+    # Session takes only: how much of the passage was read (0-1), from the syllables heard and expected.
+    coverage: float | None = None
+    syllables_heard: int | None = None
+    syllables_expected: int | None = None
     ok: bool
     issues: list[QualityIssue]
 
@@ -72,7 +78,7 @@ class _Rule:
 
 
 # Ordered so that, per metric, the blocking error is checked before the advisory warning.
-_SOUND_RULES = (
+LEVEL_RULES = (
     _Rule("rms_dbfs", True, -40, "too_quiet", "error",
           "The recording is very quiet. Move closer to the microphone and try again."),
     _Rule("rms_dbfs", True, -30, "quiet", "warning",
@@ -81,6 +87,9 @@ _SOUND_RULES = (
           "The audio is distorted (clipping). Lower the input volume or move back slightly."),
     _Rule("clipping_ratio", False, 0.001, "clipping", "warning",
           "A few peaks clipped. It may still work; a quieter take is safer."),
+)  # fmt: skip
+_SOUND_RULES = (
+    *LEVEL_RULES,
     _Rule("snr_db", True, 12, "noisy", "error",
           "There's a lot of background noise. Find a quieter room and try again."),
     _Rule("snr_db", True, 20, "noisy", "warning",
@@ -103,12 +112,6 @@ CLIP_RULES = (
           "This works, but 10–20 seconds of speech gives a more faithful voice."),
     *_SOUND_RULES,
     *_TONE_RULES,
-    _PAUSES,
-)  # fmt: skip
-TAKE_RULES = (
-    _Rule("speech_s", True, MIN_TAKE_SPEECH_S, "too_short", "error",
-          "This take is too short. Read the whole passage."),
-    *_SOUND_RULES,
     _PAUSES,
 )  # fmt: skip
 CHECK_RULES = (
@@ -166,6 +169,23 @@ def _tone(speech: Float32Array, sample_rate: int) -> tuple[float | None, float |
 
 
 def analyze(samples: Float32Array, sample_rate: int, rules: Rules = CLIP_RULES) -> QualityReport:
+    values = measure(samples, sample_rate)
+    return build_report(values, _issues(values, rules))
+
+
+def build_report(values: dict[str, float | None], issues: list[QualityIssue]) -> QualityReport:
+    return QualityReport.model_validate(
+        {**values, "ok": not any(i.severity == "error" for i in issues), "issues": issues}
+    )
+
+
+def rule_issues(values: dict[str, float | None], rules: Rules) -> list[QualityIssue]:
+    """The issues ``rules`` find in measured ``values`` (one per metric, errors before warnings)."""
+    return _issues(values, rules)
+
+
+def measure(samples: Float32Array, sample_rate: int) -> dict[str, float | None]:
+    """Every measurement the rules look at, without judging them."""
     levels = frame_rms_db(samples, sample_rate)
     frame_s = 0.03
     speech_frames = levels > SILENCE_DB
@@ -185,8 +205,6 @@ def analyze(samples: Float32Array, sample_rate: int, rules: Rules = CLIP_RULES) 
         "snr_db": round(float(np.percentile(levels, 95) - np.percentile(levels, 5)), 1),
         "brightness_db": brightness,
         "body_db": body,
+        "noise_dbfs": round(float(np.percentile(levels, 5)), 1),
     }
-    issues = _issues(values, rules)
-    return QualityReport.model_validate(
-        {**values, "ok": not any(i.severity == "error" for i in issues), "issues": issues}
-    )
+    return values

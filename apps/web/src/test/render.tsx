@@ -32,11 +32,11 @@ export function json(body: unknown, status = 200): Response {
 }
 
 export function mockApi(routes: Record<string, Handler | unknown>) {
-  const calls: { method: string; path: string; body: unknown }[] = [];
+  const calls: { method: string; path: string; query: URLSearchParams; body: unknown }[] = [];
   const fetchMock = vi.fn(async (input: RequestInfo | URL, init: RequestInit = {}) => {
     const url = new URL(String(input), 'http://127.0.0.1');
     const method = init.method ?? 'GET';
-    calls.push({ method, path: url.pathname, body: init.body });
+    calls.push({ method, path: url.pathname, query: url.searchParams, body: init.body });
     const key = Object.keys(routes)
       .filter((route) => {
         const [m, p] = route.split(' ');

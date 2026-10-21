@@ -103,17 +103,23 @@ describe('Studio voice wizard', () => {
     expect(within(dialog).getByRole('button', { name: 'Check again' })).toBeInTheDocument();
 
     await user.click(within(dialog).getByRole('button', { name: /Continue/ }));
-    expect(await within(dialog).findByText(/Passage 1 of 48/)).toBeInTheDocument();
+    expect(await within(dialog).findByText('Foundation passage')).toBeInTheDocument();
+    expect(within(dialog).getByText(/How to read it:/)).toBeInTheDocument();
     const created = calls.find((c) => c.method === 'POST' && c.path === '/api/voice-sessions');
     expect(JSON.parse(String(created?.body))).toEqual({
       cleanup: { noiseReduction: 0.5, lowCut: false, trebleDb: -4.5, bassDb: 0 },
     });
     expect(within(dialog).getByRole('button', { name: /Continue/ })).toBeDisabled();
     await recordTake(user, dialog, tick);
-    expect(await within(dialog).findByText(/Passage 2 of 48/)).toBeInTheDocument();
-    expect(calls.some((c) => c.method === 'PUT' && c.path.endsWith('/takes/1'))).toBe(true);
+    expect(await within(dialog).findByText(/Passage 1 of 48/)).toBeInTheDocument();
+    const saved = calls.find((c) => c.method === 'PUT' && c.path.endsWith('/takes/49'));
+    expect(saved?.query.get('promptId')).toBe('foundation');
+    expect(saved?.query.get('text')).toMatch(/^Good morning, and welcome\./);
     await user.click(within(dialog).getByRole('button', { name: 'Previous passage' }));
     expect(await within(dialog).findByText('Recorded · 12 s')).toBeInTheDocument();
+    await user.click(within(dialog).getByRole('button', { name: 'Listen to this take' }));
+    expect(within(dialog).getByRole('button', { name: 'Stop' })).toBeInTheDocument();
+    await user.click(within(dialog).getByRole('button', { name: 'Stop' }));
     await user.click(within(dialog).getByRole('button', { name: 'Next passage' }));
     await recordTake(user, dialog, tick);
     expect(await within(dialog).findByText(/You can build your voice now/)).toBeInTheDocument();
@@ -166,7 +172,7 @@ describe('Studio voice wizard', () => {
     expect(screen.getByText(/2 takes, 0.4 minutes of usable speech/)).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Continue' }));
     const dialog = await screen.findByRole('dialog', { name: 'Create a studio voice' });
-    expect(await within(dialog).findByText(/Passage 3 of 48/)).toBeInTheDocument();
+    expect(await within(dialog).findByText('Foundation passage')).toBeInTheDocument(); // not recorded yet
     await user.keyboard('{Escape}');
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
     await user.click(screen.getByRole('button', { name: 'Discard' }));
@@ -184,7 +190,7 @@ describe('Studio voice wizard', () => {
         { code: 'too_short', severity: 'error', message: 'This take is too short.' },
       ]),
     };
-    const draft = studioSession({ takes: [failed] });
+    const draft = studioSession({ takes: [take(49, 'foundation', 40), failed] });
     const tick = controlFrames();
     const { state } = studioApi(draft, {
       'PUT /api/voice-sessions/': () => json({ error: { code: 'payload_too_large', message: 'Too large.' } }, 413),
@@ -204,7 +210,7 @@ describe('Studio voice wizard', () => {
     await user.upload(input, huge);
     expect(within(dialog).getByText(/larger than 600 MB/)).toBeInTheDocument();
     const imported = studioSession({
-      takes: [failed, take(101, null), take(102, null)],
+      takes: [take(49, 'foundation', 40), failed, take(101, null), take(102, null)],
       usableSpeechS: 24,
     });
     mockApi({
@@ -219,7 +225,7 @@ describe('Studio voice wizard', () => {
     expect(
       await within(dialog).findByText('Added 2 takes from your recording.'),
     ).toBeInTheDocument();
-    expect(await within(dialog).findByText(/plus imported takes/)).toBeInTheDocument();
+    expect(await within(dialog).findByText(/Imported takes count/)).toBeInTheDocument();
     mockApi({
       'GET /api/voice-sessions/': () => json(state.session),
       'POST /api/voice-sessions/': () => json({ error: { code: 'take_limit', message: 'Too many takes.' } }, 409),
@@ -243,14 +249,14 @@ describe('Studio voice wizard', () => {
     await waitFor(() =>
       expect(within(dialog).getByRole('button', { name: 'Stop' })).toBeInTheDocument(),
     );
-    tick(46);
-    expect(await within(dialog).findByText(/Passage 2 of 48/)).toBeInTheDocument();
+    tick(101); // the foundation passage may run for 100 seconds
+    expect(await within(dialog).findByText(/Passage 1 of 48/)).toBeInTheDocument();
     await user.click(within(dialog).getByRole('button', { name: 'Back' }));
     await user.click(within(dialog).getByRole('button', { name: 'Check microphone' }));
     await waitFor(() =>
       expect(within(dialog).getByRole('button', { name: 'Stop' })).toBeInTheDocument(),
     );
-    tick(60); // the clock kept running from the take above
+    tick(170); // the clock kept running from the take above
     expect(await within(dialog).findByText('Bad audio.')).toBeInTheDocument();
   });
 
@@ -386,7 +392,7 @@ describe('Studio edge cases', () => {
       ...take(1, 'narration-1'),
       quality: quality(12, [{ code: 'bright', severity: 'warning', message: 'Sounds tinny.' }]),
     };
-    studioApi(studioSession({ takes: [warned], usableSpeechS: 12 }));
+    studioApi(studioSession({ takes: [take(49, 'foundation', 40), warned], usableSpeechS: 52 }));
     const user = userEvent.setup();
     const dialog = await resumeStudio(user);
     await user.click(await within(dialog).findByRole('button', { name: 'Previous passage' }));

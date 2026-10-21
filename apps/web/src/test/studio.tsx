@@ -67,10 +67,14 @@ export const take = (number: number, promptId: string | null, speechS = 12): Ses
   createdAt: '2026-10-20T10:00:00+00:00',
 }); // prettier-ignore
 
-export const studioSession = (overrides: Partial<VoiceSession> = {}): VoiceSession => ({
-  id: ID, takes: [], usableSpeechS: 0, requiredSpeechS: 20, candidates: [], buildJobId: null, cleanup: null,
-  createdAt: '2026-10-20T10:00:00+00:00', updatedAt: '2026-10-20T10:00:00+00:00', ...overrides,
-}); // prettier-ignore
+export const studioSession = (overrides: Partial<VoiceSession> = {}): VoiceSession => {
+  const complete = (overrides.usableSpeechS ?? 0) >= (overrides.requiredSpeechS ?? 20);
+  return {
+    id: ID, takes: [], usableSpeechS: 0, requiredSpeechS: 20, minimumSpeechS: 45, canBuild: complete, complete,
+    candidates: [], buildJobId: null, cleanup: null, createdAt: '2026-10-20T10:00:00+00:00',
+    updatedAt: '2026-10-20T10:00:00+00:00', ...overrides,
+  };
+}; // prettier-ignore
 
 export const job = (status: JobOut['status'], message = ''): JobOut => ({
   id: JOB, kind: 'voice-build', status, progress: 0.4, message, payload: { sessionId: ID }, result: null,
@@ -97,7 +101,9 @@ export function studioApi(initial: VoiceSession | null, overrides: Record<string
     const number = Number(url.pathname.split('/').at(-1));
     const saved = take(number, url.searchParams.get('promptId'));
     const takes = [...session.takes.filter((item) => item.number !== number), saved];
-    state.session = { ...session, takes, usableSpeechS: takes.length * 12 };
+    const usableSpeechS = takes.length * 12;
+    const complete = usableSpeechS >= session.requiredSpeechS;
+    state.session = { ...session, takes, usableSpeechS, complete, canBuild: complete };
     return saved;
   };
   const post = (url: URL) => {

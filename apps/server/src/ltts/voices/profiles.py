@@ -119,7 +119,7 @@ def _decode(path: Path, max_seconds: float) -> tuple[np.ndarray, int]:
         raise UnsupportedDocumentError("Use a mono or stereo WAV/FLAC/OGG at 16–48 kHz.", code="unsupported_audio")
     if info.frames / info.samplerate > max_seconds:
         raise ReferenceQualityError(
-            f"The recording is longer than {max_seconds:.0f} seconds. Trim it to under a minute.",
+            f"The recording is longer than {max_seconds:.0f} seconds. Use a shorter recording.",
             code="too_long",
         )
     return read_audio(path)

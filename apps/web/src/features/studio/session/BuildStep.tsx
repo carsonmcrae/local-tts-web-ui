@@ -19,6 +19,7 @@ import { Banner } from '@/components/ui/Feedback';
 import { EnginePanel } from '@/features/engines/EngineSetup';
 import { JobProgress } from '@/features/jobs/JobProgress';
 import { describeCleanup } from '../cleanup';
+import { EarlyVoiceNote } from './PassageParts';
 
 export function BuildStep({
   session,
@@ -52,6 +53,7 @@ export function BuildStep({
   const running = isJobActive(job.data);
   return (
     <div className="flex flex-col gap-4">
+      {session.complete ? null : <EarlyVoiceNote building />}
       <p className="text-sm leading-relaxed text-muted">
         The app measures all {usable} usable takes, averages your voice across them, then builds and
         tests a few voices from your best takes. This takes a minute or two with a GPU, longer on a

@@ -342,10 +342,10 @@ export function useCreateSession() {
 
 export function useSaveTake() {
   return useSessionMutation(
-    (input: { sessionId: string; number: number; promptId: string; wav: Blob }) =>
+    (input: { sessionId: string; number: number; promptId: string; text: string; wav: Blob }) =>
       api<SessionTake>(`/api/voice-sessions/${input.sessionId}/takes/${input.number}`, {
         method: 'PUT',
-        query: { promptId: input.promptId },
+        query: { promptId: input.promptId, text: input.text },
         body: input.wav,
       }),
   );

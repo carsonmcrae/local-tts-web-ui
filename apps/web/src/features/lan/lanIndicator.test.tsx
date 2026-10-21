@@ -38,6 +38,14 @@ describe('LAN mode sign', () => {
     expect(api.calls.filter((call) => call.path === '/api/lan')).toHaveLength(asked); // off: no polling
   });
 
+  it('says "your network" when the computer cannot name the network it is open on', async () => {
+    mockApi({ 'GET /api/lan': { ...status(true), interface: null } });
+    renderWithApp(<LanIndicator />);
+    expect(
+      await screen.findByRole('link', { name: /^LAN mode on \(your network\)/ }),
+    ).toBeInTheDocument();
+  });
+
   it('is only for this computer, never a phone or tablet', () => {
     expect(onThisComputer('localhost') && onThisComputer('127.0.0.1') && onThisComputer('[::1]')).toBe(true); // prettier-ignore
     expect(onThisComputer('192.168.1.20')).toBe(false);

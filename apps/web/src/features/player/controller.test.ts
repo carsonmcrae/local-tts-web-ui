@@ -124,6 +124,18 @@ describe('PlaybackController', () => {
     expect(controller.getState().status).toBe('ended');
   });
 
+  it('falls back to the nearest read sentence behind, or stays put when every sentence is skipped', async () => {
+    const { controller, requests } = setup();
+    // Sentences 5 and 6 are a page number and a footer: stepping forward from 4 has nowhere to go.
+    await controller.load({ ...DOC, skipped: new Set([4, 5]) }, 3, true);
+    await controller.next();
+    expect(controller.getState()).toMatchObject({ segmentIndex: 3, status: 'playing' });
+    // A page of nothing but page numbers: play what was asked for rather than nothing at all.
+    await controller.load({ ...DOC, skipped: new Set([0, 1, 2, 3, 4, 5]) }, 2, true);
+    expect(controller.getState().segmentIndex).toBe(2);
+    expect(requests.at(-1)?.index).toBe(2);
+  });
+
   it('never plays stale audio when the listener skips quickly', async () => {
     const { controller, media, requests } = setup();
     let release: () => void = () => undefined;

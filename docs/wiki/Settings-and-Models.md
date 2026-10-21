@@ -28,11 +28,24 @@ more detail.
 ## Pronunciation
 
 Teach every voice how to say a word: enter the **Word or name** as it is written and how to **Say it
-as**, spelled the way it sounds (for example "Kael" → "Kale", "Dr." → "Doctor"). **Hear it** plays it
-in the current reading voice. Words match whole words in any letter case; tick **Only when the letter
-case matches** for words such as "US". Rules apply to reading, previews and exports, and only the
-sentences that contain a changed word are generated again. Up to 500 words; rules are plain text,
-never patterns.
+as**, written the way it sounds, with no phonetic symbols (gnocchi → NYOH-kee, quinoa → KEEN-wah,
+Nguyen → Win, "Dr." → "Doctor"). Join syllables with hyphens and put the stressed one in capitals; it
+is read as one word, never spelled out. **Hear as written** and **Hear respelling** play the word and
+the respelling side by side in the current reading voice before you save. Words match whole words in
+any letter case; tick **Only when the letter case matches** for words such as "US".
+
+Your documents' text never changes, only what is spoken. Rules apply to reading and exports, and
+rules for all documents to voice previews and the [local speech API](#local-speech-api) too; only
+the sentences that contain a changed word are generated again. Words added here apply to **All
+documents**. To fix a word in one document only, select it in the reader and choose **Fix
+pronunciation** (see [Reading Documents](Reading-Documents#fixing-a-words-pronunciation)). The list
+shows each rule's scope, **All documents** or **Only in** a document; a document's rule wins over the
+one for all documents there, and **Change** can move it to all documents. A document's rules are
+deleted with it.
+
+Up to 500 words for all documents, and up to 500 more for each document; rules are plain text, never
+patterns. Hearing a word before saving it is limited to 30 previews a minute, of up to 200 characters
+each.
 
 ## Engines & models
 

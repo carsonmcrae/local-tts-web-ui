@@ -162,6 +162,27 @@ your reading voice. Exports sound the same as playback. A whole sentence is styl
 `"Run!" she shouted.` the narration is read in the dialogue voice too. Deleting a custom voice hands
 its sentences back to the reading voice.
 
+## Fixing a word's pronunciation
+
+When a voice says a name or word wrongly, select it in the text and choose **Fix pronunciation**
+(offered for a word or a phrase of up to six words). In the dialog:
+
+- **Say it as**: write the word the way it sounds. No phonetic symbols are needed: gnocchi →
+  NYOH-kee, quinoa → KEEN-wah, Nguyen → Win. Join syllables with hyphens and put the stressed one in
+  capitals; the voice reads it as one word and never spells the capitals out letter by letter. To
+  have letters spelled, separate them with spaces (U S A).
+- **Hear as written** and **Hear respelling** play the word and your respelling side by side in your
+  reading voice, before anything is saved. The word is played exactly as written, ignoring any saved
+  pronunciation.
+- **Use it in**: **This document** (the default) or **All documents**. A word saved for this document
+  wins over the one for all documents, here only. Saving for all documents replaces this document's
+  own pronunciation of the word, so it says it the new way too.
+
+If the word already has a pronunciation, the dialog starts from it. The text itself never changes,
+only what is spoken: playback and exports both use the fix, and only the sentences containing the
+word are generated again. A document's pronunciations are deleted with it. Every pronunciation is
+listed, and can be changed, in [Settings → Pronunciation](Settings-and-Models#pronunciation).
+
 ## Searching a document
 
 Press the magnifying glass next to Play (**Search this document**) and type a word, name or phrase.

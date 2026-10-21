@@ -16,7 +16,7 @@ import { Field, Input } from '@/components/ui/Field';
 import { MAX_SAY_AS_CHARS, MAX_WORD_CHARS } from './pronunciationRules';
 import type { Heard, PronunciationPreview } from './usePronunciationPreview';
 
-export const RESPELLING_HINT =
+const RESPELLING_HINT =
   'Write it as it sounds: gnocchi → NYOH-kee, quinoa → KEEN-wah, Nguyen → Win. Join syllables with ' +
   'hyphens and put the stressed one in capitals. No special symbols needed.';
 

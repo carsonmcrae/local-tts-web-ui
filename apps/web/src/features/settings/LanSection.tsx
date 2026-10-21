@@ -92,6 +92,53 @@ function choose(addresses: readonly NetworkAddress[], picked: string): NetworkAd
   );
 }
 
+function NoNetwork({ status }: Readonly<{ status: LanStatus }>) {
+  if (status.addresses.length > 0 || status.enabled) return null;
+  return (
+    <p className="text-[13px] text-muted">
+      This computer doesn&apos;t seem to be connected to a local network right now.
+    </p>
+  );
+}
+
+/** The address and pairing while LAN mode is on, the paired devices, and turning it off. */
+function WhileOn({
+  status,
+  updatedAt,
+  stopping,
+  onTurnOff,
+}: Readonly<{ status: LanStatus; updatedAt: number; stopping: boolean; onTurnOff: () => void }>) {
+  return (
+    <>
+      {status.enabled && status.url ? (
+        <>
+          <OpenToTheNetwork url={status.url} where={status.interface} category={status.category} />
+          <PairingCard pairing={status.pairing} url={status.url} updatedAt={updatedAt} />
+        </>
+      ) : null}
+      {status.enabled || status.devices.length > 0 ? (
+        <PairedDevices devices={status.devices} now={updatedAt} />
+      ) : null}
+      {status.enabled ? (
+        <div className="flex flex-col items-start gap-1.5">
+          <Button
+            icon={<Power size={15} />}
+            className="max-sm:h-11"
+            loading={stopping}
+            onClick={onTurnOff}
+          >
+            Turn off LAN mode
+          </Button>
+          <p className="text-[13px] text-muted">
+            Stops at once, including anything a device is still downloading. Paired devices
+            can&apos;t connect until you turn it on again.
+          </p>
+        </div>
+      ) : null}
+    </>
+  );
+}
+
 function LanPanel({ status, updatedAt }: Readonly<{ status: LanStatus; updatedAt: number }>) {
   const update = useUpdateLan();
   const [picked, setPicked] = useState(status.address ?? '');
@@ -131,37 +178,14 @@ function LanPanel({ status, updatedAt }: Readonly<{ status: LanStatus; updatedAt
       {choice && address ? (
         <AddressPicker addresses={status.addresses} value={address} onChange={pick} />
       ) : null}
-      {status.addresses.length === 0 && !status.enabled ? (
-        <p className="text-[13px] text-muted">
-          This computer doesn&apos;t seem to be connected to a local network right now.
-        </p>
-      ) : null}
+      <NoNetwork status={status} />
       {update.isError ? <LanProblem error={update.error} /> : null}
-      {status.enabled && status.url ? (
-        <>
-          <OpenToTheNetwork url={status.url} where={status.interface} category={status.category} />
-          <PairingCard pairing={status.pairing} url={status.url} updatedAt={updatedAt} />
-        </>
-      ) : null}
-      {status.enabled || status.devices.length > 0 ? (
-        <PairedDevices devices={status.devices} now={updatedAt} />
-      ) : null}
-      {status.enabled ? (
-        <div className="flex flex-col items-start gap-1.5">
-          <Button
-            icon={<Power size={15} />}
-            className="max-sm:h-11"
-            loading={update.isPending && update.variables?.enabled === false}
-            onClick={() => change(false)}
-          >
-            Turn off LAN mode
-          </Button>
-          <p className="text-[13px] text-muted">
-            Stops at once, including anything a device is still downloading. Paired devices
-            can&apos;t connect until you turn it on again.
-          </p>
-        </div>
-      ) : null}
+      <WhileOn
+        status={status}
+        updatedAt={updatedAt}
+        stopping={update.isPending && update.variables?.enabled === false}
+        onTurnOff={() => change(false)}
+      />
       <HttpLimits />
     </>
   );

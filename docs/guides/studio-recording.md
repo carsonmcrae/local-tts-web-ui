@@ -130,7 +130,7 @@ slow down for the calm ending. This passage alone is enough to build a first ver
 9. She opened the letter slowly, almost afraid to read it. Then her face changed completely. "I got
    the job," she whispered, and then, much louder, "I actually got the job!"
 
-   _Build suspense: slow and hesitant at first, whisper “I got the job”, then let the last line
+   _Build suspense: slow and hesitant at first, say “I got the job” softly (not a full whisper), then let the last line
    burst out, loud and joyful._
 
 10. The storm hit just after midnight. Thunder shook the windows, the lights flickered once, twice,
@@ -348,7 +348,7 @@ slow down for the calm ending. This passage alone is enough to build a first ver
 47. When the snow falls at night, the whole town seems to hold its breath. The streets go quiet, the
     lamps glow softly, and everything feels a little more gentle.
 
-    _Gentle and hushed, almost a whisper on “hold its breath”, and warm on the last line._
+    _Gentle and hushed, soft but still voiced on “hold its breath”, and warm on the last line._
 
 48. Thank you for listening. Whatever today brings, I hope it holds a few quiet moments, a good
     conversation, and at least one reason to smile.

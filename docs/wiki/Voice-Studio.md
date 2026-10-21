@@ -173,6 +173,8 @@ asks you to update. The format is described in
 
 - Use a quiet room, keep the microphone about a hand's width away, and read at your normal pace.
 - Read continuously. More than half the recording being silence triggers a warning.
+- Keep quiet lines voiced rather than whispered: the voice copies a whisper poorly, and a whispered
+  take is often too quiet to use.
 - **How to read it** under each passage is a suggestion: the varied inflection is what teaches the
   voice to sound like you in questions, dialogue and lively lines, but read in your own natural voice —
   there's no need to exaggerate.

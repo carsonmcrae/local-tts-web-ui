@@ -231,6 +231,20 @@ test.describe('website @site @cross-browser', () => {
     expect(await seriousViolations(page)).toEqual([]);
   });
 
+  test('the permanent download address says plainly when no installer is published', async ({
+    page,
+  }) => {
+    await page.goto(`${BASE}/download/`);
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText(
+      'Download TTSNative for Windows',
+    );
+    await expect(page.getByText("The Windows installer hasn't been published yet.")).toBeVisible();
+    await expect(
+      page.getByRole('link', { name: 'Run TTSNative from its source code' }),
+    ).toHaveAttribute('href', `${BASE}/#install`);
+    expect(await seriousViolations(page)).toEqual([]);
+  });
+
   test('the 404 page links home', async ({ page }) => {
     await page.goto(`${BASE}/404.html`);
     await expect(page.getByRole('link', { name: 'Go to the TTSNative home page' })).toHaveAttribute(

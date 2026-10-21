@@ -89,7 +89,7 @@ async function main() {
 
   const { releases, installer } = await releaseInfo();
   const problems = [];
-  for (const page of ['index.html', 'releases.html', '404.html']) {
+  for (const page of ['index.html', 'releases.html', 'download/index.html', '404.html']) {
     const file = path.join(out, page);
     const html = fillDownload(applyRequirements(readFileSync(file, 'utf8'), out), installer)
       .replace('<!-- release-history -->', renderHistory(releases))
@@ -100,7 +100,8 @@ async function main() {
   }
   writeFileSync(
     path.join(out, 'sitemap.xml'),
-    `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n  <url><loc>${base}/</loc></url>\n  <url><loc>${base}/releases.html</loc></url>\n</urlset>\n`,
+    `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n  <url><loc>${base}/</loc></url>\n  <url><loc>${base}/releases.html</loc></url>
+  <url><loc>${base}/download/</loc></url>\n</urlset>\n`,
   );
   writeFileSync(
     path.join(out, 'robots.txt'),

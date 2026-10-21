@@ -59,7 +59,7 @@ const download = process.argv.includes('--no-installer')
   ? ''
   : `## Download
 
-**Windows 11 (64-bit):** [${installer}](https://github.com/${REPO}/releases/download/${tag}/${installer}), also on [ttsnative.com](https://ttsnative.com). TTSNative already installed from the website offers this update itself.
+**Windows 11 (64-bit):** [${installer}](https://github.com/${REPO}/releases/download/${tag}/${installer}), or always the newest from [ttsnative.com/download](https://ttsnative.com/download/). TTSNative already installed from the website offers this update itself.
 
 `;
 

@@ -7,9 +7,11 @@
 
 <p align="center">
   <a href="https://ttsnative.com/"><strong>Website</strong></a> ·
-  <a href="#quick-start"><strong>Install</strong></a> ·
+  <a href="https://ttsnative.com/download/"><strong>Download for Windows</strong></a> ·
+  <a href="#quick-start"><strong>Install from source</strong></a> ·
   <a href="https://github.com/carsonmcrae/ttsnative/wiki"><strong>User guide</strong></a> ·
-  <a href="https://github.com/carsonmcrae/ttsnative/releases/latest"><strong>Latest release</strong></a>
+  <a href="https://github.com/carsonmcrae/ttsnative/releases/latest"><strong>Latest release</strong></a> ·
+  <a href="https://ttsnative.com/releases.html"><strong>Release history</strong></a>
 </p>
 
 <p align="center">
@@ -66,8 +68,8 @@ TTSNative is free and open source (MIT). It was called **Local TTS** until versi
 
 **Windows 11:** from version 2.1.0, releases include a Windows installer: no developer tools needed,
 updates arrive in the app, and your data stays in your user folder. Download it from
-[ttsnative.com](https://ttsnative.com) once a release with the installer is out, and see the
-[Windows app guide](docs/wiki/Windows-App.md).
+**[ttsnative.com/download](https://ttsnative.com/download/)** (it always points at the newest
+installer once a release with it is out), and see the [Windows app guide](docs/wiki/Windows-App.md).
 
 **From source** (Windows, macOS, Linux, and for development): you need **Node.js 22.22 or newer** and Git. That's all — the first run installs everything else inside
 this folder.

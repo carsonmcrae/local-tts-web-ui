@@ -69,6 +69,9 @@ def test_worker_idle_unload(tmp_path: Path) -> None:
     while client.running and time.monotonic() < deadline:
         time.sleep(0.02)
     assert not client.running
+    # The watcher holds the lock until the process has shut down, then must hand it back.
+    assert client._lock.acquire(timeout=10)
+    client._lock.release()
 
 
 def test_kokoro_not_installed(tmp_path: Path) -> None:

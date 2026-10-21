@@ -90,10 +90,14 @@ scripts, screen readers and home automation on this computer read text aloud wit
 voices. It is **off** until you open **Speech API settings** and switch it on, and programs need a
 token, which is shown once (only a fingerprint of it is kept). Custom voices can't be used until
 you allow each one, web pages can never call it, and other devices are refused unless you allow
-them (which only matters while LAN mode or network mode is on). The section also shows when the API was last used, and
-the sidebar shows **Speech API in use** while a program is using it. See the
+them (which only matters while LAN mode or network mode is on). OpenAI's voice names (`alloy`,
+`nova`…) work too, each reading with a built-in Kokoro voice. The section shows the exact address
+programs use, `http://127.0.0.1:<port>/v1` with TTSNative's own port (under `npm run dev`, not the
+one in your browser's address bar), and warns you when TTSNative has moved to another port since a
+program last used it, as it does when its usual port is busy at startup. It also shows when the API
+was last used, and the sidebar shows **Speech API in use** while a program is using it. See the
 [local speech API guide](https://github.com/carsonmcrae/ttsnative/blob/main/docs/guides/local-speech-api.md)
-for examples (curl, Python, the OpenAI SDK), limits and how it is protected.
+for examples (curl, Python, the OpenAI SDK), the voice names, limits and how it is protected.
 
 ## Privacy
 

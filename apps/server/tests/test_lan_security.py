@@ -63,11 +63,6 @@ REACHABLE = {
     "PATCH /api/documents/{document_id}/sections/{section_index}",
     "GET /api/documents/{document_id}/segments/{index}/audio", "POST /api/documents/{document_id}/segments/{index}/takes",
     "GET /api/documents/{document_id}/styles", "PUT /api/documents/{document_id}/styles",
-    "PUT /api/documents/{document_id}/shelf", "POST /api/library/organize", "GET /api/library/tags",
-    "GET /api/library/folders", "POST /api/library/folders", "PATCH /api/library/folders/{folder_id}",
-    "DELETE /api/library/folders/{folder_id}", "GET /api/library/collections", "POST /api/library/collections",
-    "PATCH /api/library/collections/{collection_id}", "DELETE /api/library/collections/{collection_id}",
-    "POST /api/library/collections/{collection_id}/documents",
 }  # fmt: skip
 SAMPLES = {"voice_id": "kokoro:af_heart", "engine_id": "kokoro", "key": "a" * 64}
 

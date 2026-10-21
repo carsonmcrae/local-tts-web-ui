@@ -1,7 +1,7 @@
 {
   "//": "Purpose: Root workspace manifest and the single entry point for every developer command. Scope: npm workspaces, pinned tooling, and scripts that orchestrate both the web app and the Python server through scripts/*.mjs. Does NOT belong: App runtime dependencies (apps/web/package.json, apps/server/pyproject.toml).",
   "name": "ttsnative",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "author": "Carson McRae",
   "homepage": "https://github.com/carsonmcrae/ttsnative",
   "repository": {

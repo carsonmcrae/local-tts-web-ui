@@ -6,7 +6,7 @@
 
 [project]
 name = "ltts-chatterbox-worker"
-version = "2.0.0"
+version = "2.1.0"
 description = "Stdio worker that runs Resemble AI Chatterbox Turbo for TTSNative voice cloning."
 license = "MIT"
 authors = [{ name = "Carson McRae" }]

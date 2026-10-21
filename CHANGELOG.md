@@ -6,6 +6,37 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [2.1.0] - 2026-10-21
+
+What's new for readers and listeners, in short:
+
+- **More to read.** HTML, FB2 and MOBI books, web pages by their address, and PDFs that skip their
+  running headers, page numbers, footnotes and citation markers while keeping every word visible
+  (and letting you undo it).
+- **Audiobooks you can finish.** M4B audiobooks with chapters and a cover, read-along EPUB books,
+  exports that pause, resume and survive a restart, a queue that shows each export's place, and
+  one-click sending to your own Audiobookshelf.
+- **Stories that sound like stories.** Characters get their own voices, quoted speech and narration
+  are told apart, sentences can be read as an announcement, a phone call or a memory, and pasted
+  text understands speech marks such as `{pause 2s}`.
+- **A shorter studio session.** Voice Studio now asks for about a dozen good passages instead of
+  48, shows what your voice still needs, and says plainly when better audio would help more than
+  more recordings. No model is trained; your clean takes and speaking styles are what make the
+  voice yours.
+- **Say it right.** Select a word in the reader, write it the way it sounds (gnocchi → NYOH-kee),
+  hear both versions, and keep the fix for one document or all of them.
+- **Phones and tablets.** Pair a phone on your home Wi-Fi to read and listen from it, with the
+  computer doing the work. Plain HTTP for now, so home networks only; settings, voices and
+  deleting stay on the computer.
+- **For your other programs.** An optional local speech API that works with OpenAI-style clients,
+  off until you turn it on.
+- **Easier on the eyes.** A high-contrast option, wider letter spacing for the reading text, and
+  support for Windows high-contrast themes.
+- **Experimental, off by default.** Fine-tuning a studio voice on its takes exists for those with an
+  NVIDIA GPU; in a blind test it didn't sound clearly better, so keep it only if you prefer it.
+
+The full list follows.
+
 ### Added
 
 - **Fix a word's pronunciation from the reader.** Select it, choose **Fix pronunciation**, write it
@@ -333,6 +364,7 @@ fresh with `npm install && npm run dev`.
 Initial Gradio prototype (`kokoro_tts_ui.py`), tagged `v1.0.0` at commit `1452251`. See
 [docs/architecture/legacy-audit.md](docs/architecture/legacy-audit.md).
 
-[Unreleased]: https://github.com/carsonmcrae/ttsnative/compare/v2.0.0...HEAD
+[Unreleased]: https://github.com/carsonmcrae/ttsnative/compare/v2.1.0...HEAD
+[2.1.0]: https://github.com/carsonmcrae/ttsnative/compare/v2.0.0...v2.1.0
 [2.0.0]: https://github.com/carsonmcrae/ttsnative/compare/v1.0.0...v2.0.0
 [1.0.0]: https://github.com/carsonmcrae/ttsnative/tree/v1.0.0

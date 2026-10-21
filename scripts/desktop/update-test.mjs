@@ -159,6 +159,18 @@ async function appPage(origin) {
     await browser?.close().catch(() => undefined);
     await sleep(1000);
   }
+  const webviews = spawnSync(
+    path.join(system32, 'WindowsPowerShell', 'v1.0', 'powershell.exe'),
+    [
+      '-NoProfile',
+      '-Command',
+      "Get-CimInstance Win32_Process -Filter \"Name='msedgewebview2.exe'\" | Where-Object { $_.CommandLine -match 'TTSNative' } | Select-Object -First 1 -ExpandProperty CommandLine",
+    ],
+    { encoding: 'utf8' },
+  ).stdout;
+  console.log(
+    `(TTSNative processes running: ${running()}; web view: ${webviews.trim() || 'none'})`,
+  );
   throw new Error('FAILED: the app window could not be reached through WebView2');
 }
 
@@ -178,6 +190,14 @@ async function main() {
   const server = updateServer(newer, readFileSync(`${older}.sig`, 'utf8'));
   try {
     check(spawnSync(older, ['/S'], { stdio: 'inherit' }).status === 0, `installed ${OLD}`);
+    // A copy started without the debugging port would take the single instance; end it first.
+    if (running()) {
+      console.log('(the app was already running after the install; ending it)');
+      spawnSync(path.join(system32, 'taskkill.exe'), ['/IM', 'TTSNative.exe', '/F'], {
+        stdio: 'ignore',
+      });
+      await sleep(3000);
+    }
     spawn(path.join(installDir, 'TTSNative.exe'), [], {
       detached: true,
       stdio: 'ignore',

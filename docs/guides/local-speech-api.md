@@ -231,6 +231,9 @@ id instead.
 
 ## Security and privacy
 
+- **No proxies.** Requests passed on by a reverse proxy, tunnel or port forward (they carry
+  `Forwarded`, `X-Forwarded-For`, `Via` and similar headers) are refused with `403 proxy_not_supported`,
+  so a proxy on this computer can't make other devices look local.
 - **This computer only.** The API refuses requests from other devices (`403`) unless you switch on
   **Allow other devices on my network**, which is off by default. Turning it on doesn't change how the
   server listens: TTSNative still listens only on `127.0.0.1` unless **LAN mode** is on (Settings →

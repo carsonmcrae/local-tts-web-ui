@@ -8,6 +8,21 @@ All notable changes to this project are documented here. The format follows
 
 ### Added
 
+- **Fix a word's pronunciation from the reader.** Select it, choose **Fix pronunciation**, write it
+  the way it sounds (gnocchi → NYOH-kee) and hear the word and your respelling side by side before
+  saving it for this document or for all documents. Document rules win over library ones and go
+  with the document; Settings → Pronunciation shows each rule's scope. Respellings with capitals
+  for stress are read as words, never spelled out, and your documents' text never changes.
+- **Exports wait their turn.** One runs at a time and up to four wait, each showing its place in
+  line; beyond that, starting or resuming is refused with a clear reason, for this computer and
+  paired devices alike. Exports check free disk space before starting and while they run, and stop
+  resumably when it runs out. Only one studio voice build or fine-tune runs at a time, and each
+  engine caps waiting on-demand sentences while keeping room for playback.
+- **Studio progress that weighs the recordings:** a voice is complete only when one take is long and
+  clean enough for its sound; when most takes are noisy, the session says better audio would help
+  instead of suggesting more passages.
+- A real-phone checklist for LAN mode (`docs/guides/lan-phone-checklist.md`) and a design for HTTPS
+  on phones with a local certificate authority (`docs/research/lan-https.md`, not built).
 - **Fine-tune a studio voice (experimental).** **Fine-tune this voice** trains a small adapter
   (about 13 MB) on the takes a studio voice kept, on your own NVIDIA graphics card, in a few
   minutes. It stops once passages it held back stop getting closer to your reading, and offers
@@ -211,6 +226,12 @@ All notable changes to this project are documented here. The format follows
 
 ### Fixed
 
+- Pausing or cancelling an export never ends it as failed, and cancelling removes everything it made
+  as soon as it stops; after a crash, half-built files are tidied and saved sentences kept for
+  Resume. Exports left for two weeks show how much space they use instead of being deleted.
+- Room tone in the pauses of a cloned voice is never louder than the background heard just before
+  the pause, and stays silent after a sentence that ends in near-silence.
+- `npm run start` reads `LTTS_API_PORT`, like `npm run dev` (the older `LTTS_PORT` still works).
 - Cloned voices no longer drop to dead silence between sentences: a voice that carries its recordings'
   faint hiss or hum keeps that room tone through the pauses after sentences and between narration
   and quoted speech, so the background doesn't switch off and on. Built-in voices are unchanged.
@@ -232,6 +253,14 @@ All notable changes to this project are documented here. The format follows
 
 ### Security
 
+- TTSNative refuses requests passed on by a reverse proxy, tunnel or port forward, and treats a
+  request as the person at the computer only from `localhost`, `127.0.0.1` or `[::1]`, so a proxy
+  can't pass for them.
+- LAN mode turns on only for a network Windows lists as private (it explains how to mark a home
+  network private) and turns itself off if the network becomes public; on macOS and Linux you
+  confirm each time that it's a home network you trust.
+- Phones and tablets can no longer delete or cancel exports or send them to Audiobookshelf; Settings
+  and the pairing page say what works over LAN mode's plain HTTP and what would need HTTPS.
 - **ONNX Runtime telemetry is now switched off.** Official ONNX Runtime builds send usage telemetry
   to Microsoft by default (Windows TraceLogging, or HTTPS on other platforms). TTSNative now sets
   `ORT_DISABLE_TELEMETRY` and calls `disable_telemetry_events()` before Kokoro loads, so the

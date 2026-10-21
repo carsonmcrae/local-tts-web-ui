@@ -5,7 +5,8 @@
  * Scope: Holds the music state of this narration session (on/off, track, volume, preview, loading,
  *   error). A session is one document in the player: music is off whenever a different document (or
  *   none) is loaded and when the narration ends, and only an explicit choice turns it on. The chosen
- *   track plays while the narration plays or fetches its next sentence and pauses with it; previews
+ *   track plays while the narration plays or fetches its next sentence and pauses with it (ignoring
+ *   the momentary pause a browser reports as each sentence ends); previews
  *   last up to 20 seconds; each change gets its own fade. Track and volume are saved, "on" never.
  * Does NOT belong: Web Audio (engine.ts), the narration state machine (controller.ts) or UI.
  */
@@ -56,6 +57,8 @@ export const FADES = {
   preview: 0.6,
 } as const;
 export const PREVIEW_SECONDS = 20;
+/** How long the narration must stay paused before the music follows. */
+export const PAUSE_GRACE_MS = 300;
 
 const narrating = (player: PlayerState) =>
   player.status === 'playing' || player.status === 'loading';
@@ -69,6 +72,7 @@ export class MusicSession {
   /** The track last handed to the engine (null: silence), so repeated player updates cost nothing. */
   private heard: string | null = null;
   private previewTimer: ReturnType<typeof setTimeout> | undefined;
+  private pauseTimer: ReturnType<typeof setTimeout> | undefined;
 
   constructor(private readonly deps: SessionDeps) {
     const choice = deps.choice.read();
@@ -89,6 +93,7 @@ export class MusicSession {
     return () => {
       unsubscribe();
       clearTimeout(this.previewTimer);
+      clearTimeout(this.pauseTimer);
       this.heard = null;
       this.set({ enabled: false, previewId: null });
       this.engine.dispose();
@@ -139,17 +144,22 @@ export class MusicSession {
 
   private follow(player: PlayerState): void {
     const documentId = player.document?.id ?? null;
-    let fade: number = narrating(player) ? FADES.resume : FADES.pause;
     const ended = player.status === 'ended' && this.lastStatus !== 'ended';
     this.lastStatus = player.status;
+    clearTimeout(this.pauseTimer);
     if (documentId !== this.documentId || ended) {
       // Another document (or none) is a new narration, and a finished one is over: either way the
       // music goes off and waits to be turned on again.
       this.documentId = documentId;
       if (this.state.enabled) this.set({ enabled: false });
-      fade = ended ? FADES.end : FADES.off;
+      this.sync(ended ? FADES.end : FADES.off);
+    } else if (narrating(player)) {
+      this.sync(FADES.resume);
+    } else {
+      // An audio element reports "paused" just before each sentence ends and the next one loads;
+      // only a pause that lasts fades the music out.
+      this.pauseTimer = setTimeout(() => this.sync(FADES.pause), PAUSE_GRACE_MS);
     }
-    this.sync(fade);
   }
 
   private target(): MusicTarget | null {

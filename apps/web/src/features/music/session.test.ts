@@ -13,7 +13,7 @@ import type { PlayerDocument, PlayerState } from '@/features/player/controller';
 import type { EngineEvents, MusicTarget } from './engine';
 import type { MusicTrack } from './library';
 import type { MusicChoice } from './preferences';
-import { FADES, MusicSession, PREVIEW_SECONDS } from './session';
+import { FADES, MusicSession, PAUSE_GRACE_MS, PREVIEW_SECONDS } from './session';
 
 const track = (id: string, title = id): MusicTrack => ({
   id,
@@ -140,11 +140,28 @@ describe('MusicSession', () => {
     expect(engine.play).toHaveBeenCalledTimes(1);
     expect(engine.setVolume).toHaveBeenCalledTimes(1);
     player.set({ status: 'paused' });
+    expect(engine.play).toHaveBeenCalledTimes(1);
+    vi.advanceTimersByTime(PAUSE_GRACE_MS);
     expect(lastPlay()).toEqual([null, FADES.pause]);
     player.set({ status: 'playing' });
     expect(lastPlay()).toEqual([bed('dusk'), FADES.resume]);
     player.set({ status: 'error' });
+    vi.advanceTimersByTime(PAUSE_GRACE_MS);
     expect(lastPlay()).toEqual([null, FADES.pause]);
+  });
+
+  it('plays straight through the pause a browser reports as each sentence ends', () => {
+    const { music, engine, player } = setup();
+    player.set({ document: doc('one'), status: 'playing' });
+    music.setEnabled(true);
+    for (let sentence = 1; sentence < 20; sentence += 1) {
+      player.set({ status: 'paused' }); // 'pause' fires just before 'ended'
+      player.set({ status: 'loading', segmentIndex: sentence });
+      vi.advanceTimersByTime(50);
+      player.set({ status: 'playing' });
+    }
+    vi.advanceTimersByTime(PAUSE_GRACE_MS * 2);
+    expect(engine.play).toHaveBeenCalledTimes(1);
   });
 
   it('turns off for a different document, or when none is loaded', () => {

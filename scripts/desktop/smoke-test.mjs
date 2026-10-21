@@ -169,6 +169,10 @@ async function main() {
     'Get-Process | Where-Object { $_.MainWindowHandle -ne 0 } | ForEach-Object { $_.ProcessName } | Sort-Object -Unique',
   ).split(/\r?\n/);
   check(windows.includes('TTSNative'), 'TTSNative has its own window');
+  const title = powershell(
+    '(Get-Process -Name TTSNative | Where-Object { $_.MainWindowHandle -ne 0 } | Select-Object -First 1).MainWindowTitle',
+  );
+  check(title === 'TTSNative', `the window is titled "${title}"`);
   check(
     !windows.some((name) => /^(ttsnative-backend|python|conhost|uv|cmd)$/i.test(name)),
     `no console windows (${windows.join(', ')})`,

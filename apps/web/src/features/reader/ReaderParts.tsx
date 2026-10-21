@@ -3,8 +3,8 @@
 /**
  * Purpose: Presentational building blocks of the reading view.
  * Scope: `ReaderHeader` (back link, title, document facts, search, contents and play buttons),
- *   `SectionBody` (loads one section; loading/error/text states, bookmarked sentences marked) and
- *   `SectionPager`.
+ *   `SectionBody` (loads one section; loading/error/text states, bookmarked, styled and skipped
+ *   sentences marked) and `SectionPager`.
  * Does NOT belong: Player coordination (ReaderPage) or sentence rendering (DocumentText).
  */
 import { ArrowLeft, ChevronLeft, ChevronRight, ListTree, Pause, Play, Search } from 'lucide-react';
@@ -103,6 +103,7 @@ interface BodyProps {
   activeIndex: number | null;
   bookmarked: ReadonlySet<number>;
   styled: ReadonlyMap<number, string>;
+  skipped: ReadonlySet<number>;
   autoScroll: boolean;
   onSelect: (index: number) => void;
 }
@@ -113,6 +114,7 @@ export function SectionBody({
   activeIndex,
   bookmarked,
   styled,
+  skipped,
   autoScroll,
   onSelect,
 }: Readonly<BodyProps>) {
@@ -139,6 +141,7 @@ export function SectionBody({
       activeIndex={activeIndex}
       bookmarked={bookmarked}
       styled={styled}
+      skipped={skipped}
       autoScroll={autoScroll}
       onSelect={onSelect}
     />

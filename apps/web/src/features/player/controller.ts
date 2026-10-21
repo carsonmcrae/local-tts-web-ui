@@ -4,9 +4,10 @@
  * Purpose: Framework-free playback engine for continuous, progressive document narration.
  * Scope: Plays one segment (sentence) at a time through a single audio element, prefetches the next
  *   few segments at lower server priority, aborts work that's no longer needed, advances
- *   automatically, applies voice/pace/rate changes, stops for a sleep timer (after some minutes
- *   or at the end of the section, always between sentences), and persists reading progress. Every
- *   async step is guarded by a generation counter so rapid skipping can never play stale audio.
+ *   automatically, never plays (or prefetches) the document's skipped sentences, applies
+ *   voice/pace/rate changes, stops for a sleep timer (after some minutes or at the end of the
+ *   section, always between sentences), and persists reading progress. Every async step is guarded
+ *   by a generation counter so rapid skipping can never play stale audio.
  * Does NOT belong: React bindings (PlayerProvider) or UI.
  */
 
@@ -18,6 +19,8 @@ export interface PlayerDocument {
   segmentCount: number;
   estimatedSeconds: number;
   sections: readonly { index: number; title: string; startSegment: number; segmentCount: number }[];
+  /** Sentences never read: page furniture the cleanup found, or skipped by hand (as exports do). */
+  skipped?: ReadonlySet<number>;
 }
 
 export interface PlayerError {
@@ -175,14 +178,14 @@ export class PlaybackController {
   }
 
   next(): Promise<void> {
-    return this.goTo(this.state.segmentIndex + 1, this.isActive());
+    return this.goTo(this.state.segmentIndex + 1, this.isActive(), 1);
   }
 
   previous(): Promise<void> {
     // Like music players: restart the sentence unless we're at its very beginning.
     const target =
       this.deps.media.currentTime > 2 ? this.state.segmentIndex : this.state.segmentIndex - 1;
-    return this.goTo(target, this.isActive());
+    return this.goTo(target, this.isActive(), -1);
   }
 
   nextSection(): Promise<void> {
@@ -317,20 +320,41 @@ export class PlaybackController {
     for (const [index, entry] of this.cache) this.drop(index, entry);
   }
 
-  private prefetchAround(document: PlayerDocument, index: number): void {
-    for (const [cached, entry] of this.cache) {
-      if (cached < index - KEEP_BEHIND || cached > index + PREFETCH_AHEAD) this.drop(cached, entry);
+  /** The nearest sentence from `index` on (back from it, for a `step` of -1) that is read, if any. */
+  private spoken(index: number, step = 1): number | null {
+    const document = this.state.document;
+    for (let at = index; document && at >= 0 && at < document.segmentCount; at += step) {
+      if (!document.skipped?.has(at)) return at;
     }
-    const count = document.segmentCount;
-    for (let ahead = 1; ahead <= PREFETCH_AHEAD && index + ahead < count; ahead += 1) {
-      this.request(document.id, index + ahead, true).promise.catch(() => undefined);
-    }
+    return null;
   }
 
-  private async goTo(rawIndex: number, autoplay: boolean): Promise<void> {
+  private prefetchAround(document: PlayerDocument, index: number): void {
+    const ahead: number[] = [];
+    for (let next = this.spoken(index + 1); next !== null && ahead.length < PREFETCH_AHEAD;) {
+      ahead.push(next);
+      next = this.spoken(next + 1);
+    }
+    const last = ahead.at(-1) ?? index;
+    for (const [cached, entry] of this.cache) {
+      if (cached < index - KEEP_BEHIND || cached > last) this.drop(cached, entry);
+    }
+    for (const next of ahead) this.request(document.id, next, true).promise.catch(() => undefined);
+  }
+
+  /**
+   * Move to a sentence. Playing from a skipped one, or stepping (`step` 1 or -1) onto one, moves on
+   * to the nearest sentence that is read; while paused, a skipped sentence can still be shown.
+   */
+  private async goTo(rawIndex: number, autoplay: boolean, step?: number): Promise<void> {
     const document = this.state.document;
     if (!document) return;
-    const index = Math.min(Math.max(rawIndex, 0), Math.max(document.segmentCount - 1, 0));
+    const clamped = Math.min(Math.max(rawIndex, 0), Math.max(document.segmentCount - 1, 0));
+    const toward = step ?? 1;
+    const index =
+      autoplay || step
+        ? (this.spoken(clamped, toward) ?? this.spoken(clamped, -toward) ?? clamped)
+        : clamped;
     const generation = ++this.generation;
     this.deps.media.pause();
     this.set({
@@ -382,14 +406,13 @@ export class PlaybackController {
   }
 
   private onEnded(): void {
-    const document = this.state.document;
-    if (!document) return;
-    if (this.state.segmentIndex + 1 >= document.segmentCount) {
+    if (!this.state.document) return;
+    const next = this.spoken(this.state.segmentIndex + 1);
+    if (next === null) {
       this.set({ status: 'ended' });
       this.persist();
       return;
     }
-    const next = this.state.segmentIndex + 1;
     if (this.sleepsBefore(next)) {
       // Stop between sentences, ready to carry on from the next one.
       this.set({ sleep: null });

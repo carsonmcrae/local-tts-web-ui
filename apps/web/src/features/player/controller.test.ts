@@ -101,6 +101,29 @@ describe('PlaybackController', () => {
     expect(controller.getState().status).toBe('ended');
   });
 
+  it('never plays or prefetches skipped sentences, in either direction', async () => {
+    const { controller, media, requests } = setup();
+    // The document's skipped sentences: a header, and the page number and header between pages.
+    await controller.load({ ...DOC, skipped: new Set([0, 2, 3]) }, 0, true);
+    expect(controller.getState().segmentIndex).toBe(1);
+    expect(requests.map((r) => r.index)).toEqual([1, 4, 5]);
+    media.emit('ended');
+    await flush();
+    expect(media.src).toBe('blob:kokoro:a:4');
+    await controller.previous();
+    expect(controller.getState().segmentIndex).toBe(1);
+    await controller.nextSection(); // the section starts with a skipped sentence
+    expect(controller.getState().segmentIndex).toBe(4);
+    controller.pause();
+    await controller.seek(2); // shown while paused (to review it), but never played
+    expect(controller.getState().segmentIndex).toBe(2);
+    await controller.play();
+    expect(controller.getState()).toMatchObject({ segmentIndex: 4, status: 'playing' });
+    controller.refresh({ ...DOC, skipped: new Set([0, 2, 3, 5]) }); // read by hand no more
+    media.emit('ended');
+    expect(controller.getState().status).toBe('ended');
+  });
+
   it('never plays stale audio when the listener skips quickly', async () => {
     const { controller, media, requests } = setup();
     let release: () => void = () => undefined;

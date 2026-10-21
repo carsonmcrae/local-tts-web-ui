@@ -5,7 +5,8 @@
  * Scope: Groups segments into headings and paragraphs in the reader's chosen size, spacing and
  *   typeface, highlights the active segment (sentence-level timing is exact because each segment is
  *   its own audio clip), marks bookmarked sentences and sentences with their own voice or effect
- *   (each with an accessible description), starts
+ *   (each with an accessible description) and shows skipped ones muted and labelled "skipped" (in
+ *   their accessible name too), starts
  *   playback from any clicked or keyboard-activated sentence (the text is a single tab stop; arrow
  *   keys move between sentences, Enter or Space plays), and keeps the active sentence in view
  *   without fighting a user who scrolls away.
@@ -48,6 +49,8 @@ interface SentenceProps {
   describedBy: string | undefined;
   /** How the sentence is styled ("Read by Sam · Telephone call"), when it is. */
   styled: string | undefined;
+  /** Left out when reading aloud. */
+  skipped: boolean;
   tabStop: boolean;
   onSelect: (index: number) => void;
   onMove: (index: number, step: number) => void;
@@ -59,6 +62,7 @@ function Sentence({
   bookmarked,
   describedBy,
   styled,
+  skipped,
   tabStop,
   onSelect,
   onMove,
@@ -81,12 +85,13 @@ function Sentence({
     <span // NOSONAR(typescript:S6819): inline sentence control, see the comment above
       role="button"
       tabIndex={tabStop ? 0 : -1}
-      className="reader-seg"
+      className={skipped ? 'reader-seg text-muted' : 'reader-seg'}
       data-index={segment.index}
       data-active={active}
       data-bookmarked={bookmarked}
       data-styled={styled !== undefined}
-      title={styled}
+      data-skipped={skipped}
+      title={skipped ? [styled, 'Skipped when reading aloud'].filter(Boolean).join(' · ') : styled}
       aria-describedby={describedBy}
       aria-current={active ? 'true' : undefined}
       // Dragging across text to select it (to give it a voice or effect) mustn't start playback.
@@ -96,6 +101,15 @@ function Sentence({
       onKeyDown={onKeyDown}
     >
       {segment.text}
+      {skipped ? (
+        // Not colour alone: a visible label, also part of the sentence's accessible name.
+        <>
+          {' '}
+          <span className="inline-block rounded-[3px] border border-line px-1 align-[0.12em] font-sans text-[0.62em] leading-snug font-medium tracking-wide uppercase select-none">
+            skipped
+          </span>
+        </>
+      ) : null}
     </span>
   );
 }
@@ -106,6 +120,8 @@ interface DocumentTextProps {
   bookmarked: ReadonlySet<number>;
   /** Descriptions of the sentences with their own voice or effect, by segment index. */
   styled?: ReadonlyMap<number, string>;
+  /** Sentences left out when reading aloud. */
+  skipped?: ReadonlySet<number>;
   autoScroll: boolean;
   onSelect: (index: number) => void;
 }
@@ -115,6 +131,7 @@ export function DocumentText({
   activeIndex,
   bookmarked,
   styled,
+  skipped,
   autoScroll,
   onSelect,
 }: Readonly<DocumentTextProps>) {
@@ -191,6 +208,7 @@ export function DocumentText({
                 bookmarked={bookmarked.has(segment.index)}
                 describedBy={described.length ? described.join(' ') : undefined}
                 styled={style}
+                skipped={skipped?.has(segment.index) ?? false}
                 tabStop={segment.index === tabStop}
                 onSelect={onSelect}
                 onMove={focusNeighbour}

@@ -4,7 +4,7 @@
 
 | Format       | Extensions         | How it's read                                                                                                 |
 | ------------ | ------------------ | ------------------------------------------------------------------------------------------------------------- |
-| PDF          | `.pdf`             | Text PDFs. Running headers, footers and page numbers are removed, and lines are joined back into paragraphs.  |
+| PDF          | `.pdf`             | Text PDFs. Lines are joined back into paragraphs; running headers, footers and page numbers are skipped.      |
 | Word         | `.docx`            | Paragraphs and tables in document order; tables are read row by row. Macros and embedded objects are ignored. |
 | EPUB 2 and 3 | `.epub`            | The book's files in reading order. Scripts and styles are ignored.                                            |
 | Markdown     | `.md`, `.markdown` | Links are read as their text and images as their alt text. Code blocks are skipped with a short spoken note.  |
@@ -75,6 +75,36 @@ TTSNative reads the text layer of a PDF. It doesn't support OCR (reading text fr
 
 To listen to a scanned PDF, export the text from the original document, or run OCR on it with another
 tool first.
+
+## Headers, page numbers and footnote markers
+
+Printed pages repeat things that sound wrong read aloud. When a document is added, TTSNative looks
+for them and skips them when reading. Nothing is deleted, and you can undo it.
+
+- **Running headers and footers** (PDFs): a line at the top or bottom of the page that repeats on at
+  least 40% of the pages, and on three pages or more, such as the book's title or
+  "The Silent Harbour 57". The numbers in it don't matter.
+- **Page numbers**: "12", "Page 12", "12 of 300", "- 12 -" or Roman numerals at the top or bottom of
+  a PDF page, when they count along with the pages. In other formats, paragraphs that only say
+  "Page 12", "12 of 300" or "- 12 -", when at least three of them count up through the document.
+- **Footnote markers**: a superscript number after a word ("war¹") isn't spoken, though the word is.
+  A number glued after punctuation ("ended.12") is left out only when the document has a Notes
+  section holding that note. Bracketed numbers such as "[12]" are never spoken anyway.
+
+It errs on the side of reading: PDFs of fewer than three pages are left alone, and years,
+measurements (20 m², 3.5 kg), decimals, list numbers, chapter numbers, chapter titles from the PDF's
+outline, verse numbers and a heading that appears on a couple of pages are kept.
+
+Skipped sentences stay in the text, greyed out and labelled **skipped**. Playback and exports both
+leave them out, and footnote markers stay in the text too: only what's spoken changes. A note at the
+top of the reader says what was skipped. Open it (**Review**) to see everything by reason and choose
+any sentence to show it in the text, press **Read them all again** to undo the cleanup, or
+**Skip them again** to put it back.
+
+To skip any sentence yourself, select it, choose **Voice & effect** and press **Skip when reading**.
+**Read this sentence** brings back a skipped one, including one the cleanup skipped. Sentences you
+skip yourself stay skipped when you undo the cleanup. Documents added before this version aren't
+changed.
 
 ## Pasting text
 

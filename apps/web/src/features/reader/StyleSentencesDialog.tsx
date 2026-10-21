@@ -9,8 +9,11 @@
  *     for one sentence, its takes.
  *   - For several sentences, a choice that differs between them is kept unless changed.
  *   - "Clear styling" returns them to normal. The player then fetches the new audio.
+ *   - "Skip when reading" leaves them out of playback and exports; "Read this sentence" brings back
+ *     a skipped one (the cleanup's skips too).
  * Does NOT belong: Finding the selected sentences (SentenceStyling) or takes (TakePicker).
  */
+import { EyeOff, Volume2 } from 'lucide-react';
 import { useState } from 'react';
 import { describeError } from '@/api/client';
 import { useVoices } from '@/api/queries';
@@ -122,6 +125,7 @@ export function StyleSentencesDialog({
   const available = (voices.data ?? []).filter((item) => item.available);
   const single = indexes.length === 1 ? indexes[0] : undefined;
   const count = single === undefined ? `these ${indexes.length} sentences` : 'this sentence';
+  const skipped = indexes.every((index) => Boolean(styles.get(index)?.skip));
 
   const apply = (change: Omit<SentenceStyleChange, 'indexes'>) =>
     save.mutate(
@@ -163,9 +167,26 @@ export function StyleSentencesDialog({
       description={`How ${count} should sound.`}
       footer={
         <div className="flex flex-wrap justify-between gap-2">
-          <Button variant="ghost" onClick={() => apply(cleared)} disabled={save.isPending}>
-            Clear styling
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant="ghost"
+              className="h-11 sm:h-10"
+              onClick={() => apply(cleared)}
+              disabled={save.isPending}
+            >
+              Clear styling
+            </Button>
+            <Button
+              variant="ghost"
+              className="h-11 sm:h-10"
+              icon={skipped ? <Volume2 size={15} /> : <EyeOff size={15} />}
+              title={skipped ? undefined : 'Left out when reading aloud and in exports'}
+              onClick={() => apply({ skip: !skipped })}
+              disabled={save.isPending}
+            >
+              {skipped ? `Read ${count}` : 'Skip when reading'}
+            </Button>
+          </div>
           <div className="flex gap-2">
             <Button variant="ghost" onClick={onClose}>
               Cancel

@@ -41,6 +41,8 @@ priority than live playback, so you can keep listening while one runs, and one e
 - If a sentence fails, the export stops as **Failed**, keeping what was made, and **Resume** tries again.
 - If you change a sentence while an export is paused (another voice, an effect, a pronunciation), that
   sentence is made again when you resume.
+- Skipped sentences (page furniture the [cleanup](Reading-Documents#headers-page-numbers-and-footnote-markers)
+  found, or ones you skip) are left out, just as playback leaves them out.
 - **Cancel export** (it asks first) stops and discards the sentences made so far.
 
 The **Exports** page (in the navigation) lists every export: the ones ready to resume first, then those

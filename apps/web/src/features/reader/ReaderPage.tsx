@@ -6,7 +6,8 @@
  *   the spoken section while playing, offers the contents and bookmarks panel (sidebar on desktop,
  *   dialog on phones), search, the "adjust this section" correction and the document's voices and
  *   effects (per sentence from a text selection, and a dialogue voice), jumps to any sentence from
- *   them, and composes the header, warnings, section text and section pager.
+ *   them, hands the player the sentences to skip, and composes the header, warnings (the cleanup's
+ *   notice as its review note), section text and section pager.
  * Does NOT belong: Player controls (PlayerBar) or text rendering details (DocumentText).
  */
 import { ListTree, PenLine } from 'lucide-react';
@@ -19,13 +20,14 @@ import { useDocumentStyles } from '@/api/stylingQueries';
 import type { DocumentDetail, SectionOut } from '@/api/types';
 import { Button, buttonClasses } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
-import { Banner, EmptyState, Skeleton, StatusRegion } from '@/components/ui/Feedback';
+import { EmptyState, Skeleton, StatusRegion } from '@/components/ui/Feedback';
 import { usePageTitle } from '@/components/ui/Layout';
 import { DefaultVoicesBanner } from '@/features/engines/EngineSetup';
 import type { PlayerDocument } from '@/features/player/controller';
 import { usePlayer } from '@/features/player/PlayerProvider';
 import { AdjustSectionDialog } from './AdjustSectionDialog';
 import { CastButton } from './CastDialog';
+import { DocumentNotices } from './CleanupNote';
 import { ReaderPanels } from './ReaderPanels';
 import { ReaderHeader, SectionBody, SectionPager } from './ReaderParts';
 import { SearchDialog } from './SearchDialog';
@@ -33,13 +35,14 @@ import { SectionNav } from './SectionNav';
 import { SelectionStyler } from './SentenceStyling';
 import { describeStyle } from './stylingLabels';
 
-function toPlayerDocument(doc: DocumentDetail): PlayerDocument {
+function toPlayerDocument(doc: DocumentDetail, skipped: ReadonlySet<number>): PlayerDocument {
   return {
     id: doc.id,
     title: doc.title,
     segmentCount: doc.segmentCount,
     estimatedSeconds: doc.estimatedSeconds,
     sections: doc.sections,
+    skipped,
   };
 }
 
@@ -69,7 +72,6 @@ function Reader({ doc }: Readonly<{ doc: DocumentDetail }>) {
     [bookmarks.data],
   );
   const [adjusting, setAdjusting] = useState<SectionOut | undefined>();
-  const playerDoc = useMemo(() => toPlayerDocument(doc), [doc]);
   const styling = useDocumentStyles(doc.id);
   const voices = useVoices();
   const textRoot = useRef<HTMLDivElement>(null);
@@ -77,6 +79,11 @@ function Reader({ doc }: Readonly<{ doc: DocumentDetail }>) {
     () => new Map((styling.data?.segments ?? []).map((style) => [style.index, style])),
     [styling.data],
   );
+  const skipped = useMemo(
+    () => new Set([...styleByIndex.values()].filter((style) => style.skip).map((s) => s.index)),
+    [styleByIndex],
+  );
+  const playerDoc = useMemo(() => toPlayerDocument(doc, skipped), [doc, skipped]);
   const styled = useMemo(() => {
     const name = (id: string) =>
       voices.data?.find((voice) => voice.id === id)?.name ?? 'another voice';
@@ -149,11 +156,12 @@ function Reader({ doc }: Readonly<{ doc: DocumentDetail }>) {
           playing={playingThis}
         />
         <DefaultVoicesBanner />
-        {doc.warnings.map((warning) => (
-          <Banner key={warning} tone="warning" className="mb-6">
-            {warning}
-          </Banner>
-        ))}
+        <DocumentNotices
+          documentId={doc.id}
+          warnings={doc.warnings}
+          onJump={jumpTo}
+          onChanged={stylingChanged}
+        />
         <div className="mb-6 flex flex-wrap items-center justify-between gap-2">
           <p className="text-[13px] font-medium text-muted">
             {multiSection
@@ -187,6 +195,7 @@ function Reader({ doc }: Readonly<{ doc: DocumentDetail }>) {
             activeIndex={isLoaded ? state.segmentIndex : null}
             bookmarked={bookmarked}
             styled={styled}
+            skipped={skipped}
             autoScroll={preferences.data?.autoScroll ?? true}
             onSelect={playFrom}
           />

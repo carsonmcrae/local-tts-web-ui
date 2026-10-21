@@ -20,6 +20,7 @@ from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
+from ltts.common import NO_CONSOLE_WINDOW
 from ltts.errors import AppError
 from ltts.exports.assemble import Chapter
 
@@ -109,6 +110,7 @@ def write_m4b(audio: Path, output: Path, book: Book, canceled: Callable[[], bool
         stdin=subprocess.DEVNULL,
         stdout=subprocess.DEVNULL,
         stderr=subprocess.PIPE,
+        creationflags=NO_CONSOLE_WINDOW,  # the Windows app: no console window flashes up
     )
     started = time.monotonic()
     try:

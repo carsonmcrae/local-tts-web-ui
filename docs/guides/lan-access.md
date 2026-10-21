@@ -207,7 +207,8 @@ category either. Stop the server (Ctrl+C) when you're done.
   voices on the computer. LAN mode doesn't let phones import, play or export voice recordings either.
 - **No installing on phones, and no offline screens there.** The service worker
   (`apps/web/public/sw.js`) and "install as an app" need a secure page. So they work on the computer
-  (`localhost` is one), and not over plain HTTP on a LAN address.
+  (`localhost` is one), and not over plain HTTP on a LAN address. The Windows app never registers
+  one: it loads the page from its bundled server, and updates replace the files.
 
   The service worker keeps only the app shell: `index.html`, the hashed `/assets/*` files and the
   icons. It never keeps `/api/*` or `/v1/*`. So it lets the screens open, and say the server isn't

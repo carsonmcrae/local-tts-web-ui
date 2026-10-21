@@ -116,11 +116,12 @@ describe('A page that fails', () => {
 describe('Service worker registration', () => {
   const container = () => ({ register: vi.fn(async () => ({}) as ServiceWorkerRegistration) });
 
-  it('is skipped in development and tests, on insecure pages and without support', async () => {
+  it('is skipped in development and tests, on insecure pages, without support and in the Windows app', async () => {
     const browser = container();
     await expect(registerServiceWorker({ production: false, secure: true, container: browser })).resolves.toBe(false); // prettier-ignore
     await expect(registerServiceWorker({ production: true, secure: false, container: browser })).resolves.toBe(false); // prettier-ignore
     await expect(registerServiceWorker({ production: true, secure: true, container: undefined })).resolves.toBe(false); // prettier-ignore
+    await expect(registerServiceWorker({ production: true, secure: true, container: browser, desktop: true })).resolves.toBe(false); // prettier-ignore
     await expect(registerServiceWorker()).resolves.toBe(false); // this test run: not a production build
     expect(browser.register).not.toHaveBeenCalled();
   });

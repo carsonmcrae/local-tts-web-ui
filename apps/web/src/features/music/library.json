@@ -1,4 +1,383 @@
 {
   "version": 1,
-  "tracks": []
+  "tracks": [
+    {
+      "id": "contemplation",
+      "title": "Contemplation",
+      "creator": "Joth",
+      "category": "ambient",
+      "file": "contemplation.webm",
+      "durationSeconds": 115.008,
+      "bytes": 967404,
+      "sha256": "ccc159090a6458758467d598ba3cd6063c1fd23cbbfebd7ee7886c956e6d4cd4",
+      "source": "https://opengameart.org/content/contemplation-0",
+      "download": "https://opengameart.org/sites/default/files/Contemplation.mp3",
+      "licence": {
+        "name": "CC0 1.0",
+        "url": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "verifiedAt": "https://opengameart.org/content/contemplation-0",
+        "verifiedOn": "2026-10-21"
+      },
+      "attribution": null,
+      "courtesyCredit": null,
+      "permits": {
+        "modification": true,
+        "redistribution": true,
+        "commercial": true
+      },
+      "notes": "Ambience without a real melody (the creator's description).",
+      "prepared": {
+        "file": "contemplation.mp3",
+        "sha256": "283962d3a975c93613c46cda30c9f0816176ae3e2899f961591a49e2d41b4bf3",
+        "start": 0.5,
+        "end": 119.5,
+        "crossfade": 4,
+        "bitrate": 64
+      }
+    },
+    {
+      "id": "calm-ambient",
+      "title": "Calm Ambient 1 (Synthwave 4k)",
+      "creator": "The Cynic Project (cynicmusic)",
+      "category": "ambient",
+      "file": "calm-ambient.webm",
+      "durationSeconds": 124.008,
+      "bytes": 1043083,
+      "sha256": "da26be9253d4efaeb83784cd636eaca163c546c338f464a9a201b7898fdb4fb9",
+      "source": "https://opengameart.org/content/calm-ambient-1-synthwave-4k",
+      "download": "https://opengameart.org/sites/default/files/001_Synthwave_4k_0.mp3",
+      "licence": {
+        "name": "CC0 1.0",
+        "url": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "verifiedAt": "https://opengameart.org/content/calm-ambient-1-synthwave-4k",
+        "verifiedOn": "2026-10-21"
+      },
+      "attribution": null,
+      "courtesyCredit": "The Cynic Project / cynicmusic.com / pixelsphere.org",
+      "permits": {
+        "modification": true,
+        "redistribution": true,
+        "commercial": true
+      },
+      "notes": "Calm pads and soothing chords; the build-up and ending are left out.",
+      "prepared": {
+        "file": "synthwave-4k.mp3",
+        "sha256": "56b31f997020da1abd4092f5e82457592323717a23e4d560c5f8135d26c3b8be",
+        "start": 15,
+        "end": 143,
+        "crossfade": 4,
+        "bitrate": 64
+      }
+    },
+    {
+      "id": "rising-moon",
+      "title": "Rising Moon",
+      "creator": "RandomMind",
+      "category": "fantasy",
+      "file": "rising-moon.webm",
+      "durationSeconds": 165.008,
+      "bytes": 1387762,
+      "sha256": "ac6d844ddfaf4e36ea1fd27dea7ffd5b30c7d9f0c040863afdbbb9fe4399e498",
+      "source": "https://opengameart.org/content/fantasy-rising-moon",
+      "download": "https://opengameart.org/sites/default/files/Rising_Moon_0.mp3",
+      "licence": {
+        "name": "CC0 1.0",
+        "url": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "verifiedAt": "https://opengameart.org/content/fantasy-rising-moon",
+        "verifiedOn": "2026-10-21"
+      },
+      "attribution": null,
+      "courtesyCredit": null,
+      "permits": {
+        "modification": true,
+        "redistribution": true,
+        "commercial": true
+      },
+      "notes": "A mystical, windy-night fantasy piece; the intro and ending are left out.",
+      "prepared": {
+        "file": "rising-moon.mp3",
+        "sha256": "0e56e864d19ea50cf78851baa2edbeab319fc75527140c7be7ade6ecb4c8f4d2",
+        "start": 20,
+        "end": 190,
+        "crossfade": 5,
+        "bitrate": 64
+      }
+    },
+    {
+      "id": "warriors-lament",
+      "title": "Lament for a Warrior's Soul",
+      "creator": "RandomMind",
+      "category": "fantasy",
+      "file": "warriors-lament.webm",
+      "durationSeconds": 114.008,
+      "bytes": 959025,
+      "sha256": "c3f9a2d7a149e2e6fff5fa3183656b6205a51e5557af924d1a96e14e40547183",
+      "source": "https://opengameart.org/content/fantasy-lament-for-a-warriors-soul",
+      "download": "https://opengameart.org/sites/default/files/Lament_for_a_Warriors_Soul_REUPLOAD.mp3",
+      "licence": {
+        "name": "CC0 1.0",
+        "url": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "verifiedAt": "https://opengameart.org/content/fantasy-lament-for-a-warriors-soul",
+        "verifiedOn": "2026-10-21"
+      },
+      "attribution": null,
+      "courtesyCredit": null,
+      "permits": {
+        "modification": true,
+        "redistribution": true,
+        "commercial": true
+      },
+      "notes": "A calm, sad fantasy theme (the reupload); the much quieter coda is left out so the level stays even.",
+      "prepared": {
+        "file": "lament.mp3",
+        "sha256": "a754242196b16c9fc21f9c2d108d7022b56867e5503fe1c99cf85cc752d4176e",
+        "start": 0,
+        "end": 118,
+        "crossfade": 4,
+        "bitrate": 64
+      }
+    },
+    {
+      "id": "waiting",
+      "title": "Waiting II",
+      "creator": "Kistol",
+      "category": "cinematic",
+      "file": "waiting.webm",
+      "durationSeconds": 93.508,
+      "bytes": 786689,
+      "sha256": "e9b04f01803ca661e40109daf3da946f23b2a3911ce531999bcfe790f26fc07c",
+      "source": "https://opengameart.org/content/waiting-ii",
+      "download": "https://opengameart.org/sites/default/files/Waiting%20II_0.ogg",
+      "licence": {
+        "name": "CC0 1.0",
+        "url": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "verifiedAt": "https://opengameart.org/content/waiting-ii",
+        "verifiedOn": "2026-10-21"
+      },
+      "attribution": null,
+      "courtesyCredit": "Music by Kistol",
+      "permits": {
+        "modification": true,
+        "redistribution": true,
+        "commercial": true
+      },
+      "notes": "Calm piano and orchestra.",
+      "prepared": {
+        "file": "waiting-ii.ogg",
+        "sha256": "1f8c6eaf06d1416cbf9eadb48d65b087730d58dd7c5a1b1f107d0d025452207d",
+        "start": 0.5,
+        "end": 97,
+        "crossfade": 3,
+        "bitrate": 64
+      }
+    },
+    {
+      "id": "washed-up",
+      "title": "Washed Up",
+      "creator": "HoliznaCC0",
+      "category": "lofi",
+      "file": "washed-up.webm",
+      "durationSeconds": 148.674,
+      "bytes": 1250346,
+      "sha256": "625bc6e1cb9f0239abd31cab842e2a48c0d0d659625c603037d8c840c6cdeb6d",
+      "source": "https://freemusicarchive.org/music/holiznacc0/ocean-memory-lo-fi-chill/washed-up/",
+      "download": "https://files.freemusicarchive.org/storage-freemusicarchive-org/tracks/nOI7iSZu1JomcCiZGL8R8hwVQEQjcDv49AUyCLnz.mp3",
+      "licence": {
+        "name": "CC0 1.0",
+        "url": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "verifiedAt": "https://freemusicarchive.org/music/holiznacc0/ocean-memory-lo-fi-chill/washed-up/",
+        "verifiedOn": "2026-10-21"
+      },
+      "attribution": null,
+      "courtesyCredit": null,
+      "permits": {
+        "modification": true,
+        "redistribution": true,
+        "commercial": true
+      },
+      "notes": "Instrumental lo-fi (album OCEAN MEMORY). Looped on its own beat: 56 bars at 90 BPM, one-beat crossfade.",
+      "prepared": {
+        "file": "washed-up.mp3",
+        "sha256": "d75e34dea40ec7d7cbdcda3a66624eb5e72a829d58cac98d056aa941d9b747f7",
+        "start": 32,
+        "end": 181.3333,
+        "crossfade": 0.6667,
+        "curve": "tri",
+        "bitrate": 64
+      }
+    },
+    {
+      "id": "currents",
+      "title": "Currents We Used to Know",
+      "creator": "HoliznaCC0",
+      "category": "lofi",
+      "file": "currents.webm",
+      "durationSeconds": 138.083,
+      "bytes": 1161504,
+      "sha256": "46d5220699c7a9beb9c6f6929669551b221a778be5058636a852ffb7a97e29d3",
+      "source": "https://freemusicarchive.org/music/holiznacc0/ocean-memory-lo-fi-chill/currents-we-used-to-know/",
+      "download": "https://files.freemusicarchive.org/storage-freemusicarchive-org/tracks/ql51RhvRB19HudXPsUJbcrpv3YRM3n6IVqKffdMg.mp3",
+      "licence": {
+        "name": "CC0 1.0",
+        "url": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "verifiedAt": "https://freemusicarchive.org/music/holiznacc0/ocean-memory-lo-fi-chill/currents-we-used-to-know/",
+        "verifiedOn": "2026-10-21"
+      },
+      "attribution": null,
+      "courtesyCredit": null,
+      "permits": {
+        "modification": true,
+        "redistribution": true,
+        "commercial": true
+      },
+      "notes": "Instrumental lo-fi (album OCEAN MEMORY). Looped on its own beat (48 bars), one-beat crossfade.",
+      "prepared": {
+        "file": "currents.mp3",
+        "sha256": "df71b9d52be79e0d7092e256cccc603dbcbc7d75fb902b3a7e14fcf41f2ed92d",
+        "start": 26,
+        "end": 164.7952,
+        "crossfade": 0.72,
+        "curve": "tri",
+        "bitrate": 64
+      }
+    },
+    {
+      "id": "gymnopedie-1",
+      "title": "Gymnopédie No. 1",
+      "creator": "Erik Satie, played by Robin Alciatore (Musopen)",
+      "category": "focus",
+      "file": "gymnopedie-1.webm",
+      "durationSeconds": 179.508,
+      "bytes": 1509717,
+      "sha256": "ad9613807e9e88505096616a4bf422aeb5fb60df779a873e604ee467b00d0a8a",
+      "source": "https://commons.wikimedia.org/wiki/File:Erik_Satie_-_gymnopedies_-_la_1_ere._lent_et_douloureux.ogg",
+      "download": "https://upload.wikimedia.org/wikipedia/commons/9/90/Erik_Satie_-_gymnopedies_-_la_1_ere._lent_et_douloureux.ogg",
+      "licence": {
+        "name": "Public domain",
+        "url": "https://commons.wikimedia.org/wiki/Template:PD-author",
+        "verifiedAt": "https://commons.wikimedia.org/wiki/File:Erik_Satie_-_gymnopedies_-_la_1_ere._lent_et_douloureux.ogg",
+        "verifiedOn": "2026-10-21"
+      },
+      "attribution": null,
+      "courtesyCredit": "Musopen (musopen.org)",
+      "permits": {
+        "modification": true,
+        "redistribution": true,
+        "commercial": true
+      },
+      "notes": "The whole piece. The composition (1888) and this recording are both in the public domain; gently compressed so quiet bars stay audible under speech.",
+      "prepared": {
+        "file": "gymnopedie-1.ogg",
+        "sha256": "419e37656856224227086df32d6d481a00a738961e08fca9f6147e472beea53e",
+        "start": 0,
+        "end": 183.5,
+        "crossfade": 4,
+        "filters": "acompressor=threshold=0.0316:ratio=3:attack=200:release=1500:knee=4",
+        "bitrate": 64
+      }
+    },
+    {
+      "id": "vaporware",
+      "title": "Calm Piano 1 (Vaporware)",
+      "creator": "The Cynic Project (cynicmusic)",
+      "category": "focus",
+      "file": "vaporware.webm",
+      "durationSeconds": 155.008,
+      "bytes": 1303784,
+      "sha256": "dc1485e05a474bdae675941869cf319342983eca1baa1c37f20810935050a781",
+      "source": "https://opengameart.org/content/calm-piano-1-vaporware",
+      "download": "https://opengameart.org/sites/default/files/003_Vaporware_2.mp3",
+      "licence": {
+        "name": "CC0 1.0",
+        "url": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "verifiedAt": "https://opengameart.org/content/calm-piano-1-vaporware",
+        "verifiedOn": "2026-10-21"
+      },
+      "attribution": null,
+      "courtesyCredit": "The Cynic Project / cynicmusic.com / pixelsphere.org",
+      "permits": {
+        "modification": true,
+        "redistribution": true,
+        "commercial": true
+      },
+      "notes": "Relaxing pads with a light piano melody.",
+      "prepared": {
+        "file": "vaporware.mp3",
+        "sha256": "1697fa1b7ed6f3fe1eca4daa4f9d1a2eb3db8fe40a0f3c283529ab47e57b5b38",
+        "start": 1,
+        "end": 160,
+        "crossfade": 4,
+        "bitrate": 64
+      }
+    },
+    {
+      "id": "soft-rain",
+      "title": "Soft rain on a tile roof",
+      "creator": "richwise",
+      "category": "nature",
+      "file": "soft-rain.webm",
+      "durationSeconds": 176.008,
+      "bytes": 1480216,
+      "sha256": "4e5003d856ae22d910bd35c5dc54a20d14146b7993a23bd42fd33b528f9ee2f7",
+      "source": "https://freesound.org/people/richwise/sounds/466241/",
+      "download": "https://cdn.freesound.org/previews/466/466241_1481531-hq.mp3",
+      "licence": {
+        "name": "CC0 1.0",
+        "url": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "verifiedAt": "https://freesound.org/people/richwise/sounds/466241/",
+        "verifiedOn": "2026-10-21"
+      },
+      "attribution": null,
+      "courtesyCredit": null,
+      "permits": {
+        "modification": true,
+        "redistribution": true,
+        "commercial": true
+      },
+      "notes": "Field recording (Freesound's public preview of the original). Three minutes from before the passing aeroplane; low rumble filtered out.",
+      "prepared": {
+        "file": "soft-rain.mp3",
+        "sha256": "2cf2df7172298f7bd50e3c322464a65a39b2e4ddbf7288ab6268f510fa8ec76f",
+        "start": 20,
+        "end": 200,
+        "crossfade": 4,
+        "filters": "highpass=f=120",
+        "bitrate": 64
+      }
+    },
+    {
+      "id": "brook",
+      "title": "Brook, stream, flowing water",
+      "creator": "TRP",
+      "category": "nature",
+      "file": "brook.webm",
+      "durationSeconds": 176.008,
+      "bytes": 1480255,
+      "sha256": "3e4b2ab9a3e3b7605087a48f7a7758fbe5f6c51436b4981b66039c817b321319",
+      "source": "https://freesound.org/people/TRP/sounds/567730/",
+      "download": "https://cdn.freesound.org/previews/567/567730_97550-hq.mp3",
+      "licence": {
+        "name": "CC0 1.0",
+        "url": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "verifiedAt": "https://freesound.org/people/TRP/sounds/567730/",
+        "verifiedOn": "2026-10-21"
+      },
+      "attribution": null,
+      "courtesyCredit": null,
+      "permits": {
+        "modification": true,
+        "redistribution": true,
+        "commercial": true
+      },
+      "notes": "Field recording of a small stream in a forest, close-miked (Freesound's public preview of the original).",
+      "prepared": {
+        "file": "brook.mp3",
+        "sha256": "cbe7c8ef9fdf8784677c2a725d72dfb78f3c9d0ff458a103e1bf45d8f9f8eb60",
+        "start": 30,
+        "end": 210,
+        "crossfade": 4,
+        "bitrate": 64
+      }
+    }
+  ]
 }

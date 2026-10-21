@@ -9,7 +9,8 @@
  * Does NOT belong: Playback (engine.test.ts, session.test.ts).
  */
 import { createHash } from 'node:crypto';
-import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
+import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import type { MusicCategory, MusicTrack } from './library';
 import { CATEGORIES, categoryLabel, TRACKS, trackUrl } from './library';
@@ -26,19 +27,30 @@ interface TrackRecord extends MusicTrack {
 
 const RECORDS = library.tracks as readonly TrackRecord[];
 
-const MUSIC_DIR = new URL('../../../public/music/', import.meta.url);
+/** apps/web/public/music, found from this test file (import.meta.url isn't a file URL under jsdom). */
+const musicFile = (name = '') =>
+  path.join(path.dirname(expect.getState().testPath ?? ''), '../../../public/music', name);
 const ALLOWED_LICENCES = new Set(['CC0 1.0', 'Public domain', 'CC BY 4.0']);
 
-const audioFiles = () =>
-  existsSync(MUSIC_DIR) ? readdirSync(MUSIC_DIR).filter((name) => name.endsWith('.webm')) : [];
+const audioFiles = () => readdirSync(musicFile()).filter((name) => name.endsWith('.webm'));
 
 describe('music library', () => {
+  it('offers a small library covering every category', () => {
+    expect(TRACKS.length).toBeGreaterThanOrEqual(8);
+    expect(TRACKS.length).toBeLessThanOrEqual(15);
+    for (const category of CATEGORIES)
+      expect(
+        TRACKS.some((track) => track.category === category.id),
+        category.id,
+      ).toBe(true);
+  });
+
   it('records every track with a unique id, a known category and a bundled file', () => {
     const ids = new Set(TRACKS.map((track) => track.id));
     expect(ids.size).toBe(TRACKS.length);
     for (const track of RECORDS) {
       expect(CATEGORIES.map((category) => category.id)).toContain(track.category);
-      const data = readFileSync(new URL(track.file, MUSIC_DIR));
+      const data = readFileSync(musicFile(track.file));
       expect(data.length, track.file).toBe(track.bytes);
       expect(createHash('sha256').update(data).digest('hex'), track.file).toBe(track.sha256);
       expect(track.durationSeconds).toBeGreaterThan(30);
@@ -63,9 +75,7 @@ describe('music library', () => {
   });
 
   it('credits every track in the notes that ship beside the music', () => {
-    const credits = existsSync(new URL('CREDITS.md', MUSIC_DIR))
-      ? readFileSync(new URL('CREDITS.md', MUSIC_DIR), 'utf8')
-      : '';
+    const credits = readFileSync(musicFile('CREDITS.md'), 'utf8');
     for (const track of RECORDS) {
       for (const fact of [track.title, track.creator, track.source, track.licence.name])
         expect(credits, `${track.id}: ${fact}`).toContain(fact);

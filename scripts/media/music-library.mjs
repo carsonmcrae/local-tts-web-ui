@@ -7,20 +7,20 @@
  *   outside Git in .tools/music/sources) against its recorded SHA-256, trims it, crossfades its end
  *   into its start so it loops without a seam, matches its loudness (well below the narration, with
  *   peak headroom), encodes 48 kHz Opus in WebM into apps/web/public/music, and writes the result's
- *   length, size and SHA-256 back into library.json. `--check` only verifies the bundled files.
+ *   length, size and SHA-256 back into library.json (library.test.ts checks the files against it).
  * Does NOT belong: Finding or licensing music (docs in apps/web/public/music/CREDITS.md), or playback.
  */
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
-import { color, ok } from '../lib/log.mjs';
+import { ok } from '../lib/log.mjs';
 import { repoRoot } from '../lib/paths.mjs';
 import { duration, findTool, run } from './ffmpeg.mjs';
 
 /** Integrated loudness of every track: about 1 LU below the narration's typical -27 LUFS. */
 const TARGET_LUFS = -28;
 /** Highest true peak allowed, so narration and music together keep clear of clipping. */
-const PEAK_LIMIT_DBTP = -9;
+const PEAK_LIMIT_DBTP = -10;
 
 const LIBRARY = path.join(repoRoot, 'apps/web/src/features/music/library.json');
 const OUTPUT = path.join(repoRoot, 'apps/web/public/music');
@@ -28,8 +28,11 @@ const SOURCES = path.join(repoRoot, '.tools/music/sources');
 const WORK = path.join(repoRoot, '.tools/music/work');
 
 /**
+ * A track's preparation. `curve` is the crossfade shape: `qsin` (equal power, the default) for
+ * ambient material, `tri` (equal gain) for a loop cut where the music repeats itself exactly, so
+ * the blend doesn't swell. `filters` runs after trimming (e.g. a high-pass or gentle compression).
  * @typedef {{ file: string, sha256: string, start: number, end: number, crossfade: number,
- *   bitrate: number, channels?: number }} Recipe
+ *   curve?: 'qsin' | 'tri', filters?: string, bitrate: number }} Recipe
  * @typedef {{ id: string, file: string, durationSeconds: number, bytes: number, sha256: string,
  *   prepared: Recipe }} Track
  */
@@ -48,18 +51,20 @@ async function loudness(ffmpeg, file) {
 }
 
 /**
- * The trimmed section with its last `crossfade` seconds blended (equal power) into its first, so
+ * The trimmed section with its last `crossfade` seconds blended into its first, so
  * the file's end leads straight back into its start: [x .. L-x] then (tail faded out + head in).
  * @param {string} ffmpeg @param {string} source @param {Recipe} recipe @param {string} out
  */
 async function loop(ffmpeg, source, recipe, out) {
   const length = recipe.end - recipe.start;
   const x = recipe.crossfade;
+  const curve = recipe.curve ?? 'qsin';
+  const filters = recipe.filters ? `${recipe.filters},` : '';
   const graph = [
-    `[0:a]atrim=${recipe.start}:${recipe.end},asetpts=N/SR/TB,aresample=48000,` +
-      `aformat=sample_fmts=fltp:channel_layouts=${recipe.channels === 1 ? 'mono' : 'stereo'},asplit=3[h][m][t]`,
-    `[h]atrim=0:${x},asetpts=N/SR/TB,afade=t=in:d=${x}:curve=qsin[hi]`,
-    `[t]atrim=${length - x}:${length},asetpts=N/SR/TB,afade=t=out:d=${x}:curve=qsin[to]`,
+    `[0:a]atrim=${recipe.start}:${recipe.end},asetpts=N/SR/TB,aresample=48000,${filters}` +
+      `aformat=sample_fmts=fltp:channel_layouts=stereo,asplit=3[h][m][t]`,
+    `[h]atrim=0:${x},asetpts=N/SR/TB,afade=t=in:d=${x}:curve=${curve}[hi]`,
+    `[t]atrim=${length - x}:${length},asetpts=N/SR/TB,afade=t=out:d=${x}:curve=${curve}[to]`,
     `[to][hi]amix=inputs=2:normalize=0:duration=longest[x]`,
     `[m]atrim=${x}:${length - x},asetpts=N/SR/TB[mid]`,
     `[mid][x]concat=n=2:v=0:a=1[out]`,
@@ -77,29 +82,13 @@ async function encode(ffmpeg, looped, recipe, out) {
       ? `,alimiter=limit=${10 ** (PEAK_LIMIT_DBTP / 20)}:level=false`
       : '';
   await run(ffmpeg, ['-y', '-v', 'error', '-i', looped, '-af', `volume=${gain.toFixed(2)}dB${limit}`,
-    '-c:a', 'libopus', '-b:a', `${recipe.bitrate}k`, '-vbr', 'on', '-application', 'audio',
+    '-c:a', 'libopus', '-b:a', `${recipe.bitrate}k`, '-vbr', 'constrained', '-application', 'audio',
     '-map_metadata', '-1', '-fflags', '+bitexact', '-flags:a', '+bitexact', '-f', 'webm', out]); // prettier-ignore
-}
-
-/** @param {Track} track */
-function checkBundled(track) {
-  const file = path.join(OUTPUT, track.file);
-  if (!existsSync(file)) return `${track.file} is missing`;
-  if (statSync(file).size !== track.bytes) return `${track.file} has the wrong size`;
-  if (sha256(file) !== track.sha256) return `${track.file} doesn't match its SHA-256`;
-  return null;
 }
 
 async function main() {
   /** @type {{ version: number, tracks: Track[] }} */
   const library = JSON.parse(readFileSync(LIBRARY, 'utf8'));
-  if (process.argv.includes('--check')) {
-    const problems = library.tracks.map(checkBundled).filter(Boolean);
-    for (const problem of problems) console.error(`${color.red('✗')} ${problem}`);
-    if (problems.length) process.exit(1);
-    ok(`Music files match library.json (${library.tracks.length} tracks)`);
-    return;
-  }
   const ffmpeg = findTool('ffmpeg');
   mkdirSync(WORK, { recursive: true });
   mkdirSync(OUTPUT, { recursive: true });

@@ -16,6 +16,23 @@ Each card shows the voice's name, language, gender and engine, whether it's **Bu
 Narrow the list with the search box (name or language) and the **Language**, **Gender** and
 **Source** filters (**All voices**, **Built-in** or **Your voices**).
 
+## Every voice is synthetic
+
+No voice in TTSNative is a recording of a person. Each card says where its voice comes from and under
+what licence:
+
+- **Kokoro voices** are produced by the Kokoro-82M model (Apache-2.0, by hexgrad), run with
+  kokoro-onnx (MIT). Its authors say it was trained on permissively licensed and public-domain audio,
+  including synthetic speech from other systems, and do not say whose speech each voice was trained on.
+- **Chatterbox default** is the voice built into Chatterbox Turbo (MIT, Resemble AI); its origin is
+  not documented. Every Chatterbox clip carries an inaudible watermark.
+- **Your voices** are synthetic speech from Chatterbox Turbo conditioned on the recording you made
+  with the speaker's consent; they are not that recording, and their clips are watermarked too.
+- **Blends** are weighted mixes of Kokoro voices.
+
+The exact models and files, with their checksums, are listed in
+[docs/security/model-provenance.md](https://github.com/carsonmcrae/ttsnative/blob/main/docs/security/model-provenance.md).
+
 ## Languages
 
 | Language         | Kokoro voices |

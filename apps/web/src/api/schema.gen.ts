@@ -2890,6 +2890,11 @@ export type components = {
     /** VoiceInfo */
     VoiceInfo: {
       /**
+       * Attribution
+       * @default
+       */
+      attribution: string;
+      /**
        * Available
        * @default true
        */

@@ -191,6 +191,10 @@ class ChatterboxEngine(Engine, VoiceTuner):
                 category="built-in",
                 description="The model's built-in reference voice.",
                 available=self.is_ready(),
+                attribution=(
+                    "Synthetic voice built into Chatterbox Turbo (MIT, Resemble AI); its origin is not documented. "
+                    "Every clip carries Resemble's inaudible Perth watermark."
+                ),
             )
         ]
 

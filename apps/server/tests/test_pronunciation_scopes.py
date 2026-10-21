@@ -30,6 +30,7 @@ from ltts.pronunciation import store
 from ltts.pronunciation.store import PronunciationOut, PronunciationStore, compile_rules, spoken_respelling
 from ltts.speech_api.guard import RateLimiter
 from ltts.synthesis.scheduler import PRIORITY_PREVIEW
+from ltts.synthesis.service import ClientGoneError
 
 TEXT = "Dr. Nguyen ate gnocchi with quinoa."
 VOICE = "kokoro:alpha"
@@ -179,6 +180,14 @@ def test_hearing_a_word_before_saving_it(
     limited = client.post(PREVIEW, json={"voiceId": VOICE, "text": "quinoa"})
     assert limited.status_code == 429 and error(limited) == "rate_limited" and int(limited.headers["Retry-After"]) > 0
     assert refused_remotely("POST", PREVIEW)  # on this computer until the LAN policy lists it
+
+    async def gone(*_args: Any) -> Any:
+        raise ClientGoneError
+
+    services.pronunciations.previews = RateLimiter(5)
+    monkeypatch.setattr(services.synthesis, "render", gone)
+    assert client.post(PREVIEW, json={"voiceId": VOICE, "text": "quinoa"}).status_code == 499  # the listener left
+    assert error(client.delete(f"/api/pronunciations/{'0' * 32}")) == "pronunciation_not_found"
 
 
 def test_an_older_dictionary_becomes_library_rules(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:

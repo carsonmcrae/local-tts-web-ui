@@ -63,7 +63,9 @@ def room_tone(samples: Float32Array, rate: int, seconds: float) -> Float32Array:
         return np.zeros(length, dtype=np.float32)
     spectrum, rms = background
     tail = samples[-int(rate * TAIL_S[0]) : -int(rate * TAIL_S[1]) or None].astype(np.float64)
-    if tail.size:  # never louder than what was heard just before: no swell of hiss after a sentence
+    # Never louder than what was heard just before: no swell of hiss after a sentence. (The clip is at least
+    # twelve frames long here, so its last 50 ms are never empty.)
+    if tail.size:  # pragma: no branch - see above
         rms = min(rms, float(np.sqrt(np.mean(tail**2))))
     if 20 * np.log10(rms + 1e-12) < AUDIBLE_DBFS:
         return np.zeros(length, dtype=np.float32)

@@ -22,7 +22,15 @@ from fastapi.testclient import TestClient
 from conftest import FakeEngine, saved_studio_voice, speech_like, wait_job, wav_bytes
 from ltts.config import Settings
 from ltts.container import Services
-from ltts.engines.cloned_speech import TARGET_RMS_DBFS, acceptable, plausibility, polish, sentence_style
+from ltts.engines.cloned_speech import (
+    TARGET_RMS_DBFS,
+    acceptable,
+    count_syllables,
+    is_dialogue,
+    plausibility,
+    polish,
+    sentence_style,
+)
 from ltts.voices.quality import QualityReport
 from ltts.voices.styles import StyleTake, prompt_for_number, style_prompts
 
@@ -46,6 +54,8 @@ def test_a_sentence_is_read_in_the_style_its_punctuation_asks_for() -> None:
     assert sentence_style("“Is it here?”") == "question"
     assert sentence_style("What a day!") == "lively"
     assert sentence_style("The river was wide.") == "narration"
+    assert is_dialogue('"Hi," she said.') and not is_dialogue("Hi, she said.")
+    assert count_syllables("'' 'tis") == 1  # a word of nothing but apostrophes is no word
 
 
 def test_take_numbers_map_back_to_their_passages() -> None:
@@ -145,6 +155,11 @@ def test_polish_trims_shortens_pauses_and_levels_the_speech() -> None:
     assert np.max(np.abs(polished)) <= 10 ** (-1 / 20) + 1e-6
     silent = np.zeros(RATE, dtype=np.float32)
     assert polish(silent, RATE) is silent
+    tiny = np.zeros(5, dtype=np.float32)
+    assert polish(tiny, RATE) is tiny  # shorter than one frame
+    spiky = quiet.copy()
+    spiky[len(spiky) // 2] = 0.9  # a click far above the speech: levelling must not push it past the ceiling
+    assert np.max(np.abs(polish(spiky, RATE))) == pytest.approx(10 ** (-1 / 20), abs=1e-6)
 
 
 def test_plausibility_flags_clips_that_stop_early_or_run_on() -> None:

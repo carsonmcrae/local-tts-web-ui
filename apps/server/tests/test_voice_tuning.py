@@ -123,13 +123,19 @@ def test_a_fine_tune_that_barely_helps_is_not_offered(
     assert not services.voices.tuning_dir(profile_id).with_name("tuning.new").exists()
 
 
-def test_only_a_studio_voice_with_enough_takes_can_be_fine_tuned(client: TestClient) -> None:
+def test_only_a_studio_voice_with_enough_takes_can_be_fine_tuned(
+    client: TestClient, engines: dict[str, FakeEngine]
+) -> None:
     quick = client.post(
         "/api/voice-profiles", params={"name": "Quick", "consent": "true"}, content=wav_bytes(speech_like(12))
     ).json()
     assert not quick["canTune"]
     assert client.post(f"/api/voice-profiles/{quick['id']}/tuning").json()["error"]["code"] == "not_studio"
     few = studio_voice(client, range(1, 5))
+    engines["chatterbox"].ready = False  # the cloning engine was removed since the voice was built
+    missing = client.post(f"/api/voice-profiles/{few}/tuning")
+    assert missing.status_code == 503 and missing.json()["error"]["code"] == "engine_not_installed"
+    engines["chatterbox"].ready = True
     job = wait_job(client, client.post(f"/api/voice-profiles/{few}/tuning").json()["id"])
     assert job["status"] == "failed" and job["errorCode"] == "not_enough_takes"
 

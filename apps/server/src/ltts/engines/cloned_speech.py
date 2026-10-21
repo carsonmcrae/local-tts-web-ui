@@ -104,7 +104,7 @@ def polish(samples: Float32Array, sample_rate: int) -> Float32Array:
     clip = np.concatenate([body, tail]).astype(np.float32)
     speech = samples[:usable].reshape(-1, frame)[voiced].reshape(-1)
     rms = float(np.sqrt(np.mean(speech.astype(np.float64) ** 2))) if speech.size else 0.0
-    if rms <= 1e-6:
+    if rms <= 1e-6:  # pragma: no cover - voiced frames lie within 40 dB of a peak above -70 dBFS, never this quiet
         return clip
     gain = 10 ** (TARGET_RMS_DBFS / 20) / rms
     peak = float(np.max(np.abs(clip))) * gain

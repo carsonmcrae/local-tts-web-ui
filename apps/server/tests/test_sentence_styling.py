@@ -21,6 +21,7 @@ from fastapi.testclient import TestClient
 
 from conftest import SAMPLE_RATE, FakeEngine, speech_like, wait_job, wav_bytes
 from ltts.container import Services
+from ltts.documents import styling as styling_module
 from ltts.effects import EFFECTS, apply_effect
 
 TEXT = 'The ferry left at dawn. "Is anyone there?" she called. Nobody answered.'
@@ -58,6 +59,10 @@ def test_the_loudspeaker_narrows_the_band_and_the_hall_echoes() -> None:
     hall = apply_effect("hall", speech_like(1), SAMPLE_RATE)
     assert len(hall) - SAMPLE_RATE >= 2 * SAMPLE_RATE and np.max(np.abs(hall[-SAMPLE_RATE:])) > 0
     assert apply_effect("robot", np.zeros(0, dtype=np.float32), SAMPLE_RATE).size == 0
+    assert not apply_effect("hall", np.zeros(1_000, dtype=np.float32), SAMPLE_RATE).any()  # silence stays silent
+    click = np.zeros(SAMPLE_RATE, dtype=np.float32)
+    click[100] = 1.0  # one click: matching its loudness would push the echoes past the ceiling
+    assert np.max(np.abs(apply_effect("robot", click, SAMPLE_RATE))) == pytest.approx(10 ** (-1 / 20), abs=1e-6)
 
 
 def document(client: TestClient) -> str:
@@ -90,6 +95,17 @@ def test_the_styling_api_sets_clears_and_checks(client: TestClient) -> None:
     cast = client.put(f"/api/documents/{doc_id}/cast", json={"dialogueVoiceId": "chatterbox:alpha"}).json()
     assert cast["dialogueVoiceId"] == "chatterbox:alpha"
     assert client.get(f"/api/documents/{'0' * 32}/styles").status_code == 404
+
+
+def test_the_delivery_analysis_is_kept_for_the_last_few_documents(
+    client: TestClient, services: Services, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(styling_module, "_ANALYSED", 2)
+    docs = [document(client) for _ in range(3)]
+    for doc_id in docs:
+        assert services.styling.lines(doc_id)[1].dialogue
+    assert list(services.styling._analysed) == docs[1:]  # the oldest made room
+    assert services.styling.lines(docs[1]) is services.styling._analysed[docs[1]]  # a kept analysis is reused
 
 
 def audio(client: TestClient, doc_id: str, index: int) -> Any:

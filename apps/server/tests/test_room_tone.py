@@ -63,6 +63,8 @@ def test_clean_clips_and_all_speech_get_silence() -> None:
     tone_only = (0.2 * np.sin(2 * np.pi * 180 * t)).astype(np.float32)  # no background to copy
     assert not room_tone(tone_only, RATE, 0.5).any()
     assert room_tone(_speech_with_hiss(-48.0), RATE, 0.0).size == 0
+    assert not room_tone(_speech_with_hiss(-48.0, seconds=0.6), RATE, 0.5).any()  # too few quiet frames to describe
+    assert room_tone(_speech_with_hiss(-48.0), RATE, 1 / RATE).size == 1  # one sample: nothing to fade
 
 
 def test_the_pause_after_a_sentence_carries_the_background() -> None:

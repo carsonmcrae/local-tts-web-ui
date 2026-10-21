@@ -16,14 +16,15 @@ from collections.abc import Iterator
 from pathlib import Path
 from typing import Any
 
+import numpy as np
 import pytest
 
 from chatterbox_harness import fake_chatterbox
 from ltts.config import Settings
-from ltts.engines.base import Audition, SpeakerIdentity, TuningTake, VoiceSpec
+from ltts.engines.base import AudioClip, Audition, SpeakerIdentity, TuningTake, VoiceSpec
 from ltts.engines.chatterbox import ChatterboxEngine
 from ltts.engines.chatterbox_env import write_marker
-from ltts.errors import ConflictError
+from ltts.errors import ConflictError, EngineUnavailableError
 
 
 @pytest.fixture
@@ -117,6 +118,16 @@ def test_a_sentence_is_seeded_from_its_text_and_retried_when_implausible(engine:
     assert clip.samples.size > 0
 
 
+def test_a_retry_that_sounds_more_plausible_replaces_the_first_clip(
+    engine: ChatterboxEngine, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    cut_short = AudioClip(np.zeros(2_400, dtype=np.float32), 24_000)
+    whole = AudioClip(np.ones(2_400, dtype=np.float32), 24_000)
+    attempts = iter([(cut_short, 0.2), (whole, 0.9)])
+    monkeypatch.setattr(engine, "_attempt", lambda *_args: next(attempts))
+    assert engine.synthesize("Hello there.", VoiceSpec("default"), 1.0) is whole
+
+
 def test_build_style_sends_its_prompts(engine: ChatterboxEngine, tmp_path: Path) -> None:
     output = tmp_path / "styles" / "question.safetensors"
     output.parent.mkdir()
@@ -140,10 +151,15 @@ def test_a_fine_tuned_voice_sends_its_adapter_and_only_with_its_built_voice(
     assert sent["adapter"] == str(adapter) and "speakerEmb" not in sent  # scored against the voice's own speaker
 
 
-def test_fine_tuning_needs_a_gpu(engine: ChatterboxEngine, tmp_path: Path) -> None:
+def test_fine_tuning_needs_a_gpu(engine: ChatterboxEngine, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    takes = [TuningTake(tmp_path / "001.flac", "Hi.")]
     with pytest.raises(ConflictError) as raised:
-        engine.start_tuning([TuningTake(tmp_path / "001.flac", "Hi.")], tmp_path / "v.safetensors", 8, 1)
+        engine.start_tuning(takes, tmp_path / "v.safetensors", 8, 1)
     assert raised.value.code == "needs_gpu"
+    monkeypatch.setattr(engine, "is_ready", lambda: False)  # and the engine itself, first of all
+    with pytest.raises(EngineUnavailableError) as missing:
+        engine.start_tuning(takes, tmp_path / "v.safetensors", 8, 1)
+    assert missing.value.code == "engine_not_installed"
 
 
 def test_fine_tuning_runs_epoch_by_epoch_over_the_worker(

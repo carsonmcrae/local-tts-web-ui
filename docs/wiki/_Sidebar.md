@@ -6,6 +6,7 @@
 - [Windows App](Windows-App)
 - [Getting Started](Getting-Started)
 - [Reading Documents](Reading-Documents)
+- [Background Music](Background-Music)
 - [Exporting Audio](Exporting-Audio)
 - [Keyboard Shortcuts](Keyboard-Shortcuts)
 - [Settings and Models](Settings-and-Models)

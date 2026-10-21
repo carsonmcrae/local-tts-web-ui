@@ -37,6 +37,7 @@ practical summary, not legal advice.
 | Chatterbox Turbo code and weights | MIT                                                                    |
 | Fonts: Inter, Literata            | SIL Open Font License 1.1 (self-hosted via @fontsource)                |
 | Icons: Lucide                     | ISC                                                                    |
+| Background music (11 tracks)      | CC0 1.0 / public domain; see `apps/web/public/music/CREDITS.md`        |
 | Sample text in the app            | "A Scandal in Bohemia", Arthur Conan Doyle (1891), public domain       |
 
 ## Approaches adapted from other projects

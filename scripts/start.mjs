@@ -32,9 +32,11 @@ async function main() {
     );
     if (build.status !== 0) throw new BootstrapError('The web build failed; see the output above.');
   }
-  const preferred = Number(process.env.LTTS_PORT ?? 8765);
+  // LTTS_API_PORT, as npm run dev reads it; LTTS_PORT is the older name and still works.
+  const preferred = Number(process.env.LTTS_API_PORT ?? process.env.LTTS_PORT ?? 8765);
   const port = await findFreePort(preferred);
-  if (port === null) throw new BootstrapError('No free local port found. Set LTTS_PORT and retry.');
+  if (port === null)
+    throw new BootstrapError('No free local port found. Set LTTS_API_PORT and retry.');
   if (port !== preferred) {
     warn(
       `Port ${preferred} is busy, so TTSNative is on port ${port} this time. Programs that use its local speech API need the new port.`,

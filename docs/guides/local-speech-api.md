@@ -37,8 +37,8 @@ browser's address bar.
 
 The port is **8765** unless it is busy when TTSNative starts:
 
-- `npm run start` and `npm run dev` start on 8765, or on the port in `LTTS_PORT` (`npm run start`)
-  or `LTTS_API_PORT` (`npm run dev`). If that port is taken (by another program, or another copy of
+- `npm run start` and `npm run dev` start on 8765, or on the port in `LTTS_API_PORT` (`npm run start`
+  also still reads the older `LTTS_PORT`). If that port is taken (by another program, or another copy of
   TTSNative), they use the next free one (8766, 8767…), print a warning in the terminal, and keep it
   until TTSNative stops. The next start tries the usual port again.
 - `ltts serve --port <port>` uses exactly that port, and stops with an error if it is busy.
@@ -48,8 +48,8 @@ program now answers on the old port, they would send it their requests, token in
 remembers the port a program last used and, while TTSNative is on another one, shows **The speech
 API moved from port 8765 to port 8766** until a program uses the new address. Either change your
 programs to the new address, or close whatever is using the usual port and restart TTSNative. To
-keep the address fixed, choose a port nothing else uses, set it in `LTTS_PORT` or `LTTS_API_PORT`
-each time you start TTSNative, and use it in your programs.
+keep the address fixed, choose a port nothing else uses, set it in `LTTS_API_PORT` each time you
+start TTSNative, and use it in your programs.
 
 From another device (only when you allow it, see [Security and privacy](#security-and-privacy)), use
 this computer's network address with the same port, such as `http://192.168.1.20:8765/v1`;

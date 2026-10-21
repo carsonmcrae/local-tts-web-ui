@@ -71,6 +71,12 @@ async function pinnedUv() {
 function installPython(uv) {
   step(`Python ${manifest.python} (installed and verified by uv)…`);
   const pythons = path.join(cache, 'python');
+  // uv links cpython-3.12-… to the newest 3.12.x it installed. A CI cache restores that junction broken,
+  // and uv then fails to replace it, so drop it; uv makes it again and nothing here uses it.
+  const minor = `cpython-${manifest.python.split('.').slice(0, 2).join('.')}-`;
+  for (const name of existsSync(pythons) ? readdirSync(pythons) : []) {
+    if (name.startsWith(minor)) rmSync(path.join(pythons, name), { recursive: true, force: true });
+  }
   run(uv, ['python', 'install', manifest.python, '--no-bin', '--no-registry'], {
     UV_PYTHON_INSTALL_DIR: pythons,
   });

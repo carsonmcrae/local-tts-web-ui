@@ -5,7 +5,8 @@
  * Scope: The three voice tiers (Foundation: a working voice; Developing: its sound has settled;
  *   Complete: every speaking style has the takes it uses, so more passages wouldn't change it) with
  *   the current one marked, each style's takes out of three, the passage that would help most next
- *   (with a way to go to it), and what building early means. No model is trained, and it says so.
+ *   (with a way to go to it), what building early means, and when better audio, not more
+ *   passages, is what would help. No model is trained, and it says so.
  * Does NOT belong: Recording, the passages or building (SessionRecorder, PassageParts, BuildStep).
  */
 import { Check, Minus } from 'lucide-react';
@@ -135,10 +136,31 @@ export function SpeechProgress({
         {session.canBuild && !session.complete ? null : advice}
       </p>
       <StyleCoverage session={session} />
+      <AudioAdvice advice={session.advice} />
       {session.complete ? null : <NextPassage session={session} onJump={onJump} />}
       {session.canBuild && !session.complete ? <EarlyVoiceNote /> : null}
     </div>
   );
+}
+
+const ADVICE: Readonly<Record<string, { title: string; body: string }>> = {
+  noisy_takes: {
+    title: 'Better audio would help more than more passages',
+    body: 'Most of your takes are too noisy to use. Find a quieter spot, move a hand’s width from the microphone, run the microphone check again, then record these passages again.',
+  },
+  no_sound_take: {
+    title: 'Your voice needs one long, clean take',
+    body: 'The voice takes its sound from one take, and none is long and clean enough yet (6 seconds of speech or more, with the background well below your voice). Read the foundation passage in one go, somewhere quiet.',
+  },
+};
+
+function AudioAdvice({ advice }: Readonly<{ advice: VoiceSession['advice'] }>) {
+  const found = advice ? ADVICE[advice] : undefined;
+  return found ? (
+    <Banner tone="warning" title={found.title}>
+      {found.body}
+    </Banner>
+  ) : null;
 }
 
 /** What building before the session is complete means for the voice. */

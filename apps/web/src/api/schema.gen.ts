@@ -2921,6 +2921,8 @@ export type components = {
     };
     /** VoiceSessionOut */
     VoiceSessionOut: {
+      /** Advice */
+      advice: ('noisy_takes' | 'no_sound_take') | null;
       /** Buildjobid */
       buildJobId: string | null;
       /** Canbuild */

@@ -94,8 +94,15 @@ covers microphone, Windows and room setup.
      voice, but questions and lively lines may sound less like you.
    - **Developing:** twelve clean takes. The sound of your voice has settled; more takes hardly move it.
    - **Complete:** every speaking style (narration, questions, lively lines, dialogue, calm) has its
-     three takes. That is about 15 passages, 2–3 minutes of speech. More passages won't change the
-     voice, so the session says you can build.
+     three takes, and one take is long and clean enough to give the voice its sound (6 seconds of
+     speech or more, the background well below your voice). That is usually 12–16 passages, 2–3
+     minutes of speech, depending on your recordings. More passages won't change the voice, so the
+     session says you can build.
+
+   When better audio would help more than more passages, the session says so instead of suggesting
+   one: if most takes are too noisy to use, or no take is long and clean enough for the voice's sound
+   (then it asks for the foundation passage again). Only usable takes count, and recordings you import
+   help the voice's sound but not its speaking styles, which need the passages.
 
    No model is trained at any tier: when the voice speaks, it hears about 10 seconds of one take for
    its sound and three takes of the sentence's style for its rhythm (see the

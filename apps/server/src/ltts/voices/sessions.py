@@ -33,7 +33,18 @@ from ltts.jobs import JobManager
 from ltts.voices.cleanup import Cleanup, RecordingCheck, apply_cleanup, suggest_cleanup
 from ltts.voices.profiles import decode_recording
 from ltts.voices.quality import CHECK_RULES, QualityReport, analyze
-from ltts.voices.session_progress import StyleCoverage, Tier, coverage, covered, settled, suggestions, tier
+from ltts.voices.session_progress import (
+    Advice,
+    StyleCoverage,
+    Tier,
+    advice,
+    coverage,
+    covered,
+    has_sound_take,
+    settled,
+    suggestions,
+    tier,
+)
 from ltts.voices.take_checks import context_for, judge_take
 
 log = logging.getLogger("ltts.voices.sessions")
@@ -86,6 +97,7 @@ class VoiceSessionOut(ApiModel):
     tier: Tier  # see ``session_progress``: tiers follow what the voice will actually use
     styles: list[StyleCoverage]
     suggested: list[str]  # the passages (ids) that would add most to the voice next
+    advice: Advice | None  # when better audio, not more passages, would improve the voice
     usable_speech_s: float
     required_speech_s: float  # enough to build without the passages' styles (for imported recordings)
     minimum_speech_s: float  # for an early build, with the foundation passage
@@ -156,7 +168,7 @@ class VoiceSessionService:
         building = self._jobs.find_active(BUILD_JOB, session_id)
         usable = round(sum(t.quality.speech_s for t in takes if t.quality.ok), 1)
         styles = coverage(takes)
-        complete = covered(styles) and settled(takes)
+        complete = covered(styles) and settled(takes) and has_sound_take(takes)
         foundation = any(
             t.prompt_id == FOUNDATION_PROMPT and t.quality.ok and t.quality.speech_s >= MIN_FOUNDATION_SPEECH_S
             for t in takes
@@ -169,6 +181,7 @@ class VoiceSessionService:
             tier=tier(takes, can_build),
             styles=styles,
             suggested=suggestions(takes),
+            advice=advice(takes),
             usable_speech_s=usable,
             required_speech_s=self._settings.min_studio_speech_s,
             minimum_speech_s=MIN_EARLY_SPEECH_S,

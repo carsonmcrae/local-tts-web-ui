@@ -107,3 +107,30 @@ def follow_suggestions(client: TestClient, session_id: str) -> Any:
         record(client, session_id, numbers[pid], 12, pid)
         current = client.get(f"/api/voice-sessions/{session_id}").json()
     return current
+
+
+def test_noisy_takes_ask_for_better_audio_not_more_passages(client: TestClient) -> None:
+    session_id = session(client)
+    for number in (1, 2, 3, 4):
+        url = f"/api/voice-sessions/{session_id}/takes/{number}"
+        client.put(url, params={"promptId": f"narration-{number}"}, content=wav_bytes(speech_like(12, noise=0.12)))
+    current = client.get(f"/api/voice-sessions/{session_id}").json()
+    assert current["advice"] == "noisy_takes" and current["suggested"] == []
+
+
+def test_a_complete_voice_needs_one_take_long_and_clean_enough_for_its_sound(client: TestClient) -> None:
+    session_id = session(client)
+    numbers = {prompt_for_number(n): n for n in range(1, 50)}
+    current = client.get(f"/api/voice-sessions/{session_id}").json()
+    for _ in range(30):  # every take too short to give the voice its sound
+        wanted = [pid for pid in current["suggested"] if pid != "foundation"]
+        if not wanted:
+            break
+        record(client, session_id, numbers[wanted[0]], 4, wanted[0])
+        current = client.get(f"/api/voice-sessions/{session_id}").json()
+    assert all(s["takes"] >= s["needed"] for s in current["styles"])
+    assert current["advice"] == "no_sound_take" and current["tier"] != "complete"
+    assert current["suggested"] == ["foundation"]  # read it, long and clean
+    record(client, session_id, 49, 60, "foundation")
+    current = client.get(f"/api/voice-sessions/{session_id}").json()
+    assert current["advice"] is None and current["tier"] == "complete" and current["suggested"] == []

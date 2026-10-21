@@ -6,8 +6,10 @@ Scope: A studio voice (Chatterbox Turbo, zero-shot: no model is trained) takes i
 its rhythm per speaking style from up to three takes of matching passages, and two embeddings averaged
 over every take, which settle after about twelve clean takes (docs/research/studio-voice-audit.md). So
 the tier is: starting (not enough to build), foundation (an early voice can be built), developing (the
-averaged sound has settled) or complete (every speaking style has its three takes: more passages would
-not change the voice). Also each style's coverage, and the passages that would help most next.
+averaged sound has settled) or complete (every speaking style has its three takes and one take is clean
+and long enough to give the voice its sound: more passages would not change it). How many passages that
+takes depends on the recordings, not a fixed number. Also each style's coverage, the passages that would
+help most next, and advice when the audio itself, not more passages, is what would help.
 Does NOT belong: Storing takes (``sessions.py``) or choosing a voice's style prompts (``styles.py``).
 """
 
@@ -23,9 +25,15 @@ from ltts.voices.styles import FOUNDATION_NUMBER, PROMPTS_PER_STYLE, STYLE_SOURC
 SETTLED_TAKES = 12  # clean takes after which the averaged speaker hardly moves (0.997 of a 42-take average)
 STYLE_SNR_DB = 12.0  # a take noisier than this never teaches a style (``styles.style_prompts``)
 SUGGESTIONS = 3
+SOUND_SNR_DB = 20.0  # the take a voice's sound comes from should be at least this clean...
+SOUND_SPEECH_S = 6.0  # ...and this long (the build prefers such takes: ``studio.MIN_PROMPT_SPEECH_S``)
+JUDGE_AFTER = 4  # takes recorded before the session judges the recording setup
 # starting: not enough to build yet; foundation: an early voice; developing: its sound has settled;
 # complete: every speaking style has the takes it uses
 Tier = Literal["starting", "foundation", "developing", "complete"]
+# noisy_takes: most takes are too noisy to use, so better audio would help, not more passages;
+# no_sound_take: no take is clean and long enough to give the voice its sound yet
+Advice = Literal["noisy_takes", "no_sound_take"]
 PASSAGE_IDS = tuple(
     pid for n in (FOUNDATION_NUMBER, *range(1, FOUNDATION_NUMBER)) if (pid := prompt_for_number(n)) is not None
 )
@@ -66,10 +74,26 @@ def covered(styles: Sequence[StyleCoverage]) -> bool:
     return all(style.takes >= style.needed for style in styles)
 
 
+def has_sound_take(takes: Sequence[Recorded]) -> bool:
+    """Whether one take is clean and long enough for the voice to take its sound from."""
+    return any(
+        t.quality.ok and t.quality.snr_db >= SOUND_SNR_DB and t.quality.speech_s >= SOUND_SPEECH_S for t in takes
+    )
+
+
+def advice(takes: Sequence[Recorded]) -> Advice | None:
+    """When the recordings themselves, not more of them, are what would improve the voice."""
+    if len(takes) >= JUDGE_AFTER and len(_clean(takes)) < len(takes) / 2:
+        return "noisy_takes"
+    if settled(takes) and not has_sound_take(takes):
+        return "no_sound_take"
+    return None
+
+
 def tier(takes: Sequence[Recorded], can_build: bool) -> Tier:
     if not can_build:
         return "starting"
-    if covered(coverage(takes)) and settled(takes):
+    if covered(coverage(takes)) and settled(takes) and has_sound_take(takes):
         return "complete"
     return "developing" if settled(takes) else "foundation"
 
@@ -83,9 +107,16 @@ def _sources(style: str) -> list[str]:
 
 
 def suggestions(takes: Sequence[Recorded]) -> list[str]:
-    """The passages (ids) that would add most to the voice next: the foundation, then missing style takes."""
+    """The passages (ids) that would add most to the voice next: the foundation, then missing style takes.
+
+    None while most takes are noisy (better audio would help, not more passages); the foundation again
+    when no take is clean and long enough to give the voice its sound.
+    """
+    trouble = advice(takes)
+    if trouble == "noisy_takes":
+        return []
     done = {take.prompt_id for take in _clean(takes)}
-    wanted: list[str] = [] if "foundation" in done else ["foundation"]
+    wanted: list[str] = [] if "foundation" in done and trouble is None else ["foundation"]
     for style in coverage(takes):
         missing = style.needed - style.takes
         for pid in _sources(style.style):

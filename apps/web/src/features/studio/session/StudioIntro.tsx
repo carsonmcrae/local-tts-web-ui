@@ -27,9 +27,10 @@ export function StudioIntro() {
         turn off Audio enhancements for your microphone in Sound settings.
       </Point>
       <Point icon={<Clock3 size={16} />} title="About 15–20 minutes, at your own pace">
-        About 15 passages (2–3 minutes of speech) give a complete voice; the app suggests which
-        ones, and the rest are optional. Every take is saved as you go, so you can stop and continue
-        later. Already recorded in Audacity or similar? Import it.
+        Usually 12–16 passages (2–3 minutes of speech) give a complete voice, depending on how clean
+        your takes are; the app suggests which ones, and the rest are optional. Every take is saved
+        as you go, so you can stop and continue later. Already recorded in Audacity or similar?
+        Import it.
       </Point>
       <Point icon={<Cpu size={16} />} title="Building needs the voice-cloning engine">
         You can record now and install the engine before building. Building takes a minute or two

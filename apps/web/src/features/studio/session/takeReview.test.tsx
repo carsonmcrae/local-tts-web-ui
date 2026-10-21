@@ -89,6 +89,16 @@ describe('Session progress', () => {
     expect(within(dialog).getByText(/^Have you ever wondered why the/)).toBeInTheDocument();
   }); // prettier-ignore
 
+  it('says when better audio, not more passages, would help', async () => {
+    studioApi(studioSession({
+      takes: [take(1, 'narration-1'), take(2, 'narration-2')], usableSpeechS: 24, advice: 'noisy_takes',
+      suggested: [], requiredSpeechS: 300,
+    })); // prettier-ignore
+    const { dialog } = await resumeStudioSession();
+    expect(await within(dialog).findByText('Better audio would help more than more passages')).toBeInTheDocument();
+    expect(within(dialog).queryByText(/Most useful next/)).not.toBeInTheDocument();
+  }); // prettier-ignore
+
   it('says when more passages would not change the voice', async () => {
     const styles = ['narration', 'question', 'lively', 'dialogue', 'calm'].map((style) => ({ style, takes: 3, needed: 3 }));
     studioApi(studioSession({

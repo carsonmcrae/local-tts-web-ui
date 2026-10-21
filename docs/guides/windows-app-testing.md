@@ -20,7 +20,7 @@ release, and the latest results. Design: [desktop-and-releases.md](../architectu
 | Release only: the update signature matches the key in the app, then the same smoke test on the signed build                                                              | `release.yml`                          |
 | Release only: every GPL/LGPL source archive matches its pinned size and SHA-256; the release refuses to publish without it                                               | `release.yml`                          |
 | The source manifest covers the versions of espeakng-loader, phonemizer, soundfile and lxml in `uv.lock`                                                                  | `npm run test:scripts`                 |
-| UI: update notice, install progress and failures, remind later, automatic checks, release history, What's new (mocked app)                                               | `apps/web/src/features/updates`        |
+| UI: update notice, install progress and failures, remind later, automatic checks, release history one version at a time (Older / Newer, marks), What's new (mocked app)  | `apps/web/src/features/updates`        |
 | Version, change-file and release-notes rules; concurrent branches never collide                                                                                          | `npm run test:scripts`                 |
 
 ## By hand, before a major or minor release
@@ -34,7 +34,9 @@ candidate's Desktop workflow artifact:
 4. Export an MP3 and a chapter ZIP; play them.
 5. Resize, minimise, maximise, close and reopen; the window comes back where it was, the document resumes.
 6. Record a quick custom voice (needs voice cloning from Settings, several GB) and read with it.
-7. Settings → About: version, Release history, What's new, Check for updates, Open data/log folder.
+7. Settings → About: version (also at the bottom of the sidebar, which leads here); Release history
+   one version at a time: the list of versions with the installed one marked, Older and Newer, each
+   version's date and notes; What's new; Check for updates; Open data/log folder.
 8. Turn the network off: reading still works; Check for updates explains it couldn't connect.
 9. Install the next build over it: data kept; What's new opens once.
 10. Uninstall without and then (after reinstalling) with **Delete the application data**; check the

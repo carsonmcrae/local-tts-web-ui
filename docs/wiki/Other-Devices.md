@@ -18,12 +18,27 @@ does. The settings section says so when you're on the development server.
 Use LAN mode only on a network you trust, such as your home Wi-Fi. Never use it on public Wi-Fi in a
 café, hotel or airport: see [What to know](#what-to-know).
 
+### Only on a network you trust
+
+Before LAN mode turns on, TTSNative checks the network. It only looks; it never changes your
+network, firewall or system settings.
+
+- **On Windows**, the network must be one Windows lists as **private** (or a work domain network).
+  If Windows lists it as **public**, LAN mode stays off and says how to change it: if it really is
+  your home network, open **Settings → Network & internet → Wi-Fi** (or **Ethernet**), open the
+  network's properties, and under **Network profile type** choose **Private network**. Leave
+  networks in cafés, hotels, airports and offices public. If TTSNative can't tell what Windows calls
+  the network, it stays off too.
+- **On a Mac or Linux**, which have no such setting, tick **This is a home network I trust** each
+  time you turn LAN mode on.
+
 ## Turning it on and pairing a device
 
 1. On the computer, open **Settings → Phones and tablets** and expand **LAN mode**.
-2. Read what it shares (below), then switch on **Turn on LAN mode**. If the computer is on more than
-   one network, first choose the **Network address** your phone uses: usually your Wi-Fi, with an
-   address starting with `192.168`. See [Which networks are offered](#which-networks-are-offered).
+2. Read what it shares (below), then switch on **Turn on LAN mode** (on a Mac or Linux, tick **This
+   is a home network I trust** first). If the computer is on more than one network, first choose the
+   **Network address** your phone uses: usually your Wi-Fi, with an address starting with `192.168`.
+   See [Which networks are offered](#which-networks-are-offered).
 3. The section shows:
    - the address to open, such as `http://192.168.1.20:8765`;
    - a **QR code**;
@@ -66,19 +81,36 @@ A paired phone or tablet can:
 
 - open your library, read and listen, and use bookmarks;
 - change reading and playback settings and pronunciations (these are shared with the computer);
-- add and edit documents, style sentences, and run and download exports.
+- add and edit documents and style sentences;
+- start, pause, resume and download exports.
 
-It can't:
+Sensitive things stay on the computer. A paired device can't:
 
 - change LAN mode, speech API or Audiobookshelf settings;
 - record, play back, import, export or manage voices and their recordings;
 - install engines, clear caches, or cancel the computer's own jobs;
 - import web pages (the computer would fetch them);
-- delete documents.
+- delete documents or exports;
+- cancel an export, which throws away what it has made so far (pausing it is fine);
+- send an export to Audiobookshelf, which uses the computer's Audiobookshelf account.
 
-Those stay on the computer, and the phone shows **Do this on the computer running TTSNative.** if
-you try. Starting a lot of exports or uploads in a few minutes from one device is also refused for
-a while.
+The phone shows **Do this on the computer running TTSNative.** if you try. Starting a lot of exports
+or uploads in a few minutes from one device is also refused for a while.
+
+## What works over LAN mode
+
+LAN mode uses plain HTTP, not HTTPS. Browsers keep some features for secure (HTTPS) pages, so on a
+phone or tablet:
+
+| Feature                                                           | On a phone in LAN mode                      |
+| ----------------------------------------------------------------- | ------------------------------------------- |
+| Reading, listening, bookmarks, pronunciations, documents, exports | Works, while the computer is on             |
+| Recording with the microphone                                     | No: needs HTTPS. Record on the computer     |
+| Installing TTSNative as an app                                    | No: needs HTTPS                             |
+| Screens that open while the computer can't be reached             | No: needs HTTPS                             |
+| Privacy from other devices on the same Wi-Fi                      | No: plain HTTP can be read by other devices |
+
+On the computer itself all of these work, because `localhost` counts as a secure page.
 
 The theme and other appearance settings are saved per device.
 
@@ -108,7 +140,8 @@ LAN mode also turns itself off:
 
 - whenever TTSNative restarts;
 - when the computer has been asleep;
-- when its network address goes away or moves to another adapter.
+- when its network address goes away or moves to another adapter;
+- on Windows, when the network becomes public, or TTSNative can't tell what Windows calls it.
 
 That way a laptop that wakes up on another network doesn't appear there by itself. The settings say
 when this happened. Paired devices stay paired until you remove them or their pairing ends.
@@ -135,12 +168,16 @@ Check the name in the list.
 
 ## What to know
 
-- **Plain HTTP.** Pairing stops other people on the network from using your library, but the
-  traffic isn't encrypted. Someone on the same Wi-Fi could read the documents and audio a phone
-  opens, and copy its cookie, though a copy only works from that phone's address and only until its
-  pairing ends. Use LAN mode only on networks you trust, such as your home Wi-Fi.
+- **Plain HTTP isn't secure against other devices on your network.** Pairing stops other people on
+  the network from simply opening your library, but the traffic isn't encrypted. Someone on the same
+  Wi-Fi could read the documents and audio a phone opens, and copy its cookie, though a copy only
+  works from that phone's address and only until its pairing ends. Use LAN mode only on networks you
+  trust, such as your home Wi-Fi.
 - **Nothing is opened on your router.** There's no port forwarding or UPnP, so only devices on your
   own network can reach it. Never expose TTSNative to the internet.
+- **No proxies or tunnels.** TTSNative refuses requests that come through a reverse proxy, tunnel
+  or port forward on the computer (Tailscale Serve, Caddy, nginx, Cloudflare Tunnel, ngrok), and
+  requests that only claim to, so they can't pass for you at the computer. Use LAN mode instead.
 - **Firewall prompt.** The first time, your computer's firewall may ask whether to allow TTSNative
   (Python) to accept connections. Allow it for **private** networks only.
 - **Voices stay on the computer.** Browsers only allow recording on a secure page, so voices are
@@ -175,7 +212,8 @@ away by itself once TTSNative answers again. After the computer slept, LAN mode 
 off, so turn it on again on the computer first.
 
 Phone layouts and playback were tested with Pixel 7 and iPhone 13 emulation. Real iPhones, and Safari
-on Apple hardware, haven't been verified.
+on Apple hardware, haven't been verified. To try it on your own phone, follow the
+[phone checklist](https://github.com/carsonmcrae/ttsnative/blob/main/docs/guides/lan-phone-checklist.md).
 
 ## Advanced: network mode from the command line
 

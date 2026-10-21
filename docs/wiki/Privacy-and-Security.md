@@ -62,12 +62,15 @@ and [supply chain](https://github.com/carsonmcrae/ttsnative/blob/main/docs/secur
 ## Network mode
 
 [LAN mode](Other-Devices) is off unless you switch it on in **Settings → Phones and tablets**, and off
-again after every restart; paired devices can read and listen, but can't change LAN, speech API or
-Audiobookshelf settings, record or manage voices, install engines or delete documents. The older
-network mode is off unless you start the server with `--allow-network`. When either is on:
+again after every restart. On Windows it only opens on a network Windows lists as private; on a Mac
+or Linux you confirm each time that it's a home network you trust. Paired devices can read and
+listen, but can't change LAN, speech API or Audiobookshelf settings, record or manage voices,
+install engines, delete documents or exports, cancel exports or send them to Audiobookshelf.
+Requests through a proxy or tunnel are refused. The older network mode is off unless you start the
+server with `--allow-network`. When either is on:
 
-- traffic uses plain HTTP: pairing (or the token) protects access to your library, but not the
-  privacy of the traffic on your network;
+- traffic uses plain HTTP, which isn't secure against other devices on your network: pairing (or the
+  token) protects access to your library, but not the privacy of the traffic;
 - browsers block the microphone on non-HTTPS pages;
 - use it only on networks you trust, and never expose the server to the internet.
 

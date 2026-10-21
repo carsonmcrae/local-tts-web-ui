@@ -4,11 +4,14 @@
 > `192.168.1.20` unless each phone trusts a CA or a third party is involved. The best path for
 > TTSNative is an **opt-in "secure LAN mode" with a local CA that TTSNative makes itself**. Its root
 > key is destroyed once it has signed a name-constrained intermediate, and it is trusted only on the
-> phones, never on the computer. **Tailscale Serve** should be documented as the alternative with no
-> certificates to handle, after the server is changed to treat its requests as remote devices. Reject
+> phones, never on the computer. [Section 7](#7-design-secure-lan-mode-with-a-local-ca) is a
+> concrete design, with what setting it up on an iPhone and on an Android phone would take: about
+> five minutes, two or three system warnings that are real trust decisions, and no browser warning
+> to click through. **Tailscale Serve** and other proxies are refused by the server for now (they
+> would pass for the person at the computer); supporting one needs its own design. Reject
 > self-signed click-through certificates, public tunnels and shared-key DNS services. Defer a
 > Plex-style DNS service run by the project. Nothing on this page was installed, signed up for or
-> switched on.
+> switched on, and no certificate was made.
 
 Researched on 2026-10-21 from the linked sources. Statements marked _(inference)_ are reasoning
 rather than something a source says. Untested on real phones: no phone was available.
@@ -194,17 +197,21 @@ excluded.
   provider ([PR #3554](https://github.com/juanfont/headscale/pull/3554)). That is too much for
   ordinary users.
 
-**A catch in TTSNative itself _(inference, from `security.py`)_:**
+**How TTSNative treats it now (`security.py`):**
 
-- Serve's requests reach the main server from `127.0.0.1`, with a `*.ts.net` Host. Today they are
-  refused (`421`), because that host isn't allowed.
-- If someone added the name to `extra_allowed_hosts`, every device in the tailnet would be treated
-  as the person at the computer. It would skip pairing and `lan/policy.py`, and could change
-  settings and delete documents.
-- The same is true of any reverse proxy on the computer that forwards to `127.0.0.1`.
-- Before Tailscale is documented, the server should treat a loopback request whose Host isn't a
-  loopback name as a remote device that must pair. Until then: **never add a tunnel's or proxy's
-  name to the allowed hosts.**
+- Serve's requests reach the main server from `127.0.0.1`, with a `*.ts.net` Host and Serve's own
+  `X-Forwarded-*` and `Tailscale-User-*` headers.
+- The server refuses every request that carries forwarding headers, and every request from a
+  loopback address whose Host isn't exactly `localhost`, `127.0.0.1` or `[::1]`, even if the name
+  is in `extra_allowed_hosts` (`403 proxy_not_supported`). So a tailnet device can't pass for the
+  person at the computer, and can't use TTSNative through Serve at all
+  ([LAN access](../guides/lan-access.md#proxies-tunnels-and-port-forwards-are-not-supported)).
+- Supporting Serve properly would mean treating its requests as LAN devices (pairing, the same
+  allow-list and limits). That needs: trusting Serve's `X-Forwarded-For` only from Serve, so a
+  device cookie can be tied to the device's tailnet address; a `Secure` cookie and the `https`
+  origin; a setting naming the `*.ts.net` host, off by default; and an answer to what LAN mode's
+  lifecycle (off after a restart, off when the network changes) means for a tailnet. That is a
+  separate decision for the owner, not part of this design.
 
 TTSNative shouldn't run `tailscale serve` itself. It changes the user's tailnet, and it publishes
 the machine's name.
@@ -297,6 +304,157 @@ It goes against TTSNative's local-first design. **Deferred.**
 - **Standards:** the W3C community group on HTTPS in local networks closed in 2023
   ([W3C](https://www.w3.org/groups/cg/httpslocal/)). Nothing has shipped since.
 
+## 7. Design: secure LAN mode with a local CA
+
+This is a design only. Nothing here exists yet: no code makes certificates, and none was made.
+
+### 7.1 What it gives, and what it doesn't
+
+- **Goal:** a phone that has done the setup once opens `https://192.168.1.20:8766` with a padlock
+  and no warning. The microphone, installing as an app and the offline screens then work there,
+  and the Wi-Fi can't read the traffic.
+- **Never:** asking anyone to click through or turn off a browser warning. If a phone shows "This
+  Connection Is Not Private" or "Your connection is not private", the setup isn't finished, and
+  the setup page says to go back rather than continue.
+- **Never:** touching the computer's own trust store. The computer keeps using `http://localhost`,
+  which is already a secure page.
+- **Opt-in.** Plain-HTTP LAN mode stays the default. Pairing, `lan/policy.py`, the per-device
+  limits, the network check and the proxy refusal stay exactly as they are.
+
+### 7.2 The parts
+
+1. **Certificates** (made on the computer, with pyca/cryptography):
+   - **Root:** ECDSA P-256 with SHA-256, `CA:TRUE, pathlen:1`, key usage `keyCertSign, cRLSign`,
+     10 years, named "TTSNative local CA (computer name, date)". Its private key exists only in
+     memory while it signs the intermediate, and is never written to disk.
+   - **Intermediate:** `CA:TRUE, pathlen:0`, 10 years (it can't be renewed without a new root on
+     every phone), with name constraints permitting only `10.0.0.0/8`, `172.16.0.0/12`,
+     `192.168.0.0/16` and DNS names under `local`. A stolen intermediate key could then only mint
+     certificates for private addresses and `.local` names, and only for phones that trust this
+     root.
+   - **Server certificate:** subject alternative names for the LAN address (an IP SAN) and
+     `computer-name.local`, extended key usage `serverAuth`, 397 days (well under Apple's 825-day
+     limit). It is made again by itself when the LAN address changes and 30 days before it ends;
+     phones don't notice, because they trust the root.
+2. **Where the keys live:** the intermediate's key under Windows DPAPI (current user; `CryptProtectData`
+   through `ctypes`, no new package), the macOS Keychain, or a `0600` file on Linux. The server key
+   is written encrypted (PKCS#8 with a random password kept the same way), because Python's
+   `ssl.SSLContext.load_cert_chain` needs a file but accepts a password.
+3. **An HTTPS listener** on the same private address, on the main port plus one (`8766`), with
+   TLS 1.2 or later, the same app and the same checks. Windows' firewall rule for Python covers
+   the second port; no new prompt is expected _(inference)_.
+4. **Two modes.** In **secure** mode the plain-HTTP listener serves only a setup page
+   (`/lan/setup`), the CA file and a link to the HTTPS address: never the app or the API. Pairing
+   happens over HTTPS only. The device cookie becomes
+   `__Host-ltts_device; Secure; HttpOnly; SameSite=Strict; Path=/`, which an HTTP page can't set or
+   overwrite. HSTS doesn't apply to an IP address, which is why the HTTP listener serves nothing
+   else.
+5. **Getting the CA onto the phone.** The computer shows a QR code for
+   `http://192.168.1.20:8765/lan/setup` and the CA's SHA-256 fingerprint in groups of four. The
+   phone's setup page offers `ttsnative-ca.mobileconfig` (an unsigned configuration profile holding
+   only the root, for iPhone and iPad) or `ttsnative-ca.crt` (DER, for Android), and the steps for
+   that phone. The file first arrives over plain HTTP, so the page asks the person to compare at
+   least the first and last groups of the fingerprint with the one on the computer (iOS shows it
+   under the profile's **More Details**, Android under the certificate's details).
+6. **Undo on the computer.** **Turn off secure LAN mode** goes back to plain HTTP. **Remove the
+   certificate authority** deletes the intermediate and server keys. Phones are then left trusting
+   a root that nothing can sign with any more (its key was never kept), and the computer shows how
+   to remove it from each phone.
+
+### 7.3 Windows and iPhone, step by step
+
+On the computer: **Settings → Phones and tablets → Secure LAN mode → Set up**. Nothing is installed
+on Windows. Then, on the iPhone (iOS 17 or 18, in **Safari**):
+
+1. Scan the QR code. The setup page opens and shows the fingerprint. Tap **Download for iPhone**.
+   - Safari asks "This website is trying to download a configuration profile. Do you want to allow
+     this?" Tap **Allow**, then **Close** on "Profile Downloaded".
+2. Open **Settings**. Tap **Profile Downloaded** near the top (or **General → VPN & Device
+   Management**), then **TTSNative local CA**.
+   - The profile is marked **Not Verified** in red, because it isn't signed. **More Details** shows
+     the fingerprint to compare.
+   - Tap **Install**, enter the passcode, read the warning that the root certificate will be added
+     to the trusted certificates but not trusted for websites until it is enabled in Certificate
+     Trust Settings, and tap **Install**, **Install** again, then **Done**.
+3. Go to **Settings → General → About → Certificate Trust Settings**. Under **Enable full trust
+   for root certificates**, switch on **TTSNative local CA**.
+   - iOS warns that enabling it for websites will allow third parties to view private data sent to
+     websites. Tap **Continue**.
+4. Back in Safari, tap **Open TTSNative securely** on the setup page (`https://192.168.1.20:8766`).
+   There is no warning, and the padlock shows. Pair as usual.
+
+**Time:** about four minutes the first time, if the person follows the page; then nothing, even
+when the computer's address changes _(estimate; untested on a real iPhone)_.
+
+**What can go wrong:**
+
+- Step 3 is missed (it's in a different part of Settings). Safari then shows "This Connection Is
+  Not Private". The setup page must say: don't continue; go back to step 3.
+- The profile isn't installed within about eight minutes, and iOS discards it. Download it again.
+- Chrome or Firefox on the iPhone saves the file instead of handing it to Settings. Use Safari for
+  the download; afterwards any browser works, since they all use the system's trust.
+- A work or school iPhone may not allow profiles at all.
+- iOS 18.0 and 18.1 had a bug that hid such roots from Certificate Trust Settings; it was fixed in
+  18.2 (see section 1).
+- The fingerprint isn't compared, and someone on the Wi-Fi swapped the file. Comparing it is the
+  only protection for that first download.
+
+**Undo:** **Settings → General → VPN & Device Management → TTSNative local CA → Remove Profile**,
+and the passcode. That removes the trust as well.
+
+### 7.4 Windows and Android, step by step
+
+On the computer: the same **Set up**. Then, on the phone (Android 11 or later, in **Chrome**):
+
+1. Scan the QR code and tap **Download for Android**. Chrome saves `ttsnative-ca.crt`. Tapping the
+   file doesn't install it: since Android 11 a CA certificate can only be installed from Settings,
+   and Android says so.
+2. Open **Settings** and search for **CA certificate**, or go to:
+   - Pixel: **Security & privacy → More security & privacy → Encryption & credentials → Install a
+     certificate → CA certificate**;
+   - Samsung: **Security and privacy → More security settings → Install from device storage → CA
+     certificate**.
+3. Android warns that your data won't be private, and that the certificate's owner could see data
+   from websites and apps you use. Tap **Install anyway**.
+4. Confirm with the screen lock. A phone without one must set a PIN, pattern or password first.
+5. Pick `ttsnative-ca.crt` from **Downloads**. Android says **CA certificate installed**.
+6. Back in Chrome, tap **Open TTSNative securely**. There is no warning. Pair as usual.
+
+**Time:** about five minutes, longer when the setting is hard to find on that brand of phone
+_(estimate; untested on a real phone)_.
+
+**What can go wrong:**
+
+- Android then shows that the network **may be monitored**, in notifications and the certificate
+  settings, and can show it again later. That notice is honest: it is exactly what a trusted CA
+  makes possible. The setup page has to say so in advance.
+- The file is installed as a **VPN and app** or **Wi-Fi** certificate instead of a **CA
+  certificate**, and nothing changes. Install it again as a CA certificate.
+- Removing the phone's screen lock later removes user certificates too, and the HTTPS address then
+  shows a warning again.
+- Firefox for Android needs its hidden "Use third party CA certificates" setting; Samsung Internet
+  wasn't checked. Chrome works.
+- Work profiles and managed phones may block user CAs.
+- The fingerprint isn't compared (as on iPhone).
+
+**Undo:** **Settings → Security & privacy → More security & privacy → Encryption & credentials →
+Trusted credentials → User → TTSNative local CA → Remove** (on Samsung: **Security and privacy →
+More security settings → View security certificates → User**). Don't use **Clear credentials**,
+which removes every user certificate.
+
+### 7.5 Verdict
+
+- **Windows + iPhone: workable, as an opt-in.** About four minutes, three places in Settings, two
+  warnings that are real trust decisions, and no browser warning when it's done. The usual failure
+  is the third step, which the setup page can catch and explain. Not suitable as the default.
+- **Windows + Android: workable, as an opt-in, with a lasting cost.** About five minutes; menus
+  differ by brand; it needs a screen lock; and the "network may be monitored" notice stays. People
+  should choose it knowingly. Not suitable as the default.
+- **Both:** nothing changes on the computer, and the risk is limited to phones that installed the
+  root, for private addresses and `.local` names only. Plain-HTTP LAN mode stays the default for
+  reading and listening; secure mode is for people who want the microphone, installing, the
+  offline screens or privacy on their Wi-Fi.
+
 ## Recommendation
 
 1. **Keep plain-HTTP LAN mode** for reading and listening at home, as hardened in
@@ -315,18 +473,26 @@ It goes against TTSNative's local-first design. **Deferred.**
 
    Plain HTTP would then be refused for paired devices that have switched.
 
-3. **Document Tailscale Serve** as the alternative, once loopback requests with a non-loopback Host
-   are treated as remote devices. Say that it publishes the machine's name, and that its free plan
-   is for personal use.
+3. **Keep proxies and tunnels refused**, Tailscale Serve included, until the owner decides on a
+   design that treats their requests as LAN devices (section 3). If it is documented then, say that
+   it publishes the machine's name, and that its free plan is for personal use.
 4. **Recording stays on the computer** until (2) exists.
 
 ## What needs the owner's approval
 
-- Creating CA material at all, and the key handling above (where the intermediate's key lives, the
-  destroyed root, renewal).
-- Adding `cryptography` as a dependency.
-- The wording that asks people to install a root certificate on their phone.
-- Changing how loopback requests with a non-loopback Host are treated (needed before Tailscale or
-  any reverse proxy can be documented), and documenting Tailscale at all.
+- Creating CA material at all: the root, the name-constrained intermediate and the server
+  certificate, their algorithms (ECDSA P-256) and lifetimes (10 years, 10 years, 397 days).
+- The key handling in section 7.2: the root's key never kept, the intermediate's under DPAPI, the
+  Keychain or a `0600` file (macOS may need a Keychain package or the `security` tool), and what
+  "Remove the certificate authority" deletes.
+- Adding `cryptography` (Apache-2.0 or BSD-3-Clause) as a server dependency, under the usual
+  14-day cool-down and `pip-audit`.
+- A second listener port (`8766`) on the LAN address while secure mode is on.
+- The wording that asks people to install a root certificate on their phone, including the iOS
+  warnings, Android's "network may be monitored" notice, and an unsigned ("Not Verified")
+  configuration profile.
+- Testing the design on real iPhones and Android phones before it ships (nothing here was tried on
+  one).
+- Any support for a proxy or tunnel such as Tailscale Serve (section 3). Today they are refused.
 - Any project-run DNS service: a domain, servers, ACME accounts and a privacy policy. Not
   recommended now.

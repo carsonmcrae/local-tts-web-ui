@@ -174,6 +174,31 @@ def _voice_ab(args: argparse.Namespace) -> int:
     return 0
 
 
+def _voice_panel(args: argparse.Namespace) -> int:
+    """Write a blind listening panel from clips already made (``make``), or unblind its answers (``score``)."""
+    from ltts.voices import listening_panel as panel
+
+    if args.action == "score":
+        if not args.answers:
+            print("score needs the answers.json saved from the panel's page.")
+            return 2
+        pairs = [(a, b) for a, _, b in (pair.partition(":") for pair in args.pair)]
+        print(panel.summary(*panel.score(Path(args.folder), Path(args.answers), pairs)))
+        return 0
+    if not args.items or len(args.voice) < 2:
+        print("make needs --items and at least two --voice NAME=FOLDER.")
+        return 2
+    items = [panel.Item(str(i["kind"]), str(i["text"])) for i in json.loads(Path(args.items).read_text("utf-8"))]
+    clips = {}
+    for spec in args.voice:
+        name, _, folder = spec.partition("=")
+        clips[name] = [Path(folder) / f"item-{n:02d}.wav" for n in range(1, len(items) + 1)]
+    panel.make(Path(args.folder), items, clips, args.seed)
+    print(f"Open {Path(args.folder) / 'listen.html'}, save your answers, then run: ltts voice-panel score "
+          f"{args.folder} answers.json")  # fmt: skip
+    return 0
+
+
 def _openapi(_: argparse.Namespace) -> int:
     from ltts.app import create_app
 
@@ -215,6 +240,20 @@ def main(argv: list[str] | None = None) -> int:
     ab.add_argument("--seed", type=int, default=0, help="shuffles which voice is X and which is Y")
     ab.add_argument("--pace", type=float, default=1.0)
     ab.set_defaults(func=_voice_ab)
+    panel = sub.add_parser(
+        "voice-panel",
+        help="blind listening panel of several voices",
+        description="make FOLDER --items items.json --voice NAME=CLIPS ...: a blind rating page from clips named "
+        "item-01.wav, item-02.wav… in each CLIPS folder; score FOLDER ANSWERS [--pair A:B]: unblind the answers",
+    )
+    panel.add_argument("action", choices=["make", "score"])
+    panel.add_argument("folder", help="where the panel is (or goes)")
+    panel.add_argument("answers", nargs="?", help="score: the answers.json saved from the page")
+    panel.add_argument("--items", help="make: a JSON list of {kind, text}, in the clips' order")
+    panel.add_argument("--voice", action="append", default=[], help="make: NAME=FOLDER, once per voice")
+    panel.add_argument("--pair", action="append", default=[], help="score: A:B, compare two voices item by item")
+    panel.add_argument("--seed", type=int, default=0, help="make: shuffles the order of voices in every item")
+    panel.set_defaults(func=_voice_panel)
     args = parser.parse_args(argv)
     return int(args.func(args))
 

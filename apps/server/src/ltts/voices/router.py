@@ -4,8 +4,9 @@
 
 Scope: Analyse a recording without storing it (its quality and the cleanup it needs), preview a
 cleanup on it, create a profile from a raw WAV body (with explicit consent and an optional cleanup:
-noise reduction, rumble filter, tone), list/rename/delete profiles, change a profile's delivery, and
-play back a profile's stored reference recording.
+noise reduction, rumble filter, tone), list/rename/delete profiles, change a profile's delivery,
+build a studio voice's speaking styles from its kept takes, and play back a profile's stored
+reference recording.
 Does NOT belong: Validation and storage rules (``profiles.py``).
 """
 
@@ -22,6 +23,7 @@ from pydantic import Field
 from ltts.common import MB, ApiModel, ensure_free_space, new_id, save_request_body
 from ltts.container import ServicesDep
 from ltts.engines.base import Delivery
+from ltts.jobs import JobOut
 from ltts.voices.cleanup import MAX_BASS_BOOST_DB, MAX_TREBLE_CUT_DB, Cleanup, RecordingCheck
 from ltts.voices.profiles import CONSENT_STATEMENT, VoiceProfileOut
 
@@ -111,6 +113,12 @@ def list_profiles(services: ServicesDep) -> list[VoiceProfileOut]:
 def update_profile(profile_id: ProfileId, body: ProfileUpdate, services: ServicesDep) -> VoiceProfileOut:
     name = body.name.strip() if body.name else None
     return services.voices.update(profile_id, name=name or None, delivery=body.delivery)
+
+
+@router.post("/{profile_id}/styles", status_code=202)
+def build_styles(profile_id: ProfileId, services: ServicesDep) -> JobOut:
+    """Teach a studio voice saved before speaking styles existed how the speaker asks, exclaims and talks."""
+    return services.studio.refine(profile_id)
 
 
 @router.get("/{profile_id}/reference", response_class=FileResponse)

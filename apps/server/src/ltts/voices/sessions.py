@@ -105,6 +105,9 @@ class VoiceSessionService:
     def candidate_dir(self, session_id: str, index: int) -> Path:
         return self.folder(session_id) / "candidates" / str(index)
 
+    def styles_dir(self, session_id: str) -> Path:
+        return self.folder(session_id) / "styles"
+
     def corrected_path(self, session_id: str, number: int) -> Path:
         return self.folder(session_id) / "corrected" / f"{number:03d}.flac"
 
@@ -290,6 +293,7 @@ class VoiceSessionService:
         """Takes changed: candidates (and corrected copies) made from the old takes no longer apply."""
         shutil.rmtree(self.folder(session_id) / "candidates", ignore_errors=True)
         shutil.rmtree(self.folder(session_id) / "corrected", ignore_errors=True)
+        shutil.rmtree(self.styles_dir(session_id), ignore_errors=True)
         with self._db.connect() as conn:
             conn.execute(
                 "UPDATE voice_sessions SET candidates_json = NULL, updated_at = ? WHERE id = ?", (utc_now(), session_id)

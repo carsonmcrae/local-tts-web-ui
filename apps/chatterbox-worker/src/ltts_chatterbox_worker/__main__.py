@@ -3,11 +3,11 @@
 """Purpose: JSON-lines worker that loads Chatterbox Turbo once and synthesises on request.
 
 Scope: Ops ``load`` (pick cuda/mps/cpu and load verified local weights), ``synthesize`` (optional
-reference recording or saved studio conditioning, cached per file, plus optional sampling
-settings), the studio ops ``measure``, ``build`` and ``audition`` (see ``studio.py``), ``ping`` and
-``shutdown``. Replies go to a private duplicate of the original stdout; everything libraries print
-goes to stderr. Network access to model hubs is disabled via offline mode before any ML library is
-imported.
+reference recording or saved studio conditioning with an optional style prompt, the last few kept
+loaded, plus optional sampling settings and seed), the studio ops ``measure``, ``build``, ``style``
+and ``audition`` (see ``studio.py``), ``ping`` and ``shutdown``. Replies go to a private duplicate
+of the original stdout; everything libraries print goes to stderr. Network access to model hubs is
+disabled via offline mode before any ML library is imported.
 Does NOT belong: Downloads, validation of user input or file management (the server owns those).
 """
 
@@ -17,6 +17,7 @@ import json
 import os
 import sys
 import traceback
+from collections import OrderedDict
 from typing import Any
 
 from ltts_chatterbox_worker import studio
@@ -28,6 +29,7 @@ os.environ["HF_HUB_DISABLE_TELEMETRY"] = "1"
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 # Perth (Chatterbox's watermarker) imports pkg_resources, which setuptools 81+ no longer ships.
 install_pkg_resources_shim()
+LOADED_VOICES = 8  # studio voices (with their styles) kept ready, so switching per sentence is instant
 
 
 class Worker:
@@ -36,6 +38,7 @@ class Worker:
         self.device = "cpu"
         self.default_conds: Any = None
         self.voice: str | None = None  # which file the model's conditionals came from
+        self.loaded: OrderedDict[str, Any] = OrderedDict()  # recently used studio conditionings
 
     def load(self, request: dict[str, Any]) -> dict[str, Any]:
         import torch
@@ -62,9 +65,15 @@ class Worker:
         model = self._loaded()
         conditioning, reference = request.get("conditioning"), request.get("reference")
         if conditioning:
-            voice = f"conditioning:{conditioning}"
+            style = request.get("style")
+            voice = f"conditioning:{conditioning}|{style or ''}"
             if voice != self.voice:
-                model.conds = studio.load_conditioning(conditioning, self.device)
+                if voice not in self.loaded:
+                    self.loaded[voice] = studio.load_conditioning(conditioning, self.device, style)
+                    while len(self.loaded) > LOADED_VOICES:
+                        self.loaded.popitem(last=False)
+                self.loaded.move_to_end(voice)
+                model.conds = self.loaded[voice]
         elif reference:
             voice = f"reference:{reference}"
             if voice != self.voice:
@@ -78,7 +87,10 @@ class Worker:
         import soundfile as sf
 
         self._use_voice(request)
-        samples = studio.generate(self._loaded(), request["text"], studio.sampling(request))
+        seed = request.get("seed")
+        samples = studio.generate(
+            self._loaded(), request["text"], studio.sampling(request), None if seed is None else int(seed)
+        )
         sf.write(request["output"], samples, self.model.sr, subtype="FLOAT")
         return {"output": request["output"], "sampleRate": self.model.sr}
 
@@ -90,9 +102,15 @@ class Worker:
         studio.build(model, request["prompt"], request["output"], request.get("speakerEmb"), request.get("xvector"))
         return {"output": request["output"]}
 
+    def style(self, request: dict[str, Any]) -> dict[str, Any]:
+        seconds = studio.build_style(self._loaded(), request["prompts"], request["output"])
+        self.loaded.clear()  # a rebuilt style file must be read again
+        self.voice = None
+        return {"output": request["output"], "seconds": seconds}
+
     def audition(self, request: dict[str, Any]) -> dict[str, Any]:
         scores = studio.audition(self._loaded(), request)
-        self.voice = f"conditioning:{request['conditioning']}"
+        self.voice = None  # audition loads its own conditionals, outside the cache
         return {"scores": scores, "sampleRate": self.model.sr}
 
     def ping(self, _: dict[str, Any]) -> dict[str, Any]:
@@ -109,6 +127,7 @@ def main() -> None:
         "synthesize": worker.synthesize,
         "measure": worker.measure,
         "build": worker.build,
+        "style": worker.style,
         "audition": worker.audition,
         "ping": worker.ping,
     }

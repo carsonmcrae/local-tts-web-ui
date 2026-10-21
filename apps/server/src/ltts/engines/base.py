@@ -85,13 +85,15 @@ class VoiceInfo(ApiModel):
 @dataclass(frozen=True, slots=True)
 class VoiceSpec:
     """What an engine needs to speak with a voice: a built-in key, a reference recording or a built
-    studio voice (cloning engines prefer it), and how lively the delivery should be."""
+    studio voice (cloning engines prefer it) with its speaking styles, and how lively the delivery
+    should be."""
 
     key: str
     reference_path: Path | None = None
     language_code: str = "en-us"
     conditioning_path: Path | None = None
     delivery: Delivery = "natural"
+    styles: tuple[tuple[str, Path], ...] = ()  # (style, file): prompts for questions, dialogue and more
 
 
 @dataclass(slots=True)
@@ -171,6 +173,10 @@ class VoiceBuilder(Protocol):
 
     def build_voice(self, prompt: Path, output: Path, identity: SpeakerIdentity | None) -> None:
         """Save a voice built from ``prompt``'s sound and style; ``identity`` replaces the take's own."""
+        ...
+
+    def build_style(self, prompts: Sequence[Path], output: Path) -> float:
+        """Save a speaking style learnt from ``prompts`` (takes in that style); returns the seconds used."""
         ...
 
     def audition(self, request: Audition) -> list[float]: ...

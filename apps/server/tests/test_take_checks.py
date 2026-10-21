@@ -19,8 +19,9 @@ import soundfile as sf
 from fastapi.testclient import TestClient
 
 from conftest import SAMPLE_RATE, speech_like, wav_bytes
+from ltts.engines.cloned_speech import count_syllables
 from ltts.voices.quality import QualityReport
-from ltts.voices.take_checks import TakeContext, context_for, count_syllables, judge_take, syllables_heard
+from ltts.voices.take_checks import TakeContext, context_for, judge_take, syllables_heard
 
 PASSAGE = (
     "The library opens at nine, but most mornings the first visitors arrive a little early. They wait on the "

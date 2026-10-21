@@ -81,4 +81,42 @@ def test_synthesis_with_a_built_voice_sends_its_conditioning_and_delivery(
     assert sent["temperature"] == 0.8  # "natural" is Turbo's default sampling
     engine.synthesize("Hello.", VoiceSpec("default", delivery="steady"), 1.0)
     sent = last_request(engine, "synthesize")
-    assert sent["conditioning"] is None and sent["reference"] is None and sent["temperature"] == 0.6
+    assert sent["conditioning"] is None and sent["reference"] is None and sent["temperature"] == 0.7
+    assert sent["topK"] == 600 and sent["style"] is None
+
+
+def test_each_sentence_uses_the_style_that_fits_it(engine: ChatterboxEngine, tmp_path: Path) -> None:
+    styles = tuple((name, tmp_path / f"{name}.safetensors") for name in ("narration", "question", "dialogue"))
+    voice = VoiceSpec("profile:x", conditioning_path=tmp_path / "v.safetensors", styles=styles)
+    for text, style in [
+        ("Are you coming tonight?", "question"),
+        ("“Sure,” she said.", "dialogue"),
+        ("The river was wide.", "narration"),
+        ("That's amazing!", "narration"),  # no lively style built: narration stands in
+    ]:
+        engine.synthesize(text, voice, 1.0)
+        assert last_request(engine, "synthesize")["style"].endswith(f"{style}.safetensors")
+    quick = VoiceSpec("profile:q", reference_path=tmp_path / "ref.wav", styles=styles)
+    engine.synthesize("Are you coming tonight?", quick, 1.0)
+    assert last_request(engine, "synthesize")["style"] is None  # styles belong to a built studio voice
+
+
+def test_a_sentence_is_seeded_from_its_text_and_retried_when_implausible(engine: ChatterboxEngine) -> None:
+    voice = VoiceSpec("default")
+    engine.synthesize("The same sentence.", voice, 1.0)
+    first = last_request(engine, "synthesize")["seed"]
+    engine.synthesize("The same sentence.", voice, 1.0)
+    assert last_request(engine, "synthesize")["seed"] == first  # the same text always sounds the same
+    assert engine._worker is not None
+    before = sum(1 for r in engine._worker.call("history", 5)["requests"] if r["op"] == "synthesize")
+    clip = engine.synthesize("CUT short, this whole sentence never arrives in full.", voice, 1.0)
+    requests = [r for r in engine._worker.call("history", 5)["requests"] if r["op"] == "synthesize"]
+    assert len(requests) - before == 3 and len({r["seed"] for r in requests[before:]}) == 3
+    assert clip.samples.size > 0
+
+
+def test_build_style_sends_its_prompts(engine: ChatterboxEngine, tmp_path: Path) -> None:
+    output = tmp_path / "styles" / "question.safetensors"
+    output.parent.mkdir()
+    assert engine.build_style([tmp_path / "025.flac", tmp_path / "026.flac"], output) == 15.0
+    assert last_request(engine, "style")["prompts"][1].endswith("026.flac") and output.is_file()

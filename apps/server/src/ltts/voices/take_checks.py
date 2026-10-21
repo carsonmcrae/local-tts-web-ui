@@ -14,7 +14,6 @@ Does NOT belong: The measurements themselves (``quality.py``) or storing takes (
 
 from __future__ import annotations
 
-import re
 from collections.abc import Sequence
 from dataclasses import dataclass
 from statistics import median
@@ -22,6 +21,7 @@ from statistics import median
 import numpy as np
 
 from ltts.audio import Float32Array
+from ltts.engines.cloned_speech import count_syllables
 from ltts.voices.quality import (
     LEVEL_RULES,
     MIN_TAKE_SPEECH_S,
@@ -39,27 +39,6 @@ DEFAULT_DETECTION = 1.0  # syllables heard per syllable read (0.86-1.21 on varie
 INCOMPLETE = 0.65  # below this share of the passage, the take most likely stopped early
 LOUDER_NOISE_DB = 6.0  # a background this much louder than the speaker's other takes is worth a retake
 CALIBRATION_TAKES = 3
-_WORD = re.compile("[a-z']+|[0-9]+")
-_VOWELS = re.compile("[aeiouy]+")
-
-
-def count_syllables(text: str) -> int:
-    """English syllables in ``text``, by vowel groups with the common silent endings (a close estimate)."""
-    total = 0
-    for match in _WORD.findall(text.lower()):
-        word = match.strip("'")
-        if not word:
-            continue
-        if word.isdigit():
-            total += max(1, round(1.3 * len(word)))  # "1969" is five syllables, "305" three
-            continue
-        groups = len(_VOWELS.findall(word))
-        silent_e = word.endswith("e") and not word.endswith(("le", "ee", "ye"))
-        silent_ending = word.endswith(("ed", "es")) and len(word) > 3 and word[-3] not in "tdsxzhc"
-        if groups > 1 and (silent_e or silent_ending):
-            groups -= 1
-        total += max(groups, 1)
-    return total
 
 
 def syllables_heard(samples: Float32Array, sample_rate: int) -> int:

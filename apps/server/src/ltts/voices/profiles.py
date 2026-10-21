@@ -6,8 +6,9 @@ Scope: Quick voices: validates an uploaded reference recording (container, chann
 duration), runs the quality checks (and suggests a cleanup), requires explicit consent, applies the
 chosen cleanup, trims and normalises the clip, and stores only that reference WAV plus metadata under
 ``data/voices/<id>/``; previews a cleanup on a recording. Studio voices: stores a
-finished session's chosen take, its built voice file and the session's takes there. Both have a
-delivery (sampling preset) that is part of the audio cache revision. No model is trained and nothing
+finished session's chosen take, its built voice file, its speaking styles (``styles.py``) and the
+session's takes there. Both have a delivery (sampling preset) that is part of the audio cache
+revision, as are a studio voice's styles. No model is trained and nothing
 leaves the machine. Deleting a profile removes its recordings, metadata and all audio made with it.
 Does NOT belong: Cloning inference (engine) or HTTP parsing (``router.py``).
 """
@@ -25,6 +26,7 @@ from typing import Literal
 
 import numpy as np
 import soundfile as sf
+from pydantic import Field
 
 from ltts.audio import encode_wav, normalize_peak, read_audio, trim_silence
 from ltts.common import ApiModel, new_id, utc_now
@@ -34,6 +36,7 @@ from ltts.engines.base import Delivery, VoiceInfo, VoiceSpec
 from ltts.errors import AppError, ConflictError, NotFoundError, UnsupportedDocumentError
 from ltts.voices.cleanup import Cleanup, RecordingCheck, apply_cleanup, suggest_cleanup
 from ltts.voices.quality import QualityReport, analyze
+from ltts.voices.styles import styles_in, styles_revision
 
 log = logging.getLogger("ltts.voices")
 CLONING_ENGINE = "chatterbox"
@@ -87,6 +90,8 @@ class VoiceProfileOut(ApiModel):
     kind: VoiceKind = "quick"
     delivery: Delivery = "natural"
     stores: str = _STORES["quick"]
+    # A studio voice's speaking styles (narration, question, lively, dialogue).
+    styles: list[str] = Field(default_factory=list)
 
 
 @dataclass(frozen=True, slots=True)
@@ -100,6 +105,7 @@ class StudioVoice:
     quality: QualityReport
     speech_s: float
     delivery: Delivery
+    styles: Path | None = None  # the session's style prompts, moved under the profile
 
 
 class ReferenceQualityError(AppError):
@@ -142,6 +148,16 @@ class VoiceProfileService:
 
     def reference_path(self, profile_id: str) -> Path:
         return self.root / profile_id / "reference.wav"
+
+    def takes_dir(self, profile_id: str) -> Path:
+        return self.root / profile_id / "takes"
+
+    def styles_dir(self, profile_id: str) -> Path:
+        return self.root / profile_id / "styles"
+
+    def styles_changed(self, profile_id: str) -> None:
+        """A voice's styles were rebuilt: free the audio made with the old ones (it can't be served again)."""
+        self._purge_audio(f"custom:{profile_id}")
 
     def analyze_file(self, path: Path) -> RecordingCheck:
         samples, rate = _decode(path, self._settings.max_voice_reference_s)
@@ -220,6 +236,8 @@ class VoiceProfileService:
         voice_file = f"voice-{new_id()[:12]}.safetensors"
         shutil.move(voice.voice, folder / voice_file)
         shutil.move(voice.takes, folder / "takes")
+        if voice.styles is not None and voice.styles.is_dir():
+            shutil.move(voice.styles, folder / "styles")
         self._insert(
             {
                 "id": profile_id,
@@ -251,6 +269,7 @@ class VoiceProfileService:
             kind=r["kind"],
             delivery=r["delivery"],
             stores=_STORES[r["kind"]],
+            styles=list(styles_in(self.styles_dir(r["id"]))),
         )
 
     def list_all(self) -> list[VoiceProfileOut]:
@@ -297,10 +316,20 @@ class VoiceProfileService:
         conditioning = self.root / profile_id / voice_file if voice_file else None
         if conditioning is not None and not conditioning.is_file():
             raise NotFoundError("This voice's built voice file is missing.", code="voice_not_found")
+        styles = styles_in(self.styles_dir(profile_id)) if conditioning else {}
         # A quick voice with the default delivery keeps its original revision, so its cached audio stays valid.
-        parts = [profile.created_at, voice_file or "", "" if profile.delivery == "natural" else profile.delivery]
+        parts = [
+            profile.created_at,
+            voice_file or "",
+            "" if profile.delivery == "natural" else profile.delivery,
+            styles_revision(styles),
+        ]
         spec = VoiceSpec(
-            key=f"profile:{profile_id}", reference_path=path, conditioning_path=conditioning, delivery=profile.delivery
+            key=f"profile:{profile_id}",
+            reference_path=path,
+            conditioning_path=conditioning,
+            delivery=profile.delivery,
+            styles=tuple(styles.items()),
         )
         return profile.engine_id, spec, "|".join(part for part in parts if part)
 

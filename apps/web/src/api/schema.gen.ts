@@ -563,6 +563,26 @@ export type paths = {
     patch?: never;
     trace?: never;
   };
+  '/api/voice-profiles/{profile_id}/styles': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Build Styles
+     * @description Teach a studio voice saved before speaking styles existed how the speaker asks, exclaims and talks.
+     */
+    post: operations['build_styles_api_voice_profiles__profile_id__styles_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/voice-profiles/analyze': {
     parameters: {
       query?: never;
@@ -1528,6 +1548,8 @@ export type components = {
        * @default A trimmed copy of your reference recording (WAV). No model is trained or uploaded.
        */
       stores: string;
+      /** Styles */
+      styles?: string[];
       /** Voiceid */
       voiceId: string;
     };
@@ -2757,6 +2779,37 @@ export interface operations {
           [name: string]: unknown;
         };
         content?: never;
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  build_styles_api_voice_profiles__profile_id__styles_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        profile_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      202: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['JobOut'];
+        };
       };
       /** @description Validation Error */
       422: {

@@ -43,6 +43,7 @@ class FakeEngine:
         self.calls: list[tuple[str, str, float, Path | None]] = []
         self.specs: list[VoiceSpec] = []
         self.built: list[tuple[str, SpeakerIdentity | None]] = []
+        self.styled: list[tuple[str, list[str]]] = []  # (style, prompt file names) per built style
 
     def info(self) -> EngineInfo:
         return EngineInfo(
@@ -122,6 +123,11 @@ class FakeEngine:
     def build_voice(self, prompt: Path, output: Path, identity: SpeakerIdentity | None) -> None:
         self.built.append((prompt.name, identity))
         output.write_text(prompt.name, encoding="utf-8")
+
+    def build_style(self, prompts: Sequence[Path], output: Path) -> float:
+        self.styled.append((output.stem, [prompt.name for prompt in prompts]))
+        output.write_text(",".join(prompt.name for prompt in prompts), encoding="utf-8")
+        return 15.0
 
     def audition(self, request: Audition) -> list[float]:
         for output in request.outputs:

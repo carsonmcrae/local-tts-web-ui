@@ -83,7 +83,7 @@ def test_build_choose_and_finish_a_studio_voice(
     started = client.post(f"{base}/build")
     assert started.status_code == 202
     job = wait_job(client, started.json()["id"])
-    assert job["status"] == "succeeded" and job["result"] == {"candidates": 4}
+    assert job["status"] == "succeeded" and job["result"] == {"candidates": 4, "styles": []}
     candidates = client.get(base).json()["candidates"]
     scores = [candidate["similarity"] for candidate in candidates]
     assert scores == sorted(scores, reverse=True)

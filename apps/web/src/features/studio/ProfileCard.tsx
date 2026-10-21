@@ -3,8 +3,8 @@
 /**
  * Purpose: One custom voice profile in Voice Studio.
  * Scope: Name, kind (quick or studio), source, length, creation date, consent timestamp, what is
- *   stored; play the stored reference, choose the delivery, rename, use for reading, and permanent
- *   deletion with an explicit confirmation.
+ *   stored; play the stored reference, choose the delivery, a studio voice's speaking styles, rename,
+ *   use for reading, and permanent deletion with an explicit confirmation.
  * Does NOT belong: Creation (the wizards).
  */
 import { Check, Pencil, Play, Square, Trash2 } from 'lucide-react';
@@ -26,6 +26,7 @@ import { useReadingVoice } from '@/features/player/useReadingVoice';
 import { formatRelativeDate } from '@/lib/format';
 import { DeliveryPicker } from './TestStep';
 import { useClipPlayer } from './useClipPlayer';
+import { VoiceStyles } from './VoiceStyles';
 
 function describe(profile: VoiceProfile): string {
   if (profile.kind === 'studio')
@@ -105,6 +106,7 @@ export function ProfileCard({
         {new Date(profile.consentedAt).toLocaleDateString()}.
       </p>
       {engineReady ? <DeliveryPicker profile={profile} /> : null}
+      {engineReady ? <VoiceStyles profile={profile} /> : null}
       <div className="flex flex-wrap gap-2">
         <Button
           size="sm"

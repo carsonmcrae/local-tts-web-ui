@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import csv
 import json
+import re
 from collections.abc import Sequence
 from pathlib import Path
 
@@ -20,7 +21,7 @@ import numpy as np
 import pytest
 
 from ltts.cli import main
-from ltts.voices.ab_test import compare, score
+from ltts.voices.ab_test import DEFAULT_SENTENCES, compare, score
 
 RATE = 24_000
 
@@ -93,3 +94,16 @@ def test_scoring_unblinds_the_answers(tmp_path: Path, capsys: pytest.CaptureFixt
     answers.write_text(json.dumps({"answers": {"1": a_side["1"]}}), "utf-8")
     assert main(["voice-ab", "score", str(tmp_path), str(answers)]) == 0
     assert "A (voice:a): preferred 1 times" in capsys.readouterr().out
+
+
+def test_the_default_sentences_are_not_in_the_recording_script() -> None:
+    """A voice built or fine-tuned on the studio passages must be compared on text it has never read."""
+    script = Path(__file__).parents[2] / "web" / "src" / "features" / "studio" / "session" / "passages.json"
+
+    def words(text: str) -> list[str]:
+        return re.sub(r"[^a-z ]", " ", text.lower().replace("'", "")).split()
+
+    passages = " ".join(" ".join(words(p["text"])) for p in json.loads(script.read_text("utf-8")))
+    for sentence in DEFAULT_SENTENCES:
+        found = words(sentence)
+        assert not any(" ".join(found[i : i + 5]) in passages for i in range(len(found) - 4)), sentence

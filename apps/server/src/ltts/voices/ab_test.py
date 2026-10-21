@@ -31,18 +31,19 @@ from ltts.engines.cloned_speech import count_syllables
 from ltts.voices.quality import measure
 
 Synthesise = Callable[[str, str], tuple[Float32Array, int]]  # (voice id, text) -> audio
+# None of these is in the studio recording script: a studio or fine-tuned voice has never read them.
 DEFAULT_SENTENCES = (
-    "The library opens at nine, but most mornings the first visitors arrive a little early.",
-    "Have you ever noticed how a single sound can bring back a whole memory?",
+    "The museum opens at ten, although the café downstairs is busy long before that.",
+    "Do you think the weather will hold until the weekend?",
     "Wait, you mean the whole town knew about it before we did?",
     "That's wonderful news! I can't believe it finally happened!",
-    '"Don\'t spill it," she said, laughing, "or the cat will want some too."',
+    '"Mind the step," he said, grinning, "or you\'ll end up in the pond again."',
     "Flight 2417 to Edinburgh leaves from gate 36 at 7:45 on Thursday the 12th.",
     "Dr. Okonkwo and Ms. Fitzgerald met Kael, Siobhan and Joaquín at the station in Worcester.",
     "When the storm finally passed, the fields were quiet again, the river had settled back into its banks, "
     "and the farmers walked out slowly to see what the night had left behind.",
     "(Nobody noticed, of course.) She folded the letter, and put it away.",
-    "Now, whenever it rains, I slow down a little, and listen.",
+    "These days, whenever the kettle boils, I stop for a moment and look outside.",
 )
 FIELDS = ("pair", "label", "voice", "duration_s", "syllables_per_s", "rms_dbfs", "pause_ratio", "clipping_ratio",
           "similarity")  # fmt: skip

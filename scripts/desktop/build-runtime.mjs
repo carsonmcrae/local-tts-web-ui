@@ -109,7 +109,9 @@ function installServer(uv, python) {
   const install = ['pip', 'install', '--python', python, '--break-system-packages'];
   run(uv, [...install, '--require-hashes', '--no-deps', '-r', requirements, '--link-mode', 'copy']);
   run(uv, [...install, '--no-deps', '--link-mode', 'copy', serverDir]);
-  // Unused parts of the standard library, and the console scripts pip added, are left out.
+  // The app never installs packages into its own runtime, so the pip that ships with Python goes.
+  run(uv, ['pip', 'uninstall', '--python', python, '--break-system-packages', 'pip']);
+  // Unused parts of the standard library, and the console scripts packages added, are left out.
   for (const part of manifest.removeFromPython) {
     rmSync(path.join(out, 'python', part), { recursive: true, force: true });
   }

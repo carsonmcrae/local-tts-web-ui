@@ -49,6 +49,14 @@ function studioPage(profiles: () => unknown[], routes: Record<string, unknown> =
   });
 }
 
+/** Voice Studio with one studio voice, after pressing "Fine-tune this voice". */
+async function startFineTune(routes: Record<string, unknown>) {
+  studioPage(() => [studio()], routes);
+  const user = userEvent.setup();
+  renderWithApp(<VoiceStudioPage />);
+  await user.click(await screen.findByRole('button', { name: 'Fine-tune this voice' }));
+}
+
 describe('Fine-tuning a voice', () => {
   it('starts a fine-tune and then offers the result to compare', async () => {
     let profile = studio();
@@ -119,17 +127,56 @@ describe('Fine-tuning a voice', () => {
   });
 
   it('explains why a fine-tune was not offered', async () => {
-    studioPage(() => [studio()], {
+    await startFineTune({
       'POST /api/voice-profiles/': tuneJob('running'),
       'GET /api/jobs/': tuneJob(
         'failed',
         'Fine-tuning didn’t bring the voice closer to your own reading, so nothing was changed.',
       ),
     });
+    expect(await screen.findByText(/didn’t bring the voice closer/)).toBeInTheDocument();
+  });
+
+  it('shows the fine-tune’s progress while it runs', async () => {
+    await startFineTune({
+      'POST /api/voice-profiles/': tuneJob('running'),
+      'GET /api/jobs/': tuneJob('running', 'Fine-tuning on your takes (round 2 of up to 8)…'),
+    });
+    expect(await screen.findByText(/round 2 of up to 8/)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Fine-tune this voice' })).not.toBeInTheDocument();
+  });
+
+  it('lets a fine-tuned voice that no longer has its takes only remove its fine-tune', async () => {
+    studioPage(() => [studio({ canTune: false, fineTuned: true })]);
+    renderWithApp(<VoiceStudioPage />);
+    expect(await screen.findByRole('button', { name: 'Remove fine-tune' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Fine-tune again' })).not.toBeInTheDocument();
+  });
+
+  it('says why a fine-tune couldn’t start', async () => {
+    await startFineTune({
+      'POST /api/voice-profiles/': () =>
+        new Response(
+          JSON.stringify({ error: { code: 'not_studio', message: 'Only a studio voice can.' } }),
+          { status: 409, headers: { 'Content-Type': 'application/json' } },
+        ),
+    });
+    expect(await screen.findByText('Only a studio voice can.')).toBeInTheDocument();
+  });
+
+  it('holds both choices while keeping is in progress', async () => {
+    let finish: (profile: VoiceProfile) => void = () => undefined;
+    studioPage(() => [studio({ tuning: candidate })], {
+      'POST /api/voice-profiles/': () =>
+        new Promise<VoiceProfile>((resolve) => {
+          finish = resolve;
+        }),
+    });
     const user = userEvent.setup();
     renderWithApp(<VoiceStudioPage />);
-    await user.click(await screen.findByRole('button', { name: 'Fine-tune this voice' }));
-    expect(await screen.findByText(/didn’t bring the voice closer/)).toBeInTheDocument();
+    await user.click(await screen.findByRole('button', { name: 'Keep fine-tune' }));
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Discard' })).toBeDisabled());
+    finish(studio({ fineTuned: true }));
   });
 
   it('is not offered for a voice without takes', async () => {

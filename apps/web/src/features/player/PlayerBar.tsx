@@ -125,11 +125,15 @@ export function PlayerBar() {
             <p className="truncate text-xs text-muted">{section?.title ?? <>&nbsp;</>}</p>
           </Link>
           <Transport controller={controller} busy={busy} playing={status === 'playing' || busy} />
+          {/* Music sits where there is room: beside the transport on phones (the position row is
+              full there), and at the end of the position row on wider screens. */}
+          <div className="flex md:hidden">
+            <MusicMenu />
+          </div>
           <div className="hidden items-center gap-0.5 md:flex md:w-56 md:justify-end lg:w-64">
             {voicePicker(false)}
             <SpeedMenu rate={rate} onChange={changeRate} />
             {bookmarkButton('md')}
-            <MusicMenu />
             {sleepMenu}
             <IconButton
               label="Export audio"
@@ -159,7 +163,6 @@ export function PlayerBar() {
           <div className="flex items-center md:hidden">
             {voicePicker(true)}
             {bookmarkButton('sm')}
-            <MusicMenu />
             {sleepMenu}
             <button
               type="button"
@@ -175,6 +178,9 @@ export function PlayerBar() {
               size="sm"
               onClick={() => setExportOpen(true)}
             />
+          </div>
+          <div className="-ml-1 hidden md:flex">
+            <MusicMenu />
           </div>
         </div>
       </div>

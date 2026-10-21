@@ -28,7 +28,7 @@ const percent = (weight: number, parts: readonly Part[]) =>
   Math.round((weight / parts.reduce((total, part) => total + part.weight, 0)) * 100);
 
 /** The voices that can be blended: built-in Kokoro voices that are installed. */
-export function blendable(voices: readonly VoiceInfo[]): VoiceInfo[] {
+function blendable(voices: readonly VoiceInfo[]): VoiceInfo[] {
   return voices.filter(
     (voice) => voice.engineId === 'kokoro' && voice.category === 'built-in' && voice.available,
   );

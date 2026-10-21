@@ -13,7 +13,7 @@ import { Field, Select, Switch } from '@/components/ui/Field';
 import { FORMATS, HAS_LAYOUT, HAS_SUBTITLES } from '@/features/exports/exportText';
 import { pluralize } from '@/lib/format';
 
-export type Range = 'all' | 'current' | 'custom';
+type Range = 'all' | 'current' | 'custom';
 
 export interface ExportChoices {
   format: ExportFormat;

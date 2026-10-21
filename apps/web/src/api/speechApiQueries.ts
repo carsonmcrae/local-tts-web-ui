@@ -17,7 +17,7 @@ import type {
   SpeechApiToken,
 } from './types';
 
-export const speechApiKeys = {
+const speechApiKeys = {
   all: ['speech-api'] as const,
   activity: ['speech-api', 'activity'] as const,
 };

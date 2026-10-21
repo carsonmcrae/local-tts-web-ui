@@ -21,7 +21,7 @@ import { Checkbox, Input, Switch } from '@/components/ui/Field';
 import { useToast } from '@/components/ui/Toast';
 import { pluralize } from '@/lib/format';
 
-export const EXAMPLE_VOICE = 'kokoro:af_heart';
+const EXAMPLE_VOICE = 'kokoro:af_heart';
 const MOBILE_TARGET = 'max-sm:h-11'; // 44 px touch targets on phones
 
 /** "less than a minute ago", "5 minutes ago", "2 hours ago", "3 days ago". */

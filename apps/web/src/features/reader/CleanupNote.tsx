@@ -112,7 +112,7 @@ interface NoteProps {
   onChanged: () => void;
 }
 
-export function CleanupNote({ documentId, onJump, onChanged }: Readonly<NoteProps>) {
+function CleanupNote({ documentId, onJump, onChanged }: Readonly<NoteProps>) {
   const report = useCleanup(documentId);
   const action = useCleanupAction(documentId);
   const items = Array.isArray(report.data?.items) ? report.data.items : [];

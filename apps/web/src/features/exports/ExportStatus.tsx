@@ -23,7 +23,7 @@ import { formatBytes, formatDuration, pluralize } from '@/lib/format';
 import { EXPORT_HELP_URL, exportResult, isSingleAudioFile, savedText, TOUCH } from './exportText';
 import { SendToShelf } from './SendToShelf';
 
-export interface SavedWork {
+interface SavedWork {
   savedSentences: number;
   sentences: number;
 }

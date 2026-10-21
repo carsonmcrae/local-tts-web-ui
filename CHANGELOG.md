@@ -53,10 +53,6 @@ All notable changes to this project are documented here. The format follows
   shorter pause after it. New effects: **Quiet** (an aside or near-whisper) and **Memory** (a
   flashback).
 - **Voice blends:** mix two to four built-in voices into a new one on the Voices page.
-- **Phones and tablets (LAN mode, optional):** turn it on in Settings to use the app from a phone on
-  the same Wi-Fi. Pair each device with a short-lived code or QR code, remove devices at any time, and
-  turn it off at once; settings, voice recording and other changes to this computer stay on the
-  computer. Plain HTTP, so only on networks you trust.
 - **Better studio takes:** the background is named when it matters (a hum, a low rumble, hiss,
   clicks or other voices), a take cut off mid-word is pointed out, recording a passage again keeps
   the previous take to compare and restore, the session shows its tier (Foundation, Developing,

@@ -48,7 +48,10 @@ struct StartError {
 
 impl StartError {
     fn new(message: impl Into<String>, detail: Option<String>) -> Self {
-        Self { message: message.into(), detail }
+        Self {
+            message: message.into(),
+            detail,
+        }
     }
 }
 
@@ -59,11 +62,17 @@ pub struct Backend {
 
 impl Backend {
     pub fn new() -> Self {
-        Self { status: Mutex::new(Status::Starting), running: Mutex::new(None) }
+        Self {
+            status: Mutex::new(Status::Starting),
+            running: Mutex::new(None),
+        }
     }
 
     pub fn status(&self) -> Status {
-        self.status.lock().map(|status| status.clone()).unwrap_or(Status::Starting)
+        self.status
+            .lock()
+            .map(|status| status.clone())
+            .unwrap_or(Status::Starting)
     }
 
     /// The window's allowed origin while the server runs, e.g. `http://127.0.0.1:8770`.
@@ -92,7 +101,10 @@ impl Backend {
             Err(error) => {
                 note(paths, &format!("server did not start: {}", error.message));
                 self.stop();
-                Status::Failed { message: error.message, detail: error.detail }
+                Status::Failed {
+                    message: error.message,
+                    detail: error.detail,
+                }
             }
         };
         self.set(status.clone());
@@ -108,7 +120,10 @@ impl Backend {
             ));
         }
         let port = free_port().ok_or_else(|| {
-            StartError::new("No free local port was found for TTSNative's reading engine. Restart your computer and try again.", None)
+            StartError::new(
+                "No free local port was found for TTSNative's reading engine. Restart your computer and try again.",
+                None,
+            )
         })?;
         let log_path = paths.logs().join("server.log");
         let log = open_log(&log_path)
@@ -128,7 +143,17 @@ impl Backend {
         let mut command = Command::new(python);
         // -I ignores PYTHON* variables and user site-packages; -B keeps the install folder free of caches.
         command
-            .args(["-I", "-B", "-X", "utf8", "-m", "ltts.cli", "serve", "--host", "127.0.0.1"])
+            .args([
+                "-I",
+                "-B",
+                "-X",
+                "utf8",
+                "-m",
+                "ltts.cli",
+                "serve",
+                "--host",
+                "127.0.0.1",
+            ])
             .arg("--port")
             .arg(port.to_string())
             .arg("--static")
@@ -150,26 +175,31 @@ impl Backend {
         let errors = log
             .try_clone()
             .map_err(|error| StartError::new("TTSNative couldn't write its log file.", Some(error.to_string())))?;
-        command.stdin(Stdio::piped()).stdout(Stdio::from(log)).stderr(Stdio::from(errors));
+        command
+            .stdin(Stdio::piped())
+            .stdout(Stdio::from(log))
+            .stderr(Stdio::from(errors));
         #[cfg(windows)]
         {
             use std::os::windows::process::CommandExt;
             const CREATE_NO_WINDOW: u32 = 0x0800_0000;
             command.creation_flags(CREATE_NO_WINDOW);
         }
-        command
-            .spawn()
-            .map_err(|error| StartError::new("TTSNative's reading engine couldn't be started.", Some(error.to_string())))
+        command.spawn().map_err(|error| {
+            StartError::new(
+                "TTSNative's reading engine couldn't be started.",
+                Some(error.to_string()),
+            )
+        })
     }
 
     fn wait_until_healthy(&self, port: u16, log_path: &Path) -> Result<u16, StartError> {
         let deadline = Instant::now() + START_TIMEOUT;
         loop {
-            let exited = self
-                .running
-                .lock()
-                .ok()
-                .and_then(|mut slot| slot.as_mut().and_then(|running| running.child.try_wait().ok().flatten()));
+            let exited = self.running.lock().ok().and_then(|mut slot| {
+                slot.as_mut()
+                    .and_then(|running| running.child.try_wait().ok().flatten())
+            });
             if let Some(code) = exited {
                 return Err(StartError::new(
                     format!("TTSNative's reading engine stopped while starting ({code})."),
@@ -263,7 +293,11 @@ fn contain(_child: &Child) {}
 
 /// Appends a line to `logs/desktop.log` (no document text or personal data is ever written).
 pub fn note(paths: &Paths, message: &str) {
-    if let Ok(mut file) = OpenOptions::new().create(true).append(true).open(paths.logs().join("desktop.log")) {
+    if let Ok(mut file) = OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(paths.logs().join("desktop.log"))
+    {
         let _ = writeln!(file, "{} {message}", crate::prefs::now());
     }
 }

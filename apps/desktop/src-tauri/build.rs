@@ -6,8 +6,8 @@
 //! Does NOT belong: Building the bundled runtime (scripts/desktop/build-runtime.mjs).
 
 fn main() {
-    tauri_build::try_build(tauri_build::Attributes::new().app_manifest(
-        tauri_build::AppManifest::new().commands(&[
+    tauri_build::try_build(
+        tauri_build::Attributes::new().app_manifest(tauri_build::AppManifest::new().commands(&[
             "app_quit",
             "backend_retry",
             "backend_status",
@@ -17,7 +17,7 @@ fn main() {
             "update_install",
             "update_set_auto",
             "update_snooze",
-        ]),
-    ))
+        ])),
+    )
     .expect("failed to run the Tauri build step");
 }

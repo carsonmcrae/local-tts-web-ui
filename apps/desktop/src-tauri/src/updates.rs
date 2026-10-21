@@ -48,7 +48,10 @@ pub async fn update_check(app: AppHandle, manual: bool) -> CheckResult {
         if !saved.auto_check {
             return CheckResult::Disabled;
         }
-        if saved.last_check.is_some_and(|last| now.saturating_sub(last) < RECHECK_AFTER_S) {
+        if saved
+            .last_check
+            .is_some_and(|last| now.saturating_sub(last) < RECHECK_AFTER_S)
+        {
             return remembered(&app, &saved, now);
         }
     }
@@ -115,7 +118,9 @@ pub async fn update_install(app: AppHandle, on_event: Channel<InstallEvent>) -> 
     // On Windows this launches the verified installer and exits; the installer restarts TTSNative.
     if let Err(error) = update.install(bytes) {
         crate::launch(app.clone());
-        return Err(format!("The update couldn't be started, so TTSNative kept the current version. ({error})"));
+        return Err(format!(
+            "The update couldn't be started, so TTSNative kept the current version. ({error})"
+        ));
     }
     Ok(())
 }

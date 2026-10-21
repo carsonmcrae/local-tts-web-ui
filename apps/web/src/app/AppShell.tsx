@@ -3,7 +3,8 @@
 /**
  * Purpose: Application chrome shared by every route.
  * Scope: Skip link, desktop sidebar (with privacy note and engine status), phone tab bar, the routed
- *   page area, and the docked player that persists across navigation.
+ *   page area, the docked player that persists across navigation, and (in the desktop app) the update
+ *   notice and What's new after an update.
  * Does NOT belong: Page content or player logic.
  */
 import { AudioLines, BookOpen, Mic, Settings, ShieldCheck } from 'lucide-react';
@@ -13,6 +14,10 @@ import { useEngines } from '@/api/queries';
 import type { EngineInfo } from '@/api/types';
 import { cn } from '@/lib/cn';
 import { PlayerBar } from '@/features/player/PlayerBar';
+import { UpdateNotice } from '@/features/updates/UpdateNotice';
+import { UpdatesProvider } from '@/features/updates/UpdatesProvider';
+import { WhatsNew } from '@/features/updates/WhatsNew';
+import { appVersion } from '@/lib/version';
 
 const NAV: readonly { to: string; label: string; icon: ReactNode }[] = [
   { to: '/library', label: 'Library', icon: <BookOpen size={19} /> },
@@ -67,67 +72,71 @@ const linkClass = ({ isActive }: { isActive: boolean }) =>
 
 export function AppShell() {
   return (
-    // overflow-clip, not hidden: a hidden box can still be scrolled by scrollIntoView or focus,
-    // which slid the whole shell up and left the sidebar ending mid-screen.
-    <div className="flex h-dvh overflow-clip">
-      <a
-        href="#main"
-        className="sr-only z-50 rounded-md bg-accent px-3 py-2 text-accent-fg focus:not-sr-only focus:fixed focus:top-3 focus:left-3"
-      >
-        Skip to content
-      </a>
-      <aside className="hidden w-64 shrink-0 flex-col gap-6 border-r border-line bg-surface px-3 py-5 md:flex">
-        <Brand />
-        <nav aria-label="Main" className="flex flex-col gap-1">
-          {NAV.map((item) => (
-            <NavLink key={item.to} to={item.to} className={linkClass}>
-              {item.icon}
-              {item.label}
-            </NavLink>
-          ))}
-        </nav>
-        <div className="mt-auto flex flex-col gap-3">
-          <div className="rounded-[var(--radius-lg)] border border-line bg-surface-2 p-3 text-xs leading-relaxed text-muted">
-            <p className="mb-1 flex items-center gap-1.5 font-medium text-text">
-              <ShieldCheck size={14} className="text-success" /> Private by design
-            </p>
-            Documents, voices and audio never leave this computer.
+    <UpdatesProvider>
+      // overflow-clip, not hidden: a hidden box can still be scrolled by scrollIntoView or focus,
+      // which slid the whole shell up and left the sidebar ending mid-screen.
+      <div className="flex h-dvh overflow-clip">
+        <a
+          href="#main"
+          className="sr-only z-50 rounded-md bg-accent px-3 py-2 text-accent-fg focus:not-sr-only focus:fixed focus:top-3 focus:left-3"
+        >
+          Skip to content
+        </a>
+        <aside className="hidden w-64 shrink-0 flex-col gap-6 border-r border-line bg-surface px-3 py-5 md:flex">
+          <Brand />
+          <nav aria-label="Main" className="flex flex-col gap-1">
+            {NAV.map((item) => (
+              <NavLink key={item.to} to={item.to} className={linkClass}>
+                {item.icon}
+                {item.label}
+              </NavLink>
+            ))}
+          </nav>
+          <div className="mt-auto flex flex-col gap-3">
+            <div className="rounded-[var(--radius-lg)] border border-line bg-surface-2 p-3 text-xs leading-relaxed text-muted">
+              <p className="mb-1 flex items-center gap-1.5 font-medium text-text">
+                <ShieldCheck size={14} className="text-success" /> Private by design
+              </p>
+              Documents, voices and audio never leave this computer.
+            </div>
+            <EngineStatus />
           </div>
-          <EngineStatus />
+        </aside>
+        <div className="flex min-w-0 flex-1 flex-col">
+          <UpdateNotice />
+          <WhatsNew version={appVersion()} />
+          <main
+            id="main"
+            tabIndex={-1}
+            // relative: visually hidden (absolutely positioned) elements stay inside this scroll area
+            // instead of stretching the page beyond the window.
+            className="relative min-h-0 flex-1 scrollbar-thin overflow-y-auto focus:outline-none"
+          >
+            <Outlet />
+          </main>
+          <PlayerBar />
+          <nav
+            aria-label="Main"
+            className="grid grid-cols-4 border-t border-line bg-surface pb-[env(safe-area-inset-bottom)] md:hidden"
+          >
+            {NAV.map((item) => (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                className={({ isActive }) =>
+                  cn(
+                    'flex min-h-14 flex-col items-center justify-center gap-0.5 text-[11px] font-medium',
+                    isActive ? 'text-accent-text' : 'text-muted',
+                  )
+                }
+              >
+                {item.icon}
+                {item.label.replace('Voice Studio', 'Studio')}
+              </NavLink>
+            ))}
+          </nav>
         </div>
-      </aside>
-      <div className="flex min-w-0 flex-1 flex-col">
-        <main
-          id="main"
-          tabIndex={-1}
-          // relative: visually hidden (absolutely positioned) elements stay inside this scroll area
-          // instead of stretching the page beyond the window.
-          className="relative min-h-0 flex-1 scrollbar-thin overflow-y-auto focus:outline-none"
-        >
-          <Outlet />
-        </main>
-        <PlayerBar />
-        <nav
-          aria-label="Main"
-          className="grid grid-cols-4 border-t border-line bg-surface pb-[env(safe-area-inset-bottom)] md:hidden"
-        >
-          {NAV.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              className={({ isActive }) =>
-                cn(
-                  'flex min-h-14 flex-col items-center justify-center gap-0.5 text-[11px] font-medium',
-                  isActive ? 'text-accent-text' : 'text-muted',
-                )
-              }
-            >
-              {item.icon}
-              {item.label.replace('Voice Studio', 'Studio')}
-            </NavLink>
-          ))}
-        </nav>
       </div>
-    </div>
+    </UpdatesProvider>
   );
 }

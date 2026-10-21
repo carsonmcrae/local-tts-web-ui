@@ -6,9 +6,13 @@
         "scripts/e2e-server.mjs",
         "scripts/media/demo-page.js",
         "scripts/media/promo/promo.js",
-        "site/demo.js"
+        "site/demo.js",
+        "apps/desktop/splash/splash.js",
+        "scripts/release/*.mjs",
+        "scripts/desktop/*.mjs",
+        "scripts/**/*.test.mjs"
       ],
-      "ignoreDependencies": ["vite"]
+      "ignoreDependencies": ["vite", "@tauri-apps/cli"]
     },
     "apps/web": {
       "ignore": ["src/api/schema.gen.ts"],

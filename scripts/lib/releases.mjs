@@ -17,7 +17,7 @@ import { repoRoot } from './paths.mjs';
 import { compareVersions, isStable } from './semver.mjs';
 
 export const RELEASES_DIR = 'docs/releases';
-export const DRAFT_MARKER = '<!-- draft:';
+const DRAFT_MARKER = '<!-- draft:';
 
 /**
  * @typedef {{ key: string, title: string, items: string[] }} ReleaseSection

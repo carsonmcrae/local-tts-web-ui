@@ -43,16 +43,9 @@ jobs:
     runs-on: windows-2025
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: Rust toolchain (rust-toolchain.toml)
-        working-directory: apps/desktop/src-tauri
-        run: rustup toolchain install && rustc --version
-      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      - uses: ./.github/actions/rust
         with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            apps/desktop/src-tauri/target
-          key: cargo-shell-${{ runner.os }}-${{ hashFiles('apps/desktop/src-tauri/Cargo.toml', 'apps/desktop/src-tauri/Cargo.lock', 'apps/desktop/src-tauri/rust-toolchain.toml') }}
+          cache-name: shell
       - name: Placeholder runtime (the installer job assembles the real one)
         run: mkdir -p apps/desktop/runtime && echo placeholder > apps/desktop/runtime/README.txt
       - name: Formatting
@@ -89,16 +82,9 @@ jobs:
         with:
           fetch-depth: 0 # the build identifier counts commits since the last release tag
       - uses: ./.github/actions/node-deps
-      - name: Rust toolchain (rust-toolchain.toml)
-        working-directory: apps/desktop/src-tauri
-        run: rustup toolchain install && rustc --version
-      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      - uses: ./.github/actions/rust
         with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            apps/desktop/src-tauri/target
-          key: cargo-installer-${{ runner.os }}-${{ hashFiles('apps/desktop/src-tauri/Cargo.toml', 'apps/desktop/src-tauri/Cargo.lock', 'apps/desktop/src-tauri/rust-toolchain.toml') }}
+          cache-name: installer
       - name: Cache the verified model and Python downloads
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:

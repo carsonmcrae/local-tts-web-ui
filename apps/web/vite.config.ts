@@ -2,7 +2,9 @@
 // Copyright (c) 2026 Carson McRae
 /**
  * Purpose: Vite build/dev-server and Vitest configuration for the web UI.
- * Scope: React + Tailwind plugins, the `@` alias, the licence banner on every bundle and the
+ * Scope: React + Tailwind plugins, the `@` alias, the build version (a release number or a
+ *   development identifier, scripts/lib/build-version.mjs) and the published release notes
+ *   (docs/releases/) built into the app, the licence banner on every bundle and the
  *   third-party licence files (bundled packages, and the fonts' OFL texts), the loopback-only dev
  *   server that proxies /api to the local Python server (port from LTTS_API_PORT, set by
  *   scripts/dev.mjs), and unit-test setup.
@@ -14,12 +16,19 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import type { Plugin } from 'vite';
 import { defineConfig } from 'vitest/config';
+import { buildVersion } from '../../scripts/lib/build-version.mjs';
+import { readReleases } from '../../scripts/lib/releases.mjs';
 
 const apiPort = process.env.LTTS_API_PORT ?? '8765';
 const BANNER = '/*! TTSNative | Copyright (c) 2026 Carson McRae | MIT License */';
-const { version } = JSON.parse(
+const { version: packageVersion } = JSON.parse(
   readFileSync(new URL('./package.json', import.meta.url), 'utf8'),
 ) as { version: string };
+// Tests keep the plain package version; builds and the dev server show what they really are.
+const version = process.env.VITEST ? packageVersion : buildVersion();
+const releases = readReleases()
+  .releases.filter((release) => !release.draft)
+  .map(({ draft: _draft, revised: _revised, ...release }) => release);
 
 /** The fonts are imported from CSS, which Vite's licence file doesn't cover: ship their OFL texts too. */
 function fontLicenses(): Plugin {
@@ -41,7 +50,10 @@ function fontLicenses(): Plugin {
 
 export default defineConfig({
   plugins: [react(), tailwindcss(), fontLicenses()],
-  define: { __APP_VERSION__: JSON.stringify(version) },
+  define: {
+    __APP_VERSION__: JSON.stringify(version),
+    __RELEASE_HISTORY__: JSON.stringify(releases),
+  },
   resolve: {
     alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
   },

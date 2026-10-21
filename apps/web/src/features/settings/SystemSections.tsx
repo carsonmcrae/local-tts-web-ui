@@ -4,7 +4,8 @@
  * Purpose: Settings sections describing the local system: engines, storage, privacy and diagnostics.
  * Scope: Engine install/remove panels, disk usage by category with cache clearing, the privacy
  *   posture (and whether the server is exposed to the network), version information, who made the
- *   app (project, author, licence and a link to its source) and a copyable diagnostics report.
+ *   app (project, author, licence and a link to its source), updates and release history (in
+ *   features/updates) and a copyable diagnostics report.
  * Does NOT belong: User preferences (PreferenceSections).
  */
 import { ClipboardCopy, Lock, Trash2 } from 'lucide-react';
@@ -18,6 +19,8 @@ import { Banner, ProgressBar, Skeleton } from '@/components/ui/Feedback';
 import { Section } from '@/components/ui/Layout';
 import { useToast } from '@/components/ui/Toast';
 import { EnginePanel } from '@/features/engines/EngineSetup';
+import { AboutUpdates } from '@/features/updates/AboutUpdates';
+import { isDesktop } from '@/lib/desktop';
 import { formatBytes } from '@/lib/format';
 import { AUTHOR, COPYRIGHT, HOMEPAGE, LICENSE, PROJECT } from '@/lib/provenance';
 
@@ -133,7 +136,9 @@ export function PrivacySection() {
         {[
           'No accounts, analytics or telemetry.',
           'Documents, recordings and generated audio are processed and stored only on this computer.',
-          'The only network requests are the model downloads you start yourself (and your browser loading this page).',
+          isDesktop()
+            ? 'The only network requests are the downloads you start yourself and a check for new TTSNative versions on GitHub, which you can turn off under About.'
+            : 'The only network requests are the model downloads you start yourself (and your browser loading this page).',
           'Once models are installed, everything works offline.',
         ].map((line) => (
           <li key={line} className="flex gap-2.5">
@@ -220,6 +225,7 @@ export function AboutSection() {
           Copy diagnostics
         </Button>
       ) : null}
+      <AboutUpdates version={version} />
       <p className="mt-4 text-[13px] text-muted">
         Source code, credits and how to attribute this project:{' '}
         <a

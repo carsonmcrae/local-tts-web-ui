@@ -61,7 +61,10 @@ impl Store {
             .ok()
             .and_then(|bytes| serde_json::from_slice(&bytes).ok())
             .unwrap_or_default();
-        Self { path, prefs: Mutex::new(prefs) }
+        Self {
+            path,
+            prefs: Mutex::new(prefs),
+        }
     }
 
     pub fn get(&self) -> Prefs {
@@ -82,7 +85,10 @@ impl Store {
 }
 
 pub fn now() -> u64 {
-    SystemTime::now().duration_since(UNIX_EPOCH).map(|elapsed| elapsed.as_secs()).unwrap_or(0)
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|elapsed| elapsed.as_secs())
+        .unwrap_or(0)
 }
 
 #[cfg(test)]
@@ -99,7 +105,11 @@ mod tests {
 
     #[test]
     fn a_reminder_applies_to_one_version_until_it_expires() {
-        let prefs = Prefs { snoozed_version: Some("2.1.0".into()), snoozed_until: Some(100), ..Prefs::default() };
+        let prefs = Prefs {
+            snoozed_version: Some("2.1.0".into()),
+            snoozed_until: Some(100),
+            ..Prefs::default()
+        };
         assert!(prefs.is_snoozed("2.1.0", 99));
         assert!(!prefs.is_snoozed("2.1.0", 100));
         assert!(!prefs.is_snoozed("2.2.0", 50));

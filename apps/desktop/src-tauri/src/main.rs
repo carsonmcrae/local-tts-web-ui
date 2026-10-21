@@ -47,7 +47,11 @@ fn desktop_info(app: AppHandle) -> DesktopInfo {
     let saved = state.prefs.get();
     DesktopInfo {
         version: version.to_string(),
-        channel: if version.pre.is_empty() && version.build.is_empty() { "stable" } else { "development" },
+        channel: if version.pre.is_empty() && version.build.is_empty() {
+            "stable"
+        } else {
+            "development"
+        },
         data_dir: state.paths.data().display().to_string(),
         log_dir: state.paths.logs().display().to_string(),
         auto_check: saved.auto_check,
@@ -102,7 +106,13 @@ fn is_start_screen(url: &Url) -> bool {
 /// Only the start-up screen and the local server load in the window; anything else opens outside it.
 fn allow_navigation(app: &AppHandle, url: &Url) -> bool {
     let origin = url.origin().ascii_serialization();
-    if is_start_screen(url) || app.state::<AppState>().backend.origin().is_some_and(|own| own == origin) {
+    if is_start_screen(url)
+        || app
+            .state::<AppState>()
+            .backend
+            .origin()
+            .is_some_and(|own| own == origin)
+    {
         return true;
     }
     open_outside(app, url);
@@ -154,7 +164,11 @@ fn main() {
             let paths = Paths::resolve(app.handle())?;
             paths.ensure()?;
             let prefs = prefs::Store::load(paths.prefs());
-            app.manage(AppState { paths, backend: Backend::new(), prefs });
+            app.manage(AppState {
+                paths,
+                backend: Backend::new(),
+                prefs,
+            });
             create_window(app.handle())?;
             launch(app.handle().clone());
             Ok(())

@@ -20,7 +20,7 @@ import { repoRoot } from './paths.mjs';
  */
 
 /** @type {readonly VersionFile[]} Each pattern's first group is the version. */
-export const VERSION_FILES = [
+const VERSION_FILES = [
   { file: 'package.json', pattern: /^ {2}"version": "([^"]+)"/m },
   { file: 'apps/web/package.json', pattern: /^ {2}"version": "([^"]+)"/m },
   { file: 'package-lock.json', pattern: /^ {2}"version": "([^"]+)"/m },

@@ -77,6 +77,7 @@ Runtime dependencies only (development tooling is not distributed). Model weight
 | @remix-run/route-pattern@0.22.1 | MIT |  |
 | @tanstack/query-core@5.104.1 | MIT |  |
 | @tanstack/react-query@5.104.1 | MIT |  |
+| @tauri-apps/api@2.12.1 | Apache-2.0 OR MIT |  |
 | aria-hidden@1.2.6 | MIT |  |
 | clsx@2.1.1 | MIT |  |
 | cookie-es@3.1.1 | MIT |  |

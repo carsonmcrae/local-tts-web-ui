@@ -29,7 +29,7 @@ env:
 
 jobs:
   web:
-    name: Web (lint, types, tests, build)
+    name: Web (lint, types, build)
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -43,10 +43,18 @@ jobs:
       - name: Copy-paste detection (jscpd)
         run: npm run duplication
       - run: npm run typecheck --workspace @ltts/web && npx tsc -p scripts/tsconfig.json && npx tsc -p tests/e2e/tsconfig.json
-      - run: npm run test:coverage --workspace @ltts/web
       - run: npm run build
       - name: Website builds with no broken local links
         run: npm run site:build
+
+  # Its own job so the longest web step runs beside the checks above instead of after them.
+  web-tests:
+    name: Web unit tests (coverage)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: ./.github/actions/node-deps
+      - run: npm run test:coverage --workspace @ltts/web
 
   release-impact:
     name: Release impact (change file, version, notes)
@@ -124,11 +132,12 @@ jobs:
   validate:
     name: Validate
     if: always()
-    needs: [web, release-impact, server, contract, security]
+    needs: [web, web-tests, release-impact, server, contract, security]
     runs-on: ubuntu-24.04
     steps:
       - name: All required jobs passed
         run: |
-          [ "${{ needs.web.result }}" = success ] && [ "${{ needs.server.result }}" = success ] \
+          [ "${{ needs.web.result }}" = success ] && [ "${{ needs.web-tests.result }}" = success ] \
+            && [ "${{ needs.server.result }}" = success ] \
             && [ "${{ needs.contract.result }}" = success ] && [ "${{ needs.security.result }}" = success ] \
             && [ "${{ needs.release-impact.result }}" = success ]

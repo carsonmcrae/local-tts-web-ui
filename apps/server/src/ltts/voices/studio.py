@@ -196,8 +196,12 @@ class StudioService:
             staging,
             lambda done, total: _styles_progress(context, 0.6, done, total),
         )
-        final = self._profiles.styles_dir(profile_id)
-        shutil.rmtree(final, ignore_errors=True)
+        final, previous = self._profiles.styles_dir(profile_id), self._profiles.previous_styles_dir(profile_id)
+        shutil.rmtree(previous, ignore_errors=True)  # one earlier version is kept, to go back to
+        if final.is_dir():
+            final.rename(previous)
+        else:
+            previous.mkdir()  # it had no styles before: going back means reading every sentence the same way
         staging.rename(final)
         self._profiles.styles_changed(profile_id)
         log.info("voice styles refined", extra={"profile_id": profile_id, "styles": styles})

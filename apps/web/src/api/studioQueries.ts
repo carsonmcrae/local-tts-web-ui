@@ -20,6 +20,19 @@ export function useBuildStyles() {
   });
 }
 
+/** Go back to the expression a voice had before its last rebuild (again: forward to the newer one). */
+export function useRestoreStyles() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (profileId: string) =>
+      api<VoiceProfile>(`/api/voice-profiles/${profileId}/styles/restore`, { method: 'POST' }),
+    onSuccess: () => {
+      void client.invalidateQueries({ queryKey: keys.profiles });
+      void client.invalidateQueries({ queryKey: keys.voices });
+    },
+  });
+}
+
 export function useConsentStatement() {
   return useQuery({
     queryKey: ['consent'],

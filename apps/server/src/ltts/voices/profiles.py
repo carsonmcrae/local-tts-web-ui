@@ -96,6 +96,7 @@ class VoiceProfileOut(ApiModel):
     # A studio voice's speaking styles (narration, question, lively, dialogue).
     styles: list[str] = Field(default_factory=list)
     can_refine: bool = False  # a studio voice that kept its takes can (re)build its styles from them
+    has_previous_styles: bool = False  # the styles before the last rebuild are kept and can be brought back
 
 
 @dataclass(frozen=True, slots=True)
@@ -172,6 +173,27 @@ class VoiceProfileService:
 
     def styles_dir(self, profile_id: str) -> Path:
         return self.root / profile_id / "styles"
+
+    def previous_styles_dir(self, profile_id: str) -> Path:
+        return self.root / profile_id / "styles.previous"
+
+    def restore_styles(self, profile_id: str) -> VoiceProfileOut:
+        """Swap a voice's styles with the ones it had before its last rebuild (doing it again swaps back)."""
+        self.get(profile_id)
+        current, previous = self.styles_dir(profile_id), self.previous_styles_dir(profile_id)
+        if not previous.is_dir():
+            raise ConflictError("This voice has no earlier expression to go back to.", code="no_previous_styles")
+        swap = current.with_name("styles.swap")
+        shutil.rmtree(swap, ignore_errors=True)
+        if current.is_dir():
+            current.rename(swap)
+        previous.rename(current)
+        if swap.is_dir():
+            swap.rename(previous)
+        else:
+            previous.mkdir()  # it had no styles: going forward again means having none
+        self.styles_changed(profile_id)
+        return self.get(profile_id)
 
     def styles_changed(self, profile_id: str) -> None:
         """A voice's styles were rebuilt: free the audio made with the old ones (it can't be served again)."""
@@ -335,6 +357,7 @@ class VoiceProfileService:
             stores=_STORES[SHARED if r["source"] == SHARED else r["kind"]],
             styles=list(styles_in(self.styles_dir(r["id"]))),
             can_refine=r["kind"] == "studio" and self.takes_dir(r["id"]).is_dir(),
+            has_previous_styles=self.previous_styles_dir(r["id"]).is_dir(),
         )
 
     def list_all(self) -> list[VoiceProfileOut]:

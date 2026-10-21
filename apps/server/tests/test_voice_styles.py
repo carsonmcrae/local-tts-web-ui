@@ -126,9 +126,20 @@ def test_a_saved_studio_voice_learns_its_styles_from_its_takes(
     assert refreshed["styles"] == ["calm", "dialogue", "lively", "narration", "question"]
     _, _, after = services.voices.resolve(profile["id"])
     assert after != before
+    assert refreshed["hasPreviousStyles"] is True  # the expression before the rebuild can come back
+
+    url = f"/api/voice-profiles/{profile['id']}/styles/restore"
+    back = client.post(url).json()
+    assert back["styles"] == [] and back["hasPreviousStyles"] is True  # read every sentence the same way again
+    assert services.voices.resolve(profile["id"])[2] == before
+    forward = client.post(url).json()
+    assert forward["styles"] == ["calm", "dialogue", "lively", "narration", "question"]
+    assert services.voices.resolve(profile["id"])[2] == after
 
     shutil.rmtree(services.voices.takes_dir(profile["id"]))
     assert client.post(f"/api/voice-profiles/{profile['id']}/styles").json()["error"]["code"] == "not_studio"
+    shutil.rmtree(services.voices.previous_styles_dir(profile["id"]))
+    assert client.post(url).json()["error"]["code"] == "no_previous_styles"
 
 
 def test_polish_trims_shortens_pauses_and_levels_the_speech() -> None:

@@ -86,7 +86,7 @@ function StyleCoverage({ session }: Readonly<{ session: VoiceSession }>) {
 function NextPassage({
   session,
   onJump,
-}: Readonly<{ session: VoiceSession; onJump?: (index: number) => void }>) {
+}: Readonly<{ session: VoiceSession; onJump?: ((index: number) => void) | undefined }>) {
   const index = PASSAGES.findIndex((passage) => passage.id === session.suggested[0]);
   const passage = PASSAGES[index];
   if (!passage) return null;
@@ -112,7 +112,7 @@ function NextPassage({
 export function SpeechProgress({
   session,
   onJump,
-}: Readonly<{ session: VoiceSession; onJump?: (index: number) => void }>) {
+}: Readonly<{ session: VoiceSession; onJump?: ((index: number) => void) | undefined }>) {
   const foundation = session.takes.some(
     (take) => take.promptId === FOUNDATION_ID && take.quality.ok,
   );

@@ -162,6 +162,12 @@ def update_profile(profile_id: ProfileId, body: ProfileUpdate, services: Service
     return services.voices.update(profile_id, name=name or None, delivery=body.delivery)
 
 
+@router.post("/{profile_id}/styles/restore")
+def restore_styles(profile_id: ProfileId, services: ServicesDep) -> VoiceProfileOut:
+    """Go back to the expression a voice had before its last rebuild (again to return to the newer one)."""
+    return services.voices.restore_styles(profile_id)
+
+
 @router.post("/{profile_id}/styles", status_code=202)
 def build_styles(profile_id: ProfileId, services: ServicesDep) -> JobOut:
     """Teach a studio voice saved before speaking styles existed how the speaker asks, exclaims and talks."""

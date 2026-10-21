@@ -1143,6 +1143,26 @@ export type paths = {
     patch?: never;
     trace?: never;
   };
+  '/api/voice-profiles/{profile_id}/styles/restore': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Restore Styles
+     * @description Go back to the expression a voice had before its last rebuild (again to return to the newer one).
+     */
+    post: operations['restore_styles_api_voice_profiles__profile_id__styles_restore_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/voice-profiles/analyze': {
     parameters: {
       query?: never;
@@ -2717,6 +2737,11 @@ export type components = {
       durationS: number;
       /** Engineid */
       engineId: string;
+      /**
+       * Haspreviousstyles
+       * @default false
+       */
+      hasPreviousStyles: boolean;
       /** Id */
       id: string;
       /**
@@ -5215,6 +5240,37 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['JobOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  restore_styles_api_voice_profiles__profile_id__styles_restore_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        profile_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['VoiceProfileOut'];
         };
       };
       /** @description Validation Error */

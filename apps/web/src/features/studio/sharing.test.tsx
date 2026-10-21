@@ -139,6 +139,23 @@ describe('Voice expression', () => {
     );
   });
 
+  it('switches back to the expression a voice had before its last rebuild', async () => {
+    const studio = voiceProfile({
+      kind: 'studio', source: 'studio', canRefine: true, hasPreviousStyles: true, styles: ['question'],
+    }); // prettier-ignore
+    const { calls } = studioPage([studio], {
+      'POST /api/voice-profiles/': { ...studio, styles: [], hasPreviousStyles: true },
+    });
+    const user = userEvent.setup();
+    renderWithApp(<VoiceStudioPage />);
+    await user.click(
+      await screen.findByRole('button', { name: 'Switch to the previous expression' }),
+    );
+    await waitFor(() =>
+      expect(calls.some((call) => call.path.endsWith('/styles/restore'))).toBe(true),
+    );
+  });
+
   it('lists the styles a voice has, and marks a shared voice', async () => {
     studioPage([
       voiceProfile({ kind: 'studio', source: 'shared', styles: ['narration', 'question'] }),

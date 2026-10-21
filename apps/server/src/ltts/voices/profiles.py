@@ -7,8 +7,9 @@ duration), runs the quality checks (and suggests a cleanup), requires explicit c
 chosen cleanup, trims and normalises the clip, and stores only that reference WAV plus metadata under
 ``data/voices/<id>/``; previews a cleanup on a recording. Studio voices: stores a
 finished session's chosen take, its built voice file, its speaking styles (``styles.py``) and the
-session's takes there. Both have a delivery (sampling preset) that is part of the audio cache
-revision, as are a studio voice's styles. No model is trained and nothing
+session's takes there. Shared voices (imported ``.ttsvoice`` packages, ``sharing.py``) store the
+built voice, its styles, a short reference and where it came from. All have a delivery (sampling
+preset) that is part of the audio cache revision, as are a studio voice's styles. No model is trained and nothing
 leaves the machine. Deleting a profile removes its recordings, metadata and all audio made with it.
 Does NOT belong: Cloning inference (engine) or HTTP parsing (``router.py``).
 """
@@ -54,7 +55,9 @@ VoiceKind = Literal["quick", "studio"]
 _STORES: dict[str, str] = {
     "quick": "A trimmed copy of your reference recording (WAV). No model is trained or uploaded.",
     "studio": "Your session recordings (FLAC) and the voice built from them. No model is trained or uploaded.",
+    "shared": "A voice someone shared with you: its built voice and a short reference recording.",
 }
+SHARED = "shared"
 _COLUMNS = (
     "id",
     "name",
@@ -92,6 +95,7 @@ class VoiceProfileOut(ApiModel):
     stores: str = _STORES["quick"]
     # A studio voice's speaking styles (narration, question, lively, dialogue).
     styles: list[str] = Field(default_factory=list)
+    can_refine: bool = False  # a studio voice that kept its takes can (re)build its styles from them
 
 
 @dataclass(frozen=True, slots=True)
@@ -106,6 +110,20 @@ class StudioVoice:
     speech_s: float
     delivery: Delivery
     styles: Path | None = None  # the session's style prompts, moved under the profile
+
+
+@dataclass(frozen=True, slots=True)
+class SharedVoice:
+    """A checked voice package, ready to become a profile."""
+
+    name: str
+    kind: VoiceKind
+    delivery: Delivery
+    duration_s: float
+    reference: Path
+    voice: Path | None  # the built voice (studio voices)
+    styles: Path | None  # its speaking styles
+    origin: dict[str, object]  # the package's manifest: who made it, when, and under what consent
 
 
 class ReferenceQualityError(AppError):
@@ -254,6 +272,52 @@ class VoiceProfileService:
         log.info("voice profile created", extra={"profile_id": profile_id, "source": "studio"})
         return self.get(profile_id)
 
+    def create_shared(self, voice: SharedVoice, consent: bool) -> VoiceProfileOut:
+        """Save a checked voice package as a new profile, under the importer's own consent."""
+        self._check_can_create(consent)
+        samples, rate = read_audio(voice.reference)
+        profile_id, folder, _ = self._new_folder(samples, rate)
+        voice_file = None
+        if voice.voice is not None:
+            voice_file = f"voice-{new_id()[:12]}.safetensors"
+            shutil.move(voice.voice, folder / voice_file)
+        if voice.styles is not None:
+            shutil.move(voice.styles, folder / "styles")
+        (folder / "origin.json").write_text(json.dumps(voice.origin, indent=2), encoding="utf-8")
+        quality = analyze(trim_silence(samples, rate), rate)
+        self._insert(
+            {
+                "id": profile_id,
+                "name": voice.name,
+                "duration_s": round(voice.duration_s, 1),
+                "sample_rate": rate,
+                "quality_json": quality.model_dump_json(by_alias=True),
+                "source": SHARED,
+                "kind": voice.kind if voice_file else "quick",
+                "delivery": voice.delivery,
+                "voice_file": voice_file,
+            }
+        )
+        log.info("voice profile created", extra={"profile_id": profile_id, "source": SHARED})
+        return self.get(profile_id)
+
+    def shareable_files(self, profile_id: str) -> tuple[VoiceProfileOut, str, dict[str, Path]]:
+        """What a shared copy of the voice holds (never the session takes), and its consent statement."""
+        profile = self.get(profile_id)
+        with self._db.connect() as conn:
+            row = conn.execute(
+                "SELECT consent_statement, voice_file FROM voice_profiles WHERE id = ?", (profile_id,)
+            ).fetchone()
+        files = {"reference.wav": self.reference_path(profile_id)}
+        if row["voice_file"]:
+            files["voice.safetensors"] = self.root / profile_id / row["voice_file"]
+            files |= {
+                f"styles/{name}.safetensors": path for name, path in styles_in(self.styles_dir(profile_id)).items()
+            }
+        if not all(path.is_file() for path in files.values()):
+            raise NotFoundError("This voice's files are missing, so it can't be shared.", code="voice_not_found")
+        return profile, row["consent_statement"], files
+
     def _row(self, r: sqlite3.Row) -> VoiceProfileOut:
         return VoiceProfileOut(
             id=r["id"],
@@ -268,8 +332,9 @@ class VoiceProfileService:
             created_at=r["created_at"],
             kind=r["kind"],
             delivery=r["delivery"],
-            stores=_STORES[r["kind"]],
+            stores=_STORES[SHARED if r["source"] == SHARED else r["kind"]],
             styles=list(styles_in(self.styles_dir(r["id"]))),
+            can_refine=r["kind"] == "studio" and self.takes_dir(r["id"]).is_dir(),
         )
 
     def list_all(self) -> list[VoiceProfileOut]:
@@ -352,6 +417,8 @@ class VoiceProfileService:
 
 
 def _describe(profile: VoiceProfileOut) -> str:
+    if profile.source == SHARED:
+        return f"Shared {'studio ' if profile.kind == 'studio' else ''}voice, imported from a .ttsvoice file."
     if profile.kind == "studio":
         return f"Studio voice built from {max(profile.duration_s / 60, 1):.0f} min of recordings."
     return f"Custom voice from a {profile.duration_s:.0f}s {profile.source}."

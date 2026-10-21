@@ -546,6 +546,26 @@ export type paths = {
     patch: operations['update_profile_api_voice_profiles__profile_id__patch'];
     trace?: never;
   };
+  '/api/voice-profiles/{profile_id}/export': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Export Voice
+     * @description The voice as a ``.ttsvoice`` package; ``confirm`` records that the owner chose to share it.
+     */
+    get: operations['export_voice_api_voice_profiles__profile_id__export_get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/voice-profiles/{profile_id}/reference': {
     parameters: {
       query?: never;
@@ -631,6 +651,26 @@ export type paths = {
     get: operations['consent_statement_api_voice_profiles_consent_get'];
     put?: never;
     post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/voice-profiles/import': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Import Voice
+     * @description Import a ``.ttsvoice`` package someone shared, once the importer confirms the owner's permission.
+     */
+    post: operations['import_voice_api_voice_profiles_import_post'];
     delete?: never;
     options?: never;
     head?: never;
@@ -1514,6 +1554,11 @@ export type components = {
     };
     /** VoiceProfileOut */
     VoiceProfileOut: {
+      /**
+       * Canrefine
+       * @default false
+       */
+      canRefine: boolean;
       /** Consentedat */
       consentedAt: string;
       /** Createdat */
@@ -2762,6 +2807,39 @@ export interface operations {
       };
     };
   };
+  export_voice_api_voice_profiles__profile_id__export_get: {
+    parameters: {
+      query?: {
+        confirm?: boolean;
+      };
+      header?: never;
+      path: {
+        profile_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/zip': unknown;
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
   reference_audio_api_voice_profiles__profile_id__reference_get: {
     parameters: {
       query?: never;
@@ -2892,6 +2970,38 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['ConsentInfo'];
+        };
+      };
+    };
+  };
+  import_voice_api_voice_profiles_import_post: {
+    parameters: {
+      query: {
+        consent: boolean;
+        name?: string | null;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['VoiceProfileOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
         };
       };
     };

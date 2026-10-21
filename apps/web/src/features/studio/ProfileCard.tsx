@@ -4,7 +4,8 @@
  * Purpose: One custom voice profile in Voice Studio.
  * Scope: Name, kind (quick or studio), source, length, creation date, consent timestamp, what is
  *   stored; play the stored reference, choose the delivery, a studio voice's speaking styles, rename,
- *   use for reading, and permanent deletion with an explicit confirmation.
+ *   use for reading, share it as a .ttsvoice file, and permanent deletion with an explicit
+ *   confirmation.
  * Does NOT belong: Creation (the wizards).
  */
 import { Check, Pencil, Play, Square, Trash2 } from 'lucide-react';
@@ -26,6 +27,7 @@ import { useReadingVoice } from '@/features/player/useReadingVoice';
 import { formatRelativeDate } from '@/lib/format';
 import { DeliveryPicker } from './TestStep';
 import { useClipPlayer } from './useClipPlayer';
+import { ShareVoiceButton } from './VoiceSharing';
 import { VoiceStyles } from './VoiceStyles';
 
 function describe(profile: VoiceProfile): string {
@@ -82,6 +84,7 @@ export function ProfileCard({
           <h3 className="flex items-center gap-2 font-medium">
             <span className="truncate">{profile.name}</span>
             {profile.kind === 'studio' ? <Badge tone="success">Studio</Badge> : null}
+            {profile.source === 'shared' ? <Badge>Shared</Badge> : null}
             {isDefault ? <Badge tone="accent">Reading voice</Badge> : null}
           </h3>
           <p className="text-[13px] text-muted">
@@ -131,6 +134,7 @@ export function ProfileCard({
         >
           {isDefault ? 'Used for reading' : 'Use for reading'}
         </Button>
+        <ShareVoiceButton profile={profile} />
       </div>
       <ConfirmDialog
         open={confirm}

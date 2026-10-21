@@ -29,6 +29,7 @@ from ltts.synthesis.cache import AudioCache
 from ltts.synthesis.service import SynthesisService
 from ltts.voices.profiles import CLONING_ENGINE, VoiceProfileService
 from ltts.voices.sessions import VoiceSessionService
+from ltts.voices.sharing import VoiceSharing
 from ltts.voices.studio import StudioService
 
 if TYPE_CHECKING:
@@ -54,6 +55,7 @@ class Services:
     voices: VoiceProfileService
     voice_sessions: VoiceSessionService
     studio: StudioService
+    voice_sharing: VoiceSharing
     exports: ExportService
     preferences: PreferenceStore
     pronunciations: PronunciationStore
@@ -99,6 +101,7 @@ def build_services(
         voices=voices,
         voice_sessions=sessions,
         studio=studio,
+        voice_sharing=VoiceSharing(settings, voices),
         exports=ExportService(settings, jobs, documents, synthesis),
         preferences=PreferenceStore(db),
         pronunciations=pronunciations,

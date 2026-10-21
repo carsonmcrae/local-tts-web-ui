@@ -3,8 +3,8 @@
 /**
  * Purpose: Show and improve how a studio voice reads different kinds of sentences.
  * Scope: Lists the speaking styles a studio voice has (questions, dialogue, lively lines,
- *   narration); for a voice saved before styles existed, offers to build them from its kept takes,
- *   shows the job's progress and refreshes the voice when it's done.
+ *   narration); for a voice that kept its takes (and so can learn them), offers to build or rebuild
+ *   them, shows the job's progress and refreshes the voice when it's done.
  * Does NOT belong: Building styles (the server) or the rest of the profile card.
  */
 import { useQueryClient } from '@tanstack/react-query';
@@ -39,9 +39,9 @@ export function VoiceStyles({ profile }: Readonly<{ profile: VoiceProfile }>) {
     void client.invalidateQueries({ queryKey: keys.voices });
   }, [job.data, client]);
 
-  if (profile.kind !== 'studio') return null;
-  const running = isJobActive(job.data);
   const styles = profile.styles ?? [];
+  if (profile.kind !== 'studio' || (!profile.canRefine && styles.length === 0)) return null;
+  const running = isJobActive(job.data);
   return (
     <div className="flex flex-col gap-2">
       {styles.length > 0 ? (
@@ -56,7 +56,7 @@ export function VoiceStyles({ profile }: Readonly<{ profile: VoiceProfile }>) {
         </p>
       )}
       {running && job.data ? <JobProgress job={job.data} label="Improving expression" /> : null}
-      {!running ? (
+      {!running && profile.canRefine ? (
         <div>
           <Button
             size="sm"

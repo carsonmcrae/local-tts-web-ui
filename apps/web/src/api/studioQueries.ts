@@ -2,16 +2,48 @@
 // Copyright (c) 2026 Carson McRae
 /**
  * Purpose: React Query hooks for what a finished custom voice can do beyond reading.
- * Scope: Building a studio voice's speaking styles from its kept takes (a background job).
+ * Scope: Building a studio voice's speaking styles from its kept takes (a background job), the
+ *   consent statement, the address that downloads a voice as a .ttsvoice package, and importing a
+ *   package someone shared (refreshing the voice lists).
  * Does NOT belong: Creating voices or sessions (queries.ts) or the HTTP client (client.ts).
  */
-import { useMutation } from '@tanstack/react-query';
-import { api } from './client';
-import type { JobOut } from './types';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { api, buildUrl } from './client';
+import { keys } from './queries';
+import type { JobOut, VoiceProfile } from './types';
 
 export function useBuildStyles() {
   return useMutation({
     mutationFn: (profileId: string) =>
       api<JobOut>(`/api/voice-profiles/${profileId}/styles`, { method: 'POST' }),
+  });
+}
+
+export function useConsentStatement() {
+  return useQuery({
+    queryKey: ['consent'],
+    queryFn: () => api<{ statement: string }>('/api/voice-profiles/consent'),
+    staleTime: Infinity,
+  });
+}
+
+/** Downloads the voice as a package; ``confirm`` records that its owner chose to share it. */
+export function exportVoiceUrl(profileId: string): string {
+  return buildUrl(`/api/voice-profiles/${profileId}/export`, { confirm: true });
+}
+
+export function useImportVoice() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { file: Blob; name?: string }) =>
+      api<VoiceProfile>('/api/voice-profiles/import', {
+        method: 'POST',
+        query: { consent: true, name: input.name || undefined },
+        body: input.file,
+      }),
+    onSuccess: () => {
+      void client.invalidateQueries({ queryKey: keys.profiles });
+      void client.invalidateQueries({ queryKey: keys.voices });
+    },
   });
 }

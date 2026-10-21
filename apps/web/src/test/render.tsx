@@ -227,7 +227,7 @@ export function mockReaderApi(doc: DocumentDetail, overrides: Record<string, unk
 export const voiceProfile = (overrides: Partial<VoiceProfile> = {}): VoiceProfile => ({
   id: 'c'.repeat(32), voiceId: `custom:${'c'.repeat(32)}`, name: 'My voice', engineId: 'chatterbox', durationS: 14,
   sampleRate: 24000, consentedAt: '2026-10-19T10:00:00+00:00', source: 'import', createdAt: '2026-10-19T10:00:00+00:00',
-  stores: 'A trimmed copy of your reference recording (WAV).', kind: 'quick', delivery: 'natural',
+  stores: 'A trimmed copy of your reference recording (WAV).', kind: 'quick', delivery: 'natural', styles: [], canRefine: false,
   quality: { durationS: 14, speechS: 12, rmsDbfs: -20, peakDbfs: -1, clippingRatio: 0, pauseRatio: 0.2, snrDb: 40, brightnessDb: -6, ok: true, issues: [] },
   ...overrides,
 }); // prettier-ignore

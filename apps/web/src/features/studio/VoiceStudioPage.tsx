@@ -18,6 +18,7 @@ import { Banner, EmptyState, Skeleton, StatusRegion } from '@/components/ui/Feed
 import { PageHeader, Section } from '@/components/ui/Layout';
 import { EnginePanel } from '@/features/engines/EngineSetup';
 import { CreateVoiceChooser, type CreationRoute } from './CreateVoiceChooser';
+import { ImportVoiceButton } from './VoiceSharing';
 import { CreateVoiceWizard } from './CreateVoiceWizard';
 import { ProfileCard } from './ProfileCard';
 import { StudioVoiceWizard } from './session/StudioVoiceWizard';
@@ -138,9 +139,12 @@ export default function VoiceStudioPage() {
         title="Voice Studio"
         description="Create a narration voice from a short recording of yourself, or of someone who has given you permission."
         actions={
-          <Button variant="primary" icon={<Plus size={16} />} onClick={() => setChoosing(true)}>
-            Create voice
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <ImportVoiceButton />
+            <Button variant="primary" icon={<Plus size={16} />} onClick={() => setChoosing(true)}>
+              Create voice
+            </Button>
+          </div>
         }
       />
       {cloning && (!ready || cloning.updateAvailable) ? (

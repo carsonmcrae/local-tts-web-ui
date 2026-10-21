@@ -4,9 +4,10 @@
  * Purpose: One custom voice profile in Voice Studio.
  * Scope: Name, kind (quick or studio), source, length, creation date, consent timestamp, what is
  *   stored; play the stored reference, choose the delivery, a studio voice's speaking styles and
- *   fine-tune, rename,
- *   use for reading, share it as a .ttsvoice file, and permanent deletion with an explicit
- *   confirmation.
+ *   fine-tune, rename, use for reading, share it as a .ttsvoice file, and permanent deletion with an
+ *   explicit confirmation. On a paired phone or tablet only "Use for reading" is offered: the
+ *   recording, the controls that change the voice and sharing stay on the computer (LAN mode
+ *   refuses them).
  * Does NOT belong: Creation (the wizards).
  */
 import { Check, Pencil, Play, Square, Trash2 } from 'lucide-react';
@@ -58,6 +59,7 @@ export function ProfileCard({
   const playing = reference.playing === referenceUrl;
   const toggleReference = () => reference.toggle(referenceUrl);
   const isDefault = preferences.data?.defaultVoiceId === profile.voiceId;
+  const here = onThisComputer(); // a paired phone may only choose the voice for reading
 
   const deleteProfile = () =>
     remove.mutate(profile.id, {
@@ -94,28 +96,32 @@ export function ProfileCard({
             {describe(profile)} · created {formatRelativeDate(profile.createdAt).toLowerCase()}
           </p>
         </div>
-        <IconButton
-          label={`Rename ${profile.name}`}
-          icon={<Pencil size={15} />}
-          size="sm"
-          onClick={() => setEditing(true)}
-        />
-        <IconButton
-          label={`Delete ${profile.name}`}
-          icon={<Trash2 size={15} />}
-          size="sm"
-          onClick={() => setConfirm(true)}
-        />
+        {here ? (
+          <>
+            <IconButton
+              label={`Rename ${profile.name}`}
+              icon={<Pencil size={15} />}
+              size="sm"
+              onClick={() => setEditing(true)}
+            />
+            <IconButton
+              label={`Delete ${profile.name}`}
+              icon={<Trash2 size={15} />}
+              size="sm"
+              onClick={() => setConfirm(true)}
+            />
+          </>
+        ) : null}
       </div>
       <p className="text-xs leading-relaxed text-subtle">
         Stores: {profile.stores} Consent confirmed{' '}
         {new Date(profile.consentedAt).toLocaleDateString()}.
       </p>
-      {engineReady ? <DeliveryPicker profile={profile} /> : null}
-      {engineReady ? <VoiceStyles profile={profile} /> : null}
+      {engineReady && here ? <DeliveryPicker profile={profile} /> : null}
+      {engineReady && here ? <VoiceStyles profile={profile} /> : null}
       {engineReady ? <VoiceTuning profile={profile} /> : null}
       <div className="flex flex-wrap gap-2">
-        {onThisComputer() ? ( // a voice's recording never travels to a phone over the network
+        {here ? ( // a voice's recording never travels to a phone over the network
           <Button
             size="sm"
             icon={
@@ -140,7 +146,7 @@ export function ProfileCard({
         >
           {isDefault ? 'Used for reading' : 'Use for reading'}
         </Button>
-        <ShareVoiceButton profile={profile} />
+        {here ? <ShareVoiceButton profile={profile} /> : null}
       </div>
       <ConfirmDialog
         open={confirm}

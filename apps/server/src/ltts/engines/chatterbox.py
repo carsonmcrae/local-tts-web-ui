@@ -126,7 +126,7 @@ class ChatterboxEngine(Engine, VoiceBuilder):
         return current is not None and self.is_ready() and self._marker_data().get("lockSha256") != current
 
     def revision(self) -> str:
-        return f"{ARTIFACT}/worker-2"  # 2: seeded sentences, retries, polish and style prompts
+        return f"{ARTIFACT}/worker-3"  # 2: seeded sentences, retries, polish, style prompts; 3: room tone in pauses
 
     # -- description ------------------------------------------------------
     def _options(self) -> list[InstallOption]:

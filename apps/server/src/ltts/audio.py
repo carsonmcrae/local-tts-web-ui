@@ -2,7 +2,8 @@
 # Copyright (c) 2026 Carson McRae
 """Purpose: Small, dependency-light audio utilities shared by synthesis, export and voice profiles.
 
-Scope: Natural pauses after segments (by boundary type), click-free fades, peak normalisation,
+Scope: Natural pauses after segments (by boundary type, filled with the clip's room tone when it has an
+audible background), click-free fades, peak normalisation,
 silence trimming, splitting a long recording into takes at pauses, gentle shelving tone correction,
 mono conversion, resampling, and encoding (WAV, MP3, FLAC, Ogg Opus, raw PCM) and decoding through
 soundfile (libsndfile).
@@ -17,6 +18,8 @@ from pathlib import Path
 import numpy as np
 import numpy.typing as npt
 import soundfile as sf
+
+from ltts.room_tone import room_tone
 
 Float32Array = npt.NDArray[np.float32]
 
@@ -50,9 +53,13 @@ def apply_fades(samples: Float32Array, sample_rate: int, seconds: float = FADE_S
 def finalize_segment(
     samples: Float32Array, sample_rate: int, boundary: str, pause_s: float | None = None
 ) -> Float32Array:
-    """Fade the clip edges and append the pause that follows this kind of boundary (or ``pause_s``)."""
+    """Fade the clip edges and append the pause that follows this kind of boundary (or ``pause_s``).
+
+    The pause carries the clip's own background (``room_tone``), so a cloned voice's hiss doesn't switch
+    off between sentences; a clean clip gets silence.
+    """
     seconds = PAUSE_SECONDS.get(boundary, 0.3) if pause_s is None else pause_s
-    pause = np.zeros(int(sample_rate * seconds), dtype=np.float32)
+    pause = room_tone(samples, sample_rate, seconds)
     clipped = np.clip(apply_fades(samples, sample_rate), -1.0, 1.0)
     return np.concatenate([clipped, pause])
 

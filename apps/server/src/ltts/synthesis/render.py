@@ -26,6 +26,7 @@ from ltts.effects import Effect, apply_effect
 from ltts.engines.base import AudioClip, VoiceSpec
 from ltts.engines.registry import ResolvedVoice
 from ltts.errors import SynthesisError
+from ltts.room_tone import room_tone
 from ltts.synthesis.cache import cache_key
 
 TAKE_ENGINES = frozenset({"chatterbox"})  # engines whose output varies with the seed, so a new take differs
@@ -105,11 +106,10 @@ def render(job: RenderJob) -> AudioClip:
     if any(clip.samples.size == 0 for clip in clips):
         raise SynthesisError("The engine returned no audio for this passage.", code="empty_audio")
     rate = clips[0].sample_rate
-    gap = np.zeros(int(PIECE_GAP_S * rate), dtype=np.float32)
     joined: list[Float32Array] = []
     for position, clip in enumerate(clips):
-        if position:
-            joined.append(gap)
+        if position:  # the gap between narration and quoted speech keeps the last piece's background
+            joined.append(room_tone(joined[-1], rate, PIECE_GAP_S))
         joined.append(resample(clip.samples, clip.sample_rate, rate))
     samples = np.concatenate(joined).astype(np.float32)
     raw = apply_effect(job.effect, samples, rate) if job.effect else samples

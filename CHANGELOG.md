@@ -204,6 +204,9 @@ All notable changes to this project are documented here. The format follows
 
 ### Fixed
 
+- Cloned voices no longer drop to dead silence between sentences: a voice that carries its recordings'
+  faint hiss or hum keeps that room tone through the pauses after sentences and between narration
+  and quoted speech, so the background doesn't switch off and on. Built-in voices are unchanged.
 - Numbers in brackets are no longer dropped from speech: `array[3]`, `x[i+1]`, `matrix[2][3]`,
   `[0, 1]` and `list[-1]` are read as written, in the speech API too. In documents added before
   this version, citation numbers like [12] are read until the document is added again.

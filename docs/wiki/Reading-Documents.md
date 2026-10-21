@@ -183,6 +183,26 @@ only what is spoken: playback and exports both use the fix, and only the sentenc
 word are generated again. A document's pronunciations are deleted with it. Every pronunciation is
 listed, and can be changed, in [Settings → Pronunciation](Settings-and-Models#pronunciation).
 
+## How English voices read numbers, money and abbreviations
+
+Before an English voice speaks a sentence, a few things are rewritten the way a narrator would read
+them, whichever engine the voice uses:
+
+- **Money**: £1,284.50 is "1,284 pounds 50", $1 is "1 dollar", €0.99 is "99 cents", $3bn is
+  "3 billion dollars".
+- **Clock times**: 4:45 p.m. is "4 45 PM", 9:00 is "9 o'clock", 4:05 is "4 oh 5".
+- **Phone and account numbers**: three or more groups of digits (020 7946 0321) are read digit by
+  digit, with a short pause between the groups. Dates such as 2024-10-21 are left alone.
+- **Years**: after words such as "in", "since", "by" or a month, 1998 is "nineteen ninety-eight" and
+  the 1980s are "the nineteen eighties". A bare number such as 1024 bytes is not treated as a year.
+- **Chapter numbers**: Chapter IV is "Chapter 4".
+- **Abbreviations**: Mr., Mrs., Ms., Dr., Prof., Lt., Col., Rev., St. (Saint before a name, Street
+  after one), Mt., Rd., Ave., approx., dept., no. 5, e.g., i.e., vs., ft., lb., oz. and °C become
+  words.
+
+The text you see never changes, only what is spoken, and these rules apply to English voices only. A
+pronunciation you save for a word wins over them.
+
 ## Searching a document
 
 Press the magnifying glass next to Play (**Search this document**) and type a word, name or phrase.

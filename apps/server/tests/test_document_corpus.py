@@ -31,6 +31,7 @@ from ltts.documents.normalize import speech_text, word_count
 from ltts.documents.schemas import CHARS_PER_SECOND
 from ltts.documents.segmenter import segment_extraction
 from ltts.documents.structures import ExtractionLimits
+from ltts.synthesis.english import english_speech
 from test_document_cleanup_api import cleanup, exported, skip
 
 VOICE = "kokoro:alpha"
@@ -109,9 +110,9 @@ NOVEL = Corpus(
         ["THE SILENT HARBOUR", "The lamp in the window flickered and went out."],
     ],
     {"footers": ["7", "8", "9", "10"], "outline": [("Chapter 1", 0), ("Chapter 2", 2)]},
-    read=["Chapter 1", "In 1984 the ferry carried 12 people", '"Come in," she said.', '"The door is open."',
+    read=["Chapter 1", "the ferry carried 12 people", '"Come in," she said.', '"The door is open."',
           "3 boats, then 7 more", "9.30 when", "Chapter 2", '"Will you stay?" he asked.',
-          "By 1990 the town had 2,000 people"],
+          "the town had 2,000 people"],
     unread=["THE SILENT HARBOUR"],
     skipped={"header": 4, "page_number": 4},
 )  # fmt: skip
@@ -167,7 +168,7 @@ def test_what_is_read_what_is_not_and_the_counts_of_it(
     assert [phrase for phrase in corpus.read if phrase not in spoken] == []
     assert [phrase for phrase in corpus.unread if phrase not in text or phrase in spoken] == []
     # Nothing but the markers changes what a sentence says.
-    assert [words for _, words in said] == [speech_text(sentence) for sentence in as_written(services, doc_id)]
+    assert [words for _, words in said] == [english_speech(speech_text(s)) for s in as_written(services, doc_id)]
     found: Counter[str] = Counter()
     for item in cleanup(client, doc_id)["items"]:  # sentences skipped, and markers one by one
         found[item["reason"]] += len(item["markers"]) if item["reason"] in ("footnote", "citation") else 1
@@ -176,7 +177,7 @@ def test_what_is_read_what_is_not_and_the_counts_of_it(
     document = client.get(f"/api/documents/{doc_id}").json()
     read = " ".join(as_written(services, doc_id))
     assert (document["wordCount"], document["charCount"]) == (word_count(text), len(text))
-    assert (document["spokenWordCount"], document["spokenCharCount"]) == (word_count(spoken), len(read))
+    assert (document["spokenWordCount"], document["spokenCharCount"]) == (word_count(read), len(read))
     assert document["estimatedSeconds"] == round(len(read) / CHARS_PER_SECOND, 1)
     assert exported(client, engines["kokoro"], doc_id) == (len(said), [words for _, words in said])
 

@@ -191,11 +191,13 @@ known advisories.
   and the runtime build and clean-install check were repeated with the new version. The cool-down would
   have covered this release on 2026-11-03; nothing needs removing afterwards, since the bootstrap is a
   plain pin.
-- **virtualenv 21.14.5 (CVE-2026-113725, in the voice-cloning environment through pre-commit):** its bash
-  `activate` script could run commands from an environment name; TTSNative never uses virtualenv (uv
-  builds the environment), but the fixed 21.14.7 (2026-10-12) comes in through a security exception
-  (`exclude-newer-package`), so existing installs are offered the in-place update. Drop the exception
-  after 2026-10-27.
+- **virtualenv (in the voice-cloning environment through pre-commit):** 21.14.5's bash `activate` script
+  could run commands from an environment name (CVE-2026-113725, fixed in 21.14.7 on 2026-10-12), and
+  21.14.7 was then reported for three more activation-script issues (CVE-2026-113716, -113722,
+  -113724, fixed in 21.14.9). TTSNative never runs virtualenv (uv builds the environment), but the
+  advisories fail the audit, so 21.14.10 (2026-10-17) comes in through a security exception
+  (`exclude-newer-package`), re-locked with the same uv that wrote the lock so only virtualenv changes;
+  existing installs are offered the in-place update. Drop the exception after 2026-10-31.
 - **Licences:** see [license-inventory.md](license-inventory.md) for what the installer ships and the
   GPL/LGPL source offer.
 

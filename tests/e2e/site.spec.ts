@@ -5,8 +5,9 @@
  * Scope: Builds the site with scripts/site/build-site.mjs and serves it over loopback; checks the
  *   calls to action reach real sections, the base URL fills canonical and social links, the browser
  *   speech demo (a scripted SpeechSynthesis: voices on the device first, online voices warned about,
- *   speak and stop, unsupported browsers), axe finds no serious violations in light and dark, and
- *   phones get no sideways scrolling.
+ *   speak and stop, unsupported browsers), axe finds no serious violations in light and dark, phones
+ *   get no sideways scrolling, and the release history has a page per version with Older and Newer
+ *   links and the latest version named in the footer.
  * Does NOT belong: The app (the other specs) or the page's wording.
  */
 import type { Page } from '@playwright/test';
@@ -216,19 +217,46 @@ test.describe('website @site @cross-browser', () => {
     });
   }
 
-  test('the release history lists published notes, newest first, and passes axe', async ({
+  test('the release history shows one version at a time, leads to the others, and passes axe', async ({
     page,
   }) => {
     await page.goto(`${BASE}/releases.html`);
-    const headings = await page.getByRole('heading', { level: 2 }).allTextContents();
-    expect(headings.slice(0, 2)).toEqual(['Local TTS 2.0.0', 'Local TTS 1.0.0']);
+    const versions = page.getByRole('navigation', { name: 'Versions' });
+    expect((await versions.getByRole('link').allTextContents()).slice(0, 2)).toEqual([
+      'Local TTS 2.0.0 Latest',
+      'Local TTS 1.0.0',
+    ]);
+    await expect(page.getByRole('heading', { level: 2, name: 'Local TTS 2.0.0' })).toBeVisible();
     await expect(page.getByText('October 19, 2026 · released as Local TTS')).toBeVisible();
     await expect(
-      page.getByRole('link', { name: 'Release page and downloads on GitHub' }).first(),
+      page.getByRole('link', { name: 'Release page and downloads on GitHub' }),
     ).toHaveAttribute('href', 'https://github.com/carsonmcrae/ttsnative/releases/tag/v2.0.0');
+    await expect(page.getByText('This is the latest release')).toBeVisible();
     // No installer is published in a local build, so none is offered.
     await expect(page.getByRole('link', { name: /Download TTSNative/ })).toHaveCount(0);
     expect(await seriousViolations(page)).toEqual([]);
+    await page.getByRole('link', { name: 'Older: Local TTS 1.0.0' }).click();
+    await expect(page).toHaveURL(`${BASE}/releases/1.0.0/`);
+    await expect(page).toHaveTitle('Local TTS 1.0.0 · Release history · TTSNative');
+    await expect(page.getByRole('heading', { level: 2, name: 'Local TTS 1.0.0' })).toBeVisible();
+    await expect(page.getByText('No older releases')).toBeVisible();
+    await expect(versions.getByRole('link', { name: 'Local TTS 1.0.0' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    );
+    await page.getByRole('link', { name: 'Newer: Local TTS 2.0.0' }).click();
+    await expect(page).toHaveURL(`${BASE}/releases/2.0.0/`);
+    await expect(page.getByRole('heading', { level: 2, name: 'Local TTS 2.0.0' })).toBeVisible();
+  });
+
+  test('the home page names the latest version and links to its notes', async ({ page }) => {
+    await page.goto(`${BASE}/`);
+    await expect(
+      page.getByRole('contentinfo').getByRole('link', { name: 'Version 2.0.0' }),
+    ).toHaveAttribute('href', `${BASE}/releases/2.0.0/`);
+    // A shortened address still shows the latest release.
+    await page.goto(`${BASE}/releases/`);
+    await expect(page.getByRole('heading', { level: 2, name: 'Local TTS 2.0.0' })).toBeVisible();
   });
 
   test('the permanent download address says plainly when no installer is published', async ({

@@ -4,7 +4,7 @@
  * Purpose: TTSNative's published release notes, available offline.
  * Scope: The notes built into this copy of the app (from docs/releases/ at build time, newest first),
  *   reading the Markdown notes an update check brings for a newer version, the notes for a version,
- *   whether a version is a development build, and dates written out for people.
+ *   whether a version is a development build, and names and dates written out for people.
  * Does NOT belong: Fetching anything (the desktop app's update check does that) or how notes are shown.
  */
 
@@ -29,6 +29,11 @@ export const RELEASES_URL = 'https://github.com/carsonmcrae/ttsnative/releases';
 
 export function releaseHistory(): ReleaseNotes[] {
   return typeof __RELEASE_HISTORY__ === 'undefined' ? [] : __RELEASE_HISTORY__;
+}
+
+/** "TTSNative 2.1.0", or the name a version was released under ("Local TTS 2.0.0"). */
+export function releaseName(release: Pick<ReleaseNotes, 'version' | 'publishedAs'>): string {
+  return `${release.publishedAs ?? 'TTSNative'} ${release.version}`;
 }
 
 /** `2.1.0` for `2.1.0-dev.3+feat.abc`. */

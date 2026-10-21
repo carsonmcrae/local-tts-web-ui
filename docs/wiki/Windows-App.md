@@ -35,8 +35,12 @@ website. You can check now, or turn automatic checks off, in **Settings → Abou
 
 ## What's new and release history
 
-After an update, **What's new** opens once. **Settings → About → Release history** lists every version
-with its notes, also offline; **What's new in …** jumps to the version you're running.
+After an update, **What's new** opens once. **Settings → About → Release history** shows every
+version's notes one version at a time, also offline: pick a version from the list or use **Older** and
+**Newer**, and see when it came out and what changed. The version you're running is marked
+**Installed**, and **What's new in …** opens it directly. The version is also shown at the bottom of
+the sidebar, where it leads to About. On the website, every version has its own page with the same
+notes: [ttsnative.com/releases.html](https://ttsnative.com/releases.html).
 
 ## Where your data is
 

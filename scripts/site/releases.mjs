@@ -2,22 +2,28 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 Carson McRae
 /**
- * Purpose: The website's Windows download and release history, from published releases only.
+ * Purpose: The website's Windows download, latest-version link and release history, from published
+ *   releases only.
  * Scope: Asks GitHub which releases are published and whether the latest one has a Windows installer
- *   (and that its download link really answers), fills the download section with that version, size
- *   and date, keeps or drops `<!-- if:download -->` / `<!-- if:no-download -->` blocks accordingly, and
- *   renders the release history page from docs/releases/ (escaped HTML, newest first). Without
- *   network access (local builds) no installer is advertised.
+ *   (and that its download link really answers); fills the download section with that version, size
+ *   and date and the footer with the latest release, keeping or dropping `<!-- if:… -->` blocks
+ *   accordingly; and renders the release history from docs/releases/ as one page per version
+ *   (releases/<version>/) plus the index (releases.html): the list of versions, the selected version's
+ *   notes with its date, and Older / Newer links, all escaped HTML. Without network access (local
+ *   builds) no installer is advertised.
  * Does NOT belong: The rest of the site build (build-site.mjs) or the notes' format (lib/releases.mjs).
  */
 import { formatDate } from '../lib/releases.mjs';
 
 const REPO = 'carsonmcrae/ttsnative';
 const INSTALLER = /^TTSNative-Setup-(\d+\.\d+\.\d+)\.exe$/;
+/** The marker in site/releases.html, with the indentation before it. */
+const HISTORY_MARKER = / *<!-- release-history -->/;
 
 /**
  * @typedef {{ version: string, url: string, size: number, date: string, checksums: string | null }} Installer
  * @typedef {import('../lib/releases.mjs').Release} Release
+ * @typedef {{ file: string, selected: number, title: string, description: string, canonical: string }} ReleasePage
  */
 
 /** @param {string} text */
@@ -30,13 +36,15 @@ export function escapeHtml(text) {
 }
 
 /**
- * Keep `<!-- if:name -->…<!-- /if:name -->` blocks whose flag is true; drop the others.
+ * Keep `<!-- if:name -->…<!-- /if:name -->` blocks whose flag is true, drop those whose flag is false
+ * (with the indentation before them), and leave the blocks these flags don't decide for a later pass.
  * @param {string} html
  * @param {Record<string, boolean>} flags
  */
 export function applyConditions(html, flags) {
-  return html.replace(/<!-- if:([a-z-]+) -->([\s\S]*?)<!-- \/if:\1 -->\n?/g, (_, name, body) =>
-    flags[name] ? body : '',
+  return html.replace(
+    / *<!-- if:([a-z-]+) -->([\s\S]*?)<!-- \/if:\1 -->\n?/g,
+    (whole, name, body) => (name in flags ? (flags[name] ? body : '') : whole),
   );
 }
 
@@ -58,32 +66,157 @@ export function fillDownload(html, installer) {
     );
 }
 
+/**
+ * "TTSNative 2.1.0", or the name a version was released under ("Local TTS 2.0.0").
+ * @param {Release} release
+ */
+function releaseName(release) {
+  return `${release.publishedAs ?? 'TTSNative'} ${release.version}`;
+}
+
+/**
+ * A version's own page, relative to the site root (a folder, so the address needs no file name).
+ * @param {string} version
+ */
+export function releasePath(version) {
+  return `releases/${version}/`;
+}
+
 /** @param {Release} release */
-function renderOne(release) {
-  const id = `v${release.version.replaceAll('.', '-')}`;
-  const name = `${escapeHtml(release.publishedAs ?? 'TTSNative')} ${release.version}`;
+const pageUrl = (release) => `%BASE_URL%/${releasePath(release.version)}`;
+
+/**
+ * The footer's link to the latest release, or nothing before the first one.
+ * @param {string} html
+ * @param {Release | null} latest
+ */
+export function fillLatest(html, latest) {
+  const kept = applyConditions(html, { release: latest !== null });
+  if (!latest) return kept;
+  return kept
+    .replaceAll('%LATEST_VERSION%', () => escapeHtml(latest.version))
+    .replaceAll('%LATEST_NAME%', () => escapeHtml(releaseName(latest)))
+    .replaceAll('%LATEST_DATE%', () => escapeHtml(formatDate(latest.date)))
+    .replaceAll('%LATEST_PATH%', () => pageUrl(latest));
+}
+
+/**
+ * The list of every version, the selected one marked as the current page.
+ * @param {Release[]} releases newest first
+ * @param {number} selected
+ */
+function renderIndex(releases, selected) {
+  const items = releases.map((release, index) => {
+    const current = index === selected ? ' aria-current="page"' : '';
+    const latest = index === 0 ? ' <small>Latest</small>' : '';
+    return `          <li><a href="${pageUrl(release)}"${current}>${escapeHtml(releaseName(release))}${latest}</a></li>`;
+  });
+  return `      <nav class="release-index" aria-label="Versions">
+        <h2>Versions</h2>
+        <ol>
+${items.join('\n')}
+        </ol>
+      </nav>`;
+}
+
+/**
+ * The way to the versions around the selected one, or why there is none.
+ * @param {Release | undefined} older
+ * @param {Release | undefined} newer
+ */
+function renderPager(older, newer) {
+  const back = older
+    ? `<a href="${pageUrl(older)}" rel="prev"><span aria-hidden="true">←</span> Older: ${escapeHtml(releaseName(older))}</a>`
+    : '<span>No older releases</span>';
+  const forward = newer
+    ? `<a href="${pageUrl(newer)}" rel="next">Newer: ${escapeHtml(releaseName(newer))} <span aria-hidden="true">→</span></a>`
+    : '<span>This is the latest release</span>';
+  return `        <nav class="release-pager" aria-label="Browse releases">
+          ${back}
+          ${forward}
+        </nav>`;
+}
+
+/**
+ * One version's notes with its date, and the way to the versions around it.
+ * @param {Release} release
+ * @param {Release | undefined} older
+ * @param {Release | undefined} newer
+ */
+function renderSelected(release, older, newer) {
   const sections = release.sections
     .map(
       (section) =>
-        `      <h3>${escapeHtml(section.title)}</h3>\n      <ul>\n${section.items
-          .map((item) => `        <li>${escapeHtml(item)}</li>`)
-          .join('\n')}\n      </ul>`,
+        `        <h3>${escapeHtml(section.title)}</h3>\n        <ul>\n${section.items
+          .map((item) => `          <li>${escapeHtml(item)}</li>`)
+          .join('\n')}\n        </ul>`,
     )
     .join('\n');
-  return `    <article id="${id}" class="release" aria-labelledby="${id}-title">
-      <h2 id="${id}-title">${name}</h2>
-      <p class="fine">${formatDate(release.date)}${release.publishedAs ? ` · released as ${escapeHtml(release.publishedAs)}` : ''}</p>
-      <p>${escapeHtml(release.summary)}</p>
+  const as = release.publishedAs ? ` · released as ${escapeHtml(release.publishedAs)}` : '';
+  return `      <article class="release" aria-labelledby="release-title">
+        <p class="fine"><time datetime="${release.date}">${formatDate(release.date)}</time>${as}</p>
+        <h2 id="release-title">${escapeHtml(releaseName(release))}</h2>
+        <p>${escapeHtml(release.summary)}</p>
 ${sections}
-      <p><a href="https://github.com/${REPO}/releases/tag/v${release.version}">Release page and downloads on GitHub</a></p>
-    </article>`;
+        <p><a href="https://github.com/${REPO}/releases/tag/v${release.version}">Release page and downloads on GitHub</a></p>
+${renderPager(older, newer)}
+      </article>`;
 }
 
-/** @param {Release[]} releases newest first */
-export function renderHistory(releases) {
-  return releases.length
-    ? releases.map(renderOne).join('\n')
-    : '    <p>No release has been published yet.</p>';
+/**
+ * The release history for one page: every version listed, the selected version's notes, and Older /
+ * Newer.
+ * @param {Release[]} releases newest first
+ * @param {number} [selected] index into `releases`
+ */
+export function renderHistory(releases, selected = 0) {
+  const release = releases[selected];
+  if (!release) return '    <p>No release has been published yet.</p>';
+  return `    <div class="release-layout">
+${renderIndex(releases, selected)}
+${renderSelected(release, releases[selected + 1], releases[selected - 1])}
+    </div>`;
+}
+
+/**
+ * Every page of the release history: the index (the latest release; also at releases/ so a shortened
+ * address still works) and one page per version.
+ * @param {Release[]} releases newest first
+ * @returns {ReleasePage[]}
+ */
+export function releasePages(releases) {
+  const index = {
+    selected: 0,
+    title: 'Release history · TTSNative',
+    description:
+      "What's new in each version of TTSNative, the free, private text-to-speech reader.",
+    canonical: '%BASE_URL%/releases.html',
+  };
+  return [
+    { file: 'releases.html', ...index },
+    { file: 'releases/index.html', ...index },
+    ...releases.map((release, selected) => ({
+      file: `${releasePath(release.version)}index.html`,
+      selected,
+      title: `${releaseName(release)} · Release history · TTSNative`,
+      description: `What changed in ${releaseName(release)}, released ${formatDate(release.date)}.`,
+      canonical: pageUrl(release),
+    })),
+  ];
+}
+
+/**
+ * The release history shell (site/releases.html) filled in for one page.
+ * @param {string} template
+ * @param {Release[]} releases newest first
+ * @param {ReleasePage} page
+ */
+export function fillReleasePage(template, releases, page) {
+  return template
+    .replaceAll('%PAGE_TITLE%', () => escapeHtml(page.title))
+    .replaceAll('%PAGE_DESCRIPTION%', () => escapeHtml(page.description))
+    .replaceAll('%PAGE_URL%', () => page.canonical)
+    .replace(HISTORY_MARKER, () => renderHistory(releases, page.selected));
 }
 
 /**

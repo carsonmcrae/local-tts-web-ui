@@ -5,8 +5,8 @@
  * Scope: The desktop bridge (mocked Tauri invoke and channel): the launch notice, remind me later,
  *   installing with progress and failure, checking on request, automatic checks on or off, the update
  *   status in About, and the data and log folders; in a browser, how updates arrive; release history
- *   (offline notes, an available update first, scrolling to a version, no notes) and What's new once
- *   after an update.
+ *   (offline notes, an available update first, one version at a time with Older and Newer, the
+ *   installed and latest marks, no notes) and What's new once after an update.
  * Does NOT belong: Release-note parsing helpers (releaseHistory.test.ts).
  */
 import { render, screen, waitFor, within } from '@testing-library/react';
@@ -44,6 +44,13 @@ const HISTORY: ReleaseNotes[] = [
     publishedAs: 'Local TTS',
     summary: 'A complete rebuild.',
     sections: [{ key: 'new', title: 'New', items: ['A reader.'] }],
+  },
+  {
+    version: '1.0.0',
+    date: '2026-03-24',
+    publishedAs: 'Local TTS',
+    summary: 'The first version.',
+    sections: [{ key: 'new', title: 'New', items: ['Text to speech.'] }],
   },
 ];
 
@@ -278,11 +285,23 @@ describe('in a browser', () => {
     const dialog = await screen.findByRole('dialog', { name: 'Release history' });
     expect(within(dialog).getByRole('heading', { name: 'Local TTS 2.0.0' })).toBeInTheDocument();
     expect(within(dialog).getByText('October 19, 2026')).toBeInTheDocument();
-    await waitFor(() => expect(Element.prototype.scrollIntoView).toHaveBeenCalled());
+    expect(within(dialog).getByRole('button', { name: '2.0.0 Installed' })).toHaveAttribute(
+      'aria-current',
+      'true',
+    );
     expect(within(dialog).getByRole('link', { name: /Release page on GitHub/ })).toHaveAttribute(
       'href',
       'https://github.com/carsonmcrae/ttsnative/releases/tag/v2.0.0',
     );
+    expect(within(dialog).getByText('This is the latest')).toBeInTheDocument();
+    // Step back to the oldest release and forward again.
+    await user.click(within(dialog).getByRole('button', { name: 'Older: 1.0.0' }));
+    expect(within(dialog).getByRole('heading', { name: 'Local TTS 1.0.0' })).toBeInTheDocument();
+    expect(within(dialog).getByText('No older releases')).toBeInTheDocument();
+    expect(within(dialog).getAllByText('Installed')).toHaveLength(1);
+    await user.click(within(dialog).getByRole('button', { name: 'Newer: 2.0.0' }));
+    expect(within(dialog).getByRole('heading', { name: 'Local TTS 2.0.0' })).toBeInTheDocument();
+    expect(within(dialog).getAllByText('Installed')).toHaveLength(2);
     await user.keyboard('{Escape}');
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
@@ -295,6 +314,17 @@ describe('in a browser', () => {
     expect(screen.queryByRole('button', { name: /What’s new/ })).not.toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Release history' }));
     expect(await screen.findByText(/built without release notes/)).toBeInTheDocument();
+  });
+
+  it('marks the newest notes as the latest in a development build', async () => {
+    const user = userEvent.setup();
+    render(<AboutUpdates version="2.1.0-dev.4+feat.abc" />);
+    expect(screen.queryByRole('button', { name: /What’s new/ })).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Release history' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Release history' });
+    expect(within(dialog).getByRole('heading', { name: 'Local TTS 2.0.0' })).toBeInTheDocument();
+    expect(within(dialog).getAllByText('Latest')).toHaveLength(2);
+    expect(within(dialog).queryByText('Installed')).not.toBeInTheDocument();
   });
 
   it('does nothing when asked to update outside the desktop app', async () => {
@@ -323,18 +353,47 @@ describe('in a browser', () => {
 });
 
 describe('release history with an available update', () => {
-  it('lists the newer version first', async () => {
+  const chips = (versions: HTMLElement) =>
+    within(versions)
+      .getAllByRole('button')
+      .map((chip) => chip.getAttribute('aria-label'));
+
+  it('lists the newer version first and steps through every version', async () => {
     desktopCommands();
     const { user } = renderDesktop(<span />);
     await screen.findByText('TTSNative 2.1.0 is available.');
     await user.click(screen.getByRole('button', { name: 'Release history' }));
     const dialog = await screen.findByRole('dialog', { name: 'Release history' });
-    const items = within(dialog).getAllByRole('article');
-    expect(items.map((item) => item.getAttribute('aria-label'))).toEqual([
-      'TTSNative 2.1.0',
-      'TTSNative 2.0.0',
-    ]);
-    expect(within(dialog).getByText('Available update')).toBeInTheDocument();
+    const versions = within(dialog).getByRole('navigation', { name: 'Versions' });
+    expect(chips(versions)).toEqual(['2.1.0 Available update', '2.0.0 Installed', '1.0.0']);
+    expect(within(dialog).getByRole('article', { name: 'TTSNative 2.1.0' })).toBeInTheDocument();
+    expect(within(dialog).getAllByText('Available update')).toHaveLength(2);
+    expect(within(dialog).getByText('This is the latest')).toBeInTheDocument();
+    await user.click(within(dialog).getByRole('button', { name: 'Older: 2.0.0' }));
+    expect(within(dialog).getByRole('article', { name: 'Local TTS 2.0.0' })).toBeInTheDocument();
+    expect(within(dialog).getAllByText('Installed')).toHaveLength(2);
+    await user.click(within(dialog).getByRole('button', { name: 'Older: 1.0.0' }));
+    expect(within(dialog).getByRole('article', { name: 'Local TTS 1.0.0' })).toBeInTheDocument();
+    expect(within(dialog).getByText('No older releases')).toBeInTheDocument();
+    expect(within(versions).getByRole('button', { name: '1.0.0' })).toHaveAttribute(
+      'aria-current',
+      'true',
+    );
+    await user.click(within(dialog).getByRole('button', { name: 'Newer: 2.0.0' }));
+    await user.click(within(versions).getByRole('button', { name: '2.1.0 Available update' }));
+    expect(within(dialog).getByRole('article', { name: 'TTSNative 2.1.0' })).toBeInTheDocument();
+  });
+
+  it('does not list an update twice when its notes are already built in', async () => {
+    desktopCommands({
+      update_check: { status: 'available', update: { ...UPDATE, version: '2.0.0' } },
+    });
+    const { user } = renderDesktop(<span />);
+    await screen.findByText('TTSNative 2.0.0 is available.');
+    await user.click(screen.getByRole('button', { name: 'Release history' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Release history' });
+    const versions = within(dialog).getByRole('navigation', { name: 'Versions' });
+    expect(chips(versions)).toEqual(['2.0.0 Available update', '1.0.0']);
   });
 });
 

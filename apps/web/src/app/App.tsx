@@ -25,6 +25,7 @@ import { AppShell } from './AppShell';
 import { PageError } from './PageError';
 
 const LibraryPage = lazy(() => import('@/features/library/LibraryPage'));
+const ExplorePage = lazy(() => import('@/features/explore/ExplorePage'));
 const ReaderPage = lazy(() => import('@/features/reader/ReaderPage'));
 const VoiceLibraryPage = lazy(() => import('@/features/voices/VoiceLibraryPage'));
 const VoiceStudioPage = lazy(() => import('@/features/studio/VoiceStudioPage'));
@@ -88,6 +89,14 @@ function createRouter() {
               element: (
                 <Page>
                   <LibraryPage />
+                </Page>
+              ),
+            },
+            {
+              path: 'explore',
+              element: (
+                <Page>
+                  <ExplorePage />
                 </Page>
               ),
             },

@@ -227,6 +227,71 @@ MIGRATIONS: tuple[str, ...] = (
     ALTER TABLE pronunciations ADD COLUMN document_id TEXT REFERENCES documents(id) ON DELETE CASCADE;
     CREATE INDEX pronunciations_by_document ON pronunciations(document_id);
     """,
+    # 14: how the library is organised (ADR-24): folders, a document's shelf entry (folder, type,
+    # favourite), its genres and tags, and collections. IF NOT EXISTS: branches that add migrations in
+    # parallel can be merged in either order. Nothing that exists is touched.
+    """
+    CREATE TABLE IF NOT EXISTS folders (
+        id TEXT PRIMARY KEY,
+        parent_id TEXT REFERENCES folders(id) ON DELETE CASCADE,
+        name TEXT NOT NULL,
+        position INTEGER NOT NULL DEFAULT 0,
+        created_at TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS folders_by_parent ON folders(parent_id);
+    CREATE TABLE IF NOT EXISTS document_shelf (
+        document_id TEXT PRIMARY KEY REFERENCES documents(id) ON DELETE CASCADE,
+        folder_id TEXT REFERENCES folders(id) ON DELETE SET NULL,
+        document_type TEXT,
+        favorite INTEGER NOT NULL DEFAULT 0,
+        favorited_at TEXT
+    );
+    CREATE INDEX IF NOT EXISTS document_shelf_by_folder ON document_shelf(folder_id);
+    CREATE TABLE IF NOT EXISTS document_genres (
+        document_id TEXT NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+        genre TEXT NOT NULL,
+        PRIMARY KEY (document_id, genre)
+    );
+    CREATE TABLE IF NOT EXISTS document_tags (
+        document_id TEXT NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+        tag TEXT NOT NULL,
+        tag_key TEXT NOT NULL,
+        PRIMARY KEY (document_id, tag_key)
+    );
+    CREATE INDEX IF NOT EXISTS document_tags_by_key ON document_tags(tag_key);
+    CREATE TABLE IF NOT EXISTS collections (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        description TEXT NOT NULL DEFAULT '',
+        position INTEGER NOT NULL DEFAULT 0,
+        created_at TEXT NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS collection_documents (
+        collection_id TEXT NOT NULL REFERENCES collections(id) ON DELETE CASCADE,
+        document_id TEXT NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+        position INTEGER NOT NULL DEFAULT 0,
+        added_at TEXT NOT NULL,
+        PRIMARY KEY (collection_id, document_id)
+    );
+    CREATE INDEX IF NOT EXISTS collection_documents_by_document ON collection_documents(document_id);
+    """,
+    # 15: the bundled literary catalog (ADR-25): which document a bundled work became, and the works a
+    # reader hid from Explore. A work's document is deleted like any other; the link goes with it.
+    """
+    CREATE TABLE IF NOT EXISTS bundled_documents (
+        document_id TEXT PRIMARY KEY REFERENCES documents(id) ON DELETE CASCADE,
+        work_id TEXT NOT NULL UNIQUE,
+        edition_id TEXT NOT NULL,
+        content_sha256 TEXT NOT NULL,
+        catalog_version INTEGER NOT NULL,
+        text_version INTEGER NOT NULL,
+        added_at TEXT NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS hidden_works (
+        work_id TEXT PRIMARY KEY,
+        hidden_at TEXT NOT NULL
+    );
+    """,
 )
 
 

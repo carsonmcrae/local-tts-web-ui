@@ -6,7 +6,8 @@ Scope: Insert a fully segmented document atomically (with the sentence annotatio
 such as the automatic cleanup); list/get/delete; fetch a section's or a single segment's text;
 search a document's sentences; rename a section or move where it starts (keeping segments, counts
 and the longer "end of section" pause in step); save and read progress. Rows are mapped to API
-models here, with what is read aloud counted as they are read (``spoken.py``).
+models here, with what is read aloud counted as they are read (``spoken.py``), the author from the
+audiobook details, whether a cover exists, and how the document is organised (``shelf.py``).
 Does NOT belong: Validation or extraction (``service.py``).
 """
 
@@ -14,7 +15,7 @@ from __future__ import annotations
 
 import json
 import sqlite3
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from dataclasses import asdict
 
 from ltts.common import utc_now
@@ -30,6 +31,7 @@ from ltts.documents.schemas import (
     SectionOut,
     SegmentOut,
 )
+from ltts.documents.shelf import ShelfFacets, facets
 from ltts.documents.spoken import UNREAD_SQL, Unread, unread
 from ltts.documents.structures import SectionInfo, Segment
 from ltts.errors import ConflictError, NotFoundError
@@ -38,14 +40,17 @@ _DOCUMENT_GONE = "That document no longer exists."
 # One complete query: every document (most recently read or added first), or only the one whose id
 # is passed as :document_id.
 _SUMMARY_SQL = """
-SELECT d.*, p.segment_idx AS p_segment, p.voice_id AS p_voice, p.updated_at AS p_updated
+SELECT d.*, p.segment_idx AS p_segment, p.voice_id AS p_voice, p.updated_at AS p_updated, dd.author AS author,
+       bd.work_id AS bundled_work_id
 FROM documents d LEFT JOIN progress p ON p.document_id = d.id
+LEFT JOIN document_details dd ON dd.document_id = d.id
+LEFT JOIN bundled_documents bd ON bd.document_id = d.id
 WHERE (:document_id IS NULL OR d.id = :document_id)
 ORDER BY COALESCE(p.updated_at, d.created_at) DESC
 """
 
 
-def _summary(row: sqlite3.Row, unspoken: Unread) -> DocumentSummary:
+def _summary(row: sqlite3.Row, unspoken: Unread, shelf: ShelfFacets, has_cover: bool) -> DocumentSummary:
     progress = None
     if row["p_segment"] is not None:
         last = unspoken.last_read(row["segment_count"])
@@ -74,12 +79,17 @@ def _summary(row: sqlite3.Row, unspoken: Unread) -> DocumentSummary:
         created_at=row["created_at"],
         last_opened_at=row["last_opened_at"],
         progress=progress,
+        author=row["author"],
+        has_cover=has_cover,
+        shelf=shelf,
+        bundled_work_id=row["bundled_work_id"],
     )
 
 
 class DocumentRepository:
-    def __init__(self, db: Database):
+    def __init__(self, db: Database, covers: Callable[[], set[str]] | None = None):
         self._db = db
+        self._covers = covers or set  # the documents that have a cover file
 
     def count(self) -> int:
         with self._db.connect() as conn:
@@ -117,16 +127,31 @@ class DocumentRepository:
         with self._db.connect() as conn:
             rows = conn.execute(_SUMMARY_SQL, {"document_id": None}).fetchall()
             unspoken = unread(conn.execute(UNREAD_SQL, {"document_id": None}))
-        return [_summary(row, unspoken.get(row["id"], Unread())) for row in rows]
+            shelves = facets(conn)
+        covers = self._covers()
+        return [
+            _summary(row, unspoken.get(row["id"], Unread()), shelves.get(row["id"], ShelfFacets()), row["id"] in covers)
+            for row in rows
+        ]
 
-    def get(self, document_id: str) -> DocumentDetail:
+    def _one(self, document_id: str, *, opened: bool) -> tuple[sqlite3.Row, DocumentSummary]:
         with self._db.connect() as conn:
             row = conn.execute(_SUMMARY_SQL, {"document_id": document_id}).fetchone()
             if row is None:
                 raise NotFoundError(_DOCUMENT_GONE, code="document_not_found")
-            conn.execute("UPDATE documents SET last_opened_at = ? WHERE id = ?", (utc_now(), document_id))
+            if opened:
+                conn.execute("UPDATE documents SET last_opened_at = ? WHERE id = ?", (utc_now(), document_id))
             unspoken = unread(conn.execute(UNREAD_SQL, {"document_id": document_id}))
-        summary = _summary(row, unspoken.get(document_id, Unread()))
+            shelf = facets(conn, document_id).get(document_id, ShelfFacets())
+        has_cover = document_id in self._covers()
+        return row, _summary(row, unspoken.get(document_id, Unread()), shelf, has_cover)
+
+    def summary(self, document_id: str) -> DocumentSummary:
+        """One document's library summary, without counting as opening it."""
+        return self._one(document_id, opened=False)[1]
+
+    def get(self, document_id: str) -> DocumentDetail:
+        row, summary = self._one(document_id, opened=True)
         return DocumentDetail(
             **summary.model_dump(),
             sections=[SectionOut(**s) for s in json.loads(row["sections_json"])],

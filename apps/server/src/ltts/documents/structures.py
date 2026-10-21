@@ -29,7 +29,9 @@ class DocumentType(StrEnum):
 
 
 BlockKind = Literal["heading", "paragraph"]
-Boundary = Literal["sentence", "paragraph", "section"]
+# What follows a segment: the end of a sentence, of a line inside its paragraph (verse, an address),
+# of a paragraph, or of a section. Each gets its own pause when read.
+Boundary = Literal["sentence", "line", "paragraph", "section"]
 # A PDF's running header or footer, page number, or footnote text at the foot of a page.
 Furniture = Literal["header", "footer", "page_number", "footnote_text"]
 
@@ -39,6 +41,9 @@ class Block:
     kind: BlockKind
     text: str
     furniture: Furniture | None = None
+    # The block ends with a line break inside its paragraph (``<br>``): the next block continues the
+    # same paragraph, so verse keeps its lines without a paragraph's pause or gap between them.
+    line_break: bool = False
 
 
 @dataclass(slots=True)

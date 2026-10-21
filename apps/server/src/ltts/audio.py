@@ -23,7 +23,7 @@ from ltts.room_tone import room_tone
 
 Float32Array = npt.NDArray[np.float32]
 
-PAUSE_SECONDS = {"sentence": 0.28, "paragraph": 0.62, "section": 1.2}
+PAUSE_SECONDS = {"sentence": 0.28, "line": 0.42, "paragraph": 0.62, "section": 1.2}
 FADE_SECONDS = 0.006
 # libsndfile's container and sample format for each encoded format (exports and the speech API share them).
 ENCODINGS = {

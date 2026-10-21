@@ -367,7 +367,11 @@ class ExportService:
         for track in built.tracks:
             sentences = [
                 Sentence(
-                    row.index, segments[row.index].paragraph_index, segments[row.index].kind == "heading", row.text
+                    row.index,
+                    segments[row.index].paragraph_index,
+                    segments[row.index].kind == "heading",
+                    row.text,
+                    line_break=segments[row.index].boundary == "line",
                 )
                 for row in rows
                 if row.section == track.section

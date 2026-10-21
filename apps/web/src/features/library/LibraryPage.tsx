@@ -2,24 +2,28 @@
 // Copyright (c) 2026 Carson McRae
 /**
  * Purpose: The library — the app's home screen.
- * Scope: Upload/paste/web page entry points, drag-and-drop anywhere on the page, a "continue listening" card
- *   for the most recent document, the searchable, sortable document list, a one-click sample, and
+ * Scope: Upload/paste/web page entry points, drag-and-drop anywhere on the page, the rail of views,
+ *   collections and folders (a select on phones), a "continue listening" card for the most recent
+ *   document, the view's document list, a one-click sample, the tab to the included books, and
  *   loading/empty/error states.
- * Does NOT belong: Reading view (ReaderPage).
+ * Does NOT belong: Reading view (ReaderPage) or the list's filters and actions (LibraryList).
  */
-import { BookOpen, PlayCircle, Sparkles } from 'lucide-react';
+import { BookMarked, BookOpen, PlayCircle, Sparkles } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router';
+import { Link, useNavigate, useSearchParams } from 'react-router';
 import { describeError } from '@/api/client';
+import { useCollections, useFolders } from '@/api/libraryQueries';
 import { useDocuments, usePasteText } from '@/api/queries';
-import type { DocumentSummary, ReadingProgress } from '@/api/types';
+import type { DocumentSummary } from '@/api/types';
 import { Button, buttonClasses } from '@/components/ui/Button';
 import { Banner, EmptyState, ProgressBar, Skeleton, StatusRegion } from '@/components/ui/Feedback';
 import { PageHeader } from '@/components/ui/Layout';
 import { DefaultVoicesBanner } from '@/features/engines/EngineSetup';
 import { documentFacts } from './DocumentCard';
 import { LibraryList } from './LibraryList';
+import { LibraryRail, RailSelect } from './LibraryRail';
+import { LibraryTabs } from './LibraryTabs';
 import { SAMPLE_TEXT, SAMPLE_TITLE } from './sample';
 import {
   DropTarget,
@@ -28,6 +32,7 @@ import {
   UploadStatus,
   useDocumentIntake,
 } from './UploadArea';
+import { isResumable, parseView, selectDocuments } from './views';
 import { WebPageDialog } from './WebPageDialog';
 
 function ContinueCard({
@@ -59,17 +64,14 @@ function ContinueCard({
   );
 }
 
-type Resumable = DocumentSummary & { progress: ReadingProgress };
-
-/** A document that was started but not finished (the "continue listening" candidate). */
-function isResumable(doc: DocumentSummary): doc is Resumable {
-  return Boolean(doc.progress && doc.progress.percent < 99.5);
-}
-
 function LibraryContent({
   documents,
   emptyActions,
 }: Readonly<{ documents: ReturnType<typeof useDocuments>; emptyActions: ReactNode }>) {
+  const [params] = useSearchParams();
+  const view = parseView(params);
+  const folders = useFolders();
+  const collections = useCollections();
   if (documents.isPending) {
     return (
       <StatusRegion label="Loading documents" className="flex flex-col gap-3">
@@ -94,7 +96,7 @@ function LibraryContent({
       </Banner>
     );
   }
-  const list = documents.data;
+  const list: DocumentSummary[] = documents.data;
   if (list.length === 0) {
     return (
       <div className="rounded-[var(--radius-xl)] border-2 border-dashed border-line-strong bg-surface/60">
@@ -105,24 +107,45 @@ function LibraryContent({
         >
           PDF, Word (DOCX), EPUB, Kindle (MOBI), FB2, HTML, Markdown and plain text, up to 25 MB, or
           a web page by its address. Text is extracted on this computer; scanned PDFs without a text
-          layer aren't supported yet.
+          layer aren't supported yet. Or start with one of the books that come with TTSNative.
         </EmptyState>
       </div>
     );
   }
-  const recent = list.find(isResumable);
+  const recent = view.kind === 'all' ? list.find(isResumable) : undefined;
+  const folderList = folders.data ?? [];
+  const collectionList = collections.data ?? [];
   return (
-    <>
-      {recent ? (
-        <ContinueCard
-          id={recent.id}
-          title={recent.title}
-          percent={recent.progress.percent}
-          facts={documentFacts(recent).join(' · ')}
+    <div className="flex gap-8">
+      <aside className="hidden w-56 shrink-0 lg:block">
+        <LibraryRail
+          view={view}
+          documents={list}
+          folders={folderList}
+          collections={collectionList}
         />
-      ) : null}
-      <LibraryList documents={list} />
-    </>
+      </aside>
+      <div className="min-w-0 flex-1">
+        <div className="mb-4 lg:hidden">
+          <RailSelect view={view} folders={folderList} collections={collectionList} />
+        </div>
+        {recent ? (
+          <ContinueCard
+            id={recent.id}
+            title={recent.title}
+            percent={recent.progress.percent}
+            facts={documentFacts(recent).join(' · ')}
+          />
+        ) : null}
+        <LibraryList
+          documents={selectDocuments(list, view)}
+          view={view}
+          folders={folderList}
+          collections={collectionList}
+          total={list.length}
+        />
+      </div>
+    </div>
   );
 }
 
@@ -143,7 +166,7 @@ export default function LibraryPage() {
   return (
     <DropTarget
       onFile={intake.submit}
-      className="mx-auto min-h-full max-w-5xl px-4 py-6 sm:px-8 sm:py-10"
+      className="mx-auto min-h-full max-w-6xl px-4 py-6 sm:px-8 sm:py-10"
     >
       <PageHeader
         title="Library"
@@ -156,6 +179,7 @@ export default function LibraryPage() {
           />
         }
       />
+      <LibraryTabs current="library" />
       <DefaultVoicesBanner />
       <UploadStatus
         uploading={intake.uploading}
@@ -176,6 +200,9 @@ export default function LibraryPage() {
               onPaste={() => setPasteOpen(true)}
               onWebPage={() => setWebOpen(true)}
             />
+            <Link to="/explore" className={buttonClasses('secondary')}>
+              <BookMarked size={16} /> Browse the included books
+            </Link>
             <Button
               variant="ghost"
               icon={<Sparkles size={16} />}

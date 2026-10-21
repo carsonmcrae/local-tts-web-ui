@@ -19,10 +19,13 @@ from ltts.common import MB
 from ltts.db import Database
 from ltts.documents.bookmarks import BookmarkStore
 from ltts.documents.casting import CastingStore
+from ltts.documents.collections import CollectionStore
 from ltts.documents.delivery import Sentence
 from ltts.documents.details import DocumentDetailsStore
+from ltts.documents.folders import FolderStore
 from ltts.documents.repository import DocumentRepository
 from ltts.documents.service import DocumentService
+from ltts.documents.shelf import ShelfStore
 from ltts.documents.speech_marks import MarkHooks, voice_finder
 from ltts.documents.styling import StylingStore
 from ltts.engines.registry import EngineRegistry
@@ -30,6 +33,7 @@ from ltts.exports.audiobookshelf import Audiobookshelf
 from ltts.exports.service import ExportService
 from ltts.jobs import JobManager
 from ltts.lan.service import LanService
+from ltts.library.catalog import Catalog, LibraryStores
 from ltts.modelstore.store import ModelStore
 from ltts.pronunciation.store import PronunciationStore
 from ltts.secrets import SecretStore
@@ -78,6 +82,10 @@ class Services:
     styling: StylingStore
     casting: CastingStore
     details: DocumentDetailsStore
+    shelf: ShelfStore
+    folders: FolderStore
+    collections: CollectionStore
+    catalog: Catalog
     audiobookshelf: Audiobookshelf
     speech_api: SpeechApi
 
@@ -97,7 +105,8 @@ def build_services(
     db = Database(settings.database_path)
     db.migrate()
     jobs = JobManager(db)
-    documents = DocumentRepository(db)
+    details = DocumentDetailsStore(settings, db)
+    documents = DocumentRepository(db, details.ids_with_cover)
     store = ModelStore(
         settings.resolved_models_dir, reserve_mb=settings.min_free_disk_mb, bundled_dir=settings.bundled_models_dir
     )
@@ -108,7 +117,6 @@ def build_services(
     styling = StylingStore(db, lambda doc: [Sentence(s.index, s.paragraph_index, s.kind, s.text)
                                              for s in documents.segments_detail(doc)])  # fmt: skip
     casting = CastingStore(db, styling.lines, lambda doc: {s.index: s.text for s in documents.segments_detail(doc)})
-    details = DocumentDetailsStore(settings, db)
     synthesis = SynthesisService(registry, cache, documents, pronunciations.apply, styling, casting)
     speech_store = SpeechApiStore(db, lambda: {profile.voice_id for profile in voices.list_all()})
 
@@ -124,12 +132,14 @@ def build_services(
     sessions = VoiceSessionService(settings, db, jobs)
     studio = StudioService(sessions, voices, jobs, lambda: registry.voice_builder(CLONING_ENGINE))
     marks = MarkHooks(voice_finder(lambda: [(v.id, v.name) for v in registry.voices()]), styling.annotate)
+    document_service = DocumentService(settings, documents, isolate=isolate_extraction, marks=marks)
+    shelf = ShelfStore(db)
     return Services(
         settings=settings,
         db=db,
         jobs=jobs,
         document_repo=documents,
-        document_service=DocumentService(settings, documents, isolate=isolate_extraction, marks=marks),
+        document_service=document_service,
         model_store=store,
         engines=registry,
         audio_cache=cache,
@@ -148,6 +158,10 @@ def build_services(
         styling=styling,
         casting=casting,
         details=details,
+        shelf=shelf,
+        folders=FolderStore(db),
+        collections=CollectionStore(db),
+        catalog=Catalog(settings, db, LibraryStores(document_service, documents, details, shelf)),
         audiobookshelf=Audiobookshelf(db, SecretStore(settings.path("secrets"))),
         speech_api=SpeechApi(settings, speech_store, synthesis, registry),
     )

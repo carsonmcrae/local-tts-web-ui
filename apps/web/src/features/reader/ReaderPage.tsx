@@ -4,16 +4,18 @@
  * Purpose: The reading view for one document.
  * Scope: Loads the document into the player at the saved position (without auto-playing), follows
  *   the spoken section while playing, offers the contents and bookmarks panel (sidebar on desktop,
- *   dialog on phones), search, and the "adjust this section" correction, jumps to any sentence
- *   from them, and composes the header, warnings, section text and section pager.
+ *   dialog on phones), search, the "adjust this section" correction and the document's voices and
+ *   effects (per sentence from a text selection, and a dialogue voice), jumps to any sentence from
+ *   them, and composes the header, warnings, section text and section pager.
  * Does NOT belong: Player controls (PlayerBar) or text rendering details (DocumentText).
  */
 import { ListTree, PenLine } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router';
 import { ApiError, describeError } from '@/api/client';
-import { useDocument, usePreferences } from '@/api/queries';
+import { useDocument, usePreferences, useVoices } from '@/api/queries';
 import { useBookmarks } from '@/api/readingQueries';
+import { useDocumentStyles } from '@/api/stylingQueries';
 import type { DocumentDetail, SectionOut } from '@/api/types';
 import { Button, buttonClasses } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
@@ -23,10 +25,13 @@ import { DefaultVoicesBanner } from '@/features/engines/EngineSetup';
 import type { PlayerDocument } from '@/features/player/controller';
 import { usePlayer } from '@/features/player/PlayerProvider';
 import { AdjustSectionDialog } from './AdjustSectionDialog';
+import { CastButton } from './CastDialog';
 import { ReaderPanels } from './ReaderPanels';
 import { ReaderHeader, SectionBody, SectionPager } from './ReaderParts';
 import { SearchDialog } from './SearchDialog';
 import { SectionNav } from './SectionNav';
+import { SelectionStyler } from './SentenceStyling';
+import { describeStyle } from './stylingLabels';
 
 function toPlayerDocument(doc: DocumentDetail): PlayerDocument {
   return {
@@ -65,6 +70,18 @@ function Reader({ doc }: Readonly<{ doc: DocumentDetail }>) {
   );
   const [adjusting, setAdjusting] = useState<SectionOut | undefined>();
   const playerDoc = useMemo(() => toPlayerDocument(doc), [doc]);
+  const styling = useDocumentStyles(doc.id);
+  const voices = useVoices();
+  const textRoot = useRef<HTMLDivElement>(null);
+  const styleByIndex = useMemo(
+    () => new Map((styling.data?.segments ?? []).map((style) => [style.index, style])),
+    [styling.data],
+  );
+  const styled = useMemo(() => {
+    const name = (id: string) =>
+      voices.data?.find((voice) => voice.id === id)?.name ?? 'another voice';
+    return new Map([...styleByIndex].map(([index, style]) => [index, describeStyle(style, name)]));
+  }, [styleByIndex, voices.data]);
 
   // Follow the narration into the next section (adjusting state during render, not in an effect).
   // Moving to the next sentence sets its index together with `loading`, so following only while
@@ -99,6 +116,10 @@ function Reader({ doc }: Readonly<{ doc: DocumentDetail }>) {
     else void controller.load(playerDoc, index, true);
   };
   const resumeAt = isLoaded ? state.segmentIndex : (doc.progress?.segmentIndex ?? 0);
+  // New voices or effects: the player fetches the audio again, if it is reading this document.
+  const stylingChanged = () => {
+    if (isLoaded) void controller.refreshAudio();
+  };
   const playingThis = isLoaded && isNarrating(state.status);
   const panels = (
     <ReaderPanels
@@ -133,28 +154,47 @@ function Reader({ doc }: Readonly<{ doc: DocumentDetail }>) {
             {warning}
           </Banner>
         ))}
-        {multiSection ? (
-          <div className="mb-6 flex flex-wrap items-center justify-between gap-2">
-            <p className="text-[13px] font-medium text-muted">
-              Section {viewed + 1} of {doc.sections.length} · {doc.sections[viewed]?.title}
-            </p>
-            <Button
-              variant="ghost"
-              size="sm"
-              icon={<PenLine size={14} />}
-              onClick={() => setAdjusting(doc.sections[viewed])}
-            >
-              Adjust this section
-            </Button>
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-2">
+          <p className="text-[13px] font-medium text-muted">
+            {multiSection
+              ? `Section ${viewed + 1} of ${doc.sections.length} · ${doc.sections[viewed]?.title}`
+              : null}
+          </p>
+          <div className="flex flex-wrap gap-1">
+            <CastButton
+              documentId={doc.id}
+              styling={styling.data}
+              activeIndex={isLoaded ? state.segmentIndex : null}
+              onChanged={stylingChanged}
+            />
+            {multiSection ? (
+              <Button
+                variant="ghost"
+                size="sm"
+                icon={<PenLine size={14} />}
+                onClick={() => setAdjusting(doc.sections[viewed])}
+              >
+                Adjust this section
+              </Button>
+            ) : null}
           </div>
-        ) : null}
-        <SectionBody
+        </div>
+        <div ref={textRoot}>
+          <SectionBody
+            documentId={doc.id}
+            sectionIndex={viewed}
+            activeIndex={isLoaded ? state.segmentIndex : null}
+            bookmarked={bookmarked}
+            styled={styled}
+            autoScroll={preferences.data?.autoScroll ?? true}
+            onSelect={playFrom}
+          />
+        </div>
+        <SelectionStyler
           documentId={doc.id}
-          sectionIndex={viewed}
-          activeIndex={isLoaded ? state.segmentIndex : null}
-          bookmarked={bookmarked}
-          autoScroll={preferences.data?.autoScroll ?? true}
-          onSelect={playFrom}
+          root={textRoot}
+          styles={styleByIndex}
+          onChanged={stylingChanged}
         />
         <SectionPager
           previous={doc.sections[viewed - 1]}

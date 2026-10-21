@@ -229,6 +229,11 @@ export class PlaybackController {
     else this.set({ sleep: { kind: 'minutes', endsAt: this.now() + choice * 60_000 } });
   }
 
+  /** How sentences are read changed (their voice or effect): fetch the audio again from here. */
+  refreshAudio(): Promise<void> {
+    return this.restartWithNewAudio();
+  }
+
   /** Take corrected sections for the loaded document (a chapter was renamed or moved). */
   refresh(document: PlayerDocument): void {
     if (this.state.document?.id === document.id) this.set({ document });

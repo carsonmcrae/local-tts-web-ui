@@ -172,6 +172,14 @@
     text-underline-offset: 0.28em;
   }
 
+  /* A sentence with its own voice or effect is tinted along its foot (and described for screen readers). */
+  .reader-seg[data-styled='true'] {
+    background-image: linear-gradient(
+      transparent 82%,
+      color-mix(in srgb, var(--accent) 28%, transparent) 82%
+    );
+  }
+
   /* The spread shadow widens the highlight without adding padding that would look like double spaces. */
   .reader-seg[data-active='true'] {
     background: var(--highlight);

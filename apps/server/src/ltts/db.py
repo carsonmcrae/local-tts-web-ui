@@ -138,6 +138,20 @@ MIGRATIONS: tuple[str, ...] = (
         UNIQUE (document_id, segment_idx)
     );
     """,
+    """
+    CREATE TABLE segment_styles (
+        document_id TEXT NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+        segment_idx INTEGER NOT NULL,
+        voice_id TEXT,
+        effect TEXT,
+        sound TEXT,
+        PRIMARY KEY (document_id, segment_idx)
+    );
+    CREATE TABLE document_cast (
+        document_id TEXT PRIMARY KEY REFERENCES documents(id) ON DELETE CASCADE,
+        dialogue_voice_id TEXT
+    );
+    """,
 )
 
 

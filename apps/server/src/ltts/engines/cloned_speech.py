@@ -45,6 +45,11 @@ def sentence_style(text: str) -> str:
     return "dialogue" if _QUOTE.search(text) else NARRATION
 
 
+def is_dialogue(text: str) -> bool:
+    """Whether a sentence holds quoted speech."""
+    return _QUOTE.search(text) is not None
+
+
 def count_syllables(text: str) -> int:
     """English syllables in ``text``, by vowel groups with the common silent endings (a close estimate)."""
     total = 0

@@ -158,8 +158,9 @@ class ExportService:
         try:
             for done, (index, section, text, boundary) in enumerate(rows):
                 ctx.check()
+                plan = self._synthesis.plan_segment(req.document_id, index, text, req.voice_id)
                 audio = self._synthesis.render_blocking(
-                    req.voice_id, text, boundary, req.pace, PRIORITY_EXPORT, lambda: ctx.canceled
+                    plan, text, boundary, req.pace, PRIORITY_EXPORT, lambda: ctx.canceled
                 )
                 samples, rate = read_audio(audio.path)
                 key = section if req.layout == "chapters" else -1

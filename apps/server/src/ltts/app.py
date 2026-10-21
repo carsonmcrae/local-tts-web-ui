@@ -99,6 +99,7 @@ def create_app(
     install_error_handlers(app)
 
     from ltts.documents.router import router as documents_router
+    from ltts.documents.styling_router import router as styling_router
     from ltts.engines.router import router as engines_router
     from ltts.exports.router import router as exports_router
     from ltts.preferences import router as preferences_router
@@ -109,7 +110,8 @@ def create_app(
     from ltts.voices.sessions_router import router as voice_sessions_router
 
     for router in (system_router, documents_router, audio_router, engines_router, voices_router,
-                   voice_sessions_router, exports_router, preferences_router, pronunciation_router):  # fmt: skip
+                   voice_sessions_router, exports_router, preferences_router, pronunciation_router,
+                   styling_router):  # fmt: skip
         app.include_router(router)
     if static_dir is not None:
         _mount_static(app, static_dir)

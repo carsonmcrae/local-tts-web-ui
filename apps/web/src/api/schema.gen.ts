@@ -98,6 +98,26 @@ export type paths = {
     patch: operations['update_bookmark_api_documents__document_id__bookmarks__bookmark_id__patch'];
     trace?: never;
   };
+  '/api/documents/{document_id}/cast': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /**
+     * Update Cast
+     * @description Choose the voice that reads quoted dialogue in this document (null: the reading voice).
+     */
+    put: operations['update_cast_api_documents__document_id__cast_put'];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/documents/{document_id}/progress': {
     parameters: {
       query?: never;
@@ -160,6 +180,27 @@ export type paths = {
     /** Segment Audio */
     get: operations['segment_audio_api_documents__document_id__segments__index__audio_get'];
     put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/documents/{document_id}/styles': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get Styles */
+    get: operations['get_styles_api_documents__document_id__styles_get'];
+    /**
+     * Update Styles
+     * @description Set (or, with null, clear) a voice, an effect or a sound on the chosen sentences.
+     */
+    put: operations['update_styles_api_documents__document_id__styles_put'];
     post?: never;
     delete?: never;
     options?: never;
@@ -917,6 +958,11 @@ export type components = {
       /** Takenumber */
       takeNumber: number;
     };
+    /** CastUpdate */
+    CastUpdate: {
+      /** Dialoguevoiceid */
+      dialogueVoiceId?: string | null;
+    };
     /**
      * Cleanup
      * @description How a microphone's recordings are cleaned up before a voice is made from them.
@@ -981,6 +1027,15 @@ export type components = {
       warnings: string[];
       /** Wordcount */
       wordCount: number;
+    };
+    /** DocumentStylesOut */
+    DocumentStylesOut: {
+      /** Dialoguevoiceid */
+      dialogueVoiceId: string | null;
+      /** Revision */
+      revision: string;
+      /** Segments */
+      segments: components['schemas']['SegmentStyleOut'][];
     };
     /** DocumentSummary */
     DocumentSummary: {
@@ -1429,6 +1484,55 @@ export type components = {
       /** Text */
       text: string;
     };
+    /** SegmentStyleOut */
+    SegmentStyleOut: {
+      /** Effect */
+      effect?: ('loudspeaker' | 'telephone' | 'radio' | 'hall' | 'distant' | 'robot') | null;
+      /** Index */
+      index: number;
+      /** Sound */
+      sound?:
+        | (
+            | 'laugh'
+            | 'chuckle'
+            | 'sigh'
+            | 'gasp'
+            | 'cough'
+            | 'clear throat'
+            | 'sniff'
+            | 'groan'
+            | 'shush'
+          )
+        | null;
+      /** Voiceid */
+      voiceId?: string | null;
+    };
+    /**
+     * SegmentStyleUpdate
+     * @description Set the given fields on the given sentences; a field sent as null clears it, one left out is kept.
+     */
+    SegmentStyleUpdate: {
+      /** Effect */
+      effect?: ('loudspeaker' | 'telephone' | 'radio' | 'hall' | 'distant' | 'robot') | null;
+      /** Indexes */
+      indexes: number[];
+      /** Sound */
+      sound?:
+        | (
+            | 'laugh'
+            | 'chuckle'
+            | 'sigh'
+            | 'gasp'
+            | 'cough'
+            | 'clear throat'
+            | 'sniff'
+            | 'groan'
+            | 'shush'
+          )
+        | null;
+      /** Voiceid */
+      voiceId?: string | null;
+    };
     /** SessionCreate */
     SessionCreate: {
       cleanup?: components['schemas']['Cleanup'] | null;
@@ -1874,6 +1978,41 @@ export interface operations {
       };
     };
   };
+  update_cast_api_documents__document_id__cast_put: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        document_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CastUpdate'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DocumentStylesOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
   save_progress_api_documents__document_id__progress_put: {
     parameters: {
       query?: never;
@@ -2030,6 +2169,72 @@ export interface operations {
           [name: string]: unknown;
         };
         content?: never;
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  get_styles_api_documents__document_id__styles_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        document_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DocumentStylesOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  update_styles_api_documents__document_id__styles_put: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        document_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['SegmentStyleUpdate'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DocumentStylesOut'];
+        };
       };
       /** @description Validation Error */
       422: {

@@ -20,6 +20,7 @@ from ltts.db import Database
 from ltts.documents.bookmarks import BookmarkStore
 from ltts.documents.repository import DocumentRepository
 from ltts.documents.service import DocumentService
+from ltts.documents.styling import StylingStore
 from ltts.engines.registry import EngineRegistry
 from ltts.exports.service import ExportService
 from ltts.jobs import JobManager
@@ -60,6 +61,7 @@ class Services:
     preferences: PreferenceStore
     pronunciations: PronunciationStore
     bookmarks: BookmarkStore
+    styling: StylingStore
 
 
 def build_services(
@@ -83,7 +85,8 @@ def build_services(
     registry = EngineRegistry(factory(settings, store), jobs)
     cache = AudioCache(settings.path("cache", "audio"), db, settings.audio_cache_max_mb * MB)
     pronunciations = PronunciationStore(db)
-    synthesis = SynthesisService(registry, cache, documents, pronunciations.apply)
+    styling = StylingStore(db)
+    synthesis = SynthesisService(registry, cache, documents, pronunciations.apply, styling)
     voices = VoiceProfileService(settings, db, cache.purge_voice)
     registry.attach_custom_voices(voices.resolve, lambda: voices.as_voices(lambda: registry.is_ready(CLONING_ENGINE)))
     sessions = VoiceSessionService(settings, db, jobs)
@@ -106,6 +109,7 @@ def build_services(
         preferences=PreferenceStore(db),
         pronunciations=pronunciations,
         bookmarks=BookmarkStore(db),
+        styling=styling,
     )
 
 

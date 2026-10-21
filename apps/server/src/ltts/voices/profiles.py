@@ -366,7 +366,12 @@ class VoiceProfileService:
         shutil.rmtree(self.root / profile_id, ignore_errors=True)
         with self._db.connect() as conn:
             conn.execute("DELETE FROM voice_profiles WHERE id = ?", (profile_id,))
-            conn.execute("UPDATE progress SET voice_id = NULL WHERE voice_id = ?", (f"custom:{profile_id}",))
+            voice_id = f"custom:{profile_id}"
+            conn.execute("UPDATE progress SET voice_id = NULL WHERE voice_id = ?", (voice_id,))
+            # Sentences and dialogue it read go back to the reading voice.
+            conn.execute("UPDATE segment_styles SET voice_id = NULL WHERE voice_id = ?", (voice_id,))
+            conn.execute("DELETE FROM segment_styles WHERE voice_id IS NULL AND effect IS NULL AND sound IS NULL")
+            conn.execute("UPDATE document_cast SET dialogue_voice_id = NULL WHERE dialogue_voice_id = ?", (voice_id,))
         purged = self._purge_audio(f"custom:{profile_id}")
         log.info("voice profile deleted", extra={"profile_id": profile_id, "purged_audio": purged})
 

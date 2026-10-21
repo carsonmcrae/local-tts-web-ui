@@ -102,6 +102,7 @@ interface BodyProps {
   sectionIndex: number;
   activeIndex: number | null;
   bookmarked: ReadonlySet<number>;
+  styled: ReadonlyMap<number, string>;
   autoScroll: boolean;
   onSelect: (index: number) => void;
 }
@@ -111,6 +112,7 @@ export function SectionBody({
   sectionIndex,
   activeIndex,
   bookmarked,
+  styled,
   autoScroll,
   onSelect,
 }: Readonly<BodyProps>) {
@@ -136,6 +138,7 @@ export function SectionBody({
       segments={section.data.segments}
       activeIndex={activeIndex}
       bookmarked={bookmarked}
+      styled={styled}
       autoScroll={autoScroll}
       onSelect={onSelect}
     />

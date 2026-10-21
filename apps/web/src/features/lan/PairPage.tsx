@@ -6,7 +6,8 @@
  *   QR link (after `#`, so it never reaches a server log), which is dropped from the address at once,
  *   or is typed in (with or without the dash, any case). The device name is guessed from the browser
  *   and can be changed. After pairing it returns to the page that sent it here, or the library.
- *   If this device is paired already it says so.
+ *   If this device is paired already it says so; if its pairing stopped working (it ended, or the
+ *   device's network address changed), it says why before asking for a new code.
  * Does NOT belong: Showing codes or managing devices (features/settings/LanSection) or sending
  *   unpaired devices here (app/App.tsx).
  */
@@ -15,6 +16,7 @@ import type { FormEvent } from 'react';
 import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router';
 import { describeError } from '@/api/client';
+import type { ThisDevice } from '@/api/lanQueries';
 import { usePairDevice, useThisDevice } from '@/api/lanQueries';
 import { Button, buttonClasses } from '@/components/ui/Button';
 import { Banner } from '@/components/ui/Feedback';
@@ -24,6 +26,25 @@ import { useToast } from '@/components/ui/Toast';
 import { CODE_LENGTH, cleanCode, deviceName, formatCode, returnPath } from './pairing';
 
 const TALL = 'h-12 text-base'; // 48 px controls; 16 px text so phones don't zoom in
+const WHY = {
+  expired:
+    'Pairings last up to 30 days, and end sooner if the device isn’t used for 14 days. Show a new code on the computer to pair again.',
+  address_changed:
+    'This device’s network address changed. TTSNative only accepts a device from the address it paired from, so that a cookie copied off the network doesn’t work anywhere else. Show a new code on the computer to pair again.',
+} as const;
+
+/** Why this device's pairing stopped working, when the server knows. */
+function PairAgain({ reason }: Readonly<{ reason: ThisDevice['reason'] }>) {
+  if (!reason) return null;
+  return (
+    <Banner
+      tone="info"
+      title={reason === 'expired' ? 'Its pairing has ended' : 'Pair this device again'}
+    >
+      {WHY[reason]}
+    </Banner>
+  );
+}
 
 function PairForm({ initialCode, returnTo }: Readonly<{ initialCode: string; returnTo: string }>) {
   const pair = usePairDevice();
@@ -144,12 +165,16 @@ export default function PairPage() {
             </Link>
           </div>
         ) : (
-          <PairForm initialCode={initialCode} returnTo={returnTo} />
+          <>
+            <PairAgain reason={device.data?.reason} />
+            <PairForm initialCode={initialCode} returnTo={returnTo} />
+          </>
         )}
         <p className="text-[13px] leading-relaxed text-muted">
-          Pairing keeps a cookie on this device so TTSNative recognises it. It can be removed at any
-          time on the computer. Traffic on your network isn&apos;t encrypted, so only pair on
-          networks you trust.
+          Pairing keeps a cookie on this device so TTSNative recognises it, for up to 30 days and
+          only from this device&apos;s network address. It can be removed at any time on the
+          computer. Traffic on your network isn&apos;t encrypted, so only pair on networks you
+          trust, such as your home Wi-Fi.
         </p>
       </div>
     </main>

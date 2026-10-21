@@ -2,10 +2,12 @@
 // Copyright (c) 2026 Carson McRae
 /**
  * Purpose: The pieces of the "Phones and tablets" (LAN mode) settings.
- * Scope: What LAN mode shares and what stays on this computer (shown before the switch), the
- *   pairing card (the address to open, the QR code, the code in large type with a live countdown and
- *   a new code), the paired devices with removal behind a confirmation, the notes on the microphone,
- *   installing as an app and the development server, and the error explanations.
+ * Scope: What LAN mode shares and what stays on this computer (shown before the switch), what is
+ *   open to the network while it is on, why it turned itself off, the pairing card (the address to
+ *   open, the QR code, the code in large type with a live countdown and a new code), the paired
+ *   devices (where each paired from, when its pairing ends, a refused use of its cookie from another
+ *   address) with removal behind a confirmation, the notes on what phones can't do over plain HTTP
+ *   and on the development server, and the error explanations.
  * Does NOT belong: Loading or saving (LanSection.tsx, api/lanQueries.ts) or the pairing page on the
  *   phone (features/lan/PairPage.tsx).
  */
@@ -23,6 +25,7 @@ import { timeAgo, useCopy } from './SpeechApiParts';
 
 const MOBILE_TARGET = 'max-sm:h-11'; // 44 px touch targets on phones
 const NOTE = 'text-[13px] leading-relaxed text-muted';
+const DAY = { day: 'numeric', month: 'short', year: 'numeric' } as const;
 
 export function WhatLanModeShares() {
   return (
@@ -33,13 +36,15 @@ export function WhatLanModeShares() {
         reading settings, add documents and run exports.
       </p>
       <p>
-        It can&apos;t change these settings, record or manage voices, install engines, import web
-        pages or delete documents. Those stay on this computer.
+        It can&apos;t change these settings, record, play back or manage voice recordings, install
+        engines, import web pages or delete documents. Those stay on this computer.
       </p>
       <ul className={`flex flex-col gap-1.5 ${NOTE}`}>
         <li>
-          Traffic is plain HTTP on your network, not encrypted. Only use LAN mode on networks you
-          trust, such as your home Wi-Fi.
+          Traffic is plain HTTP on your network, not encrypted: anyone on the same Wi-Fi could read
+          the documents and audio a device opens, and copy its cookie. A copied cookie only works
+          from that device&apos;s own address, and pairings end after 30 days. Only use LAN mode on
+          networks you trust, such as your home Wi-Fi, never on public Wi-Fi.
         </li>
         <li>
           Nothing is opened on your router (no port forwarding or UPnP), so only devices on your own
@@ -47,11 +52,33 @@ export function WhatLanModeShares() {
           Python on private networks.
         </li>
         <li>
-          LAN mode turns itself off when TTSNative restarts. Paired devices stay paired until you
-          remove them.
+          LAN mode turns itself off when TTSNative restarts, when this computer sleeps or changes
+          network, and when you turn it off. Paired devices stay paired until you remove them or
+          their pairing ends.
         </li>
       </ul>
     </div>
+  );
+}
+
+/** While LAN mode is on: what other devices can reach, in plain words. */
+export function OpenToTheNetwork({ url, where }: Readonly<{ url: string; where: string | null }>) {
+  return (
+    <Banner tone="warning" title="Open to devices on your network">
+      Any device on {where ? `this computer’s ${where} network` : 'this network'} can open {url} and
+      ask to pair. Only paired devices can use your library, and what they open isn&apos;t encrypted
+      on the way.
+    </Banner>
+  );
+}
+
+/** LAN mode stopped by itself rather than appear on a network nobody chose. */
+export function TurnedOff() {
+  return (
+    <Banner tone="info" title="LAN mode turned itself off">
+      This computer&apos;s network changed, or it was asleep, so TTSNative stopped listening on the
+      network. Check that you&apos;re on your own network, then turn it on again.
+    </Banner>
   );
 }
 
@@ -91,6 +118,13 @@ function useNow(intervalMs: number): number {
   return now;
 }
 
+/** A number that changes with each new code, so the QR code reloads without the code in its URL. */
+function useQrVersion(code: string | undefined): number {
+  const [seen, setSeen] = useState({ code, version: 1 });
+  if (seen.code !== code) setSeen({ code, version: seen.version + 1 });
+  return seen.code === code ? seen.version : seen.version + 1;
+}
+
 /** The pairing code, read out one character at a time by screen readers. */
 function LargeCode({ code }: Readonly<{ code: string }>) {
   return (
@@ -109,6 +143,7 @@ export function PairingCard({
   const newCode = useNewPairingCode();
   const copy = useCopy();
   const now = useNow(1000);
+  const version = useQrVersion(pairing?.code);
   const left = pairing ? Math.round((updatedAt + pairing.expiresInS * 1000 - now) / 1000) : 0;
   const live = pairing !== null && left > 0;
   return (
@@ -134,7 +169,7 @@ export function PairingCard({
       {live ? (
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
           <img
-            src={`/api/lan/pairing/qr.svg?v=${pairing.code}`}
+            src={`/api/lan/pairing/qr.svg?v=${version}`}
             alt={`QR code that opens ${url}/pair with the pairing code ${pairing.code}`}
             width={176}
             height={176}
@@ -177,13 +212,24 @@ export function PairingCard({
 }
 
 function pairedLine(device: LanDevice, now: number): string {
-  const paired = new Date(device.createdAt).toLocaleDateString(undefined, {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  });
+  const paired = new Date(device.createdAt).toLocaleDateString(undefined, DAY);
+  const from = device.address ? ` from ${device.address}` : '';
+  if (device.expired) return `Paired ${paired}${from}. Its pairing has ended: pair it again.`;
   const seen = device.lastSeenAt ? `last seen ${timeAgo(device.lastSeenAt, now)}` : 'not used yet';
-  return `Paired ${paired}, ${seen}.`;
+  const ends = new Date(device.expiresAt).toLocaleDateString(undefined, DAY);
+  return `Paired ${paired}${from}, ${seen}. Pairing ends ${ends}.`;
+}
+
+/** Its cookie was used from another address: the device moved, or someone copied it. */
+function RefusedUse({ device, now }: Readonly<{ device: LanDevice; now: number }>) {
+  if (!device.refusedAddress || !device.refusedAt) return null;
+  return (
+    <p className="text-[13px] leading-relaxed text-warning">
+      Refused {timeAgo(device.refusedAt, now)}: its cookie was used from {device.refusedAddress}. If
+      this device&apos;s address changed, pair it again. If not, someone on the network may have
+      copied it: remove it.
+    </p>
+  );
 }
 
 export function PairedDevices({
@@ -209,6 +255,7 @@ export function PairedDevices({
             <div className="min-w-0">
               <p className="text-sm font-medium break-words">{device.name}</p>
               <p className="text-[13px] text-muted">{pairedLine(device, now)}</p>
+              <RefusedUse device={device} now={now} />
             </div>
             <Button
               size="sm"
@@ -254,14 +301,14 @@ export function LanNotes() {
     <div className={`flex flex-col gap-2 ${NOTE}`}>
       <p className="flex gap-2">
         <MicOff size={14} className="mt-0.5 shrink-0" aria-hidden="true" />
-        Recording a voice needs this computer (browsers only allow the microphone on a secure page);
-        on a phone you can import a recording instead.
+        Voices are recorded and managed on this computer: browsers only allow the microphone on a
+        secure page, and LAN mode keeps voice recordings off the network.
       </p>
       <p className="flex gap-2">
         <Lock size={14} className="mt-0.5 shrink-0" aria-hidden="true" />
-        Phones can&apos;t install TTSNative as an app or open it without a connection: browsers only
-        allow that on a secure (HTTPS) page, and LAN mode uses plain HTTP. On this computer it
-        works.
+        Phones can&apos;t install TTSNative as an app: browsers only allow that on a secure (HTTPS)
+        page, and LAN mode uses plain HTTP. Reading and listening always need this computer to be on
+        with TTSNative running.
       </p>
     </div>
   );

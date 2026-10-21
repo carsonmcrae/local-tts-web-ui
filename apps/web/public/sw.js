@@ -8,7 +8,8 @@
  *   /api/* or /v1/* (documents, audio, exports, settings, the speech API), other methods than GET,
  *   range requests or other origins: those always go to the network as if it weren't here. Old
  *   caches are deleted when a new version activates. With no cached shell, a navigation that fails
- *   gets a small offline page with a Retry link (no scripts).
+ *   gets a small "isn't reachable" page with a Retry link (no scripts). Only the screens can open
+ *   this way: reading and listening always need the server, which makes the speech.
  * Does NOT belong: Registering it (src/app/serviceWorker.ts) or the in-app reconnect banner.
  */
 'use strict';
@@ -81,7 +82,8 @@ async function remember(cache, key, response) {
   try {
     await cache.put(key, response);
   } catch {
-    // storage full or unavailable: the app works the same, just not offline
+    // storage full or unavailable: the app works the same, but its screens won't open while the
+    // server is unreachable
   }
 }
 

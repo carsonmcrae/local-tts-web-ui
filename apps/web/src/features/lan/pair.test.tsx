@@ -4,7 +4,8 @@
  * Purpose: Tests for pairing a phone or tablet with TTSNative (the /pair page and its helpers).
  * Scope: The code from the QR link (dropped from the address at once) and the request it sends with
  *   the device's name, a typed code with or without the dash, a code that is too short, the server's
- *   refusals, a device that is paired already, guessing the device name and where to go afterwards.
+ *   refusals, a device that is paired already, why a pairing stopped working (it ended, or the
+ *   device's address changed), guessing the device name and where to go afterwards.
  * Does NOT belong: Sending unpaired devices here (app/pairingRedirect.test.tsx) or the settings on
  *   the computer (features/settings/lan.test.tsx).
  */
@@ -50,6 +51,17 @@ describe('Pairing page', () => {
     expect(pairings()).toEqual([{ code: 'ABCD-EFGH', name: 'iPhone' }]);
     expect(await screen.findByText('iPhone can now use TTSNative.')).toBeInTheDocument();
   });
+
+  it.each([
+    ['address_changed', 'Pair this device again', /network address changed. TTSNative only accepts a device from the address it paired from/],
+    ['expired', 'Its pairing has ended', /Pairings last up to 30 days, and end sooner if the device isn.t used for 14 days/],
+  ])('says why a pairing stopped working (%s) before asking for a new code', async (reason, title, why) => {
+    openPairPage('/pair', { 'GET /api/lan/device': { paired: false, name: null, reason } });
+    expect(await screen.findByText(title)).toBeInTheDocument();
+    expect(screen.getByText(why)).toBeInTheDocument();
+    expect(screen.getByLabelText('Pairing code')).toBeInTheDocument();
+    expect(screen.getByText(/for up to 30 days and only from this device.s network address/)).toBeInTheDocument();
+  }); // prettier-ignore
 
   it('accepts a typed code with or without the dash and a name of its own', async () => {
     const { router, pairings, user } = openPairPage('/pair');

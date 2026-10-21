@@ -4,15 +4,16 @@
  * Purpose: "Phones and tablets" in Settings: LAN mode, for reading and listening on other devices.
  * Scope: A collapsed section (an On/Off badge and a one-line summary; a link to #lan opens it) that
  *   says what LAN mode shares before the switch, then the switch, the network address to use (when
- *   this computer has more than one), the pairing card and paired devices while it is on, "Turn
- *   off", and the notes. The status is polled only while the section is open and LAN mode is on.
- *   On a phone or tablet the section only says to manage this on the computer.
+ *   there is a choice to make, with virtual and VPN adapters labelled), what is open to the network
+ *   while it is on, the pairing card and paired devices, "Turn off", why it turned itself off, and
+ *   the notes. The status is polled only while the section is open and LAN mode is on. On a phone
+ *   or tablet the section only says to manage this on the computer.
  * Does NOT belong: The pieces themselves (LanParts.tsx) or the server's checks.
  */
 import { Power } from 'lucide-react';
 import { useState } from 'react';
 import { ApiError, describeError } from '@/api/client';
-import type { LanStatus } from '@/api/lanQueries';
+import type { LanStatus, NetworkAddress } from '@/api/lanQueries';
 import { useLan, useUpdateLan } from '@/api/lanQueries';
 import { Button } from '@/components/ui/Button';
 import { Badge, Banner, Skeleton } from '@/components/ui/Feedback';
@@ -23,10 +24,20 @@ import {
   DevelopmentNote,
   LanNotes,
   LanProblem,
+  OpenToTheNetwork,
   PairedDevices,
   PairingCard,
+  TurnedOff,
   WhatLanModeShares,
 } from './LanParts';
+
+const KIND_LABEL = { network: '', virtual: ' (virtual adapter)', vpn: ' (VPN)' } as const;
+const KIND_HINT = {
+  network: null,
+  virtual:
+    'This is a virtual adapter. It can be your real network (a Hyper-V switch, or this computer’s mobile hotspot), or reach only virtual machines. Choose it only if your phone is on that network.',
+  vpn: 'This is a VPN or virtual network. Devices on it, which may be outside your home, could reach TTSNative and ask to pair. Choose it only if you mean to.',
+} as const;
 
 function summary(status: LanStatus | undefined): string {
   if (!status) return 'Read and listen on a phone or tablet on the same Wi-Fi.';
@@ -38,44 +49,63 @@ function AddressPicker({
   addresses,
   value,
   onChange,
-}: Readonly<{ addresses: readonly string[]; value: string; onChange: (value: string) => void }>) {
+}: Readonly<{
+  addresses: readonly NetworkAddress[];
+  value: NetworkAddress;
+  onChange: (value: string) => void;
+}>) {
+  const hint = KIND_HINT[value.kind];
   return (
-    <Field
-      label="Network address"
-      hint="This computer is on more than one network. Choose the one your phone or tablet uses (often the one starting with 192.168)."
-    >
-      {({ id, describedBy }) => (
-        <Select
-          id={id}
-          aria-describedby={describedBy}
-          value={value}
-          className="max-sm:h-11 sm:max-w-xs"
-          onChange={(event) => onChange(event.target.value)}
-        >
-          {addresses.map((address) => (
-            <option key={address} value={address}>
-              {address}
-            </option>
-          ))}
-        </Select>
-      )}
-    </Field>
+    <div className="flex flex-col gap-2">
+      <Field
+        label="Network address"
+        hint="Choose the network your phone or tablet uses (often your Wi-Fi, with an address starting with 192.168)."
+      >
+        {({ id, describedBy }) => (
+          <Select
+            id={id}
+            aria-describedby={describedBy}
+            value={value.address}
+            className="max-sm:h-11 sm:max-w-md"
+            onChange={(event) => onChange(event.target.value)}
+          >
+            {addresses.map((choice) => (
+              <option key={choice.address} value={choice.address}>
+                {`${choice.address}, ${choice.interface}${KIND_LABEL[choice.kind]}`}
+              </option>
+            ))}
+          </Select>
+        )}
+      </Field>
+      {hint ? <Banner tone="warning">{hint}</Banner> : null}
+    </div>
+  );
+}
+
+/** The address to use: the one picked, else the first that isn't a VPN (they are listed last). */
+function choose(addresses: readonly NetworkAddress[], picked: string): NetworkAddress | undefined {
+  return (
+    addresses.find((choice) => choice.address === picked) ??
+    addresses.find((choice) => choice.kind !== 'vpn') ??
+    addresses[0]
   );
 }
 
 function LanPanel({ status, updatedAt }: Readonly<{ status: LanStatus; updatedAt: number }>) {
   const update = useUpdateLan();
   const [picked, setPicked] = useState(status.address ?? '');
-  const address = status.addresses.includes(picked) ? picked : (status.addresses[0] ?? '');
-  const change = (enabled: boolean, chosen = address) =>
+  const address = choose(status.addresses, picked);
+  const change = (enabled: boolean, chosen = address?.address) =>
     update.mutate({ enabled, address: enabled && chosen ? chosen : null });
   const pick = (chosen: string) => {
     setPicked(chosen);
     if (status.enabled) change(true, chosen); // move to the other network at once
   };
+  const choice = status.addresses.length > 1 || (address && address.kind !== 'network');
   return (
     <>
       {import.meta.env.DEV ? <DevelopmentNote /> : null}
+      {!status.enabled && status.turnedOff ? <TurnedOff /> : null}
       <div className="flex min-h-11 flex-col justify-center">
         <Switch
           label="Turn on LAN mode"
@@ -84,7 +114,7 @@ function LanPanel({ status, updatedAt }: Readonly<{ status: LanStatus; updatedAt
           onCheckedChange={(enabled) => change(enabled)}
         />
       </div>
-      {status.addresses.length > 1 ? (
+      {choice && address ? (
         <AddressPicker addresses={status.addresses} value={address} onChange={pick} />
       ) : null}
       {status.addresses.length === 0 && !status.enabled ? (
@@ -94,7 +124,10 @@ function LanPanel({ status, updatedAt }: Readonly<{ status: LanStatus; updatedAt
       ) : null}
       {update.isError ? <LanProblem error={update.error} /> : null}
       {status.enabled && status.url ? (
-        <PairingCard pairing={status.pairing} url={status.url} updatedAt={updatedAt} />
+        <>
+          <OpenToTheNetwork url={status.url} where={status.interface} />
+          <PairingCard pairing={status.pairing} url={status.url} updatedAt={updatedAt} />
+        </>
       ) : null}
       {status.enabled || status.devices.length > 0 ? (
         <PairedDevices devices={status.devices} now={updatedAt} />
@@ -110,7 +143,8 @@ function LanPanel({ status, updatedAt }: Readonly<{ status: LanStatus; updatedAt
             Turn off LAN mode
           </Button>
           <p className="text-[13px] text-muted">
-            Stops at once. Paired devices can&apos;t connect until you turn it on again.
+            Stops at once, including anything a device is still downloading. Paired devices
+            can&apos;t connect until you turn it on again.
           </p>
         </div>
       ) : null}
@@ -139,7 +173,7 @@ export function LanSection() {
       id="lan"
       title="Phones and tablets"
       description="Optional. Read and listen on other devices on the same Wi-Fi (LAN mode)."
-      badge={<Badge tone={enabled ? 'success' : 'neutral'}>{enabled ? 'On' : 'Off'}</Badge>}
+      badge={<Badge tone={enabled ? 'warning' : 'neutral'}>{enabled ? 'On' : 'Off'}</Badge>}
       toggleLabel="LAN mode"
       summary={summary(status.data)}
       open={open}

@@ -13,7 +13,7 @@ import { act, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { ReactNode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { LanDevice, LanStatus, LanUpdate } from '@/api/lanQueries';
+import type { LanDevice, LanStatus, LanUpdate, NetworkAddress } from '@/api/lanQueries';
 import { json, mockApi, preferences, renderWithApp } from '@/test/render';
 import { LanSection } from './LanSection';
 import SettingsPage from './SettingsPage';
@@ -25,15 +25,19 @@ afterEach(() => {
 });
 
 const URL_ON = 'http://192.168.1.20:8765';
-const device = (id: string, name: string, lastSeenAt: string | null = null): LanDevice => ({
-  id: id.repeat(32), name, createdAt: '2026-10-19T10:00:00+00:00', lastSeenAt,
+const device = (id: string, name: string, lastSeenAt: string | null = null, more: Partial<LanDevice> = {}): LanDevice => ({
+  id: id.repeat(32), name, createdAt: '2026-10-19T10:00:00+00:00', lastSeenAt, address: '192.168.1.50',
+  expiresAt: '2026-11-18T10:00:00+00:00', expired: false, ...more,
+}); // prettier-ignore
+const net = (address: string, name = 'Wi-Fi', kind: NetworkAddress['kind'] = 'network'): NetworkAddress => ({
+  address, interface: name, kind,
 }); // prettier-ignore
 const off = (overrides: Partial<LanStatus> = {}): LanStatus => ({
-  enabled: false, address: null, port: null, url: null, addresses: ['192.168.1.20'], devices: [], pairing: null,
-  ...overrides,
+  enabled: false, address: null, interface: null, port: null, url: null, addresses: [net('192.168.1.20')],
+  devices: [], pairing: null, ...overrides,
 }); // prettier-ignore
 const on = (overrides: Partial<LanStatus> = {}): LanStatus =>
-  off({ enabled: true, address: '192.168.1.20', port: 8765, url: URL_ON, pairing: { code: 'ABCD-EFGH', expiresInS: 300 }, ...overrides }); // prettier-ignore
+  off({ enabled: true, address: '192.168.1.20', interface: 'Wi-Fi', port: 8765, url: URL_ON, pairing: { code: 'ABCD-EFGH', expiresInS: 300 }, ...overrides }); // prettier-ignore
 
 function setup(
   initial: LanStatus,
@@ -47,7 +51,8 @@ function setup(
       const body = JSON.parse(String(init.body)) as LanUpdate;
       const keep = { addresses: current.addresses, devices: current.devices };
       current = body.enabled
-        ? on({ ...keep, address: body.address ?? null, url: `http://${body.address}:8765` })
+        ? on({ ...keep, address: body.address ?? null, url: `http://${body.address}:8765`,
+            interface: keep.addresses.find((choice) => choice.address === body.address)?.interface ?? null }) // prettier-ignore
         : off(keep);
       return current;
     },
@@ -84,7 +89,9 @@ async function expand(user: ReturnType<typeof userEvent.setup>) {
 
 describe('Phones and tablets (LAN mode)', () => {
   it('says what it shares before the switch, then turns on with a QR code, the code and a countdown', async () => {
-    const { sent, user } = setup(off({ addresses: ['192.168.1.20', '10.0.0.5'] }));
+    const { sent, user } = setup(
+      off({ addresses: [net('192.168.1.20'), net('10.0.0.5', 'Ethernet')] }),
+    );
     const section = await screen.findByRole('region', { name: 'Phones and tablets' });
     expect(await within(section).findByText('Off. Only this computer can open TTSNative.')).toBeInTheDocument(); // prettier-ignore
     expect(within(section).queryByRole('switch')).not.toBeInTheDocument();
@@ -94,7 +101,8 @@ describe('Phones and tablets (LAN mode)', () => {
     );
     const power = await within(section).findByRole('switch', { name: 'Turn on LAN mode' });
     expect(shares.compareDocumentPosition(power) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(within(section).getByText(/can.t change these settings, record or manage voices/)).toBeInTheDocument(); // prettier-ignore
+    expect(within(section).getByText(/can.t change these settings, record, play back or manage voice recordings/)).toBeInTheDocument(); // prettier-ignore
+    expect(within(section).getByText(/copy its cookie/)).toBeInTheDocument();
     expect(within(section).getByText(/plain HTTP on your network, not encrypted/)).toBeInTheDocument(); // prettier-ignore
     expect(within(section).getByText(/no port forwarding or UPnP/)).toBeInTheDocument();
     expect(within(section).getByText(/turns itself off when TTSNative restarts/)).toBeInTheDocument(); // prettier-ignore
@@ -109,7 +117,9 @@ describe('Phones and tablets (LAN mode)', () => {
       address: '10.0.0.5',
     });
     const qr = await within(section).findByRole('img', { name: /pairing code ABCD-EFGH/ });
-    expect(qr).toHaveAttribute('src', '/api/lan/pairing/qr.svg?v=ABCD-EFGH');
+    expect(qr).toHaveAttribute('src', '/api/lan/pairing/qr.svg?v=1'); // never the code itself
+    expect(within(section).getByText('Open to devices on your network')).toBeInTheDocument();
+    expect(within(section).getByText(/Any device on this computer.s Ethernet network can open/)).toBeInTheDocument(); // prettier-ignore
     expect(qr).toHaveAccessibleName('QR code that opens http://10.0.0.5:8765/pair with the pairing code ABCD-EFGH'); // prettier-ignore
     expect(within(section).getByText('ABCD-EFGH')).toBeInTheDocument();
     expect(within(section).getByText('A B C D - E F G H')).toBeInTheDocument(); // read out one by one
@@ -124,7 +134,7 @@ describe('Phones and tablets (LAN mode)', () => {
 
     await user.click(within(section).getByRole('button', { name: 'New code' }));
     expect(await within(section).findByText('WXYZ-2345')).toBeInTheDocument();
-    expect(within(section).getByRole('img', { name: /WXYZ-2345/ })).toHaveAttribute('src', '/api/lan/pairing/qr.svg?v=WXYZ-2345'); // prettier-ignore
+    expect(within(section).getByRole('img', { name: /WXYZ-2345/ })).toHaveAttribute('src', '/api/lan/pairing/qr.svg?v=2'); // prettier-ignore
     expect(sent('POST')).toHaveLength(1);
 
     await user.selectOptions(within(section).getByLabelText('Network address'), '192.168.1.20');
@@ -149,8 +159,8 @@ describe('Phones and tablets (LAN mode)', () => {
     const { sent, user } = setup(on({ devices }));
     const section = await expand(user);
     expect(await within(section).findByText('Kitchen tablet')).toBeInTheDocument();
-    expect(within(section).getAllByText(/not used yet\.$/)).toHaveLength(2);
-    expect(within(section).getByText(/last seen 5 minutes ago\.$/)).toBeInTheDocument();
+    expect(within(section).getAllByText(/from 192\.168\.1\.50, not used yet\. Pairing ends/)).toHaveLength(2); // prettier-ignore
+    expect(within(section).getByText(/last seen 5 minutes ago\. Pairing ends/)).toBeInTheDocument();
 
     await user.click(within(section).getByRole('button', { name: 'Remove Kitchen tablet' }));
     const one = await screen.findByRole('dialog', { name: 'Remove Kitchen tablet?' });
@@ -190,7 +200,7 @@ describe('Phones and tablets (LAN mode)', () => {
     ['lan_address', "That address isn't one of this computer's network addresses.", /The network may have changed/, ['192.168.1.20']],
     ['lan_not_started', "The network listener didn't start.", /^The network listener didn't start\.$/, ['192.168.1.20']],
   ])('explains %s', async (code, message, hint, addresses) => {
-    const { sent, user } = setup(off({ addresses }), { 'PUT /api/lan': json({ error: { code, message } }, 409) });
+    const { sent, user } = setup(off({ addresses: addresses.map((a) => net(a)) }), { 'PUT /api/lan': json({ error: { code, message } }, 409) });
     const section = await expand(user);
     await user.click(await within(section).findByRole('switch', { name: 'Turn on LAN mode' }));
     const alert = await within(section).findByRole('alert');
@@ -254,5 +264,51 @@ describe('Phones and tablets (LAN mode)', () => {
     expect(within(index).getByRole('link', { name: 'Phones & tablets' })).toHaveAttribute('href', '#lan'); // prettier-ignore
     const section = await expand(user);
     expect(await within(section).findByRole('alert')).toHaveTextContent('Something broke.');
+  });
+
+  it('labels virtual and VPN adapters, warns about them and never picks a VPN by itself', async () => {
+    const vpn = net('10.8.0.2', 'WireGuard', 'vpn');
+    const { sent, user } = setup(
+      off({ addresses: [net('192.168.2.4', 'vEthernet (External)', 'virtual'), vpn] }),
+    );
+    const section = await expand(user);
+    const picker = await within(section).findByLabelText('Network address');
+    expect(within(picker).getAllByRole('option').map((o) => o.textContent)).toEqual([
+      '192.168.2.4, vEthernet (External) (virtual adapter)', '10.8.0.2, WireGuard (VPN)',
+    ]); // prettier-ignore
+    expect(picker).toHaveValue('192.168.2.4');
+    expect(within(section).getByText(/It can be your real network \(a Hyper-V switch/)).toBeInTheDocument(); // prettier-ignore
+    await user.selectOptions(picker, '10.8.0.2');
+    expect(within(section).getByText(/may be outside your home, could reach TTSNative/)).toBeInTheDocument(); // prettier-ignore
+    await user.click(within(section).getByRole('switch', { name: 'Turn on LAN mode' }));
+    await waitFor(() => expect(sent('PUT')).toHaveLength(1));
+    expect(JSON.parse(String(sent('PUT')[0]?.body))).toEqual({
+      enabled: true,
+      address: '10.8.0.2',
+    });
+  });
+
+  it('shows a single virtual adapter with its label, and says why LAN mode turned itself off', async () => {
+    const { user } = setup(off({ addresses: [net('192.168.137.1', 'Local Area Connection* 10', 'virtual')], turnedOff: 'network_changed' })); // prettier-ignore
+    const section = await expand(user);
+    expect(await within(section).findByText('LAN mode turned itself off')).toBeInTheDocument();
+    expect(within(section).getByText(/network changed, or it was asleep/)).toBeInTheDocument();
+    expect(within(section).getByRole('option')).toHaveTextContent('Local Area Connection* 10 (virtual adapter)'); // prettier-ignore
+  });
+
+  it('shows where each device paired from, a refused use of its cookie and an ended pairing', async () => {
+    const minutesAgo = new Date(Date.now() - 180_000).toISOString();
+    const devices = [
+      device('a', 'Kitchen tablet', minutesAgo, {
+        refusedAddress: '192.168.1.77',
+        refusedAt: minutesAgo,
+      }),
+      device('b', 'Old phone', null, { expired: true }),
+    ];
+    const { user } = setup(on({ devices }));
+    const section = await expand(user);
+    expect(await within(section).findByText(/Refused 3 minutes ago: its cookie was used from 192\.168\.1\.77/)).toBeInTheDocument(); // prettier-ignore
+    expect(within(section).getByText(/someone on the network may have copied it: remove it/)).toBeInTheDocument(); // prettier-ignore
+    expect(within(section).getByText(/from 192\.168\.1\.50\. Its pairing has ended: pair it again\./)).toBeInTheDocument(); // prettier-ignore
   });
 });

@@ -3,9 +3,10 @@
 /**
  * Purpose: Server state for LAN mode: using TTSNative from phones and tablets on the same Wi-Fi.
  * Scope: On this computer: the status (polled every few seconds only while the settings are open
- *   and LAN mode is on, to show newly paired devices), turning it on or off, a new pairing code and
- *   removing one or all paired devices. On a phone or tablet: pairing with a code and asking whether
- *   this device is paired.
+ *   and LAN mode is on, to show newly paired devices, and every 15 s while it is on, so the sidebar
+ *   notices when it turns itself off), turning it on or off, a new pairing code and removing one or
+ *   all paired devices. On a phone or tablet: pairing with a code and asking whether this device is
+ *   paired, or why it no longer is.
  * Does NOT belong: Presentation (features/settings/LanSection, features/lan/PairPage) or the
  *   pairing rules (the server's lan/ package).
  */
@@ -16,6 +17,7 @@ import type { components } from './schema.gen';
 export type LanStatus = components['schemas']['LanStatus'];
 export type LanUpdate = components['schemas']['LanUpdate'];
 export type LanDevice = components['schemas']['DeviceOut'];
+export type NetworkAddress = components['schemas']['NetworkAddress'];
 export type PairingCode = components['schemas']['PairingOut'];
 export type PairRequest = components['schemas']['PairRequest'];
 export type ThisDevice = components['schemas']['ThisDevice'];
@@ -23,6 +25,7 @@ export type ThisDevice = components['schemas']['ThisDevice'];
 const LAN = ['lan'] as const;
 const THIS_DEVICE = ['lan', 'this-device'] as const;
 const POLL_MS = 3000;
+const WATCH_MS = 15_000;
 
 /** The status; `watch` polls it while LAN mode is on (the settings are open). */
 export function useLan(watch: boolean) {
@@ -30,6 +33,17 @@ export function useLan(watch: boolean) {
     queryKey: LAN,
     queryFn: () => api<LanStatus>('/api/lan'),
     refetchInterval: (query) => (watch && query.state.data?.enabled ? POLL_MS : false),
+  });
+}
+
+/** On this computer only: whether LAN mode is on, checked every 15 s while it is (for the sidebar). */
+export function useLanWhileOn(enabled: boolean) {
+  return useQuery({
+    queryKey: LAN,
+    queryFn: () => api<LanStatus>('/api/lan'),
+    enabled,
+    retry: false,
+    refetchInterval: (query) => (query.state.data?.enabled ? WATCH_MS : false),
   });
 }
 

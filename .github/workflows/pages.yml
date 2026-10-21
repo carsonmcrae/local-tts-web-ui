@@ -1,8 +1,10 @@
 # Purpose: Publish the TTSNative website (site/) to GitHub Pages.
 # Scope: Assembles the site with scripts/site/build-site.mjs (videos, screenshots, sitemap, robots.txt and
 #   a broken-link check), using the address Pages reports as the base URL, so canonical and social links
-#   follow a custom domain automatically; deploys with GitHub's official Pages actions (SHA-pinned). Runs
-#   when the site, media, screenshots or brand change on main, or on demand.
+#   follow a custom domain automatically; asks GitHub which releases are published so the Windows download
+#   (only when a published installer's link answers) and the release history show approved releases only;
+#   deploys with GitHub's official Pages actions (SHA-pinned). Runs when the site, media, screenshots,
+#   brand or release notes change on main, on demand, and after every release (release.yml starts it).
 # Does NOT belong: The wiki (wiki.yml) or release packaging (release.yml).
 name: Pages
 
@@ -15,6 +17,8 @@ on:
         'docs/media/**',
         'docs/images/**',
         'scripts/site/**',
+        'scripts/lib/releases.mjs',
+        'docs/releases/**',
         '.github/workflows/pages.yml',
       ]
   workflow_dispatch:
@@ -40,8 +44,9 @@ jobs:
       - name: Assemble the site
         env:
           BASE_URL: ${{ steps.pages.outputs.base_url }}
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
-          node scripts/site/build-site.mjs --out _site --base-url "$BASE_URL"
+          node scripts/site/build-site.mjs --out _site --base-url "$BASE_URL" --releases github
           ls -la _site _site/media
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:

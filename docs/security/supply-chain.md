@@ -5,20 +5,23 @@
 
 ## Controls
 
-| Control                                                                                                                              | Where                                                   |
-| ------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------- |
-| Exact npm versions, `save-exact`, committed `package-lock.json`                                                                      | `package.json`, `.npmrc`                                |
-| `ignore-scripts=true` — no package runs install hooks (audited: none of the 519 packages needs one)                                  | `.npmrc`                                                |
-| Locked Python environments, `uv sync --frozen`                                                                                       | `apps/server/uv.lock`, `apps/chatterbox-worker/uv.lock` |
-| Existing cloning installs record the worker lock's SHA-256 and are offered an update when it changes                                 | `apps/server/src/ltts/engines/chatterbox_env.py`        |
-| 14-day release cool-down: `exclude-newer = "14 days"` in both Python projects and `min-release-age=14` for npm                       | `apps/*/pyproject.toml`, `.npmrc`                       |
-| Pinned uv binary with SHA-256 for six platforms                                                                                      | `scripts/toolchain.json`                                |
-| Pinned model artifacts with SHA-256 and host allow-list                                                                              | `apps/server/src/ltts/modelstore/manifest.json`         |
-| `npm audit --audit-level=high`, `pip-audit` of the server environment and of both Chatterbox extras (OSV, no install)                | `npm run security` (`scripts/audit-worker.mjs`), CI     |
-| Secret scanning (gitleaks), CodeQL (JS/TS + Python), dependency review on PRs (fails on high severity, covers both Python lockfiles) | `.github/workflows`                                     |
-| Dependabot with a 7-day cool-down and grouped updates                                                                                | `.github/dependabot.yml`                                |
-| License inventory that fails on unreviewed copyleft or unknown licences                                                              | `npm run licenses`                                      |
-| GitHub Actions pinned to commit SHAs                                                                                                 | `.github/workflows`                                     |
+| Control                                                                                                                                                                                                            | Where                                                   |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------- |
+| Exact npm versions, `save-exact`, committed `package-lock.json`                                                                                                                                                    | `package.json`, `.npmrc`                                |
+| `ignore-scripts=true` — no package runs install hooks (audited: none of the 519 packages needs one)                                                                                                                | `.npmrc`                                                |
+| Locked Python environments, `uv sync --frozen`                                                                                                                                                                     | `apps/server/uv.lock`, `apps/chatterbox-worker/uv.lock` |
+| Existing cloning installs record the worker lock's SHA-256 and are offered an update when it changes                                                                                                               | `apps/server/src/ltts/engines/chatterbox_env.py`        |
+| 14-day release cool-down: `exclude-newer = "14 days"` in both Python projects and `min-release-age=14` for npm                                                                                                     | `apps/*/pyproject.toml`, `.npmrc`                       |
+| Pinned uv binary with SHA-256 for six platforms                                                                                                                                                                    | `scripts/toolchain.json`                                |
+| Pinned model artifacts with SHA-256 and host allow-list                                                                                                                                                            | `apps/server/src/ltts/modelstore/manifest.json`         |
+| `npm audit --audit-level=high`, `pip-audit` of the server environment and of both Chatterbox extras (OSV, no install)                                                                                              | `npm run security` (`scripts/audit-worker.mjs`), CI     |
+| Secret scanning (gitleaks), CodeQL (JS/TS + Python), dependency review on PRs (fails on high severity, covers both Python lockfiles)                                                                               | `.github/workflows`                                     |
+| Dependabot with a 7-day cool-down and grouped updates                                                                                                                                                              | `.github/dependabot.yml`                                |
+| License inventory that fails on unreviewed copyleft or unknown licences                                                                                                                                            | `npm run licenses`                                      |
+| GitHub Actions pinned to commit SHAs                                                                                                                                                                               | `.github/workflows`                                     |
+| Windows app: Tauri crates pinned exactly (each at least 14 days old when chosen), `Cargo.lock` committed, Rust toolchain pinned                                                                                    | `apps/desktop/src-tauri`                                |
+| Windows app runtime: Python from python-build-standalone installed by the pinned uv (verified), server packages hash-checked from the lock, Kokoro by the model store; recorded in `desktop-runtime-manifest.json` | `scripts/desktop/build-runtime.mjs`                     |
+| Release artifacts: SBOMs (web, server, worker, desktop shell), `SHA256SUMS.txt`, build provenance, update signature verified against the app's key                                                                 | `.github/workflows/release.yml`                         |
 
 ## Known advisories in the optional Chatterbox environment
 
@@ -185,6 +188,44 @@ window, as it did for Pillow; add the exception by hand.
 Both Python projects use a rolling window (`exclude-newer = "14 days"`, uv 0.9.17 or newer), so a
 re-lock always considers releases at least 14 days old without a date to bump. npm applies the same
 rule to new resolutions through `min-release-age=14` in `.npmrc` (npm 11.10 or newer).
+
+### Windows app (2026-10-21 review)
+
+Everything the installer ships was checked against OSV.dev, pip-audit and npm audit, and the installed
+files against their packages: every file in the 41 locked Python packages matches the SHA-256 recorded by
+its hash-checked wheel, nothing outside the lock is installed (pip, which came with Python, is now
+removed), and no secrets, keys or personal paths are in the install. The Python server and npm sets have no
+known advisories.
+
+- **Rust:** `tauri-plugin-updater`'s default `zip` feature compiled `zip` 4.6.1 (RUSTSEC-2026-0367,
+  -0368, -0369; fixed only in zip 9). It was unreachable (zip handling runs only on archives whose
+  signature already matched, and TTSNative's updates are `.exe` files), and the feature is now off, so
+  zip is no longer compiled. Transitive crates follow the 14-day cool-down through
+  `scripts/desktop/cargo-cooldown.mjs`, except where the newer release is a security fix (`rustls`
+  0.23.46, `rustls-webpki` 0.103.16, `webpki-root-certs` 1.0.10). cargo-deny checks the Windows build in CI
+  (`apps/desktop/src-tauri/deny.toml`); the remaining RustSec notices (`glib`, `proc-macro-error`,
+  `zbus_names`, `zvariant`) are Linux-only and not compiled for Windows.
+- **uv 0.13.4 for GHSA-hq85-5cpj-mr62 (high, published 2026-10-20; security exception approved by the
+  maintainer on 2026-10-21):** uv 0.12.21's bundled root store still trusted the emSign ECC Root CA - G3
+  (the same compromise certifi 2026.10.19 fixes). The shipped uv runs only when someone installs the
+  optional voice-cloning engine, and package and Python downloads are pinned by hash, so a forged
+  certificate could at most observe or block that download, not change it; the fix is taken anyway. uv
+  0.13.4 (released 2026-10-20, the version the advisory names as patched) was inside the 14-day cool-down
+  and is a minor-version upgrade of the bootstrap for every developer. Before pinning it in
+  `scripts/toolchain.json`, all six official binaries were downloaded from the GitHub release and their
+  SHA-256 compared with the `.sha256` files published beside them and recomputed locally (all matched).
+  0.13.0's breaking changes (default Python 3.15, hashes required in constraints files, stricter tar
+  extraction) do not affect the scripts here: the Python version is pinned, no constraints files are used,
+  and the runtime build and clean-install check were repeated with the new version. The cool-down would
+  have covered this release on 2026-11-03; nothing needs removing afterwards, since the bootstrap is a
+  plain pin.
+- **virtualenv 21.14.5 (CVE-2026-113725, in the voice-cloning environment through pre-commit):** its bash
+  `activate` script could run commands from an environment name; TTSNative never uses virtualenv (uv
+  builds the environment), but the fixed 21.14.7 (2026-10-12) comes in through a security exception
+  (`exclude-newer-package`), so existing installs are offered the in-place update. Drop the exception
+  after 2026-10-27.
+- **Licences:** see [license-inventory.md](license-inventory.md) for what the installer ships and the
+  GPL/LGPL source offer.
 
 ## Updating dependencies
 

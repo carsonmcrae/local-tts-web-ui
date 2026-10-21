@@ -98,7 +98,9 @@ def build_services(
     db.migrate()
     jobs = JobManager(db)
     documents = DocumentRepository(db)
-    store = ModelStore(settings.resolved_models_dir, reserve_mb=settings.min_free_disk_mb)
+    store = ModelStore(
+        settings.resolved_models_dir, reserve_mb=settings.min_free_disk_mb, bundled_dir=settings.bundled_models_dir
+    )
     factory = engine_factory or (lambda s, m: [KokoroEngine(m), ChatterboxEngine(s, m)])
     registry = EngineRegistry(factory(settings, store), jobs)
     cache = AudioCache(settings.path("cache", "audio"), db, settings.audio_cache_max_mb * MB)

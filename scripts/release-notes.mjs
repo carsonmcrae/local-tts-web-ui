@@ -2,16 +2,20 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 Carson McRae
 /**
- * Purpose: Print the GitHub Release notes for a version tag, refusing to publish a mismatched release.
- * Scope: Checks that the tag (vX.Y.Z) equals the version in package.json and that CHANGELOG.md has a
- *   dated `## [X.Y.Z] - YYYY-MM-DD` entry (not "Unreleased"), then prints that entry followed by how
- *   to verify the downloads. Usage: `node scripts/release-notes.mjs v2.0.0 > notes.md`.
+ * Purpose: Print the GitHub Release notes for a version tag, refusing to publish a mismatched or
+ *   unreviewed release.
+ * Scope: Checks that the tag (vX.Y.Z) equals the version in package.json, that CHANGELOG.md has a
+ *   dated `## [X.Y.Z] - YYYY-MM-DD` entry and that docs/releases/X.Y.Z.md is valid and no longer a
+ *   draft; then prints the user-facing notes, the Windows download (unless `--no-installer`), the
+ *   developer changes folded away, and how to verify the files.
+ *   Usage: `node scripts/release-notes.mjs v2.1.0 > notes.md`.
  * Does NOT belong: Building or uploading artifacts (.github/workflows/release.yml) or the version
  *   consistency gate across files (check-version.mjs).
  */
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { repoRoot } from './lib/paths.mjs';
+import { RELEASES_DIR, parseRelease, renderRelease } from './lib/releases.mjs';
 
 const REPO = 'carsonmcrae/ttsnative';
 
@@ -35,12 +39,38 @@ if (!match) fail(`CHANGELOG.md has no "## [${version}] - <date>" entry`);
 const date = match?.[1]?.trim() ?? '';
 if (!/^\d{4}-\d{2}-\d{2}$/.test(date))
   fail(`CHANGELOG.md entry for ${version} is "${date}", not a date`);
-
 const start = (match?.index ?? 0) + (match?.[0].length ?? 0);
 const next = changelog.indexOf('\n## [', start);
-const body = changelog.slice(start, next === -1 ? changelog.length : next).trim();
+const technical = changelog.slice(start, next === -1 ? changelog.length : next).trim();
 
-console.log(`${body}
+const notesFile = `${RELEASES_DIR}/${version}.md`;
+let notesText = '';
+try {
+  notesText = readFileSync(path.join(repoRoot, notesFile), 'utf8');
+} catch {
+  fail(`${notesFile} is missing`);
+}
+const { release, problems } = parseRelease(notesFile, notesText);
+if (problems.length) fail(problems.join('\n'));
+if (release.draft) fail(`${notesFile} is still a draft`);
+
+const installer = `TTSNative-Setup-${version}.exe`;
+const download = process.argv.includes('--no-installer')
+  ? ''
+  : `## Download
+
+**Windows 11 (64-bit):** [${installer}](https://github.com/${REPO}/releases/download/${tag}/${installer}), or always the newest from [ttsnative.com/download](https://ttsnative.com/download/). TTSNative already installed from the website offers this update itself. The installer includes open-source components under their own licences (listed in its THIRD-PARTY-NOTICES.txt); the source of its GPL and LGPL parts is attached as [ttsnative-${version}-third-party-sources.tar.gz](https://github.com/${REPO}/releases/download/${tag}/ttsnative-${version}-third-party-sources.tar.gz).
+
+`;
+
+console.log(`${renderRelease(release)}
+
+${download}<details>
+<summary>Changes for developers</summary>
+
+${technical}
+
+</details>
 
 ## Verifying this release
 
@@ -52,5 +82,5 @@ sha256sum --check --ignore-missing SHA256SUMS.txt
 gh attestation verify <file> --repo ${REPO}
 \`\`\`
 
-The source archive and SBOMs (CycloneDX 1.5) cover the web app, the server and the optional Chatterbox
-worker. To install, follow the [Quick start](https://github.com/${REPO}#quick-start).`);
+The source archive and SBOMs (CycloneDX 1.5) cover the web app, the server, the optional Chatterbox
+worker and the Windows app. To run from source, follow the [Quick start](https://github.com/${REPO}#quick-start).`);

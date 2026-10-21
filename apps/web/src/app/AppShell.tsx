@@ -2,19 +2,32 @@
 // Copyright (c) 2026 Carson McRae
 /**
  * Purpose: Application chrome shared by every route.
- * Scope: Skip link, desktop sidebar (with privacy note, engine status, the speech API in-use sign
- *   and the LAN mode sign), phone tab bar (the speech API sign on Settings), the reconnect banner,
- *   the routed page area, and the docked player that persists across navigation.
+ * Scope: Skip link, desktop sidebar (with privacy note, engine status, the speech API in-use sign,
+ *   the LAN mode sign and the version), phone tab bar (the speech API sign on Settings), the
+ *   reconnect banner, the routed page area, the docked player that persists across navigation, and
+ *   (in the desktop app) the update notice and What's new after an update.
  * Does NOT belong: Page content or player logic.
  */
-import { AudioLines, BookHeadphones, BookOpen, Mic, Settings, ShieldCheck } from 'lucide-react';
+import {
+  AudioLines,
+  BookHeadphones,
+  BookOpen,
+  Info,
+  Mic,
+  Settings,
+  ShieldCheck,
+} from 'lucide-react';
 import type { ReactNode } from 'react';
-import { NavLink, Outlet } from 'react-router';
+import { Link, NavLink, Outlet } from 'react-router';
 import { useEngines } from '@/api/queries';
 import type { EngineInfo } from '@/api/types';
 import { cn } from '@/lib/cn';
 import { LanIndicator } from '@/features/lan/LanIndicator';
 import { PlayerBar } from '@/features/player/PlayerBar';
+import { UpdateNotice } from '@/features/updates/UpdateNotice';
+import { UpdatesProvider } from '@/features/updates/UpdatesProvider';
+import { WhatsNew } from '@/features/updates/WhatsNew';
+import { appVersion } from '@/lib/version';
 import { ConnectionBanner } from './ConnectionBanner';
 import { SpeechApiIndicator } from './SpeechApiIndicator';
 
@@ -64,6 +77,20 @@ function EngineStatus() {
   );
 }
 
+/** The version this copy runs, leading to About (What's new and the release history). */
+function VersionLink() {
+  const version = appVersion();
+  return (
+    <Link
+      to="/settings#about"
+      className="flex items-center gap-2 rounded-[var(--radius-md)] px-2 py-1.5 text-xs text-muted hover:bg-surface-2"
+    >
+      <Info size={14} className="shrink-0" aria-hidden="true" />
+      <span className="truncate">Version {version}</span>
+    </Link>
+  );
+}
+
 const linkClass = ({ isActive }: { isActive: boolean }) =>
   cn(
     'flex h-10 items-center gap-3 rounded-[var(--radius-md)] px-3 text-sm font-medium transition-colors',
@@ -72,72 +99,77 @@ const linkClass = ({ isActive }: { isActive: boolean }) =>
 
 export function AppShell() {
   return (
-    // overflow-clip, not hidden: a hidden box can still be scrolled by scrollIntoView or focus,
-    // which slid the whole shell up and left the sidebar ending mid-screen.
-    <div className="flex h-dvh overflow-clip">
-      <a
-        href="#main"
-        className="sr-only z-50 rounded-md bg-accent px-3 py-2 text-accent-fg focus:not-sr-only focus:fixed focus:top-3 focus:left-3"
-      >
-        Skip to content
-      </a>
-      <aside className="hidden w-64 shrink-0 flex-col gap-6 border-r border-line bg-surface px-3 py-5 md:flex">
-        <Brand />
-        <nav aria-label="Main" className="flex flex-col gap-1">
-          {NAV.map((item) => (
-            <NavLink key={item.to} to={item.to} className={linkClass}>
-              {item.icon}
-              {item.label}
-            </NavLink>
-          ))}
-        </nav>
-        <div className="mt-auto flex flex-col gap-3">
-          <div className="rounded-[var(--radius-lg)] border border-line bg-surface-2 p-3 text-xs leading-relaxed text-muted">
-            <p className="mb-1 flex items-center gap-1.5 font-medium text-text">
-              <ShieldCheck size={14} className="text-success" /> Private by design
-            </p>
-            Documents, voices and audio stay on this computer, unless you send a book to your own
-            Audiobookshelf.
+    <UpdatesProvider>
+      {/* overflow-clip, not hidden: a hidden box can still be scrolled by scrollIntoView or focus,
+          which slid the whole shell up and left the sidebar ending mid-screen. */}
+      <div className="flex h-dvh overflow-clip">
+        <a
+          href="#main"
+          className="sr-only z-50 rounded-md bg-accent px-3 py-2 text-accent-fg focus:not-sr-only focus:fixed focus:top-3 focus:left-3"
+        >
+          Skip to content
+        </a>
+        <aside className="hidden w-64 shrink-0 flex-col gap-6 border-r border-line bg-surface px-3 py-5 md:flex">
+          <Brand />
+          <nav aria-label="Main" className="flex flex-col gap-1">
+            {NAV.map((item) => (
+              <NavLink key={item.to} to={item.to} className={linkClass}>
+                {item.icon}
+                {item.label}
+              </NavLink>
+            ))}
+          </nav>
+          <div className="mt-auto flex flex-col gap-3">
+            <div className="rounded-[var(--radius-lg)] border border-line bg-surface-2 p-3 text-xs leading-relaxed text-muted">
+              <p className="mb-1 flex items-center gap-1.5 font-medium text-text">
+                <ShieldCheck size={14} className="text-success" /> Private by design
+              </p>
+              Documents, voices and audio stay on this computer, unless you send a book to your own
+              Audiobookshelf.
+            </div>
+            <EngineStatus />
+            <SpeechApiIndicator variant="sidebar" />
+            <LanIndicator />
+            <VersionLink />
           </div>
-          <EngineStatus />
-          <SpeechApiIndicator variant="sidebar" />
-          <LanIndicator />
+        </aside>
+        <div className="flex min-w-0 flex-1 flex-col">
+          <ConnectionBanner />
+          <UpdateNotice />
+          <WhatsNew version={appVersion()} />
+          <main
+            id="main"
+            tabIndex={-1}
+            // relative: visually hidden (absolutely positioned) elements stay inside this scroll area
+            // instead of stretching the page beyond the window.
+            className="relative min-h-0 flex-1 scrollbar-thin overflow-y-auto focus:outline-none"
+          >
+            <Outlet />
+          </main>
+          <PlayerBar />
+          <nav
+            aria-label="Main"
+            className="grid grid-cols-5 border-t border-line bg-surface pb-[env(safe-area-inset-bottom)] md:hidden"
+          >
+            {NAV.map((item) => (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                className={({ isActive }) =>
+                  cn(
+                    'relative flex min-h-14 flex-col items-center justify-center gap-0.5 text-[11px] font-medium',
+                    isActive ? 'text-accent-text' : 'text-muted',
+                  )
+                }
+              >
+                {item.icon}
+                {item.label.replace('Voice Studio', 'Studio')}
+                {item.to === '/settings' ? <SpeechApiIndicator variant="tab" /> : null}
+              </NavLink>
+            ))}
+          </nav>
         </div>
-      </aside>
-      <div className="flex min-w-0 flex-1 flex-col">
-        <ConnectionBanner />
-        <main
-          id="main"
-          tabIndex={-1}
-          // relative: visually hidden (absolutely positioned) elements stay inside this scroll area
-          // instead of stretching the page beyond the window.
-          className="relative min-h-0 flex-1 scrollbar-thin overflow-y-auto focus:outline-none"
-        >
-          <Outlet />
-        </main>
-        <PlayerBar />
-        <nav
-          aria-label="Main"
-          className="grid grid-cols-5 border-t border-line bg-surface pb-[env(safe-area-inset-bottom)] md:hidden"
-        >
-          {NAV.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              className={({ isActive }) =>
-                cn(
-                  'relative flex min-h-14 flex-col items-center justify-center gap-0.5 text-[11px] font-medium',
-                  isActive ? 'text-accent-text' : 'text-muted',
-                )
-              }
-            >
-              {item.icon}
-              {item.label.replace('Voice Studio', 'Studio')}
-              {item.to === '/settings' ? <SpeechApiIndicator variant="tab" /> : null}
-            </NavLink>
-          ))}
-        </nav>
       </div>
-    </div>
+    </UpdatesProvider>
   );
 }

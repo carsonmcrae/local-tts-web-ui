@@ -49,6 +49,10 @@ def _serve(args: argparse.Namespace) -> int:
     if args.open:
         url = f"http://127.0.0.1:{args.port}/"
         threading.Timer(1.5, webbrowser.open, args=(url,)).start()
+    if args.exit_with_stdin:
+        from ltts.lifecycle import stop_when_stdin_closes
+
+        stop_when_stdin_closes()
     uvicorn.run(
         "ltts.asgi:app",
         host=args.host,
@@ -84,7 +88,9 @@ def _models(args: argparse.Namespace) -> int:
 
     settings = Settings()
     configure_logging("production")
-    store = ModelStore(settings.resolved_models_dir, reserve_mb=settings.min_free_disk_mb)
+    store = ModelStore(
+        settings.resolved_models_dir, reserve_mb=settings.min_free_disk_mb, bundled_dir=settings.bundled_models_dir
+    )
     artifact_id = {"kokoro": "kokoro-v1.0", "chatterbox": "chatterbox-turbo"}.get(args.target, args.target)
     art = store.artifact(artifact_id)
     if args.action == "ensure":
@@ -117,7 +123,9 @@ def _doctor(_: argparse.Namespace) -> int:
     from ltts.onnx import onnxruntime
 
     settings = Settings()
-    store = ModelStore(settings.resolved_models_dir, reserve_mb=settings.min_free_disk_mb)
+    store = ModelStore(
+        settings.resolved_models_dir, reserve_mb=settings.min_free_disk_mb, bundled_dir=settings.bundled_models_dir
+    )
     print(f"TTSNative {__version__} — Python {platform.python_version()} on {platform.platform()}")
     print(f"Data directory:   {settings.resolved_data_dir}")
     print(f"Models directory: {settings.resolved_models_dir}")
@@ -218,6 +226,7 @@ def main(argv: list[str] | None = None) -> int:
     serve.add_argument("--static", help="directory with the built web UI to serve")
     serve.add_argument("--open", action="store_true", help="open the browser once started")
     serve.add_argument("--allow-network", action="store_true", help="expose to the LAN (requires a token)")
+    serve.add_argument("--exit-with-stdin", action="store_true", help="stop when standard input closes (desktop app)")
     serve.set_defaults(func=_serve)
     models = sub.add_parser("models", help="install, verify or remove model files")
     models.add_argument("action", choices=["ensure", "verify", "remove"])

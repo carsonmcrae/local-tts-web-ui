@@ -1,0 +1,4 @@
+# Purpose: Formatting rules for the desktop shell (checked by cargo fmt in CI).
+# Scope: Line width matching the Python server (120).
+# Does NOT belong: Lint rules (clippy runs with -D warnings).
+max_width = 120

@@ -3,6 +3,7 @@
 **Using TTSNative**
 
 - [Installation](Installation)
+- [Windows App](Windows-App)
 - [Getting Started](Getting-Started)
 - [Reading Documents](Reading-Documents)
 - [Exporting Audio](Exporting-Audio)

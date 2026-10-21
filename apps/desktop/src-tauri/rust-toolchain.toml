@@ -1,0 +1,7 @@
+# Purpose: Pin the Rust toolchain the desktop shell is built with (CI and local builds alike).
+# Scope: The compiler release (at least 14 days old when chosen) and the components CI uses.
+# Does NOT belong: Crate versions (Cargo.toml / Cargo.lock).
+[toolchain]
+channel = "1.99.0"
+components = ["rustfmt", "clippy"]
+profile = "minimal"

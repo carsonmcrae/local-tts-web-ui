@@ -17,6 +17,8 @@ local filesystem, and the integrity of installed model files and Python/npm depe
 4. **Server ↔ cloning worker.** A separate process with large third-party dependencies.
 5. **LAN (opt-in only).** Other devices when LAN mode (pairing) or the older network mode is enabled.
 6. **Local programs ↔ speech API (opt-in only).** Scripts and tools on this computer calling `/v1`.
+7. **Windows app: page ↔ desktop shell.** The UI page may call a few app commands.
+8. **Internet → installed app (updates).** Update information and installers from GitHub Releases.
 
 ## Threats and mitigations
 
@@ -54,6 +56,10 @@ local filesystem, and the integrity of installed model files and Python/npm depe
 | A proxy, tunnel or forged header passing for this computer's user              | Requests with forwarding headers (`Forwarded`, `X-Forwarded-*`, `Via`, `X-Real-IP`, Tailscale's and Cloudflare's, any letter case) are refused on both listeners and on `/v1`, and never read for an address; this computer's own user is a loopback address under exactly `localhost`, `127.0.0.1` or `[::1]` (a proxy's name, even in `extra_allowed_hosts`, or `localhost.` is refused), and a browser's changes need an `Origin` on those names; malformed or repeated Host headers are refused; there is no trusted-proxy setting                                                                                                               | `test_proxy_requests.py`, `test_security.py`                    |
 | A shared or hostile `.ttsvoice` file                                           | Only the files a voice may hold, each once and within its size limit; checksums, audio and safetensors headers checked without loading or running anything; newer format versions refused clearly; control and direction-reversing characters removed from shown text; never replaces a voice; a preview runs the same checks and saves nothing                                                                                                                                                                                                                                                                                                      | `test_voice_sharing.py`, `test_voice_file_safety.py`            |
 | Speech marks forging instructions in pasted text                               | Off unless chosen when pasting; recognised marks only, everything else stays as text with a warning; mark characters already in the text are removed before reading, so text can't fake a mark; values are validated (pause lengths, known effects, styles and sounds, voices that exist)                                                                                                                                                                                                                                                                                                                                                            | `test_speech_marks.py`, `test_document_speech_marks.py`         |
+
+| A page in the Windows app calls the shell beyond its needs | Capabilities grant the loopback origin only version, folders and update commands (no file system, shell or HTTP); only the start-up screen and the server's own origin load in the window; other links open in the browser and no second web view can open | code review, `desktop.yml` smoke test |
+| A forged or tampered update | Updates only from the latest GitHub Release over HTTPS; minisign signature checked against the public key built into the app (cannot be disabled); only a newer SemVer; installed only after the user confirms; the release workflow proves the signature against that key before publishing | `verify-update-signature.test.mjs`, `update-test.mjs` |
+| A global setting or environment variable redirects the installed app | The shell removes inherited `LTTS_*` variables, runs Python isolated (`-I`) and uses its own runtime in release builds (`TTSNATIVE_RUNTIME_DIR` works in debug builds only) | code review |
 
 ## Residual risks
 
@@ -96,6 +102,16 @@ local filesystem, and the integrity of installed model files and Python/npm depe
   LAN mode opening on a network nobody thought about, not a deliberate choice.
 - **Adapter detection is by name.** A VPN or virtual adapter with an unusual name is offered as an
   ordinary network. The address list shows each adapter's name, so check it.
-- **GPL components** (espeak-ng, phonemizer) are runtime dependencies; see the license inventory.
+- **GPL components** (espeak-ng, phonemizer) are runtime dependencies. The Windows installer redistributes
+  them with their licences, and each release attaches their source; see the license inventory.
+- **The Windows app is not Authenticode-signed yet.** Users must click through SmartScreen and can't
+  tell a genuine installer from a renamed one by its publisher; the published checksums and build
+  provenance are the check until a certificate is in place. The updater's own signature is enforced.
+- **The updater key is a single point of trust.** Whoever holds it can sign updates that installed
+  copies accept; it lives only in the `release` environment's secrets behind a required reviewer.
+- **The Windows app opens WebView2's debugging port when started with `--remote-debugging-port=N`**
+  (Chromium's own switch, used by the installer tests to drive the window; it listens on 127.0.0.1
+  only). Anyone able to start the app with arguments already runs as that user, so this adds nothing a
+  local attacker lacks, and the server's own protections (`x-ltts-client`, origin checks) still apply.
 - **The Chatterbox environment** contains a large third-party dependency tree (PyTorch, transformers).
   It is isolated, locked and only installed on request, but it is not audited line by line.

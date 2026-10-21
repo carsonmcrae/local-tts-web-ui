@@ -6,8 +6,9 @@ Scope: HTTPS-only downloads restricted to approved hosts (checked after every re
 ``.part`` files, retries with backoff, exact size + SHA-256 verification before an atomic rename,
 an install marker written only after every file verifies, integrity checks of installed files (missing,
 incomplete or failing their checksum) with hashes remembered per file size and modification time,
-and a refusal to hand damaged files to an engine. Model files are data: nothing downloaded is ever
-executed.
+and a refusal to hand damaged files to an engine. A read-only folder of models shipped with the desktop
+app is used until the user's own copy exists; repairing copies its intact files and downloads only the
+damaged ones. Model files are data: nothing downloaded is ever executed.
 Does NOT belong: Loading models into an inference runtime (engines).
 """
 
@@ -31,7 +32,7 @@ from urllib.parse import urlparse
 import httpx
 
 from ltts.common import ensure_free_space, utc_now
-from ltts.errors import AppError, EngineUnavailableError, NotFoundError
+from ltts.errors import AppError, ConflictError, EngineUnavailableError, NotFoundError
 from ltts.jobs import JobCanceledError
 
 log = logging.getLogger("ltts.models")
@@ -126,8 +127,16 @@ def _sha256(path: Path) -> str:
 
 
 class ModelStore:
-    def __init__(self, models_dir: Path, *, reserve_mb: int, client_factory: Callable[[], httpx.Client] | None = None):
+    def __init__(
+        self,
+        models_dir: Path,
+        *,
+        reserve_mb: int,
+        client_factory: Callable[[], httpx.Client] | None = None,
+        bundled_dir: Path | None = None,
+    ):
         self.root = models_dir
+        self.bundled_root = bundled_dir
         self.artifacts, self.allowed_hosts = load_manifest()
         self._reserve_mb = reserve_mb
         self._client_factory = client_factory or (lambda: httpx.Client(follow_redirects=False, timeout=60.0))
@@ -141,7 +150,18 @@ class ModelStore:
             raise NotFoundError("Unknown model artifact.", code="artifact_not_found") from exc
 
     def directory(self, artifact_id: str) -> Path:
-        return self.root / artifact_id
+        """Where an artifact is used from: the user's own copy, else the copy bundled with the app."""
+        own = self.root / artifact_id
+        bundled = self._bundled(artifact_id)
+        return bundled if bundled is not None and not (own / MARKER).is_file() else own
+
+    def is_bundled(self, artifact_id: str) -> bool:
+        return self._bundled(artifact_id) == self.directory(artifact_id)
+
+    def _bundled(self, artifact_id: str) -> Path | None:
+        if self.bundled_root is None or not (self.bundled_root / artifact_id / MARKER).is_file():
+            return None
+        return self.bundled_root / artifact_id
 
     def file_path(self, artifact_id: str, name: str) -> Path:
         return self.directory(artifact_id) / name
@@ -204,14 +224,20 @@ class ModelStore:
         return digest
 
     def remove(self, artifact_id: str) -> None:
-        self.artifact(artifact_id)
+        art = self.artifact(artifact_id)
+        if self.is_bundled(artifact_id):
+            raise ConflictError(
+                f"{art.label} comes with the TTSNative app and is removed when you uninstall the app.",
+                code="model_bundled",
+            )
         folder = self.directory(artifact_id)
         shutil.rmtree(folder, ignore_errors=True)
         self._hashes = {path: entry for path, entry in self._hashes.items() if path.parent != folder}
 
     def install(self, artifact_id: str, progress: ProgressFn, canceled: CancelFn) -> None:
         art = self.artifact(artifact_id)
-        folder = self.directory(artifact_id)
+        bundled = self._bundled(artifact_id)
+        folder = self.root / artifact_id
         folder.mkdir(parents=True, exist_ok=True)
         (folder / MARKER).unlink(missing_ok=True)
         pending = [f for f in art.files if not self._file_ok(folder / f.name, f)]
@@ -225,7 +251,10 @@ class ModelStore:
             def report(received: int, base: int = done, name: str = file.name) -> None:
                 progress(base + received, art.total_bytes, name)
 
-            self._download_with_retry(file, folder, report, canceled)
+            if bundled is not None and self._file_ok(bundled / file.name, file):
+                self._copy(bundled / file.name, folder / file.name, file)
+            else:
+                self._download_with_retry(file, folder, report, canceled)
             done += file.size
         marker = {
             "artifact": art.id,
@@ -234,6 +263,14 @@ class ModelStore:
         }
         (folder / MARKER).write_text(json.dumps(marker, indent=2), encoding="utf-8")
         log.info("artifact installed", extra={"artifact": art.id})
+
+    def _copy(self, source: Path, target: Path, file: ArtifactFile) -> None:
+        """Copy an intact bundled file into the user's models folder (no download needed)."""
+        part = target.with_name(f"{file.name}.part")
+        shutil.copyfile(source, part)
+        part.replace(target)
+        stat = target.stat()
+        self._hashes[target] = (stat.st_size, stat.st_mtime_ns, file.sha256)
 
     def _file_ok(self, path: Path, file: ArtifactFile) -> bool:
         return path.is_file() and path.stat().st_size == file.size and self._digest(path) == file.sha256

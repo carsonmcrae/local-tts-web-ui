@@ -2,8 +2,9 @@
 # Copyright (c) 2026 Carson McRae
 """Purpose: Small shared primitives used across feature packages.
 
-Scope: The camelCase API base model, identifier generation, UTC timestamps, disk-space checks and
-streaming a request body to disk under a hard byte limit.
+Scope: The camelCase API base model, identifier generation, UTC timestamps, disk-space checks,
+streaming a request body to disk under a hard byte limit, and the flag that keeps helper processes from
+opening console windows on Windows.
 Does NOT belong: Feature logic. Keep this module tiny; promote helpers only when two features need them.
 """
 
@@ -12,6 +13,7 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import shutil
+import sys
 import uuid
 from datetime import UTC, datetime
 from pathlib import Path
@@ -24,6 +26,9 @@ from pydantic.alias_generators import to_camel
 from ltts.errors import InsufficientStorageError, PayloadTooLargeError
 
 MB = 1024 * 1024
+# CREATE_NO_WINDOW: helper processes (uv, the voice-cloning worker, nvidia-smi) never open a console
+# window, which matters when the server itself runs windowless inside the desktop app.
+NO_CONSOLE_WINDOW = 0x08000000 if sys.platform == "win32" else 0
 
 
 class ApiModel(BaseModel):

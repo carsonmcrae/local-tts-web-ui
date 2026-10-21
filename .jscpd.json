@@ -15,7 +15,9 @@
     "**/*.lock",
     "**/package-lock.json",
     "apps/web/src/api/schema.gen.ts",
-    "tests/fixtures/**"
+    "tests/fixtures/**",
+    "apps/desktop/runtime/**",
+    "apps/desktop/src-tauri/target/**"
   ],
   "reporters": ["console", "json"],
   "output": ".tools/jscpd",

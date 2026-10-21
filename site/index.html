@@ -76,7 +76,12 @@
         <nav aria-label="Main">
           <a href="#features">Features</a>
           <a href="#try">Try it</a>
+          <!-- if:download -->
+          <a href="#download">Download</a>
+          <!-- /if:download -->
+          <!-- if:no-download -->
           <a href="#install">Install</a>
+          <!-- /if:no-download -->
           <a href="#engineering">Engineering</a>
           <a href="https://github.com/carsonmcrae/ttsnative">GitHub</a>
         </nav>
@@ -94,11 +99,23 @@
             subscriptions, no telemetry and no cloud inference.
           </p>
           <div class="actions">
+            <!-- if:download -->
+            <a class="btn primary" href="#download">Download TTSNative for Windows</a>
+            <!-- /if:download -->
+            <!-- if:no-download -->
             <a class="btn primary" href="#install">Install TTSNative</a>
+            <!-- /if:no-download -->
             <a class="btn" href="#try">Try speech in your browser</a>
             <a class="btn ghost" href="https://github.com/carsonmcrae/ttsnative">View the source</a>
           </div>
+          <!-- if:download -->
+          <p class="fine">
+            Free · Open source (MIT) · Installed locally · Works offline · Windows 11 (64-bit)
+          </p>
+          <!-- /if:download -->
+          <!-- if:no-download -->
           <p class="fine">Windows, macOS and Linux · Node.js 22.22 or newer · MIT licence</p>
+          <!-- /if:no-download -->
         </div>
         <figure class="shot">
           <picture>
@@ -382,13 +399,74 @@ Open a document, press Play, and follow along as each sentence is read to you.</
         </div>
       </section>
 
+      <!-- if:download -->
+      <section id="download" class="wrap" aria-labelledby="download-title">
+        <h2 id="download-title">Download TTSNative for Windows</h2>
+        <ul class="checks">
+          <li><strong>Free</strong> and open source under the MIT licence.</li>
+          <li>
+            <strong>Installed locally</strong> for your Windows account, with no administrator
+            rights or other software needed.
+          </li>
+          <li>
+            <strong>Works offline</strong>: the default voice comes with the app, and documents and
+            voices never leave your computer.
+          </li>
+          <li><strong>For Windows 11</strong> (64-bit).</li>
+        </ul>
+        <p class="actions">
+          <a class="btn primary" href="%WIN_URL%">Download TTSNative %WIN_VERSION%</a>
+          <a class="btn" href="releases.html">Release history</a>
+        </p>
+        <p class="fine">
+          TTSNative-Setup-%WIN_VERSION%.exe · %WIN_SIZE% · released %WIN_DATE% ·
+          <a href="%WIN_SUMS%">SHA-256 checksums</a> · built and attested by this project's public
+          release workflow
+        </p>
+        <ol class="steps">
+          <li>
+            <strong>Run the installer</strong> you downloaded. If Windows says it protected your PC
+            from an unrecognised app, choose <em>More info</em>, then <em>Run anyway</em>; you can
+            check the file against the published checksum first.
+          </li>
+          <li>
+            <strong>Open TTSNative</strong> from the Start menu or the desktop shortcut. The first
+            start can take a minute while Windows checks the new files.
+          </li>
+          <li>
+            <strong>Updates</strong>: TTSNative lets you know when a new version is out and installs
+            it when you agree. Your documents, voices and settings are kept.
+          </li>
+          <li>
+            <strong>To uninstall</strong>, use Settings → Apps → Installed apps. Your documents and
+            voices are kept unless you choose to delete them.
+          </li>
+        </ol>
+        <p class="actions">
+          <a class="btn ghost" href="#requirements">System requirements</a>
+          <a class="btn ghost" href="#install">Developer installation</a>
+          <a class="btn ghost" href="https://github.com/carsonmcrae/ttsnative">View source code</a>
+        </p>
+      </section>
+      <!-- /if:download -->
+
       <section id="install" class="wrap" aria-labelledby="install-title">
+        <!-- if:download -->
+        <h2 id="install-title">Run from the source code</h2>
+        <p>
+          For developers, and on macOS and Linux, where there's no installer yet. You need
+          <strong>Node.js 22.22 or newer</strong> and <strong>Git</strong>. The first run installs
+          everything else inside the project folder.
+        </p>
+        <!-- /if:download -->
+        <!-- if:no-download -->
         <h2 id="install-title">Install TTSNative</h2>
         <p>
           TTSNative runs from its source code; there's no installer yet. You need
           <strong>Node.js 22.22 or newer</strong> and <strong>Git</strong>. The first run installs
           everything else inside the project folder.
         </p>
+        <!-- /if:no-download -->
         <div class="code">
           <pre
             tabindex="0"
@@ -418,9 +496,9 @@ npm run dev</code></pre>
             <strong>To uninstall</strong>, delete the folder. Nothing is installed system-wide.
           </li>
         </ol>
-        <table>
+        <table id="requirements">
           <caption>
-            Tested support
+            System requirements and tested support
           </caption>
           <thead>
             <tr>
@@ -429,6 +507,15 @@ npm run dev</code></pre>
             </tr>
           </thead>
           <tbody>
+            <!-- if:download -->
+            <tr>
+              <td>Windows app</td>
+              <td>
+                Windows 11, 64-bit. Each release's installer is built and tested on a clean Windows
+                machine: install, speech, audio export, restart and uninstall.
+              </td>
+            </tr>
+            <!-- /if:download -->
             <tr>
               <td>Windows 11</td>
               <td>
@@ -455,6 +542,7 @@ npm run dev</code></pre>
           <a class="btn primary" href="https://github.com/carsonmcrae/ttsnative/releases/latest"
             >Latest release</a
           >
+          <a class="btn" href="releases.html">Release history</a>
           <a class="btn" href="https://github.com/carsonmcrae/ttsnative/wiki/Installation"
             >Installation guide</a
           >
@@ -590,10 +678,15 @@ npm run dev</code></pre>
 
     <footer class="foot">
       <div class="wrap foot-row">
-        <span>© 2026 Carson McRae · TTSNative is free and open source under the MIT licence.</span>
+        <span>
+          © 2026 Carson McRae · TTSNative is free and open source under the MIT licence.
+          <!-- if:release -->
+          · <a href="%LATEST_PATH%">Version %LATEST_VERSION%</a>
+          <!-- /if:release -->
+        </span>
         <nav aria-label="Project">
           <a href="https://github.com/carsonmcrae/ttsnative">GitHub</a>
-          <a href="https://github.com/carsonmcrae/ttsnative/releases">Releases</a>
+          <a href="releases.html">Release history</a>
           <a href="https://github.com/carsonmcrae/ttsnative/wiki">Guide</a>
           <a href="https://github.com/carsonmcrae/ttsnative/security/policy">Security</a>
           <a href="https://github.com/carsonmcrae/ttsnative#responsible-use">Responsible use</a>

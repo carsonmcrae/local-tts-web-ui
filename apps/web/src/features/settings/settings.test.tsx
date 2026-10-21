@@ -214,6 +214,18 @@ describe('System sections', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('Copy failed');
   });
 
+  it('names the update check in the privacy summary of the desktop app', async () => {
+    api();
+    (window as { __TTSNATIVE_DESKTOP__?: boolean }).__TTSNATIVE_DESKTOP__ = true;
+    try {
+      renderSettings();
+      const privacy = await screen.findByRole('region', { name: 'Privacy' });
+      expect(privacy).toHaveTextContent('a check for new TTSNative versions on GitHub');
+    } finally {
+      delete (window as { __TTSNATIVE_DESKTOP__?: boolean }).__TTSNATIVE_DESKTOP__;
+    }
+  });
+
   it('shows placeholders and errors while the server is unavailable', async () => {
     api({ 'GET /api/system': failure(), 'GET /api/engines': failure() });
     vi.stubGlobal('__APP_VERSION__', undefined);

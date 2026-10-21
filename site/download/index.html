@@ -1,0 +1,58 @@
+<!doctype html>
+<!--
+  Purpose: A permanent download address for the Windows app: https://ttsnative.com/download/.
+  Scope: When the latest published release has a verified installer, the build fills in its version and
+    address and this page starts the download (with a link in case it doesn't); otherwise it says plainly
+    that the installer isn't published yet and points to running from source. Used by the README, the
+    wiki and GitHub so their links never need a version number.
+  Does NOT belong: The home page's download section (index.html) or the release notes (releases.html).
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Download TTSNative for Windows</title>
+    <meta
+      name="description"
+      content="Download TTSNative, the free, private text-to-speech reader, for Windows 11."
+    />
+    <link rel="canonical" href="%BASE_URL%/download/" />
+    <meta name="color-scheme" content="light dark" />
+    <!-- if:download -->
+    <meta http-equiv="refresh" content="1; url=%WIN_URL%" />
+    <!-- /if:download -->
+    <link rel="icon" href="%BASE_URL%/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="%BASE_URL%/styles.css" />
+    <link rel="stylesheet" href="%BASE_URL%/sections.css" />
+  </head>
+  <body>
+    <main id="main" class="wrap releases">
+      <p class="eyebrow"><a href="%BASE_URL%/">TTSNative</a></p>
+      <h1>Download TTSNative for Windows</h1>
+      <!-- if:download -->
+      <p class="lead">
+        Your download of TTSNative %WIN_VERSION% (%WIN_SIZE%) should start in a moment.
+      </p>
+      <p class="actions">
+        <a class="btn primary" href="%WIN_URL%">Download TTSNative-Setup-%WIN_VERSION%.exe</a>
+        <a class="btn" href="%BASE_URL%/#download">Installation steps</a>
+      </p>
+      <p class="fine">
+        Free and open source · Windows 11 (64-bit) · released %WIN_DATE% ·
+        <a href="%WIN_SUMS%">SHA-256 checksums</a> ·
+        <a href="%BASE_URL%/releases.html">What's new</a>
+      </p>
+      <!-- /if:download -->
+      <!-- if:no-download -->
+      <p class="lead">
+        The Windows installer hasn't been published yet. It will be available here as soon as the
+        first release that includes it is out.
+      </p>
+      <p class="actions">
+        <a class="btn primary" href="%BASE_URL%/#install">Run TTSNative from its source code</a>
+        <a class="btn" href="%BASE_URL%/releases.html">Release history</a>
+      </p>
+      <!-- /if:no-download -->
+    </main>
+  </body>
+</html>

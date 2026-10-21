@@ -28,6 +28,8 @@ export default defineConfig(
       'test-results/**',
       'apps/web/src/api/schema.gen.ts',
       'apps/web/public/**',
+      'apps/desktop/runtime/**',
+      'apps/desktop/src-tauri/target/**',
     ],
   },
   js.configs.recommended,
@@ -92,7 +94,7 @@ export default defineConfig(
   },
   {
     // The public website's scripts run in the visitor's browser.
-    files: ['site/**/*.js'],
+    files: ['site/**/*.js', 'apps/desktop/splash/**/*.js'],
     languageOptions: { globals: { ...globals.browser } },
   },
   {

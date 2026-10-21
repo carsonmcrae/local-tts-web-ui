@@ -41,7 +41,8 @@ SAMPLE_RATE = 24_000
 PACE = EngineControl(name="pace", label="Speaking pace", minimum=0.5, maximum=2.0, default=1.0, step=0.05)
 ATTRIBUTION = (
     "Synthetic voice from the Kokoro-82M model (Apache-2.0, hexgrad), run with kokoro-onnx (MIT). "
-    "Not a recording of a person; the model's authors do not say whose speech each voice was trained on."
+    "Not a recording of a person: the model was trained on permissively licensed and public-domain audio "
+    "(CC BY corpora are credited in the licence notices), and no speaker is named for any voice."
 )
 
 

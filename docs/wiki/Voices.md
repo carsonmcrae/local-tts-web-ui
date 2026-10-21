@@ -23,7 +23,8 @@ what licence:
 
 - **Kokoro voices** are produced by the Kokoro-82M model (Apache-2.0, by hexgrad), run with
   kokoro-onnx (MIT). Its authors say it was trained on permissively licensed and public-domain audio,
-  including synthetic speech from other systems, and do not say whose speech each voice was trained on.
+  including synthetic speech from other systems and the CC BY corpora credited in the licence notices,
+  and name no speaker for any voice.
 - **Chatterbox default** is the voice built into Chatterbox Turbo (MIT, Resemble AI); its origin is
   not documented. Every Chatterbox clip carries an inaudible watermark.
 - **Your voices** are synthetic speech from Chatterbox Turbo conditioned on the recording you made

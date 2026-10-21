@@ -287,9 +287,15 @@ summary {
   gap: 8px;
 }
 
+.checks li {
+  position: relative;
+  padding-left: 24px;
+}
+
 .checks li::before {
   content: '✓';
-  margin-right: 8px;
+  position: absolute;
+  left: 0;
   font-weight: 700;
   color: var(--accent-text);
 }

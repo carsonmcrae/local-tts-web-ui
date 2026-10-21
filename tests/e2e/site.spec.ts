@@ -216,6 +216,21 @@ test.describe('website @site @cross-browser', () => {
     });
   }
 
+  test('the release history lists published notes, newest first, and passes axe', async ({
+    page,
+  }) => {
+    await page.goto(`${BASE}/releases.html`);
+    const headings = await page.getByRole('heading', { level: 2 }).allTextContents();
+    expect(headings.slice(0, 2)).toEqual(['Local TTS 2.0.0', 'Local TTS 1.0.0']);
+    await expect(page.getByText('October 19, 2026 · released as Local TTS')).toBeVisible();
+    await expect(
+      page.getByRole('link', { name: 'Release page and downloads on GitHub' }).first(),
+    ).toHaveAttribute('href', 'https://github.com/carsonmcrae/ttsnative/releases/tag/v2.0.0');
+    // No installer is published in a local build, so none is offered.
+    await expect(page.getByRole('link', { name: /Download TTSNative/ })).toHaveCount(0);
+    expect(await seriousViolations(page)).toEqual([]);
+  });
+
   test('the 404 page links home', async ({ page }) => {
     await page.goto(`${BASE}/404.html`);
     await expect(page.getByRole('link', { name: 'Go to the TTSNative home page' })).toHaveAttribute(

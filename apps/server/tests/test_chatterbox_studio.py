@@ -3,9 +3,10 @@
 """Purpose: Tests for the Chatterbox engine's studio-voice operations over the real stdio protocol.
 
 Scope: ``measure_takes`` parses the worker's per-take features; ``build_voice`` sends the session
-identity only when there is one; ``audition`` sends the seed and the delivery's sampling settings
-and returns scores; synthesis with a built voice sends its conditioning and delivery. Uses
-``fake_worker.py`` (its ``history`` op shows exactly what reached the worker).
+identity only when there is one; ``audition`` sends the seed, the delivery's sampling settings and
+an adapter, and returns scores; synthesis with a built voice sends its conditioning, delivery and
+fine-tuned adapter; fine-tuning runs epoch by epoch on a GPU only. Uses ``fake_worker.py`` (its
+``history`` op shows exactly what reached the worker).
 Does NOT belong: Real inference (test_inference.py) or session handling.
 """
 
@@ -19,9 +20,10 @@ import pytest
 
 from chatterbox_harness import fake_chatterbox
 from ltts.config import Settings
-from ltts.engines.base import Audition, SpeakerIdentity, VoiceSpec
+from ltts.engines.base import Audition, SpeakerIdentity, TuningTake, VoiceSpec
 from ltts.engines.chatterbox import ChatterboxEngine
 from ltts.engines.chatterbox_env import write_marker
+from ltts.errors import ConflictError
 
 
 @pytest.fixture
@@ -120,3 +122,48 @@ def test_build_style_sends_its_prompts(engine: ChatterboxEngine, tmp_path: Path)
     output.parent.mkdir()
     assert engine.build_style([tmp_path / "025.flac", tmp_path / "026.flac"], output) == 15.0
     assert last_request(engine, "style")["prompts"][1].endswith("026.flac") and output.is_file()
+
+
+def test_a_fine_tuned_voice_sends_its_adapter_and_only_with_its_built_voice(
+    engine: ChatterboxEngine, tmp_path: Path
+) -> None:
+    adapter = tmp_path / "adapter-abc.safetensors"
+    voice = VoiceSpec("profile:x", conditioning_path=tmp_path / "v.safetensors", adapter_path=adapter)
+    engine.synthesize("Hello.", voice, 1.0)
+    assert last_request(engine, "synthesize")["adapter"] == str(adapter)
+    engine.synthesize("Hello.", VoiceSpec("profile:q", reference_path=tmp_path / "ref.wav", adapter_path=adapter), 1.0)
+    assert last_request(engine, "synthesize")["adapter"] is None  # an adapter belongs to a built voice
+    conditioning = tmp_path / "voice.safetensors"
+    engine.build_voice(tmp_path / "take-004.flac", conditioning, None)
+    engine.audition(Audition(conditioning, ["One."], [tmp_path / "a.wav"], (), seed=3, adapter=adapter))
+    sent = last_request(engine, "audition")
+    assert sent["adapter"] == str(adapter) and "speakerEmb" not in sent  # scored against the voice's own speaker
+
+
+def test_fine_tuning_needs_a_gpu(engine: ChatterboxEngine, tmp_path: Path) -> None:
+    with pytest.raises(ConflictError) as raised:
+        engine.start_tuning([TuningTake(tmp_path / "001.flac", "Hi.")], tmp_path / "v.safetensors", 8, 1)
+    assert raised.value.code == "needs_gpu"
+
+
+def test_fine_tuning_runs_epoch_by_epoch_over_the_worker(
+    settings: Settings, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    gpu = fake_chatterbox(settings, tmp_path / "gpu", monkeypatch)
+    write_marker(gpu._marker, "cuda", None, gpu._venv)
+    try:
+        takes = [TuningTake(tmp_path / "001.flac", "One."), TuningTake(tmp_path / "008.flac", "Eight.", held_out=True)]
+        start = gpu.start_tuning(takes, tmp_path / "v.safetensors", 8, 1234)
+        assert start.epoch == 0 and start.held_out_loss == 4.0
+        sent = last_request(gpu, "tune_start")
+        assert sent["takes"][1] == {"path": str(tmp_path / "008.flac"), "text": "Eight.", "heldOut": True}
+        assert sent["epochs"] == 8 and sent["seed"] == 1234
+        first, second = gpu.tune_epoch(), gpu.tune_epoch()
+        assert (first.epoch, second.epoch) == (1, 2) and second.held_out_loss < first.held_out_loss
+        saved = gpu.save_tuning(tmp_path / "adapter.safetensors")
+        assert saved.best_epoch == 2 and (tmp_path / "adapter.safetensors").is_file()
+        gpu.stop_tuning()
+        assert last_request(gpu, "tune_stop")["op"] == "tune_stop"
+    finally:
+        gpu.close()
+    gpu.stop_tuning()  # nothing to stop once the worker is gone

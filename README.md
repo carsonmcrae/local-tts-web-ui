@@ -138,11 +138,14 @@ Chatterbox copies a voice at the moment it speaks from a **reference**: it takes
 roughly the first 10 seconds and its speaking style from the first 15, so a clean recording matters more
 than a long one. A **quick voice** uses one 10–20 second clip. A **studio voice** comes from a longer guided
 session: the app averages the speaker across the takes, builds the voice from the take you choose by ear
-and gives each speaking style three takes of its own. No model is trained, so the session asks only for what
-the voice uses and stops when more passages wouldn't change it; measured, a complete session scores the same
-as an early one built from about a dozen takes
-([studio voice audit](docs/research/studio-voice-audit.md)). Fine-tuning is being evaluated, not offered. Recordings are stored only on this computer. You must confirm the voice is yours
-or that the speaker gave permission; generated audio carries Resemble AI's inaudible Perth watermark.
+and gives each speaking style three takes of its own. No model is trained to build it, so the session asks
+only for what the voice uses and stops when more passages wouldn't change it; measured, a complete session
+scores the same as an early one built from about a dozen takes
+([studio voice audit](docs/research/studio-voice-audit.md)). A studio voice can optionally be
+**fine-tuned** on its takes afterwards (experimental; a few minutes on an NVIDIA GPU), and you keep the
+result only if you prefer it by ear. Recordings are stored only on this computer. You must confirm the voice
+is yours or that the speaker gave permission; generated audio carries Resemble AI's inaudible Perth
+watermark.
 
 ## Documentation
 

@@ -10,8 +10,8 @@ model's built-in voice), with a delivery preset. A studio voice reads each sente
 prompt that fits it (questions, lively lines, dialogue, narration). Every sentence is seeded from its
 text (the same sentence always sounds the same), generated again with another seed when the clip is
 implausibly short or long for its text, then polished (edges, long pauses, loudness).
-Builds studio voices (``VoiceBuilder``): measures takes, builds a voice from one take plus a session
-identity, builds style prompts, and auditions it. Output is 24 kHz and carries Resemble's imperceptible Perth watermark.
+Builds studio voices (``VoiceBuilder``) and fine-tunes them on an NVIDIA GPU (``VoiceTuner``, an epoch per call).
+Output is 24 kHz and carries Resemble's imperceptible Perth watermark.
 Does NOT belong: Profile storage/consent (``voices``), running uv and the install marker
 (``chatterbox_env.py``) or the worker implementation (``apps/chatterbox-worker``).
 """
@@ -41,9 +41,11 @@ from ltts.engines.base import (
     InstallOption,
     SpeakerIdentity,
     TakeFeatures,
-    VoiceBuilder,
+    TuningProgress,
+    TuningTake,
     VoiceInfo,
     VoiceSpec,
+    VoiceTuner,
 )
 from ltts.engines.chatterbox_env import (
     PROJECT_DIR,
@@ -55,7 +57,7 @@ from ltts.engines.chatterbox_env import (
 )
 from ltts.engines.cloned_speech import acceptable, plausibility, polish, sentence_style
 from ltts.engines.worker_client import WorkerClient
-from ltts.errors import EngineUnavailableError
+from ltts.errors import ConflictError, EngineUnavailableError
 from ltts.hardware import detect_gpus
 from ltts.jobs import JobContext
 from ltts.modelstore.store import ModelStore, describe_damage
@@ -79,7 +81,7 @@ DELIVERY: dict[Delivery, dict[str, float]] = {
 NOT_INSTALLED = "Chatterbox isn't installed. Install it from Settings → Engines & models."
 
 
-class ChatterboxEngine(Engine, VoiceBuilder):
+class ChatterboxEngine(Engine, VoiceTuner):
     id = "chatterbox"
 
     def __init__(self, settings: Settings, store: ModelStore, project_dir: Path = PROJECT_DIR):
@@ -349,6 +351,7 @@ class ChatterboxEngine(Engine, VoiceBuilder):
                 text=text,
                 conditioning=str(voice.conditioning_path) if voice.conditioning_path else None,
                 style=str(style) if style and voice.conditioning_path else None,
+                adapter=str(voice.adapter_path) if voice.adapter_path and voice.conditioning_path else None,
                 reference=str(voice.reference_path) if voice.reference_path else None,
                 output=str(output),
                 seed=seed,
@@ -386,17 +389,61 @@ class ChatterboxEngine(Engine, VoiceBuilder):
 
     @override
     def audition(self, request: Audition) -> list[float]:
+        optional: dict[str, Any] = {"speakerEmb": list(request.target)} if request.target else {}
+        if request.adapter is not None:
+            optional["adapter"] = str(request.adapter)
         reply = self._call(
             "audition",
             SYNTH_TIMEOUT_S * max(len(request.texts), 1),
             conditioning=str(request.conditioning),
             texts=list(request.texts),
             outputs=[str(output) for output in request.outputs],
-            speakerEmb=list(request.target),
             seed=request.seed,
+            **optional,
             **DELIVERY[request.delivery],
         )
         return [float(score) for score in reply["scores"]]
+
+    # -- fine-tuning --------------------------------------------------------
+    @override
+    def start_tuning(self, takes: Sequence[TuningTake], conditioning: Path, epochs: int, seed: int) -> TuningProgress:
+        if not self.is_ready():
+            raise EngineUnavailableError(NOT_INSTALLED, code="engine_not_installed")
+        if self._ensure_worker().get("device") != "cuda":
+            raise ConflictError(
+                "Fine-tuning needs an NVIDIA graphics card, and voice cloning installed for it.", code="needs_gpu"
+            )
+        reply = self._call(
+            "tune_start",
+            STUDIO_TIMEOUT_S,
+            takes=[{"path": str(take.path), "text": take.text, "heldOut": take.held_out} for take in takes],
+            conditioning=str(conditioning),
+            epochs=epochs,
+            seed=seed,
+        )
+        return TuningProgress(epoch=0, held_out_loss=float(reply["baseLoss"]), best_epoch=0)
+
+    @override
+    def tune_epoch(self) -> TuningProgress:
+        reply = self._call("tune_epoch", STUDIO_TIMEOUT_S)
+        return TuningProgress(
+            epoch=int(reply["epoch"]),
+            held_out_loss=float(reply["heldOutLoss"]),
+            best_epoch=int(reply["bestEpoch"]),
+            train_loss=float(reply["trainLoss"]),
+        )
+
+    @override
+    def save_tuning(self, output: Path) -> TuningProgress:
+        reply = self._call("tune_save", STUDIO_TIMEOUT_S, output=str(output))
+        epoch = int(reply["epoch"])
+        return TuningProgress(epoch=epoch, held_out_loss=float(reply["heldOutLoss"]), best_epoch=epoch)
+
+    @override
+    def stop_tuning(self) -> None:
+        """Free the worker's training state; nothing to do when the worker isn't running."""
+        if self._worker is not None and self._worker.loaded:
+            self._worker.call("tune_stop", STUDIO_TIMEOUT_S)
 
 
 def _distance(ratio: float) -> float:

@@ -42,6 +42,7 @@ from ltts.voices.profiles import CLONING_ENGINE, VoiceProfileService
 from ltts.voices.sessions import VoiceSessionService
 from ltts.voices.sharing import VoiceSharing
 from ltts.voices.studio import StudioService
+from ltts.voices.tuning import TuningService
 
 if TYPE_CHECKING:
     from ltts.config import Settings
@@ -68,6 +69,7 @@ class Services:
     lan: LanService
     voice_sessions: VoiceSessionService
     studio: StudioService
+    tuning: TuningService
     voice_sharing: VoiceSharing
     exports: ExportService
     preferences: PreferenceStore
@@ -135,6 +137,7 @@ def build_services(
         lan=LanService(db),
         voice_sessions=sessions,
         studio=studio,
+        tuning=TuningService(voices, jobs, lambda: registry.voice_tuner(CLONING_ENGINE)),
         voice_sharing=VoiceSharing(settings, voices),
         exports=ExportService(settings, jobs, documents, synthesis, details),
         preferences=PreferenceStore(db),

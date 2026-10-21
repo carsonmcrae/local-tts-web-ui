@@ -5,7 +5,7 @@
 Scope: Holds the engine instances, maps ``engine:key`` voice ids and the ones attached from outside the
 engines (``custom:<profile>``, ``blend:<id>``), merges built-in and custom voices for the library, runs
 engine install, update and repair jobs, explains damaged model files when a voice is used, and hands out
-the cloning engine for building studio voices.
+the cloning engine for building and fine-tuning studio voices.
 Does NOT belong: Engine internals, caching or HTTP.
 """
 
@@ -14,7 +14,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from dataclasses import dataclass
 
-from ltts.engines.base import Engine, EngineInfo, VoiceBuilder, VoiceInfo, VoiceSpec
+from ltts.engines.base import Engine, EngineInfo, VoiceBuilder, VoiceInfo, VoiceSpec, VoiceTuner
 from ltts.errors import ConflictError, EngineUnavailableError, NotFoundError
 from ltts.jobs import JobManager, JobOut, JobStatus
 from ltts.modelstore.store import ModelDamagedError
@@ -60,6 +60,15 @@ class EngineRegistry:
         if engine is None or not engine.is_ready() or not isinstance(engine, VoiceBuilder):
             raise EngineUnavailableError(
                 "Install the voice-cloning engine to build a studio voice.", code="engine_not_installed"
+            )
+        return engine
+
+    def voice_tuner(self, engine_id: str) -> VoiceTuner:
+        """The cloning engine, installed and able to fine-tune a studio voice."""
+        engine = self._engines.get(engine_id)
+        if engine is None or not engine.is_ready() or not isinstance(engine, VoiceTuner):
+            raise EngineUnavailableError(
+                "Install the voice-cloning engine to fine-tune a studio voice.", code="engine_not_installed"
             )
         return engine
 

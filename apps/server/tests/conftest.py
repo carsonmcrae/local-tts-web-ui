@@ -4,7 +4,7 @@
 
 Scope: Isolated settings (temporary data dir), a deterministic ``FakeEngine`` (sine tones whose
 length follows the text, so API/caching/export logic is testable without models; as a cloning engine
-it also fakes studio-voice measuring, building and auditioning), the wired service
+it also fakes studio-voice measuring, building, auditioning and fine-tuning), the wired service
 container, a TestClient that sends the app's required client header, and shared helpers for
 speech-like recordings, WAV encoding and waiting for background jobs.
 Does NOT belong: Real-inference fixtures (see test_inference_*.py, marked ``inference``).
@@ -27,7 +27,17 @@ from fastapi.testclient import TestClient
 from ltts.app import create_app
 from ltts.config import Settings
 from ltts.container import Services, build_services
-from ltts.engines.base import AudioClip, Audition, EngineInfo, SpeakerIdentity, TakeFeatures, VoiceInfo, VoiceSpec
+from ltts.engines.base import (
+    AudioClip,
+    Audition,
+    EngineInfo,
+    SpeakerIdentity,
+    TakeFeatures,
+    TuningProgress,
+    TuningTake,
+    VoiceInfo,
+    VoiceSpec,
+)
 from ltts.jobs import JobContext
 
 SAMPLE_RATE = 24_000
@@ -44,6 +54,8 @@ class FakeEngine:
         self.specs: list[VoiceSpec] = []
         self.built: list[tuple[str, SpeakerIdentity | None]] = []
         self.styled: list[tuple[str, list[str]]] = []  # (style, prompt file names) per built style
+        self.tunings: list[dict[str, Any]] = []  # each fine-tuning run: its takes, epochs trained, stopped
+        self.tuning_losses = [4.0, 3.9, 3.85, 3.86, 3.9, 3.95, 4.0, 4.1, 4.2]  # held-out loss by epoch (0: before)
 
     def info(self) -> EngineInfo:
         return EngineInfo(
@@ -134,6 +146,29 @@ class FakeEngine:
             output.write_bytes(wav_bytes(speech_like(0.5)))
         score = 0.8 + take_number(Path(request.conditioning.read_text("utf-8"))) % 10 / 100
         return [round(score, 4)] * len(request.outputs)
+
+    # Fine-tuning: the held-out loss follows ``tuning_losses`` epoch by epoch.
+    def start_tuning(self, takes: Sequence[TuningTake], conditioning: Path, epochs: int, seed: int) -> TuningProgress:
+        self.tunings.append({"takes": list(takes), "conditioning": conditioning, "epochs": 0, "stopped": False})
+        return TuningProgress(0, self.tuning_losses[0], 0)
+
+    def _best_epoch(self) -> int:
+        trained = self.tunings[-1]["epochs"]
+        return min(range(trained + 1), key=lambda epoch: self.tuning_losses[epoch])
+
+    def tune_epoch(self) -> TuningProgress:
+        self.tunings[-1]["epochs"] += 1
+        epoch = self.tunings[-1]["epochs"]
+        return TuningProgress(epoch, self.tuning_losses[epoch], self._best_epoch(), self.tuning_losses[epoch])
+
+    def save_tuning(self, output: Path) -> TuningProgress:
+        best = self._best_epoch()
+        output.write_text(f"adapter from epoch {best}", encoding="utf-8")
+        return TuningProgress(best, self.tuning_losses[best], best)
+
+    def stop_tuning(self) -> None:
+        if self.tunings:
+            self.tunings[-1]["stopped"] = True
 
 
 def take_number(path: Path) -> int:

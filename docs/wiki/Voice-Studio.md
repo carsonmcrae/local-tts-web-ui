@@ -10,8 +10,9 @@ longer guided session for the most faithful result.
 Voice Studio uses [Chatterbox Turbo](https://github.com/resemble-ai/chatterbox) by Resemble AI (MIT).
 It copies a voice from a short reference recording at the moment it speaks ("zero-shot" cloning).
 
-- **No model is trained.** Fine-tuning a model on 30+ minutes of speech can sound closer, but it needs
-  hours of GPU time and isn't offered here.
+- **No model is trained to make a voice.** A studio voice can optionally be
+  [fine-tuned](#fine-tuning-experimental) on its takes later, on your own NVIDIA graphics card, and
+  you keep the result only if you prefer it.
 - **The reference sets the sound.** The engine takes the voice's sound from roughly the first 10
   seconds of a reference and its speaking style from the first 15. A clean recording matters far more
   than a long one: a thin, "tinny" microphone makes a thin, tinny voice.
@@ -161,6 +162,28 @@ Every sentence a custom voice speaks is also checked: one that comes out far too
 its text (cut off, or running on with noise) is generated again, and every sentence is levelled to the
 same loudness as the built-in voices, with silent edges trimmed and overly long pauses shortened.
 
+### Fine-tuning (experimental)
+
+A studio voice that kept its takes shows **Fine-tune this voice**. It trains a small add-on to the
+cloning model (a LoRA adapter, about 13 MB) on your takes and their passages, so the voice picks up
+more of how you read: your rhythm, pauses and rise and fall.
+
+- **What you need.** An NVIDIA graphics card (about 3 GB of free video memory) and at least 12
+  recorded passages. Imported recordings aren't used, because the app doesn't know their words.
+- **How long it takes.** A few minutes for a full session. The voice keeps reading meanwhile.
+- **How it checks itself.** A few passages are held back, and training stops once the voice stops
+  getting closer to how you read them. If it barely helped, nothing is offered.
+- **Compare before keeping.** The card plays three sentences as the voice reads them **Now** and
+  **Fine-tuned**. **Keep fine-tune** makes it part of the voice; audio made before is cleared and
+  read again with it. **Discard** throws it away.
+- **Undo.** **Remove fine-tune** goes back to the voice as it was. **Fine-tune again** trains a new
+  one to compare.
+
+The gain is real but modest. On a 48-take session it brought pitch movement and speaking pace closer
+to the speaker's own, with the same likeness, but in a blind test the speaker preferred it as often as
+the voice without it. Trust your ears. A shared `.ttsvoice` file doesn't
+include the fine-tune.
+
 ### Sharing a voice
 
 **Share** on a voice card saves the voice as a `.ttsvoice` file that someone else can import into
@@ -250,15 +273,18 @@ survival through MP3 export hasn't been tested here. Kokoro's built-in voices ar
 
 For a quick voice, only a trimmed copy of the reference recording (a WAV of at most 30 seconds) is
 saved, in `data/voices/`, with the voice's name and details in the library database. A studio voice
-also keeps its session's takes (24-bit FLAC), the voice built from them and its speaking styles (small
-safetensors files). A shared voice keeps the built voice, its styles, a short reference and where it
+also keeps its session's takes (24-bit FLAC), the voice built from them, its speaking styles (small
+safetensors files) and, if you kept one, its fine-tune (about 13 MB), plus a fine-tune waiting to be
+compared. A shared voice keeps the built voice, its styles, a short reference and where it
 came from (`origin.json`), but no takes.
-Sessions in progress live in `data/voices/sessions/`. No model is trained and nothing is uploaded.
+Sessions in progress live in `data/voices/sessions/`. Nothing is uploaded; a model is trained only
+when you fine-tune a voice, on this computer.
 You can have up to 50 custom voices.
 
 Each voice card has **Play recording**, a **Delivery** choice, the voice's
-[expression](#expression) and **Use for reading** (once the engine is installed), **Share**, a rename
-button and a delete button. Studio voices are marked **Studio**, imported ones **Shared**.
+[expression](#expression), its [fine-tune](#fine-tuning-experimental) and **Use for reading** (once
+the engine is installed), **Share**, a rename button and a delete button. Studio voices are marked
+**Studio**, imported ones **Shared**.
 
 ## Permanent deletion
 

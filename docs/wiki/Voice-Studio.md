@@ -66,7 +66,7 @@ About two minutes. A wizard guides you through five steps.
 
 ### Studio voice
 
-About 30–45 minutes, and you can stop and continue later: every take is saved as you go, and Voice
+About 15–20 minutes, and you can stop and continue later: every take is saved as you go, and Voice
 Studio shows **Studio session in progress** with **Continue** and **Discard**. Use a USB or XLR
 microphone if you can. The [recording guide](https://github.com/carsonmcrae/ttsnative/blob/main/docs/guides/studio-recording.md)
 covers microphone, Windows and room setup.
@@ -87,11 +87,21 @@ covers microphone, Windows and room setup.
    auto-gain are off), checked and saved at once; a good take moves you to the next passage.
    **Listen to this take** plays it back before you decide whether to record it again, and **All
    passages** jumps to any passage, showing which are recorded, have advice or need another take.
-   Five minutes of usable speech gives a complete voice; ten or more is better. Short on time? The
-   foundation passage plus 45 seconds of speech in all lets you build an **early version**: it works,
-   but questions, lively lines and some words sound less like you, and you can come back, record more
-   and build again. Recorded elsewhere? **Import a recording** splits a WAV, FLAC or OGG file (up to
-   30 minutes) into takes at its pauses.
+   You don't need all 48. The session shows what the voice will use and suggests the **most useful
+   next** passage (**Go to it** jumps there):
+   - **Foundation:** the foundation passage plus 45 seconds of speech in all. You can build a working
+     voice, but questions and lively lines may sound less like you.
+   - **Developing:** eight clean takes. The sound of your voice has settled; more takes hardly move it.
+   - **Complete:** every speaking style (narration, questions, lively lines, dialogue, calm) has its
+     three takes. That is about 15 passages, 2–3 minutes of speech. More passages won't change the
+     voice, so the session says you can build.
+
+   No model is trained at any tier: when the voice speaks, it hears about 10 seconds of one take for
+   its sound and three takes of the sentence's style for its rhythm (see the
+   [studio voice audit](https://github.com/carsonmcrae/ttsnative/blob/main/docs/research/studio-voice-audit.md)).
+   Recorded elsewhere? **Import a recording** splits a WAV, FLAC or OGG file (up to 30 minutes) into
+   takes at its pauses; an import with 5 minutes of speech can be built without the passages' styles.
+
 4. **Build.** Press **Build my voice**. The app measures every take, averages your voice across the
    session, builds and tests five voices from your best takes, and learns your [speaking
    styles](#expression). This takes a minute or two with a GPU, longer on a CPU, and needs the

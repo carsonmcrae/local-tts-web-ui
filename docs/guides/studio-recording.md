@@ -36,7 +36,7 @@ their voice. Recordings stay on this computer.
 - Set the microphone gain so your loudest words peak around **−12 dB** on the recording meter. Never
   let it reach 0.
 
-## Record (20–30 minutes)
+## Record (10–20 minutes)
 
 1. Press record and stay silent for **5 seconds** first. The app uses this to measure the room.
 2. Read the **foundation passage** first, then the others below. Speak as if you were talking to a
@@ -49,9 +49,11 @@ their voice. Recordings stay on this computer.
    cleanest take.
 5. Take breaks whenever you like. Stop recording, rest, and continue in a new recording.
 
-All 48 passages give about 10–12 minutes of speech, which is plenty. Five minutes gives a complete
-voice. Short on time? The foundation passage plus 45 seconds of speech in all builds an early version
-that you can improve later by recording more.
+You don't need all 48. A complete voice needs the foundation passage and three takes of each speaking
+style: about 15 passages, 2–3 minutes of speech. Voice Studio shows which ones it still needs and
+suggests the most useful next one. The rest are optional: today they barely change the voice (see the
+[studio voice audit](../research/studio-voice-audit.md)). Short on time? The foundation passage plus 45
+seconds of speech in all builds an early version that you can improve later by recording more.
 
 ## Export
 

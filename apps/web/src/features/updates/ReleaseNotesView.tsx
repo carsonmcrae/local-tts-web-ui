@@ -8,7 +8,7 @@
  */
 import { ExternalLink } from 'lucide-react';
 import type { ReleaseNotes } from '@/lib/releaseHistory';
-import { formatReleaseDate, releaseUrl } from '@/lib/releaseHistory';
+import { formatReleaseDate, releaseName, releaseUrl } from '@/lib/releaseHistory';
 
 interface ReleaseNotesViewProps {
   release: ReleaseNotes;
@@ -19,13 +19,10 @@ interface ReleaseNotesViewProps {
 export function ReleaseNotesView({ release, heading = false }: Readonly<ReleaseNotesViewProps>) {
   const date = formatReleaseDate(release.date);
   return (
-    <article aria-label={`TTSNative ${release.version}`} className="flex flex-col gap-3 text-sm">
+    <article aria-label={releaseName(release)} className="flex flex-col gap-3 text-sm">
       {heading ? (
         <header>
-          <h3 className="text-base font-semibold tracking-tight">
-            {release.publishedAs ? `${release.publishedAs} ` : 'TTSNative '}
-            {release.version}
-          </h3>
+          <h3 className="text-base font-semibold tracking-tight">{releaseName(release)}</h3>
           {date ? <p className="text-[13px] text-muted">{date}</p> : null}
         </header>
       ) : null}

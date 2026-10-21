@@ -147,7 +147,8 @@ export function AboutUpdates({ version }: Readonly<{ version: string }>) {
         onOpenChange={(open) => !open && setHistory(false)}
         releases={releaseHistory()}
         available={available}
-        focusVersion={history || null}
+        installed={baseVersion(version)}
+        initialVersion={history || null}
       />
     </div>
   );

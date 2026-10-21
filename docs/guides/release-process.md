@@ -46,8 +46,9 @@ maintenance. The design behind this guide is in
    parts, SBOMs, the runtime manifest and `SHA256SUMS.txt` with signed provenance, checks they are all
    there, and only then publishes it.
 9. The reviewed notes become the release's description (with the developer changes folded away).
-10. ttsnative.com rebuilds: the download button points at the new installer, and the release history
-    page shows the new notes.
+10. ttsnative.com rebuilds: the download button points at the new installer, the new version gets its
+    own release notes page (`/releases/X.Y.Z/`), the release history opens on it, and the footer
+    names it.
 11. Installed copies of the Windows app find the update at their next check.
 
 If anything fails, nothing is published; fix the cause and run the workflow again for the same tag

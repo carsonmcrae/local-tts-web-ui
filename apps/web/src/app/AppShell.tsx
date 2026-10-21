@@ -2,14 +2,14 @@
 // Copyright (c) 2026 Carson McRae
 /**
  * Purpose: Application chrome shared by every route.
- * Scope: Skip link, desktop sidebar (with privacy note and engine status), phone tab bar, the routed
+ * Scope: Skip link, desktop sidebar (with privacy note, engine status and the version), phone tab bar, the routed
  *   page area, the docked player that persists across navigation, and (in the desktop app) the update
  *   notice and What's new after an update.
  * Does NOT belong: Page content or player logic.
  */
-import { AudioLines, BookOpen, Mic, Settings, ShieldCheck } from 'lucide-react';
+import { AudioLines, BookOpen, Info, Mic, Settings, ShieldCheck } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { NavLink, Outlet } from 'react-router';
+import { Link, NavLink, Outlet } from 'react-router';
 import { useEngines } from '@/api/queries';
 import type { EngineInfo } from '@/api/types';
 import { cn } from '@/lib/cn';
@@ -64,6 +64,20 @@ function EngineStatus() {
   );
 }
 
+/** The version this copy runs, leading to About (What's new and the release history). */
+function VersionLink() {
+  const version = appVersion();
+  return (
+    <Link
+      to="/settings#about"
+      className="flex items-center gap-2 rounded-[var(--radius-md)] px-2 py-1.5 text-xs text-muted hover:bg-surface-2"
+    >
+      <Info size={14} className="shrink-0" aria-hidden="true" />
+      <span className="truncate">Version {version}</span>
+    </Link>
+  );
+}
+
 const linkClass = ({ isActive }: { isActive: boolean }) =>
   cn(
     'flex h-10 items-center gap-3 rounded-[var(--radius-md)] px-3 text-sm font-medium transition-colors',
@@ -100,6 +114,7 @@ export function AppShell() {
               Documents, voices and audio never leave this computer.
             </div>
             <EngineStatus />
+            <VersionLink />
           </div>
         </aside>
         <div className="flex min-w-0 flex-1 flex-col">

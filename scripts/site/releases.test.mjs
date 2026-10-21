@@ -5,7 +5,9 @@
  * Purpose: Tests for the website's Windows download and release history.
  * Scope: Only a published release with an installer whose download answers is advertised; drafts and
  *   pre-releases are ignored; a broken download link fails the build; the download section is filled
- *   in or dropped; the history page escapes the notes and links each GitHub release.
+ *   in or dropped; the history shows one version with its date, the list of versions and Older /
+ *   Newer, escapes the notes and links each GitHub release; every version gets its own page; the
+ *   footer names the latest release.
  * Does NOT belong: The rest of the site build (link checks in build-site.mjs).
  */
 import assert from 'node:assert/strict';
@@ -14,9 +16,34 @@ import {
   applyConditions,
   escapeHtml,
   fillDownload,
+  fillLatest,
+  fillReleasePage,
   githubReleases,
+  releasePages,
   renderHistory,
 } from './releases.mjs';
+
+/** @type {import('../lib/releases.mjs').Release[]} */
+const RELEASES = [
+  {
+    version: '2.0.0',
+    date: '2026-10-19',
+    publishedAs: 'Local TTS',
+    revised: null,
+    draft: false,
+    summary: 'Fast & <private>.',
+    sections: [{ key: 'new', title: 'New', items: ['Read "anything".'] }],
+  },
+  {
+    version: '1.0.0',
+    date: '2026-03-24',
+    publishedAs: 'Local TTS',
+    revised: null,
+    draft: false,
+    summary: 'The first version.',
+    sections: [],
+  },
+];
 
 const asset = (/** @type {string} */ name, size = 300 * 1_048_576) => ({
   name,
@@ -116,28 +143,76 @@ test('the download section is filled in, or replaced by the source install', () 
     '<a href="https://x/a.exe">2.1.0 · 310 MB · November 2, 2026 · https://github.com/carsonmcrae/ttsnative/releases/latest</a>',
   );
   assert.equal(
-    applyConditions('<!-- if:a -->A<!-- /if:a --><!-- if:b -->B<!-- /if:b -->', { a: true }),
+    applyConditions('<!-- if:a -->A<!-- /if:a --><!-- if:b -->B<!-- /if:b -->', {
+      a: true,
+      b: false,
+    }),
     'A',
   );
+  // A block another pass decides is left alone.
+  assert.equal(applyConditions('<!-- if:c -->C<!-- /if:c -->', {}), '<!-- if:c -->C<!-- /if:c -->');
 });
 
-test('the history page escapes the notes and links each release', () => {
-  const html = renderHistory([
-    {
-      version: '2.0.0',
-      date: '2026-10-19',
-      publishedAs: 'Local TTS',
-      revised: null,
-      draft: false,
-      summary: 'Fast & <private>.',
-      sections: [{ key: 'new', title: 'New', items: ['Read "anything".'] }],
-    },
-  ]);
-  assert.match(html, /<h2 id="v2-0-0-title">Local TTS 2\.0\.0<\/h2>/);
-  assert.match(html, /October 19, 2026 · released as Local TTS/);
+test('the history shows one version with its date, every version listed, and the way around', () => {
+  const html = renderHistory(RELEASES);
+  assert.match(html, /<h2 id="release-title">Local TTS 2\.0\.0<\/h2>/);
+  assert.match(
+    html,
+    /<time datetime="2026-10-19">October 19, 2026<\/time> · released as Local TTS/,
+  );
   assert.match(html, /Fast &amp; &lt;private&gt;\./);
   assert.match(html, /<li>Read &quot;anything&quot;\.<\/li>/);
   assert.match(html, /releases\/tag\/v2\.0\.0/);
+  assert.match(
+    html,
+    /<a href="%BASE_URL%\/releases\/2\.0\.0\/" aria-current="page">Local TTS 2\.0\.0 <small>Latest<\/small><\/a>/,
+  );
+  assert.match(html, /<a href="%BASE_URL%\/releases\/1\.0\.0\/">Local TTS 1\.0\.0<\/a>/);
+  assert.match(html, /rel="prev">.*Older: Local TTS 1\.0\.0<\/a>/);
+  assert.match(html, /This is the latest release/);
+  const oldest = renderHistory(RELEASES, 1);
+  assert.match(oldest, /<h2 id="release-title">Local TTS 1\.0\.0<\/h2>/);
+  assert.match(oldest, /No older releases/);
+  assert.match(oldest, /rel="next">Newer: Local TTS 2\.0\.0 /);
+  assert.doesNotMatch(oldest, /<h3>/);
   assert.match(renderHistory([]), /No release has been published yet/);
   assert.equal(escapeHtml('a<b>&"'), 'a&lt;b&gt;&amp;&quot;');
+});
+
+test('every version gets its own page, and the index shows the latest', () => {
+  const pages = releasePages(RELEASES);
+  assert.deepEqual(
+    pages.map((page) => [page.file, page.selected]),
+    [
+      ['releases.html', 0],
+      ['releases/index.html', 0],
+      ['releases/2.0.0/index.html', 0],
+      ['releases/1.0.0/index.html', 1],
+    ],
+  );
+  assert.equal(pages[1]?.canonical, '%BASE_URL%/releases.html');
+  const oldest = pages[3];
+  assert.ok(oldest);
+  assert.equal(oldest.title, 'Local TTS 1.0.0 · Release history · TTSNative');
+  assert.equal(oldest.description, 'What changed in Local TTS 1.0.0, released March 24, 2026.');
+  assert.equal(oldest.canonical, '%BASE_URL%/releases/1.0.0/');
+  const template =
+    '<title>%PAGE_TITLE%</title><meta content="%PAGE_DESCRIPTION%"><link href="%PAGE_URL%"><!-- release-history -->';
+  const html = fillReleasePage(template, RELEASES, oldest);
+  assert.match(html, /^<title>Local TTS 1\.0\.0 · Release history · TTSNative<\/title>/);
+  assert.match(html, /<link href="%BASE_URL%\/releases\/1\.0\.0\/">/);
+  assert.match(html, /<h2 id="release-title">Local TTS 1\.0\.0<\/h2>/);
+  const first = pages[0];
+  assert.ok(first);
+  assert.match(fillReleasePage(template, [], first), /No release has been published yet/);
+});
+
+test('the footer names the latest release, or nothing before the first one', () => {
+  const page =
+    'a<!-- if:release --> <a href="%LATEST_PATH%">%LATEST_NAME% (%LATEST_VERSION%, %LATEST_DATE%)</a><!-- /if:release -->b';
+  assert.equal(fillLatest(page, null), 'ab');
+  assert.equal(
+    fillLatest(page, RELEASES[0] ?? null),
+    'a <a href="%BASE_URL%/releases/2.0.0/">Local TTS 2.0.0 (2.0.0, October 19, 2026)</a>b',
+  );
 });

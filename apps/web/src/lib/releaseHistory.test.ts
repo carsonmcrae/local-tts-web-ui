@@ -15,6 +15,7 @@ import {
   notesFor,
   parseReleaseMarkdown,
   releaseHistory,
+  releaseName,
   releaseUrl,
 } from './releaseHistory';
 import { appVersion } from './version';
@@ -70,6 +71,8 @@ describe('release notes', () => {
     expect(isDevelopmentBuild('2.1.0')).toBe(false);
     expect(formatReleaseDate('2026-10-19')).toBe('October 19, 2026');
     expect(formatReleaseDate('')).toBe('');
+    expect(releaseName({ version: '2.0.0', publishedAs: 'Local TTS' })).toBe('Local TTS 2.0.0');
+    expect(releaseName({ version: '2.1.0', publishedAs: null })).toBe('TTSNative 2.1.0');
     expect(releaseUrl('2.0.0')).toBe(
       'https://github.com/carsonmcrae/ttsnative/releases/tag/v2.0.0',
     );

@@ -1,0 +1,4013 @@
+{
+  "schema": "ttsnative.literary-catalog/1",
+  "catalog_version": 1,
+  "built_for": "2026-10-21",
+  "works": [
+    {
+      "work_id": "alices-adventures-in-wonderland",
+      "title": "Alice’s Adventures in Wonderland",
+      "sort_title": "Alice's Adventures in Wonderland",
+      "authors": [
+        {
+          "name": "Lewis Carroll",
+          "sort_name": "Carroll, Lewis",
+          "born": 1832,
+          "died": 1898,
+          "wikipedia": "https://en.wikipedia.org/wiki/Lewis_Carroll"
+        }
+      ],
+      "contributors": [
+        {
+          "role": "illustrator",
+          "name": "John Tenniel",
+          "died": 1914,
+          "note": "The 42 illustrations of the source edition are omitted."
+        }
+      ],
+      "first_published": 1865,
+      "language": "en-GB",
+      "document_type": "novel",
+      "genres": [
+        "fantasy",
+        "childrens"
+      ],
+      "description": "A young girl follows a white rabbit into a strange land of poetry, humor and whimsy.",
+      "content_notes": [],
+      "word_count": 27526,
+      "chapters": [
+        {
+          "id": "epigraph",
+          "title": "All in the Golden Afternoon"
+        },
+        {
+          "id": "chapter-1",
+          "title": "Chapter 1: Down the Rabbit-Hole"
+        },
+        {
+          "id": "chapter-2",
+          "title": "Chapter 2: The Pool of Tears"
+        },
+        {
+          "id": "chapter-3",
+          "title": "Chapter 3: A Caucus-Race and a Long Tale"
+        },
+        {
+          "id": "chapter-4",
+          "title": "Chapter 4: The Rabbit Sends in a Little Bill"
+        },
+        {
+          "id": "chapter-5",
+          "title": "Chapter 5: Advice from a Caterpillar"
+        },
+        {
+          "id": "chapter-6",
+          "title": "Chapter 6: Pig and Pepper"
+        },
+        {
+          "id": "chapter-7",
+          "title": "Chapter 7: A Mad Tea-Party"
+        },
+        {
+          "id": "chapter-8",
+          "title": "Chapter 8: The Queen’s Croquet-Ground"
+        },
+        {
+          "id": "chapter-9",
+          "title": "Chapter 9: The Mock Turtle’s Story"
+        },
+        {
+          "id": "chapter-10",
+          "title": "Chapter 10: The Lobster Quadrille"
+        },
+        {
+          "id": "chapter-11",
+          "title": "Chapter 11: Who Stole the Tarts?"
+        },
+        {
+          "id": "chapter-12",
+          "title": "Chapter 12: Alice’s Evidence"
+        }
+      ],
+      "chapters_read": 13,
+      "edition": {
+        "edition_id": "standardebooks:lewis-carroll/alices-adventures-in-wonderland/john-tenniel@9ecdf2f",
+        "source": "Standard Ebooks",
+        "source_url": "https://standardebooks.org/ebooks/lewis-carroll/alices-adventures-in-wonderland/john-tenniel",
+        "source_revision": "9ecdf2f",
+        "source_released": "2026-09-28T18:13:34Z",
+        "source_file": "lewis-carroll_alices-adventures-in-wonderland_john-tenniel.epub",
+        "source_sha256": "8f957fd0c7fabc290f8a423ea2f9a2d2215291514f5f9959d23cbb91f4bc0c7f",
+        "source_bytes": 18398848,
+        "transcription": [
+          "https://www.gutenberg.org/ebooks/11",
+          "https://archive.org/details/adventuresalices00carrrich"
+        ],
+        "changes": [
+          "Images, figures and the list of illustrations removed (the app reads text).",
+          "The publisher's title page, imprint, colophon and uncopyright pages removed, with its logo; the edition is credited in CREDITS.md instead.",
+          "The editor's endnotes and their markers removed.",
+          "Chapter headings written out for listening (\"Chapter 1: Down the Rabbit-Hole\" instead of a Roman numeral).",
+          "Links replaced by their text; nothing in a shipped book points anywhere."
+        ],
+        "selection": null
+      },
+      "file": "works/alices-adventures-in-wonderland.epub",
+      "bytes": 70738,
+      "sha256": "b534719b8e69785b9b355d408196a12cbf14a499fc7af0a6bdd783f476da8041",
+      "text_version": 1,
+      "cover": {
+        "file": "covers/alices-adventures-in-wonderland.jpg",
+        "bytes": 90472,
+        "sha256": "6ac4e09b0d67a5422cb91e4d30169e8f6b7b1732037b4a67c26eb9e445cd0372",
+        "artwork": "Amanita (1879), Ivan Shishkin",
+        "artist_died": 1898,
+        "design": "Standard Ebooks cover composition (CC0), scaled for the library"
+      },
+      "cover_note": null,
+      "rights": {
+        "status": "public-domain-us",
+        "worldwide": true,
+        "basis": "First published 1865. Lewis Carroll died 1898; John Tenniel died 1914. Every known contributor died more than 70 years ago.",
+        "licence": "CC0 1.0 (edition) / public domain in the United States (text)",
+        "licence_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "evidence": [
+          "dc:rights in each edition's content.opf: text and artwork believed public domain in the United States; contributors dedicate their work under CC0 1.0",
+          "each edition's uncopyright.xhtml (kept in the source file, removed from what ships)",
+          "https://standardebooks.org/about (content produced by or for Standard Ebooks L3C is dedicated to the public domain)"
+        ],
+        "verified_on": "2026-10-21",
+        "permits": {
+          "redistribution": true,
+          "modification": true,
+          "commercial": true,
+          "performance": true
+        },
+        "attribution_required": false,
+        "attribution": "Edition prepared by Standard Ebooks volunteers (a courtesy credit, not a requirement).",
+        "trademark_note": "The publisher's name and logo do not appear in the shipped file; see CREDITS.md.",
+        "limits": null
+      },
+      "featured": {
+        "preset_id": "alices-adventures-in-wonderland-immersive",
+        "blurb": "Alice, the Rabbit, the Hatter and the Queen in their own voices, with a few quiet sounds."
+      },
+      "preset_version": null
+    },
+    {
+      "work_id": "the-wonderful-wizard-of-oz",
+      "title": "The Wonderful Wizard of Oz",
+      "sort_title": "Wonderful Wizard of Oz, The",
+      "authors": [
+        {
+          "name": "L. Frank Baum",
+          "sort_name": "Baum, L. Frank",
+          "born": 1856,
+          "died": 1919,
+          "wikipedia": "https://en.wikipedia.org/wiki/L._Frank_Baum"
+        }
+      ],
+      "contributors": [],
+      "first_published": 1900,
+      "language": "en-US",
+      "document_type": "novel",
+      "genres": [
+        "fantasy",
+        "childrens",
+        "adventure"
+      ],
+      "description": "The adventures of a young farm girl named Dorothy in the magical Land of Oz, after she and her pet dog Toto are swept away from their Kansas home by a cyclone.",
+      "content_notes": [],
+      "word_count": 39764,
+      "chapters": [
+        {
+          "id": "introduction",
+          "title": "Introduction"
+        },
+        {
+          "id": "chapter-1",
+          "title": "Chapter 1: The Cyclone"
+        },
+        {
+          "id": "chapter-2",
+          "title": "Chapter 2: The Council with the Munchkins"
+        },
+        {
+          "id": "chapter-3",
+          "title": "Chapter 3: How Dorothy Saved the Scarecrow"
+        },
+        {
+          "id": "chapter-4",
+          "title": "Chapter 4: The Road Through the Forest"
+        },
+        {
+          "id": "chapter-5",
+          "title": "Chapter 5: The Rescue of the Tin Woodman"
+        },
+        {
+          "id": "chapter-6",
+          "title": "Chapter 6: The Cowardly Lion"
+        },
+        {
+          "id": "chapter-7",
+          "title": "Chapter 7: The Journey to the Great Oz"
+        },
+        {
+          "id": "chapter-8",
+          "title": "Chapter 8: The Deadly Poppy Field"
+        },
+        {
+          "id": "chapter-9",
+          "title": "Chapter 9: The Queen of the Field Mice"
+        },
+        {
+          "id": "chapter-10",
+          "title": "Chapter 10: The Guardian of the Gate"
+        },
+        {
+          "id": "chapter-11",
+          "title": "Chapter 11: The Wonderful City of Oz"
+        },
+        {
+          "id": "chapter-12",
+          "title": "Chapter 12: The Search for the Wicked Witch"
+        },
+        {
+          "id": "chapter-13",
+          "title": "Chapter 13: The Rescue"
+        },
+        {
+          "id": "chapter-14",
+          "title": "Chapter 14: The Winged Monkeys"
+        },
+        {
+          "id": "chapter-15",
+          "title": "Chapter 15: The Discovery of Oz, the Terrible"
+        },
+        {
+          "id": "chapter-16",
+          "title": "Chapter 16: The Magic Art of the Great Humbug"
+        },
+        {
+          "id": "chapter-17",
+          "title": "Chapter 17: How the Balloon Was Launched"
+        },
+        {
+          "id": "chapter-18",
+          "title": "Chapter 18: Away to the South"
+        },
+        {
+          "id": "chapter-19",
+          "title": "Chapter 19: Attacked by the Fighting Trees"
+        },
+        {
+          "id": "chapter-20",
+          "title": "Chapter 20: The Dainty China Country"
+        },
+        {
+          "id": "chapter-21",
+          "title": "Chapter 21: The Lion Becomes the King of Beasts"
+        },
+        {
+          "id": "chapter-22",
+          "title": "Chapter 22: The Country of the Quadlings"
+        },
+        {
+          "id": "chapter-23",
+          "title": "Chapter 23: Glinda the Good Witch Grants Dorothy’s Wish"
+        },
+        {
+          "id": "chapter-24",
+          "title": "Chapter 24: Home Again"
+        }
+      ],
+      "chapters_read": 25,
+      "edition": {
+        "edition_id": "standardebooks:l-frank-baum/the-wonderful-wizard-of-oz@2874632",
+        "source": "Standard Ebooks",
+        "source_url": "https://standardebooks.org/ebooks/l-frank-baum/the-wonderful-wizard-of-oz",
+        "source_revision": "2874632",
+        "source_released": "2026-08-15T17:39:47Z",
+        "source_file": "l-frank-baum_the-wonderful-wizard-of-oz.epub",
+        "source_sha256": "be8f7802b737cf2f402960d4c691238ccd51b67de0cd69b909e35a2108da47a3",
+        "source_bytes": 681182,
+        "transcription": [
+          "https://www.gutenberg.org/ebooks/55",
+          "https://archive.org/details/wonderfulwizardo00baumiala"
+        ],
+        "changes": [
+          "Images, figures and the list of illustrations removed (the app reads text).",
+          "The publisher's title page, imprint, colophon and uncopyright pages removed, with its logo; the edition is credited in CREDITS.md instead.",
+          "The editor's endnotes and their markers removed.",
+          "Chapter headings written out for listening (\"Chapter 1: Down the Rabbit-Hole\" instead of a Roman numeral).",
+          "Links replaced by their text; nothing in a shipped book points anywhere."
+        ],
+        "selection": null
+      },
+      "file": "works/the-wonderful-wizard-of-oz.epub",
+      "bytes": 99562,
+      "sha256": "9ee9e728163c0cc709eca1f95efe0dd71cbfa51070032b8ec538d5bfa2361c4d",
+      "text_version": 1,
+      "cover": {
+        "file": "covers/the-wonderful-wizard-of-oz.jpg",
+        "bytes": 31341,
+        "sha256": "8f4ca14e35ab1e8500e47fadd3c3138a45e42c657781fb080e226b2d0ff394e9",
+        "artwork": "Heroic Landscape with Rainbow (1824), Joseph Anton Koch",
+        "artist_died": 1839,
+        "design": "Standard Ebooks cover composition (CC0), scaled for the library"
+      },
+      "cover_note": null,
+      "rights": {
+        "status": "public-domain-us",
+        "worldwide": true,
+        "basis": "First published 1900. L. Frank Baum died 1919. Every known contributor died more than 70 years ago.",
+        "licence": "CC0 1.0 (edition) / public domain in the United States (text)",
+        "licence_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "evidence": [
+          "dc:rights in each edition's content.opf: text and artwork believed public domain in the United States; contributors dedicate their work under CC0 1.0",
+          "each edition's uncopyright.xhtml (kept in the source file, removed from what ships)",
+          "https://standardebooks.org/about (content produced by or for Standard Ebooks L3C is dedicated to the public domain)"
+        ],
+        "verified_on": "2026-10-21",
+        "permits": {
+          "redistribution": true,
+          "modification": true,
+          "commercial": true,
+          "performance": true
+        },
+        "attribution_required": false,
+        "attribution": "Edition prepared by Standard Ebooks volunteers (a courtesy credit, not a requirement).",
+        "trademark_note": "The publisher's name and logo do not appear in the shipped file; see CREDITS.md.",
+        "limits": null
+      },
+      "featured": null,
+      "preset_version": null
+    },
+    {
+      "work_id": "the-time-machine",
+      "title": "The Time Machine",
+      "sort_title": "Time Machine, The",
+      "authors": [
+        {
+          "name": "H. G. Wells",
+          "sort_name": "Wells, H. G.",
+          "born": 1866,
+          "died": 1946,
+          "wikipedia": "https://en.wikipedia.org/wiki/H._G._Wells"
+        }
+      ],
+      "contributors": [],
+      "first_published": 1895,
+      "language": "en-GB",
+      "document_type": "novella",
+      "genres": [
+        "science-fiction"
+      ],
+      "description": "A mysterious inventor travels to a land far off in time.",
+      "content_notes": [],
+      "word_count": 32692,
+      "chapters": [
+        {
+          "id": "chapter-1",
+          "title": "Chapter 1"
+        },
+        {
+          "id": "chapter-2",
+          "title": "Chapter 2"
+        },
+        {
+          "id": "chapter-3",
+          "title": "Chapter 3"
+        },
+        {
+          "id": "chapter-4",
+          "title": "Chapter 4"
+        },
+        {
+          "id": "chapter-5",
+          "title": "Chapter 5"
+        },
+        {
+          "id": "chapter-6",
+          "title": "Chapter 6"
+        },
+        {
+          "id": "chapter-7",
+          "title": "Chapter 7"
+        },
+        {
+          "id": "chapter-8",
+          "title": "Chapter 8"
+        },
+        {
+          "id": "chapter-9",
+          "title": "Chapter 9"
+        },
+        {
+          "id": "chapter-10",
+          "title": "Chapter 10"
+        },
+        {
+          "id": "chapter-11",
+          "title": "Chapter 11"
+        },
+        {
+          "id": "chapter-12",
+          "title": "Chapter 12"
+        },
+        {
+          "id": "epilogue",
+          "title": "Epilogue"
+        }
+      ],
+      "chapters_read": 13,
+      "edition": {
+        "edition_id": "standardebooks:h-g-wells/the-time-machine@9fd22d6",
+        "source": "Standard Ebooks",
+        "source_url": "https://standardebooks.org/ebooks/h-g-wells/the-time-machine",
+        "source_revision": "9fd22d6",
+        "source_released": "2026-08-04T14:52:59Z",
+        "source_file": "h-g-wells_the-time-machine.epub",
+        "source_sha256": "3931b56fecfb0b0d00737f5fabcd00a46a96c26a6b1c9b8a60751d154057d9a6",
+        "source_bytes": 535571,
+        "transcription": [
+          "https://www.gutenberg.org/ebooks/35",
+          "https://books.google.com/books?id=Y0pAAQAAIAAJ"
+        ],
+        "changes": [
+          "Images, figures and the list of illustrations removed (the app reads text).",
+          "The publisher's title page, imprint, colophon and uncopyright pages removed, with its logo; the edition is credited in CREDITS.md instead.",
+          "The editor's endnotes and their markers removed.",
+          "Chapter headings written out for listening (\"Chapter 1: Down the Rabbit-Hole\" instead of a Roman numeral).",
+          "Links replaced by their text; nothing in a shipped book points anywhere."
+        ],
+        "selection": null
+      },
+      "file": "works/the-time-machine.epub",
+      "bytes": 84533,
+      "sha256": "3c9b3f6d80303a98b6ca158dcc81e5cafe268ac0aacc6dabdbdc09a30f04d96e",
+      "text_version": 1,
+      "cover": {
+        "file": "covers/the-time-machine.jpg",
+        "bytes": 54938,
+        "sha256": "d8b7b572e7f4e00c541c82727d393ea111545f1a22814125e259c1ab91d08536",
+        "artwork": "The Black Marble Clock (c. 1870), Paul Cézanne",
+        "artist_died": 1906,
+        "design": "Standard Ebooks cover composition (CC0), scaled for the library"
+      },
+      "cover_note": null,
+      "rights": {
+        "status": "public-domain-us",
+        "worldwide": true,
+        "basis": "First published 1895. H. G. Wells died 1946. Every known contributor died more than 70 years ago.",
+        "licence": "CC0 1.0 (edition) / public domain in the United States (text)",
+        "licence_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "evidence": [
+          "dc:rights in each edition's content.opf: text and artwork believed public domain in the United States; contributors dedicate their work under CC0 1.0",
+          "each edition's uncopyright.xhtml (kept in the source file, removed from what ships)",
+          "https://standardebooks.org/about (content produced by or for Standard Ebooks L3C is dedicated to the public domain)"
+        ],
+        "verified_on": "2026-10-21",
+        "permits": {
+          "redistribution": true,
+          "modification": true,
+          "commercial": true,
+          "performance": true
+        },
+        "attribution_required": false,
+        "attribution": "Edition prepared by Standard Ebooks volunteers (a courtesy credit, not a requirement).",
+        "trademark_note": "The publisher's name and logo do not appear in the shipped file; see CREDITS.md.",
+        "limits": null
+      },
+      "featured": null,
+      "preset_version": null
+    },
+    {
+      "work_id": "wells-selected-stories",
+      "title": "Six Stories",
+      "sort_title": "Six Stories (Wells)",
+      "authors": [
+        {
+          "name": "H. G. Wells",
+          "sort_name": "Wells, H. G.",
+          "born": 1866,
+          "died": 1946,
+          "wikipedia": "https://en.wikipedia.org/wiki/H._G._Wells"
+        }
+      ],
+      "contributors": [],
+      "first_published": 1894,
+      "language": "en-GB",
+      "document_type": "short-story-collection",
+      "genres": [
+        "science-fiction",
+        "fantasy"
+      ],
+      "description": "Six of Wells's short stories: a wandering star, a valley where no one can see, a door that opens onto an enchanted garden, a magic shop, a haunted room and a drug that speeds up life.",
+      "content_notes": [],
+      "word_count": 34235,
+      "chapters": [
+        {
+          "id": "the-star",
+          "title": "The Star"
+        },
+        {
+          "id": "the-country-of-the-blind",
+          "title": "The Country of the Blind"
+        },
+        {
+          "id": "the-door-in-the-wall",
+          "title": "The Door in the Wall"
+        },
+        {
+          "id": "the-magic-shop",
+          "title": "The Magic Shop"
+        },
+        {
+          "id": "the-red-room",
+          "title": "The Red Room"
+        },
+        {
+          "id": "the-new-accelerator",
+          "title": "The New Accelerator"
+        }
+      ],
+      "chapters_read": 6,
+      "edition": {
+        "edition_id": "standardebooks:h-g-wells/short-fiction@67af70a",
+        "source": "Standard Ebooks",
+        "source_url": "https://standardebooks.org/ebooks/h-g-wells/short-fiction",
+        "source_revision": "67af70a",
+        "source_released": "2026-08-15T17:39:26Z",
+        "source_file": "h-g-wells_short-fiction.epub",
+        "source_sha256": "a3ceb15fcfdfb6dae449e0a612f491d2442beb1f992b36cc8c19eb5c0aaea191",
+        "source_bytes": 1296023,
+        "transcription": [
+          "https://www.gutenberg.org/ebooks/11870",
+          "https://www.gutenberg.org/ebooks/27365",
+          "https://www.gutenberg.org/ebooks/42989",
+          "https://www.gutenberg.org/ebooks/12750",
+          "https://www.gutenberg.org/ebooks/1743",
+          "https://www.gutenberg.net.au/ebooks06/0601951h.html",
+          "https://www.gutenberg.net.au/ebooks06/0604041h.html",
+          "https://archive.org/details/countryofblindot00welluoft",
+          "https://archive.org/details/talesofspacetime00well",
+          "https://archive.org/details/plattnerstoryoth00wellrich",
+          "https://archive.org/details/twelvestoriesand00well",
+          "https://archive.org/details/stolenbacillusan00welluoft",
+          "https://archive.org/details/sim_strand-magazine_1903-12_26_156",
+          "https://catalog.hathitrust.org/Record/000642318"
+        ],
+        "changes": [
+          "Images, figures and the list of illustrations removed (the app reads text).",
+          "The publisher's title page, imprint, colophon and uncopyright pages removed, with its logo; the edition is credited in CREDITS.md instead.",
+          "The editor's endnotes and their markers removed.",
+          "Chapter headings written out for listening (\"Chapter 1: Down the Rabbit-Hole\" instead of a Roman numeral).",
+          "Links replaced by their text; nothing in a shipped book points anywhere.",
+          "Only part of the collection ships: the-star, the-country-of-the-blind, the-door-in-the-wall, the-magic-shop, the-red-room, the-new-accelerator."
+        ],
+        "selection": {
+          "from": "Short Fiction",
+          "items": [
+            "the-star",
+            "the-country-of-the-blind",
+            "the-door-in-the-wall",
+            "the-magic-shop",
+            "the-red-room",
+            "the-new-accelerator"
+          ]
+        }
+      },
+      "file": "works/wells-selected-stories.epub",
+      "bytes": 82015,
+      "sha256": "09c7e52261e3c08455123b63fe0ed5403b04a1baabdf4cbb53f02edd1771dc64",
+      "text_version": 1,
+      "cover": {
+        "file": "covers/wells-selected-stories.jpg",
+        "bytes": 59642,
+        "sha256": "707ad38c27247ff13a0043915f9e76e564c357450c72099cdff4660590959007",
+        "artwork": "In the Laboratory (c. 1856), Henry Alexander",
+        "artist_died": 1894,
+        "design": "Standard Ebooks cover composition (CC0), scaled for the library"
+      },
+      "cover_note": null,
+      "rights": {
+        "status": "public-domain-us",
+        "worldwide": true,
+        "basis": "First published 1894. H. G. Wells died 1946. Every known contributor died more than 70 years ago.",
+        "licence": "CC0 1.0 (edition) / public domain in the United States (text)",
+        "licence_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "evidence": [
+          "dc:rights in each edition's content.opf: text and artwork believed public domain in the United States; contributors dedicate their work under CC0 1.0",
+          "each edition's uncopyright.xhtml (kept in the source file, removed from what ships)",
+          "https://standardebooks.org/about (content produced by or for Standard Ebooks L3C is dedicated to the public domain)"
+        ],
+        "verified_on": "2026-10-21",
+        "permits": {
+          "redistribution": true,
+          "modification": true,
+          "commercial": true,
+          "performance": true
+        },
+        "attribution_required": false,
+        "attribution": "Edition prepared by Standard Ebooks volunteers (a courtesy credit, not a requirement).",
+        "trademark_note": "The publisher's name and logo do not appear in the shipped file; see CREDITS.md.",
+        "limits": null
+      },
+      "featured": null,
+      "preset_version": null
+    },
+    {
+      "work_id": "pride-and-prejudice",
+      "title": "Pride and Prejudice",
+      "sort_title": "Pride and Prejudice",
+      "authors": [
+        {
+          "name": "Jane Austen",
+          "sort_name": "Austen, Jane",
+          "born": 1775,
+          "died": 1817,
+          "wikipedia": "https://en.wikipedia.org/wiki/Jane_Austen"
+        }
+      ],
+      "contributors": [
+        {
+          "role": "editor",
+          "name": "R. W. Chapman",
+          "died": 1960,
+          "note": "The edition follows Chapman's 1923 Oxford text. Austen's novel is public domain everywhere; the editor's corrections to it are treated as part of the public-domain text in the United States."
+        }
+      ],
+      "first_published": 1813,
+      "language": "en-GB",
+      "document_type": "novel",
+      "genres": [
+        "literary-fiction",
+        "romance"
+      ],
+      "description": "A Regency-era novel of manners in which five women try to adjust to their new neighbor, an eligible gentleman.",
+      "content_notes": [],
+      "word_count": 122905,
+      "chapters": [
+        {
+          "id": "chapter-1",
+          "title": "Chapter 1"
+        },
+        {
+          "id": "chapter-2",
+          "title": "Chapter 2"
+        },
+        {
+          "id": "chapter-3",
+          "title": "Chapter 3"
+        },
+        {
+          "id": "chapter-4",
+          "title": "Chapter 4"
+        },
+        {
+          "id": "chapter-5",
+          "title": "Chapter 5"
+        },
+        {
+          "id": "chapter-6",
+          "title": "Chapter 6"
+        },
+        {
+          "id": "chapter-7",
+          "title": "Chapter 7"
+        },
+        {
+          "id": "chapter-8",
+          "title": "Chapter 8"
+        },
+        {
+          "id": "chapter-9",
+          "title": "Chapter 9"
+        },
+        {
+          "id": "chapter-10",
+          "title": "Chapter 10"
+        },
+        {
+          "id": "chapter-11",
+          "title": "Chapter 11"
+        },
+        {
+          "id": "chapter-12",
+          "title": "Chapter 12"
+        },
+        {
+          "id": "chapter-13",
+          "title": "Chapter 13"
+        },
+        {
+          "id": "chapter-14",
+          "title": "Chapter 14"
+        },
+        {
+          "id": "chapter-15",
+          "title": "Chapter 15"
+        },
+        {
+          "id": "chapter-16",
+          "title": "Chapter 16"
+        },
+        {
+          "id": "chapter-17",
+          "title": "Chapter 17"
+        },
+        {
+          "id": "chapter-18",
+          "title": "Chapter 18"
+        },
+        {
+          "id": "chapter-19",
+          "title": "Chapter 19"
+        },
+        {
+          "id": "chapter-20",
+          "title": "Chapter 20"
+        },
+        {
+          "id": "chapter-21",
+          "title": "Chapter 21"
+        },
+        {
+          "id": "chapter-22",
+          "title": "Chapter 22"
+        },
+        {
+          "id": "chapter-23",
+          "title": "Chapter 23"
+        },
+        {
+          "id": "chapter-24",
+          "title": "Chapter 24"
+        },
+        {
+          "id": "chapter-25",
+          "title": "Chapter 25"
+        },
+        {
+          "id": "chapter-26",
+          "title": "Chapter 26"
+        },
+        {
+          "id": "chapter-27",
+          "title": "Chapter 27"
+        },
+        {
+          "id": "chapter-28",
+          "title": "Chapter 28"
+        },
+        {
+          "id": "chapter-29",
+          "title": "Chapter 29"
+        },
+        {
+          "id": "chapter-30",
+          "title": "Chapter 30"
+        },
+        {
+          "id": "chapter-31",
+          "title": "Chapter 31"
+        },
+        {
+          "id": "chapter-32",
+          "title": "Chapter 32"
+        },
+        {
+          "id": "chapter-33",
+          "title": "Chapter 33"
+        },
+        {
+          "id": "chapter-34",
+          "title": "Chapter 34"
+        },
+        {
+          "id": "chapter-35",
+          "title": "Chapter 35"
+        },
+        {
+          "id": "chapter-36",
+          "title": "Chapter 36"
+        },
+        {
+          "id": "chapter-37",
+          "title": "Chapter 37"
+        },
+        {
+          "id": "chapter-38",
+          "title": "Chapter 38"
+        },
+        {
+          "id": "chapter-39",
+          "title": "Chapter 39"
+        },
+        {
+          "id": "chapter-40",
+          "title": "Chapter 40"
+        },
+        {
+          "id": "chapter-41",
+          "title": "Chapter 41"
+        },
+        {
+          "id": "chapter-42",
+          "title": "Chapter 42"
+        },
+        {
+          "id": "chapter-43",
+          "title": "Chapter 43"
+        },
+        {
+          "id": "chapter-44",
+          "title": "Chapter 44"
+        },
+        {
+          "id": "chapter-45",
+          "title": "Chapter 45"
+        },
+        {
+          "id": "chapter-46",
+          "title": "Chapter 46"
+        },
+        {
+          "id": "chapter-47",
+          "title": "Chapter 47"
+        },
+        {
+          "id": "chapter-48",
+          "title": "Chapter 48"
+        },
+        {
+          "id": "chapter-49",
+          "title": "Chapter 49"
+        },
+        {
+          "id": "chapter-50",
+          "title": "Chapter 50"
+        },
+        {
+          "id": "chapter-51",
+          "title": "Chapter 51"
+        },
+        {
+          "id": "chapter-52",
+          "title": "Chapter 52"
+        },
+        {
+          "id": "chapter-53",
+          "title": "Chapter 53"
+        },
+        {
+          "id": "chapter-54",
+          "title": "Chapter 54"
+        },
+        {
+          "id": "chapter-55",
+          "title": "Chapter 55"
+        },
+        {
+          "id": "chapter-56",
+          "title": "Chapter 56"
+        },
+        {
+          "id": "chapter-57",
+          "title": "Chapter 57"
+        },
+        {
+          "id": "chapter-58",
+          "title": "Chapter 58"
+        },
+        {
+          "id": "chapter-59",
+          "title": "Chapter 59"
+        },
+        {
+          "id": "chapter-60",
+          "title": "Chapter 60"
+        },
+        {
+          "id": "chapter-61",
+          "title": "Chapter 61"
+        }
+      ],
+      "chapters_read": 61,
+      "edition": {
+        "edition_id": "standardebooks:jane-austen/pride-and-prejudice@ed94a32",
+        "source": "Standard Ebooks",
+        "source_url": "https://standardebooks.org/ebooks/jane-austen/pride-and-prejudice",
+        "source_revision": "ed94a32",
+        "source_released": "2026-09-07T16:45:45Z",
+        "source_file": "jane-austen_pride-and-prejudice.epub",
+        "source_sha256": "85814417c1a74d2ca7f3b077b47454d0cfc728392d40d846d1c97d44f24c5279",
+        "source_bytes": 831959,
+        "transcription": [
+          "https://www.gutenberg.org/ebooks/42671",
+          "https://catalog.hathitrust.org/Record/000429470"
+        ],
+        "changes": [
+          "Images, figures and the list of illustrations removed (the app reads text).",
+          "The publisher's title page, imprint, colophon and uncopyright pages removed, with its logo; the edition is credited in CREDITS.md instead.",
+          "The editor's endnotes and their markers removed.",
+          "Chapter headings written out for listening (\"Chapter 1: Down the Rabbit-Hole\" instead of a Roman numeral).",
+          "Links replaced by their text; nothing in a shipped book points anywhere."
+        ],
+        "selection": null
+      },
+      "file": "works/pride-and-prejudice.epub",
+      "bytes": 334275,
+      "sha256": "e76dba9e7066237a2b11dc85a927575027609aaa849bfe8ffcef6ddcdca98307",
+      "text_version": 1,
+      "cover": {
+        "file": "covers/pride-and-prejudice.jpg",
+        "bytes": 65181,
+        "sha256": "fc11d68c1ccd6864beab01e0085ed81356b50f8770916c7ab841060ca24bfa84",
+        "artwork": "A Wet Sunday Morning (1896), Edmund Blair Leighton",
+        "artist_died": 1922,
+        "design": "Standard Ebooks cover composition (CC0), scaled for the library"
+      },
+      "cover_note": null,
+      "rights": {
+        "status": "public-domain-us",
+        "worldwide": false,
+        "basis": "First published 1813. Jane Austen died 1817; R. W. Chapman died 1960.",
+        "licence": "CC0 1.0 (edition) / public domain in the United States (text)",
+        "licence_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "evidence": [
+          "dc:rights in each edition's content.opf: text and artwork believed public domain in the United States; contributors dedicate their work under CC0 1.0",
+          "each edition's uncopyright.xhtml (kept in the source file, removed from what ships)",
+          "https://standardebooks.org/about (content produced by or for Standard Ebooks L3C is dedicated to the public domain)"
+        ],
+        "verified_on": "2026-10-21",
+        "permits": {
+          "redistribution": true,
+          "modification": true,
+          "commercial": true,
+          "performance": true
+        },
+        "attribution_required": false,
+        "attribution": "Edition prepared by Standard Ebooks volunteers (a courtesy credit, not a requirement).",
+        "trademark_note": "The publisher's name and logo do not appear in the shipped file; see CREDITS.md.",
+        "limits": "Public domain in the United States; check the law where you are."
+      },
+      "featured": {
+        "preset_id": "pride-and-prejudice-voices",
+        "blurb": "Elizabeth, Darcy and the Bennets, each in their own voice."
+      },
+      "preset_version": null
+    },
+    {
+      "work_id": "a-christmas-carol",
+      "title": "A Christmas Carol",
+      "sort_title": "Christmas Carol, A",
+      "authors": [
+        {
+          "name": "Charles Dickens",
+          "sort_name": "Dickens, Charles",
+          "born": 1812,
+          "died": 1870,
+          "wikipedia": "https://en.wikipedia.org/wiki/Charles_Dickens"
+        }
+      ],
+      "contributors": [],
+      "first_published": 1843,
+      "language": "en-GB",
+      "document_type": "novella",
+      "genres": [
+        "literary-fiction",
+        "fantasy"
+      ],
+      "description": "A miserly moneylender is visited by four ghosts who help him see how to honor Christmas in his heart all year round.",
+      "content_notes": [],
+      "word_count": 29131,
+      "chapters": [
+        {
+          "id": "preface",
+          "title": "Preface"
+        },
+        {
+          "id": "chapter-1",
+          "title": "Stave 1: Marley’s Ghost"
+        },
+        {
+          "id": "chapter-2",
+          "title": "Stave 2: The First of the Three Spirits"
+        },
+        {
+          "id": "chapter-3",
+          "title": "Stave 3: The Second of the Three Spirits"
+        },
+        {
+          "id": "chapter-4",
+          "title": "Stave 4: The Last of the Spirits"
+        },
+        {
+          "id": "chapter-5",
+          "title": "Stave 5: The End of It"
+        }
+      ],
+      "chapters_read": 6,
+      "edition": {
+        "edition_id": "standardebooks:charles-dickens/a-christmas-carol@d5a9e58",
+        "source": "Standard Ebooks",
+        "source_url": "https://standardebooks.org/ebooks/charles-dickens/a-christmas-carol",
+        "source_revision": "d5a9e58",
+        "source_released": "2026-08-04T14:48:41Z",
+        "source_file": "charles-dickens_a-christmas-carol.epub",
+        "source_sha256": "5362a33b41bc353b415e28c339303dae02dcc016fb4f706e3078df6425369cf9",
+        "source_bytes": 548617,
+        "transcription": [
+          "https://www.gutenberg.org/ebooks/24022",
+          "https://archive.org/details/christmascarol00dick2"
+        ],
+        "changes": [
+          "Images, figures and the list of illustrations removed (the app reads text).",
+          "The publisher's title page, imprint, colophon and uncopyright pages removed, with its logo; the edition is credited in CREDITS.md instead.",
+          "The editor's endnotes and their markers removed.",
+          "Chapter headings written out for listening (\"Chapter 1: Down the Rabbit-Hole\" instead of a Roman numeral).",
+          "Links replaced by their text; nothing in a shipped book points anywhere."
+        ],
+        "selection": null
+      },
+      "file": "works/a-christmas-carol.epub",
+      "bytes": 70854,
+      "sha256": "f0d59adf72960ad136b45325966051fb93c3192d4bba94ed4e1b16c278ecd49b",
+      "text_version": 1,
+      "cover": {
+        "file": "covers/a-christmas-carol.jpg",
+        "bytes": 37138,
+        "sha256": "a9126955c65803069a5c21b0a99803ee95ee871a4b851f0be7c94bdb4af1b64d",
+        "artwork": "The New Bonnet (1876), Eastman Johnson",
+        "artist_died": 1906,
+        "design": "Standard Ebooks cover composition (CC0), scaled for the library"
+      },
+      "cover_note": null,
+      "rights": {
+        "status": "public-domain-us",
+        "worldwide": true,
+        "basis": "First published 1843. Charles Dickens died 1870. Every known contributor died more than 70 years ago.",
+        "licence": "CC0 1.0 (edition) / public domain in the United States (text)",
+        "licence_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "evidence": [
+          "dc:rights in each edition's content.opf: text and artwork believed public domain in the United States; contributors dedicate their work under CC0 1.0",
+          "each edition's uncopyright.xhtml (kept in the source file, removed from what ships)",
+          "https://standardebooks.org/about (content produced by or for Standard Ebooks L3C is dedicated to the public domain)"
+        ],
+        "verified_on": "2026-10-21",
+        "permits": {
+          "redistribution": true,
+          "modification": true,
+          "commercial": true,
+          "performance": true
+        },
+        "attribution_required": false,
+        "attribution": "Edition prepared by Standard Ebooks volunteers (a courtesy credit, not a requirement).",
+        "trademark_note": "The publisher's name and logo do not appear in the shipped file; see CREDITS.md.",
+        "limits": null
+      },
+      "featured": {
+        "preset_id": "a-christmas-carol-immersive",
+        "blurb": "Scrooge, Marley and the three spirits, with chains, bells and a crackling fire."
+      },
+      "preset_version": null
+    },
+    {
+      "work_id": "the-strange-case-of-dr-jekyll-and-mr-hyde",
+      "title": "The Strange Case of Dr. Jekyll and Mr. Hyde",
+      "sort_title": "Strange Case of Dr. Jekyll and Mr. Hyde, The",
+      "authors": [
+        {
+          "name": "Robert Louis Stevenson",
+          "sort_name": "Stevenson, Robert Louis",
+          "born": 1850,
+          "died": 1894,
+          "wikipedia": "https://en.wikipedia.org/wiki/Robert_Louis_Stevenson"
+        }
+      ],
+      "contributors": [],
+      "first_published": 1886,
+      "language": "en-GB",
+      "document_type": "novella",
+      "genres": [
+        "horror",
+        "mystery"
+      ],
+      "description": "A London lawyer investigates the relationship between a brilliant scientist and a misshapen misanthrope.",
+      "content_notes": [],
+      "word_count": 25898,
+      "chapters": [
+        {
+          "id": "chapter-1",
+          "title": "Story of the Door"
+        },
+        {
+          "id": "chapter-2",
+          "title": "Search for Mr. Hyde"
+        },
+        {
+          "id": "chapter-3",
+          "title": "Dr. Jekyll Was Quite at Ease"
+        },
+        {
+          "id": "chapter-4",
+          "title": "The Carew Murder Case"
+        },
+        {
+          "id": "chapter-5",
+          "title": "Incident of the Letter"
+        },
+        {
+          "id": "chapter-6",
+          "title": "Remarkable Incident of Dr. Lanyon"
+        },
+        {
+          "id": "chapter-7",
+          "title": "Incident at the Window"
+        },
+        {
+          "id": "chapter-8",
+          "title": "The Last Night"
+        },
+        {
+          "id": "chapter-9",
+          "title": "Dr. Lanyon’s Narrative"
+        },
+        {
+          "id": "chapter-10",
+          "title": "Henry Jekyll’s Full Statement of the Case"
+        }
+      ],
+      "chapters_read": 10,
+      "edition": {
+        "edition_id": "standardebooks:robert-louis-stevenson/the-strange-case-of-dr-jekyll-and-mr-hyde@c155a03",
+        "source": "Standard Ebooks",
+        "source_url": "https://standardebooks.org/ebooks/robert-louis-stevenson/the-strange-case-of-dr-jekyll-and-mr-hyde",
+        "source_revision": "c155a03",
+        "source_released": "2026-08-15T17:39:59Z",
+        "source_file": "robert-louis-stevenson_the-strange-case-of-dr-jekyll-and-mr-hyde.epub",
+        "source_sha256": "9f0306972d1c6a21dcdf0be8a752a58a42f7470fda0613c4dc40090923f08adc",
+        "source_bytes": 492233,
+        "transcription": [
+          "https://www.gutenberg.org/ebooks/43",
+          "https://catalog.hathitrust.org/Record/100586776"
+        ],
+        "changes": [
+          "Images, figures and the list of illustrations removed (the app reads text).",
+          "The publisher's title page, imprint, colophon and uncopyright pages removed, with its logo; the edition is credited in CREDITS.md instead.",
+          "The editor's endnotes and their markers removed.",
+          "Chapter headings written out for listening (\"Chapter 1: Down the Rabbit-Hole\" instead of a Roman numeral).",
+          "Links replaced by their text; nothing in a shipped book points anywhere."
+        ],
+        "selection": null
+      },
+      "file": "works/the-strange-case-of-dr-jekyll-and-mr-hyde.epub",
+      "bytes": 67661,
+      "sha256": "0873aead605c4397f130a14dbc952d1ef58416eb9c9cc800432ff080a6f17afd",
+      "text_version": 1,
+      "cover": {
+        "file": "covers/the-strange-case-of-dr-jekyll-and-mr-hyde.jpg",
+        "bytes": 36772,
+        "sha256": "7cc1556d962a4bf31b72df018b50c78e2d5deae28c9f4aeb3e53a23f28601e17",
+        "artwork": "Double Portrait of Marées and Lenbach (1863), Hans von Marées",
+        "artist_died": 1887,
+        "design": "Standard Ebooks cover composition (CC0), scaled for the library"
+      },
+      "cover_note": null,
+      "rights": {
+        "status": "public-domain-us",
+        "worldwide": true,
+        "basis": "First published 1886. Robert Louis Stevenson died 1894. Every known contributor died more than 70 years ago.",
+        "licence": "CC0 1.0 (edition) / public domain in the United States (text)",
+        "licence_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "evidence": [
+          "dc:rights in each edition's content.opf: text and artwork believed public domain in the United States; contributors dedicate their work under CC0 1.0",
+          "each edition's uncopyright.xhtml (kept in the source file, removed from what ships)",
+          "https://standardebooks.org/about (content produced by or for Standard Ebooks L3C is dedicated to the public domain)"
+        ],
+        "verified_on": "2026-10-21",
+        "permits": {
+          "redistribution": true,
+          "modification": true,
+          "commercial": true,
+          "performance": true
+        },
+        "attribution_required": false,
+        "attribution": "Edition prepared by Standard Ebooks volunteers (a courtesy credit, not a requirement).",
+        "trademark_note": "The publisher's name and logo do not appear in the shipped file; see CREDITS.md.",
+        "limits": null
+      },
+      "featured": null,
+      "preset_version": null
+    },
+    {
+      "work_id": "treasure-island",
+      "title": "Treasure Island",
+      "sort_title": "Treasure Island",
+      "authors": [
+        {
+          "name": "Robert Louis Stevenson",
+          "sort_name": "Stevenson, Robert Louis",
+          "born": 1850,
+          "died": 1894,
+          "wikipedia": "https://en.wikipedia.org/wiki/Robert_Louis_Stevenson"
+        }
+      ],
+      "contributors": [],
+      "first_published": 1883,
+      "language": "en-US",
+      "document_type": "novel",
+      "genres": [
+        "adventure",
+        "childrens"
+      ],
+      "description": "A young boy finds adventure on the high seas as he battles bloodthirsty pirates in search of a long-lost treasure.",
+      "content_notes": [],
+      "word_count": 70105,
+      "chapters": [
+        {
+          "id": "epigraph",
+          "title": "To the Hesitating Purchaser"
+        },
+        {
+          "id": "dedication",
+          "title": "Dedication"
+        },
+        {
+          "id": "part-1",
+          "title": "Part 1: The Old Buccaneer"
+        },
+        {
+          "id": "chapter-1",
+          "title": "Chapter 1: At the Admiral Benbow"
+        },
+        {
+          "id": "chapter-2",
+          "title": "Chapter 2: Black Dog Appears and Disappears"
+        },
+        {
+          "id": "chapter-3",
+          "title": "Chapter 3: The Black Spot"
+        },
+        {
+          "id": "chapter-4",
+          "title": "Chapter 4: The Sea-Chest"
+        },
+        {
+          "id": "chapter-5",
+          "title": "Chapter 5: The Last of the Blind Man"
+        },
+        {
+          "id": "chapter-6",
+          "title": "Chapter 6: The Captain’s Papers"
+        },
+        {
+          "id": "part-2",
+          "title": "Part 2: The Sea-Cook"
+        },
+        {
+          "id": "chapter-7",
+          "title": "Chapter 7: I Go to Bristol"
+        },
+        {
+          "id": "chapter-8",
+          "title": "Chapter 8: At the Sign of the Spy-Glass"
+        },
+        {
+          "id": "chapter-9",
+          "title": "Chapter 9: Powder and Arms"
+        },
+        {
+          "id": "chapter-10",
+          "title": "Chapter 10: The Voyage"
+        },
+        {
+          "id": "chapter-11",
+          "title": "Chapter 11: What I Heard in the Apple Barrel"
+        },
+        {
+          "id": "chapter-12",
+          "title": "Chapter 12: Council of War"
+        },
+        {
+          "id": "part-3",
+          "title": "Part 3: My Shore Adventure"
+        },
+        {
+          "id": "chapter-13",
+          "title": "Chapter 13: How My Shore Adventure Began"
+        },
+        {
+          "id": "chapter-14",
+          "title": "Chapter 14: The First Blow"
+        },
+        {
+          "id": "chapter-15",
+          "title": "Chapter 15: The Man of the Island"
+        },
+        {
+          "id": "part-4",
+          "title": "Part 4: The Stockade"
+        },
+        {
+          "id": "chapter-16",
+          "title": "Chapter 16: Narrative Continued by the Doctor﻿—How the Ship Was Abandoned"
+        },
+        {
+          "id": "chapter-17",
+          "title": "Chapter 17: Narrative Continued by the Doctor﻿—The Jolly-Boat’s Last Trip"
+        },
+        {
+          "id": "chapter-18",
+          "title": "Chapter 18: Narrative Continued by the Doctor﻿—End of the First Day’s Fighting"
+        },
+        {
+          "id": "chapter-19",
+          "title": "Chapter 19: Narrative Resumed by Jim Hawkins﻿—The Garrison in the Stockade"
+        },
+        {
+          "id": "chapter-20",
+          "title": "Chapter 20: Silver’s Embassy"
+        },
+        {
+          "id": "chapter-21",
+          "title": "Chapter 21: The Attack"
+        },
+        {
+          "id": "part-5",
+          "title": "Part 5: My Sea Adventure"
+        },
+        {
+          "id": "chapter-22",
+          "title": "Chapter 22: How My Sea Adventure Began"
+        },
+        {
+          "id": "chapter-23",
+          "title": "Chapter 23: The Ebb-Tide Runs"
+        },
+        {
+          "id": "chapter-24",
+          "title": "Chapter 24: The Cruise of the Coracle"
+        },
+        {
+          "id": "chapter-25",
+          "title": "Chapter 25: I Strike the Jolly Roger"
+        },
+        {
+          "id": "chapter-26",
+          "title": "Chapter 26: Israel Hands"
+        },
+        {
+          "id": "chapter-27",
+          "title": "Chapter 27: “Pieces of Eight”"
+        },
+        {
+          "id": "part-6",
+          "title": "Part 6: Captain Silver"
+        },
+        {
+          "id": "chapter-28",
+          "title": "Chapter 28: In the Enemy’s Camp"
+        },
+        {
+          "id": "chapter-29",
+          "title": "Chapter 29: The Black Spot Again"
+        },
+        {
+          "id": "chapter-30",
+          "title": "Chapter 30: On Parole"
+        },
+        {
+          "id": "chapter-31",
+          "title": "Chapter 31: The Treasure-Hunt﻿—Flint’s Pointer"
+        },
+        {
+          "id": "chapter-32",
+          "title": "Chapter 32: The Treasure-Hunt﻿—The Voice Among the Trees"
+        },
+        {
+          "id": "chapter-33",
+          "title": "Chapter 33: The Fall of a Chieftain"
+        },
+        {
+          "id": "chapter-34",
+          "title": "Chapter 34: And Last"
+        }
+      ],
+      "chapters_read": 42,
+      "edition": {
+        "edition_id": "standardebooks:robert-louis-stevenson/treasure-island@c7fd6b4",
+        "source": "Standard Ebooks",
+        "source_url": "https://standardebooks.org/ebooks/robert-louis-stevenson/treasure-island",
+        "source_revision": "c7fd6b4",
+        "source_released": "2026-08-04T14:58:16Z",
+        "source_file": "robert-louis-stevenson_treasure-island.epub",
+        "source_sha256": "5b72b8b7d6adb3681786613fca321b8ba3334b6ad134ea3b5608ca8f132b5fbf",
+        "source_bytes": 720634,
+        "transcription": [
+          "https://www.gutenberg.org/ebooks/27780",
+          "https://archive.org/details/treasislandyork00stev"
+        ],
+        "changes": [
+          "Images, figures and the list of illustrations removed (the app reads text).",
+          "The publisher's title page, imprint, colophon and uncopyright pages removed, with its logo; the edition is credited in CREDITS.md instead.",
+          "The editor's endnotes and their markers removed.",
+          "Chapter headings written out for listening (\"Chapter 1: Down the Rabbit-Hole\" instead of a Roman numeral).",
+          "Links replaced by their text; nothing in a shipped book points anywhere."
+        ],
+        "selection": null
+      },
+      "file": "works/treasure-island.epub",
+      "bytes": 187745,
+      "sha256": "dcf08a51e1e250d75d0f8bc1301496a66db610c9ab5cd25eaf642d5eb940e8f9",
+      "text_version": 1,
+      "cover": {
+        "file": "covers/treasure-island.jpg",
+        "bytes": 56312,
+        "sha256": "7636f91666777d643506370b8481da6bd6fb5b63365db5bf0a6641b778f8c0b1",
+        "artwork": "One More Step, Mr. Hands (1911), N. C. Wyeth",
+        "artist_died": 1945,
+        "design": "Standard Ebooks cover composition (CC0), scaled for the library"
+      },
+      "cover_note": null,
+      "rights": {
+        "status": "public-domain-us",
+        "worldwide": true,
+        "basis": "First published 1883. Robert Louis Stevenson died 1894. Every known contributor died more than 70 years ago.",
+        "licence": "CC0 1.0 (edition) / public domain in the United States (text)",
+        "licence_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "evidence": [
+          "dc:rights in each edition's content.opf: text and artwork believed public domain in the United States; contributors dedicate their work under CC0 1.0",
+          "each edition's uncopyright.xhtml (kept in the source file, removed from what ships)",
+          "https://standardebooks.org/about (content produced by or for Standard Ebooks L3C is dedicated to the public domain)"
+        ],
+        "verified_on": "2026-10-21",
+        "permits": {
+          "redistribution": true,
+          "modification": true,
+          "commercial": true,
+          "performance": true
+        },
+        "attribution_required": false,
+        "attribution": "Edition prepared by Standard Ebooks volunteers (a courtesy credit, not a requirement).",
+        "trademark_note": "The publisher's name and logo do not appear in the shipped file; see CREDITS.md.",
+        "limits": null
+      },
+      "featured": null,
+      "preset_version": null
+    },
+    {
+      "work_id": "the-wind-in-the-willows",
+      "title": "The Wind in the Willows",
+      "sort_title": "Wind in the Willows, The",
+      "authors": [
+        {
+          "name": "Kenneth Grahame",
+          "sort_name": "Grahame, Kenneth",
+          "born": 1859,
+          "died": 1932,
+          "wikipedia": "https://en.wikipedia.org/wiki/Kenneth_Grahame"
+        }
+      ],
+      "contributors": [],
+      "first_published": 1908,
+      "language": "en-GB",
+      "document_type": "novel",
+      "genres": [
+        "fantasy",
+        "childrens"
+      ],
+      "description": "Four animals adventure through the bucolic English countryside.",
+      "content_notes": [],
+      "word_count": 60436,
+      "chapters": [
+        {
+          "id": "chapter-1",
+          "title": "Chapter 1: The River Bank"
+        },
+        {
+          "id": "chapter-2",
+          "title": "Chapter 2: The Open Road"
+        },
+        {
+          "id": "chapter-3",
+          "title": "Chapter 3: The Wild Wood"
+        },
+        {
+          "id": "chapter-4",
+          "title": "Chapter 4: Mr. Badger"
+        },
+        {
+          "id": "chapter-5",
+          "title": "Chapter 5: Dulce Domum"
+        },
+        {
+          "id": "chapter-6",
+          "title": "Chapter 6: Mr. Toad"
+        },
+        {
+          "id": "chapter-7",
+          "title": "Chapter 7: The Piper at the Gates of Dawn"
+        },
+        {
+          "id": "chapter-8",
+          "title": "Chapter 8: Toad’s Adventures"
+        },
+        {
+          "id": "chapter-9",
+          "title": "Chapter 9: Wayfarers All"
+        },
+        {
+          "id": "chapter-10",
+          "title": "Chapter 10: The Further Adventures of Toad"
+        },
+        {
+          "id": "chapter-11",
+          "title": "Chapter 11: “Like Summer Tempests Came His Tears”"
+        },
+        {
+          "id": "chapter-12",
+          "title": "Chapter 12: The Return of Ulysses"
+        }
+      ],
+      "chapters_read": 12,
+      "edition": {
+        "edition_id": "standardebooks:kenneth-grahame/the-wind-in-the-willows@0c69015",
+        "source": "Standard Ebooks",
+        "source_url": "https://standardebooks.org/ebooks/kenneth-grahame/the-wind-in-the-willows",
+        "source_revision": "0c69015",
+        "source_released": "2026-08-04T14:55:21Z",
+        "source_file": "kenneth-grahame_the-wind-in-the-willows.epub",
+        "source_sha256": "d874ac24670373ea53c0a0d7a52601ca191e95d02270c7571bbd7ccf29cc6b1c",
+        "source_bytes": 848274,
+        "transcription": [
+          "https://www.gutenberg.org/ebooks/27805",
+          "https://catalog.hathitrust.org/Record/100654169"
+        ],
+        "changes": [
+          "Images, figures and the list of illustrations removed (the app reads text).",
+          "The publisher's title page, imprint, colophon and uncopyright pages removed, with its logo; the edition is credited in CREDITS.md instead.",
+          "The editor's endnotes and their markers removed.",
+          "Chapter headings written out for listening (\"Chapter 1: Down the Rabbit-Hole\" instead of a Roman numeral).",
+          "Links replaced by their text; nothing in a shipped book points anywhere."
+        ],
+        "selection": null
+      },
+      "file": "works/the-wind-in-the-willows.epub",
+      "bytes": 147214,
+      "sha256": "07882645612f4b7b03532a68745c68f9ac25c89085553ba759c93dede0b948eb",
+      "text_version": 1,
+      "cover": null,
+      "cover_note": "Public domain in the United States, but the artist died in 1979, so the painting is still protected elsewhere; a plain cover is shown instead.",
+      "rights": {
+        "status": "public-domain-us",
+        "worldwide": true,
+        "basis": "First published 1908. Kenneth Grahame died 1932. Every known contributor died more than 70 years ago.",
+        "licence": "CC0 1.0 (edition) / public domain in the United States (text)",
+        "licence_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "evidence": [
+          "dc:rights in each edition's content.opf: text and artwork believed public domain in the United States; contributors dedicate their work under CC0 1.0",
+          "each edition's uncopyright.xhtml (kept in the source file, removed from what ships)",
+          "https://standardebooks.org/about (content produced by or for Standard Ebooks L3C is dedicated to the public domain)"
+        ],
+        "verified_on": "2026-10-21",
+        "permits": {
+          "redistribution": true,
+          "modification": true,
+          "commercial": true,
+          "performance": true
+        },
+        "attribution_required": false,
+        "attribution": "Edition prepared by Standard Ebooks volunteers (a courtesy credit, not a requirement).",
+        "trademark_note": "The publisher's name and logo do not appear in the shipped file; see CREDITS.md.",
+        "limits": null
+      },
+      "featured": null,
+      "preset_version": null
+    },
+    {
+      "work_id": "the-hound-of-the-baskervilles",
+      "title": "The Hound of the Baskervilles",
+      "sort_title": "Hound of the Baskervilles, The",
+      "authors": [
+        {
+          "name": "Arthur Conan Doyle",
+          "sort_name": "Doyle, Arthur Conan",
+          "born": 1859,
+          "died": 1930,
+          "wikipedia": "https://en.wikipedia.org/wiki/Arthur_Conan_Doyle"
+        }
+      ],
+      "contributors": [],
+      "first_published": 1902,
+      "language": "en-GB",
+      "document_type": "novel",
+      "genres": [
+        "mystery",
+        "horror"
+      ],
+      "description": "A famous detective investigates a mysterious and apparently supernatural threat to the heir of a wealthy Dartmoor estate.",
+      "content_notes": [],
+      "word_count": 59882,
+      "chapters": [
+        {
+          "id": "dedication",
+          "title": "Dedication"
+        },
+        {
+          "id": "chapter-1",
+          "title": "Chapter 1: Mr. Sherlock Holmes"
+        },
+        {
+          "id": "chapter-2",
+          "title": "Chapter 2: The Curse of the Baskervilles"
+        },
+        {
+          "id": "chapter-3",
+          "title": "Chapter 3: The Problem"
+        },
+        {
+          "id": "chapter-4",
+          "title": "Chapter 4: Sir Henry Baskerville"
+        },
+        {
+          "id": "chapter-5",
+          "title": "Chapter 5: Three Broken Threads"
+        },
+        {
+          "id": "chapter-6",
+          "title": "Chapter 6: Baskerville Hall"
+        },
+        {
+          "id": "chapter-7",
+          "title": "Chapter 7: The Stapletons of Merripit House"
+        },
+        {
+          "id": "chapter-8",
+          "title": "Chapter 8: First Report of Dr. Watson"
+        },
+        {
+          "id": "chapter-9",
+          "title": "Chapter 9: Second Report of Dr. Watson"
+        },
+        {
+          "id": "chapter-10",
+          "title": "Chapter 10: Extract from the Diary of Dr. Watson"
+        },
+        {
+          "id": "chapter-11",
+          "title": "Chapter 11: The Man on the Tor"
+        },
+        {
+          "id": "chapter-12",
+          "title": "Chapter 12: Death on the Moor"
+        },
+        {
+          "id": "chapter-13",
+          "title": "Chapter 13: Fixing the Nets"
+        },
+        {
+          "id": "chapter-14",
+          "title": "Chapter 14: The Hound of the Baskervilles"
+        },
+        {
+          "id": "chapter-15",
+          "title": "Chapter 15: A Retrospection"
+        }
+      ],
+      "chapters_read": 16,
+      "edition": {
+        "edition_id": "standardebooks:arthur-conan-doyle/the-hound-of-the-baskervilles@4f080d1",
+        "source": "Standard Ebooks",
+        "source_url": "https://standardebooks.org/ebooks/arthur-conan-doyle/the-hound-of-the-baskervilles",
+        "source_revision": "4f080d1",
+        "source_released": "2026-08-15T17:38:46Z",
+        "source_file": "arthur-conan-doyle_the-hound-of-the-baskervilles.epub",
+        "source_sha256": "af7cae8cd2596627c2658c41566afe06201e13572540c0761f9c348b86cbd15d",
+        "source_bytes": 539642,
+        "transcription": [
+          "https://www.gutenberg.org/ebooks/2852",
+          "https://archive.org/details/houndofbaskervil00doyluoft"
+        ],
+        "changes": [
+          "Images, figures and the list of illustrations removed (the app reads text).",
+          "The publisher's title page, imprint, colophon and uncopyright pages removed, with its logo; the edition is credited in CREDITS.md instead.",
+          "The editor's endnotes and their markers removed.",
+          "Chapter headings written out for listening (\"Chapter 1: Down the Rabbit-Hole\" instead of a Roman numeral).",
+          "Links replaced by their text; nothing in a shipped book points anywhere."
+        ],
+        "selection": null
+      },
+      "file": "works/the-hound-of-the-baskervilles.epub",
+      "bytes": 145792,
+      "sha256": "af1bc2931aacb54fea192317c7e79bae335be99b6655a34609b6f838e7b51fcf",
+      "text_version": 1,
+      "cover": {
+        "file": "covers/the-hound-of-the-baskervilles.jpg",
+        "bytes": 33041,
+        "sha256": "23f21135ed33bf109438b220ec33a385f6bbf86e3c12e7825267c4d3baf5f573",
+        "artwork": "Riesengebirgslandschaft mit aufsteigendem Nebel (1820), Caspar David Friedrich",
+        "artist_died": 1840,
+        "design": "Standard Ebooks cover composition (CC0), scaled for the library"
+      },
+      "cover_note": null,
+      "rights": {
+        "status": "public-domain-us",
+        "worldwide": true,
+        "basis": "First published 1902. Arthur Conan Doyle died 1930. Every known contributor died more than 70 years ago.",
+        "licence": "CC0 1.0 (edition) / public domain in the United States (text)",
+        "licence_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "evidence": [
+          "dc:rights in each edition's content.opf: text and artwork believed public domain in the United States; contributors dedicate their work under CC0 1.0",
+          "each edition's uncopyright.xhtml (kept in the source file, removed from what ships)",
+          "https://standardebooks.org/about (content produced by or for Standard Ebooks L3C is dedicated to the public domain)"
+        ],
+        "verified_on": "2026-10-21",
+        "permits": {
+          "redistribution": true,
+          "modification": true,
+          "commercial": true,
+          "performance": true
+        },
+        "attribution_required": false,
+        "attribution": "Edition prepared by Standard Ebooks volunteers (a courtesy credit, not a requirement).",
+        "trademark_note": "The publisher's name and logo do not appear in the shipped file; see CREDITS.md.",
+        "limits": null
+      },
+      "featured": null,
+      "preset_version": null
+    },
+    {
+      "work_id": "the-adventures-of-sherlock-holmes",
+      "title": "The Adventures of Sherlock Holmes",
+      "sort_title": "Adventures of Sherlock Holmes, The",
+      "authors": [
+        {
+          "name": "Arthur Conan Doyle",
+          "sort_name": "Doyle, Arthur Conan",
+          "born": 1859,
+          "died": 1930,
+          "wikipedia": "https://en.wikipedia.org/wiki/Arthur_Conan_Doyle"
+        }
+      ],
+      "contributors": [],
+      "first_published": 1892,
+      "language": "en-GB",
+      "document_type": "short-story-collection",
+      "genres": [
+        "mystery"
+      ],
+      "description": "The world’s first consulting detective investigates a variety of intriguing cases in the first Holmes short story collection.",
+      "content_notes": [],
+      "word_count": 105671,
+      "chapters": [
+        {
+          "id": "a-scandal-in-bohemia",
+          "title": "A Scandal in Bohemia"
+        },
+        {
+          "id": "the-redheaded-league",
+          "title": "The Redheaded League"
+        },
+        {
+          "id": "a-case-of-identity",
+          "title": "A Case of Identity"
+        },
+        {
+          "id": "the-boscombe-valley-mystery",
+          "title": "The Boscombe Valley Mystery"
+        },
+        {
+          "id": "the-five-orange-pips",
+          "title": "The Five Orange Pips"
+        },
+        {
+          "id": "the-man-with-the-twisted-lip",
+          "title": "The Man with the Twisted Lip"
+        },
+        {
+          "id": "the-adventure-of-the-blue-carbuncle",
+          "title": "The Adventure of the Blue Carbuncle"
+        },
+        {
+          "id": "the-adventure-of-the-speckled-band",
+          "title": "The Adventure of the Speckled Band"
+        },
+        {
+          "id": "the-adventure-of-the-engineers-thumb",
+          "title": "The Adventure of the Engineer’s Thumb"
+        },
+        {
+          "id": "the-adventure-of-the-noble-bachelor",
+          "title": "The Adventure of the Noble Bachelor"
+        },
+        {
+          "id": "the-adventure-of-the-beryl-coronet",
+          "title": "The Adventure of the Beryl Coronet"
+        },
+        {
+          "id": "the-adventure-of-the-copper-beeches",
+          "title": "The Adventure of the Copper Beeches"
+        }
+      ],
+      "chapters_read": 12,
+      "edition": {
+        "edition_id": "standardebooks:arthur-conan-doyle/the-adventures-of-sherlock-holmes@60f53b2",
+        "source": "Standard Ebooks",
+        "source_url": "https://standardebooks.org/ebooks/arthur-conan-doyle/the-adventures-of-sherlock-holmes",
+        "source_revision": "60f53b2",
+        "source_released": "2026-08-15T17:38:45Z",
+        "source_file": "arthur-conan-doyle_the-adventures-of-sherlock-holmes.epub",
+        "source_sha256": "644ab66744e64b03915d0d1ee6167c1de1b7a17f0544c81fc31ad4ad3585d59c",
+        "source_bytes": 742083,
+        "transcription": [
+          "https://www.gutenberg.org/ebooks/1661",
+          "https://archive.org/details/adventuresofsher001892doyl"
+        ],
+        "changes": [
+          "Images, figures and the list of illustrations removed (the app reads text).",
+          "The publisher's title page, imprint, colophon and uncopyright pages removed, with its logo; the edition is credited in CREDITS.md instead.",
+          "The editor's endnotes and their markers removed.",
+          "Chapter headings written out for listening (\"Chapter 1: Down the Rabbit-Hole\" instead of a Roman numeral).",
+          "Links replaced by their text; nothing in a shipped book points anywhere."
+        ],
+        "selection": null
+      },
+      "file": "works/the-adventures-of-sherlock-holmes.epub",
+      "bytes": 238525,
+      "sha256": "aede26632933ef8f5eff82cbb996b57d599a8cb939bf82500884c82218397015",
+      "text_version": 1,
+      "cover": {
+        "file": "covers/the-adventures-of-sherlock-holmes.jpg",
+        "bytes": 32228,
+        "sha256": "94a1904c83458766761d8441e66cac77c24471dd6132ceccf916fa51eb85bb39",
+        "artwork": "Music (1904), Thomas Eakins",
+        "artist_died": 1916,
+        "design": "Standard Ebooks cover composition (CC0), scaled for the library"
+      },
+      "cover_note": null,
+      "rights": {
+        "status": "public-domain-us",
+        "worldwide": true,
+        "basis": "First published 1892. Arthur Conan Doyle died 1930. Every known contributor died more than 70 years ago.",
+        "licence": "CC0 1.0 (edition) / public domain in the United States (text)",
+        "licence_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "evidence": [
+          "dc:rights in each edition's content.opf: text and artwork believed public domain in the United States; contributors dedicate their work under CC0 1.0",
+          "each edition's uncopyright.xhtml (kept in the source file, removed from what ships)",
+          "https://standardebooks.org/about (content produced by or for Standard Ebooks L3C is dedicated to the public domain)"
+        ],
+        "verified_on": "2026-10-21",
+        "permits": {
+          "redistribution": true,
+          "modification": true,
+          "commercial": true,
+          "performance": true
+        },
+        "attribution_required": false,
+        "attribution": "Edition prepared by Standard Ebooks volunteers (a courtesy credit, not a requirement).",
+        "trademark_note": "The publisher's name and logo do not appear in the shipped file; see CREDITS.md.",
+        "limits": null
+      },
+      "featured": {
+        "preset_id": "the-adventures-of-sherlock-holmes-voices",
+        "blurb": "Holmes and Watson, told apart."
+      },
+      "preset_version": null
+    },
+    {
+      "work_id": "frankenstein",
+      "title": "Frankenstein",
+      "sort_title": "Frankenstein",
+      "authors": [
+        {
+          "name": "Mary Shelley",
+          "sort_name": "Shelley, Mary",
+          "born": 1797,
+          "died": 1851,
+          "wikipedia": "https://en.wikipedia.org/wiki/Mary_Shelley"
+        }
+      ],
+      "contributors": [
+        {
+          "role": "writer of preface",
+          "name": "Percy Bysshe Shelley",
+          "died": 1822,
+          "note": null
+        }
+      ],
+      "first_published": 1818,
+      "language": "en-GB",
+      "document_type": "novel",
+      "genres": [
+        "horror",
+        "science-fiction"
+      ],
+      "description": "A tragic scientist creates a monster in his laboratory.",
+      "content_notes": [],
+      "word_count": 78117,
+      "chapters": [
+        {
+          "id": "introduction",
+          "title": "Introduction"
+        },
+        {
+          "id": "preface",
+          "title": "Preface"
+        },
+        {
+          "id": "dedication",
+          "title": "Dedication"
+        },
+        {
+          "id": "epigraph",
+          "title": "Epigraph"
+        },
+        {
+          "id": "letter-1",
+          "title": "Letter I"
+        },
+        {
+          "id": "letter-2",
+          "title": "Letter II"
+        },
+        {
+          "id": "letter-3",
+          "title": "Letter III"
+        },
+        {
+          "id": "letter-4",
+          "title": "Letter IV"
+        },
+        {
+          "id": "chapter-1",
+          "title": "Chapter I"
+        },
+        {
+          "id": "chapter-2",
+          "title": "Chapter II"
+        },
+        {
+          "id": "chapter-3",
+          "title": "Chapter III"
+        },
+        {
+          "id": "chapter-4",
+          "title": "Chapter IV"
+        },
+        {
+          "id": "chapter-5",
+          "title": "Chapter V"
+        },
+        {
+          "id": "chapter-6",
+          "title": "Chapter VI"
+        },
+        {
+          "id": "chapter-7",
+          "title": "Chapter VII"
+        },
+        {
+          "id": "chapter-8",
+          "title": "Chapter VIII"
+        },
+        {
+          "id": "chapter-9",
+          "title": "Chapter IX"
+        },
+        {
+          "id": "chapter-10",
+          "title": "Chapter X"
+        },
+        {
+          "id": "chapter-11",
+          "title": "Chapter XI"
+        },
+        {
+          "id": "chapter-12",
+          "title": "Chapter XII"
+        },
+        {
+          "id": "chapter-13",
+          "title": "Chapter XIII"
+        },
+        {
+          "id": "chapter-14",
+          "title": "Chapter XIV"
+        },
+        {
+          "id": "chapter-15",
+          "title": "Chapter XV"
+        },
+        {
+          "id": "chapter-16",
+          "title": "Chapter XVI"
+        },
+        {
+          "id": "chapter-17",
+          "title": "Chapter XVII"
+        },
+        {
+          "id": "chapter-18",
+          "title": "Chapter XVIII"
+        },
+        {
+          "id": "chapter-19",
+          "title": "Chapter XIX"
+        },
+        {
+          "id": "chapter-20",
+          "title": "Chapter XX"
+        },
+        {
+          "id": "chapter-21",
+          "title": "Chapter XXI"
+        },
+        {
+          "id": "chapter-22",
+          "title": "Chapter XXII"
+        },
+        {
+          "id": "chapter-23",
+          "title": "Chapter XXIII"
+        },
+        {
+          "id": "chapter-24",
+          "title": "Chapter XXIV"
+        }
+      ],
+      "chapters_read": 32,
+      "edition": {
+        "edition_id": "standardebooks:mary-shelley/frankenstein@3909a2b",
+        "source": "Standard Ebooks",
+        "source_url": "https://standardebooks.org/ebooks/mary-shelley/frankenstein",
+        "source_revision": "3909a2b",
+        "source_released": "2026-09-07T16:46:03Z",
+        "source_file": "mary-shelley_frankenstein.epub",
+        "source_sha256": "0b5c070e2cde4d8bb36ef707f9d024465b00d0c49c078f0a148270f55b8c8780",
+        "source_bytes": 685797,
+        "transcription": [
+          "https://www.gutenberg.org/ebooks/42324",
+          "https://archive.org/details/frankensteinormo00shel_9"
+        ],
+        "changes": [
+          "Images, figures and the list of illustrations removed (the app reads text).",
+          "The publisher's title page, imprint, colophon and uncopyright pages removed, with its logo; the edition is credited in CREDITS.md instead.",
+          "The editor's endnotes and their markers removed.",
+          "Chapter headings written out for listening (\"Chapter 1: Down the Rabbit-Hole\" instead of a Roman numeral).",
+          "Links replaced by their text; nothing in a shipped book points anywhere."
+        ],
+        "selection": null
+      },
+      "file": "works/frankenstein.epub",
+      "bytes": 207930,
+      "sha256": "1bf6d1c58fbe9663dbc2e07b06dbfe31fb2dd39e189caed9c3a7765cb982048f",
+      "text_version": 1,
+      "cover": {
+        "file": "covers/frankenstein.jpg",
+        "bytes": 54048,
+        "sha256": "f08411fd155fa06fb40e9fbf541865af6d947c41494d3bd61c601eefe422b095",
+        "artwork": "Portrait of Adam (1578), Giuseppe Arcimboldo",
+        "artist_died": 1593,
+        "design": "Standard Ebooks cover composition (CC0), scaled for the library"
+      },
+      "cover_note": null,
+      "rights": {
+        "status": "public-domain-us",
+        "worldwide": true,
+        "basis": "First published 1818. Mary Shelley died 1851; Percy Bysshe Shelley died 1822. Every known contributor died more than 70 years ago.",
+        "licence": "CC0 1.0 (edition) / public domain in the United States (text)",
+        "licence_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "evidence": [
+          "dc:rights in each edition's content.opf: text and artwork believed public domain in the United States; contributors dedicate their work under CC0 1.0",
+          "each edition's uncopyright.xhtml (kept in the source file, removed from what ships)",
+          "https://standardebooks.org/about (content produced by or for Standard Ebooks L3C is dedicated to the public domain)"
+        ],
+        "verified_on": "2026-10-21",
+        "permits": {
+          "redistribution": true,
+          "modification": true,
+          "commercial": true,
+          "performance": true
+        },
+        "attribution_required": false,
+        "attribution": "Edition prepared by Standard Ebooks volunteers (a courtesy credit, not a requirement).",
+        "trademark_note": "The publisher's name and logo do not appear in the shipped file; see CREDITS.md.",
+        "limits": null
+      },
+      "featured": null,
+      "preset_version": null
+    },
+    {
+      "work_id": "poe-selected-stories",
+      "title": "Eight Tales",
+      "sort_title": "Eight Tales (Poe)",
+      "authors": [
+        {
+          "name": "Edgar Allan Poe",
+          "sort_name": "Poe, Edgar Allan",
+          "born": 1809,
+          "died": 1849,
+          "wikipedia": "https://en.wikipedia.org/wiki/Edgar_Allan_Poe"
+        }
+      ],
+      "contributors": [],
+      "first_published": 1839,
+      "language": "en-US",
+      "document_type": "short-story-collection",
+      "genres": [
+        "horror",
+        "mystery"
+      ],
+      "description": "Eight of Poe's tales: five of terror, from a heartbeat under the floorboards to a plague at a masked ball, and three that invented the detective story.",
+      "content_notes": [
+        "Tales of murder, madness and premature burial, told in the first person."
+      ],
+      "word_count": 45179,
+      "chapters": [
+        {
+          "id": "the-telltale-heart",
+          "title": "The Telltale Heart"
+        },
+        {
+          "id": "the-black-cat",
+          "title": "The Black Cat"
+        },
+        {
+          "id": "the-cask-of-amontillado",
+          "title": "The Cask of Amontillado"
+        },
+        {
+          "id": "the-fall-of-the-house-of-usher",
+          "title": "The Fall of the House of Usher"
+        },
+        {
+          "id": "the-masque-of-the-red-death",
+          "title": "The Masque of the Red Death"
+        },
+        {
+          "id": "the-pit-and-the-pendulum",
+          "title": "The Pit and the Pendulum"
+        },
+        {
+          "id": "the-murders-in-the-rue-morgue",
+          "title": "The Murders in the Rue Morgue"
+        },
+        {
+          "id": "the-purloined-letter",
+          "title": "The Purloined Letter"
+        }
+      ],
+      "chapters_read": 8,
+      "edition": {
+        "edition_id": "standardebooks:edgar-allan-poe/short-fiction@f0a5168",
+        "source": "Standard Ebooks",
+        "source_url": "https://standardebooks.org/ebooks/edgar-allan-poe/short-fiction",
+        "source_revision": "f0a5168",
+        "source_released": "2026-09-07T16:45:16Z",
+        "source_file": "edgar-allan-poe_short-fiction.epub",
+        "source_sha256": "cf5bf1c5fae87049415c552eaae8951126de9324a5aee714a3c0458cdf3dbc38",
+        "source_bytes": 1279674,
+        "transcription": [
+          "https://www.gutenberg.org/ebooks/25525",
+          "https://archive.org/details/worksofedgaralla01poeeuoft",
+          "https://archive.org/details/worksofedgaralla02poeeuoft",
+          "https://archive.org/details/worksofedgaralla03poeeuoft",
+          "https://archive.org/details/worksofedgaralla04poeeuoft"
+        ],
+        "changes": [
+          "Images, figures and the list of illustrations removed (the app reads text).",
+          "The publisher's title page, imprint, colophon and uncopyright pages removed, with its logo; the edition is credited in CREDITS.md instead.",
+          "The editor's endnotes and their markers removed.",
+          "Chapter headings written out for listening (\"Chapter 1: Down the Rabbit-Hole\" instead of a Roman numeral).",
+          "Links replaced by their text; nothing in a shipped book points anywhere.",
+          "Only part of the collection ships: the-telltale-heart, the-black-cat, the-cask-of-amontillado, the-fall-of-the-house-of-usher, the-masque-of-the-red-death, the-pit-and-the-pendulum, the-murders-in-the-rue-morgue, the-purloined-letter."
+        ],
+        "selection": {
+          "from": "Short Fiction",
+          "items": [
+            "the-telltale-heart",
+            "the-black-cat",
+            "the-cask-of-amontillado",
+            "the-fall-of-the-house-of-usher",
+            "the-masque-of-the-red-death",
+            "the-pit-and-the-pendulum",
+            "the-murders-in-the-rue-morgue",
+            "the-purloined-letter"
+          ]
+        }
+      },
+      "file": "works/poe-selected-stories.epub",
+      "bytes": 111355,
+      "sha256": "d96bd8f1c877631616b9540b8ed4de9df99031ca346f3d5066539f96444998cf",
+      "text_version": 1,
+      "cover": {
+        "file": "covers/poe-selected-stories.jpg",
+        "bytes": 50531,
+        "sha256": "9c07aec722718ffcd6b4b1df56d20add2a0cce59dcaa16782eba00aedc3af876",
+        "artwork": "Saint-Séverin (1909), Robert Delaunay",
+        "artist_died": 1941,
+        "design": "Standard Ebooks cover composition (CC0), scaled for the library"
+      },
+      "cover_note": null,
+      "rights": {
+        "status": "public-domain-us",
+        "worldwide": true,
+        "basis": "First published 1839. Edgar Allan Poe died 1849. Every known contributor died more than 70 years ago.",
+        "licence": "CC0 1.0 (edition) / public domain in the United States (text)",
+        "licence_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "evidence": [
+          "dc:rights in each edition's content.opf: text and artwork believed public domain in the United States; contributors dedicate their work under CC0 1.0",
+          "each edition's uncopyright.xhtml (kept in the source file, removed from what ships)",
+          "https://standardebooks.org/about (content produced by or for Standard Ebooks L3C is dedicated to the public domain)"
+        ],
+        "verified_on": "2026-10-21",
+        "permits": {
+          "redistribution": true,
+          "modification": true,
+          "commercial": true,
+          "performance": true
+        },
+        "attribution_required": false,
+        "attribution": "Edition prepared by Standard Ebooks volunteers (a courtesy credit, not a requirement).",
+        "trademark_note": "The publisher's name and logo do not appear in the shipped file; see CREDITS.md.",
+        "limits": null
+      },
+      "featured": {
+        "preset_id": "poe-selected-stories-immersive",
+        "blurb": "The Tell-Tale Heart with a heartbeat you can almost hear."
+      },
+      "preset_version": null
+    },
+    {
+      "work_id": "poe-selected-poems",
+      "title": "The Raven and Other Poems",
+      "sort_title": "Raven and Other Poems, The",
+      "authors": [
+        {
+          "name": "Edgar Allan Poe",
+          "sort_name": "Poe, Edgar Allan",
+          "born": 1809,
+          "died": 1849,
+          "wikipedia": "https://en.wikipedia.org/wiki/Edgar_Allan_Poe"
+        }
+      ],
+      "contributors": [
+        {
+          "role": "editor",
+          "name": "P. F. Collier and Son (1904 edition)",
+          "died": null,
+          "note": "The edition's arrangement; the poems are Poe's."
+        }
+      ],
+      "first_published": 1845,
+      "language": "en-US",
+      "document_type": "poetry-collection",
+      "genres": [
+        "poetry",
+        "horror"
+      ],
+      "description": "Fourteen of Poe's poems, from The Raven and Annabel Lee to The Bells and Eldorado, with every line kept as a line.",
+      "content_notes": [],
+      "word_count": 4813,
+      "chapters": [
+        {
+          "id": "the-raven",
+          "title": "The Raven"
+        },
+        {
+          "id": "annabel-lee",
+          "title": "Annabel Lee"
+        },
+        {
+          "id": "the-bells",
+          "title": "The Bells"
+        },
+        {
+          "id": "a-dream-within-a-dream",
+          "title": "A Dream Within a Dream"
+        },
+        {
+          "id": "eldorado",
+          "title": "Eldorado"
+        },
+        {
+          "id": "to-helen",
+          "title": "To Helen"
+        },
+        {
+          "id": "the-city-in-the-sea",
+          "title": "The City in the Sea"
+        },
+        {
+          "id": "alone",
+          "title": "Alone"
+        },
+        {
+          "id": "lenore",
+          "title": "Lenore"
+        },
+        {
+          "id": "ulalume",
+          "title": "Ulalume"
+        },
+        {
+          "id": "the-haunted-palace",
+          "title": "The Haunted Palace"
+        },
+        {
+          "id": "the-conqueror-worm",
+          "title": "The Conqueror Worm"
+        },
+        {
+          "id": "spirits-of-the-dead",
+          "title": "Spirits of the Dead"
+        },
+        {
+          "id": "dreamland",
+          "title": "Dreamland"
+        }
+      ],
+      "chapters_read": 14,
+      "edition": {
+        "edition_id": "standardebooks:edgar-allan-poe/poetry@a6565f2",
+        "source": "Standard Ebooks",
+        "source_url": "https://standardebooks.org/ebooks/edgar-allan-poe/poetry",
+        "source_revision": "a6565f2",
+        "source_released": "2026-08-04T14:49:34Z",
+        "source_file": "edgar-allan-poe_poetry.epub",
+        "source_sha256": "eeac3a09acea315415ca9e5c9dbcf8cc0582fdc7312c4f2296f1b7eb3feec2a7",
+        "source_bytes": 698306,
+        "transcription": [
+          "https://www.gutenberg.org/ebooks/2151",
+          "https://en.wikisource.org/wiki/An_Acrostic",
+          "https://en.wikisource.org/wiki/Elizabeth_(Poe)",
+          "https://en.wikisource.org/wiki/Serenade_(Poe)",
+          "https://archive.org/details/worksedgarallan00unkngoog",
+          "https://archive.org/details/cu31924019520810",
+          "https://archive.org/details/jstor-2915307"
+        ],
+        "changes": [
+          "Images, figures and the list of illustrations removed (the app reads text).",
+          "The publisher's title page, imprint, colophon and uncopyright pages removed, with its logo; the edition is credited in CREDITS.md instead.",
+          "The editor's endnotes and their markers removed.",
+          "Chapter headings written out for listening (\"Chapter 1: Down the Rabbit-Hole\" instead of a Roman numeral).",
+          "Links replaced by their text; nothing in a shipped book points anywhere.",
+          "Only part of the collection ships: poetry#the-raven, poetry#annabel-lee, poetry#the-bells, poetry#a-dream-within-a-dream, poetry#eldorado, poetry#to-helen, poetry#the-city-in-the-sea, poetry#alone, poetry#lenore, poetry#ulalume, poetry#the-haunted-palace, poetry#the-conqueror-worm, poetry#spirits-of-the-dead, poetry#dreamland."
+        ],
+        "selection": {
+          "from": "Poetry",
+          "items": [
+            "poetry#the-raven",
+            "poetry#annabel-lee",
+            "poetry#the-bells",
+            "poetry#a-dream-within-a-dream",
+            "poetry#eldorado",
+            "poetry#to-helen",
+            "poetry#the-city-in-the-sea",
+            "poetry#alone",
+            "poetry#lenore",
+            "poetry#ulalume",
+            "poetry#the-haunted-palace",
+            "poetry#the-conqueror-worm",
+            "poetry#spirits-of-the-dead",
+            "poetry#dreamland"
+          ]
+        }
+      },
+      "file": "works/poe-selected-poems.epub",
+      "bytes": 22320,
+      "sha256": "df6b5df0864634649ec1b808d230c6da1b8e05dfd164f900bb79d0678f062679",
+      "text_version": 1,
+      "cover": {
+        "file": "covers/poe-selected-poems.jpg",
+        "bytes": 48172,
+        "sha256": "a3aad1dbc12c9598b420199091de4b6b7c6421930060171587a9d78f3c25ea6c",
+        "artwork": "Melancholy (1876), Odilon Redon",
+        "artist_died": 1916,
+        "design": "Standard Ebooks cover composition (CC0), scaled for the library"
+      },
+      "cover_note": null,
+      "rights": {
+        "status": "public-domain-us",
+        "worldwide": true,
+        "basis": "First published 1845. Edgar Allan Poe died 1849; P. F. Collier and Son (1904 edition): dates not recorded. Every known contributor died more than 70 years ago.",
+        "licence": "CC0 1.0 (edition) / public domain in the United States (text)",
+        "licence_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "evidence": [
+          "dc:rights in each edition's content.opf: text and artwork believed public domain in the United States; contributors dedicate their work under CC0 1.0",
+          "each edition's uncopyright.xhtml (kept in the source file, removed from what ships)",
+          "https://standardebooks.org/about (content produced by or for Standard Ebooks L3C is dedicated to the public domain)"
+        ],
+        "verified_on": "2026-10-21",
+        "permits": {
+          "redistribution": true,
+          "modification": true,
+          "commercial": true,
+          "performance": true
+        },
+        "attribution_required": false,
+        "attribution": "Edition prepared by Standard Ebooks volunteers (a courtesy credit, not a requirement).",
+        "trademark_note": "The publisher's name and logo do not appear in the shipped file; see CREDITS.md.",
+        "limits": null
+      },
+      "featured": {
+        "preset_id": "poe-selected-poems-immersive",
+        "blurb": "The Raven: a tapping at the chamber door, wind at the window."
+      },
+      "preset_version": null
+    },
+    {
+      "work_id": "o-henry-selected-stories",
+      "title": "The Gift of the Magi and Other Stories",
+      "sort_title": "Gift of the Magi and Other Stories, The",
+      "authors": [
+        {
+          "name": "O. Henry",
+          "sort_name": "Henry, O.",
+          "born": 1862,
+          "died": 1910,
+          "wikipedia": "https://en.wikipedia.org/wiki/O._Henry"
+        }
+      ],
+      "contributors": [],
+      "first_published": 1905,
+      "language": "en-US",
+      "document_type": "short-story-collection",
+      "genres": [
+        "literary-fiction"
+      ],
+      "description": "Eight of O. Henry's best-loved stories, with their famous twists: a Christmas gift, a kidnapping gone wrong, a painted leaf, a safecracker's last job.",
+      "content_notes": [],
+      "word_count": 20111,
+      "chapters": [
+        {
+          "id": "the-gift-of-the-magi",
+          "title": "The Gift of the Magi"
+        },
+        {
+          "id": "the-ransom-of-red-chief",
+          "title": "The Ransom of Red Chief"
+        },
+        {
+          "id": "the-last-leaf",
+          "title": "The Last Leaf"
+        },
+        {
+          "id": "the-cop-and-the-anthem",
+          "title": "The Cop and the Anthem"
+        },
+        {
+          "id": "after-twenty-years",
+          "title": "After Twenty Years"
+        },
+        {
+          "id": "a-retrieved-reformation",
+          "title": "A Retrieved Reformation"
+        },
+        {
+          "id": "the-furnished-room",
+          "title": "The Furnished Room"
+        },
+        {
+          "id": "one-thousand-dollars",
+          "title": "One Thousand Dollars"
+        }
+      ],
+      "chapters_read": 8,
+      "edition": {
+        "edition_id": "standardebooks:o-henry/short-fiction@38ebd93",
+        "source": "Standard Ebooks",
+        "source_url": "https://standardebooks.org/ebooks/o-henry/short-fiction",
+        "source_revision": "38ebd93",
+        "source_released": "2026-09-22T14:30:54Z",
+        "source_file": "o-henry_short-fiction.epub",
+        "source_sha256": "90375e9db61ef200cf351ff465d0aa3520eece45c2b52b2c97eb440718835372",
+        "source_bytes": 3122868,
+        "transcription": [
+          "https://books.google.com/books?id=mG0XAQAAIAAJ",
+          "https://www.gutenberg.org/ebooks/2777",
+          "https://archive.org/details/cu31924022067254",
+          "https://www.gutenberg.org/ebooks/2776",
+          "https://archive.org/details/cu31924012602755",
+          "https://www.gutenberg.org/ebooks/3707",
+          "https://archive.org/details/cu31924022015394",
+          "https://www.gutenberg.org/ebooks/1725",
+          "https://archive.org/details/cu31924022025799",
+          "https://www.gutenberg.org/ebooks/1805",
+          "https://archive.org/details/gentlegrafter02henrgoog",
+          "https://www.gutenberg.org/ebooks/1444",
+          "https://archive.org/details/in.ernet.dli.2015.93860",
+          "https://www.gutenberg.org/ebooks/1646",
+          "https://archive.org/details/roadsdestiny00henrgoog",
+          "https://www.gutenberg.org/ebooks/1583",
+          "https://archive.org/details/cu31924022025807",
+          "https://archive.org/details/o-henry_a-christmas-pi",
+          "https://www.gutenberg.org/ebooks/2141",
+          "https://archive.org/details/StrictlyBusiness",
+          "https://www.gutenberg.org/ebooks/1595",
+          "https://archive.org/details/whirligigs02henrgoog",
+          "https://www.gutenberg.org/ebooks/2851",
+          "https://archive.org/details/sixesandsevens00henrgoog",
+          "https://www.gutenberg.org/ebooks/3815",
+          "https://archive.org/details/rollingstones04henrgoog",
+          "https://www.gutenberg.org/ebooks/2295",
+          "https://archive.org/details/waifsandstrayst00henrgoog",
+          "https://archive.org/details/ohenryanaseveno00presgoog",
+          "https://archive.org/details/postscripts00henr",
+          "https://catalog.hathitrust.org/Record/007926272"
+        ],
+        "changes": [
+          "Images, figures and the list of illustrations removed (the app reads text).",
+          "The publisher's title page, imprint, colophon and uncopyright pages removed, with its logo; the edition is credited in CREDITS.md instead.",
+          "The editor's endnotes and their markers removed.",
+          "Chapter headings written out for listening (\"Chapter 1: Down the Rabbit-Hole\" instead of a Roman numeral).",
+          "Links replaced by their text; nothing in a shipped book points anywhere.",
+          "Only part of the collection ships: the-gift-of-the-magi, the-ransom-of-red-chief, the-last-leaf, the-cop-and-the-anthem, after-twenty-years, a-retrieved-reformation, the-furnished-room, one-thousand-dollars."
+        ],
+        "selection": {
+          "from": "Short Fiction",
+          "items": [
+            "the-gift-of-the-magi",
+            "the-ransom-of-red-chief",
+            "the-last-leaf",
+            "the-cop-and-the-anthem",
+            "after-twenty-years",
+            "a-retrieved-reformation",
+            "the-furnished-room",
+            "one-thousand-dollars"
+          ]
+        }
+      },
+      "file": "works/o-henry-selected-stories.epub",
+      "bytes": 55637,
+      "sha256": "9059b010d309773c5f692829bcc82efb8e8911c8bd48aedc23b57914ee1dab06",
+      "text_version": 1,
+      "cover": {
+        "file": "covers/o-henry-selected-stories.jpg",
+        "bytes": 49205,
+        "sha256": "8c29af6eb8f503a38282c6085f990ed56bf4e16f114790cf215ab4d8c57b3832",
+        "artwork": "The Soul of the Soulless City (1920), C. R. W. Nevinson",
+        "artist_died": 1946,
+        "design": "Standard Ebooks cover composition (CC0), scaled for the library"
+      },
+      "cover_note": null,
+      "rights": {
+        "status": "public-domain-us",
+        "worldwide": true,
+        "basis": "First published 1905. O. Henry died 1910. Every known contributor died more than 70 years ago.",
+        "licence": "CC0 1.0 (edition) / public domain in the United States (text)",
+        "licence_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "evidence": [
+          "dc:rights in each edition's content.opf: text and artwork believed public domain in the United States; contributors dedicate their work under CC0 1.0",
+          "each edition's uncopyright.xhtml (kept in the source file, removed from what ships)",
+          "https://standardebooks.org/about (content produced by or for Standard Ebooks L3C is dedicated to the public domain)"
+        ],
+        "verified_on": "2026-10-21",
+        "permits": {
+          "redistribution": true,
+          "modification": true,
+          "commercial": true,
+          "performance": true
+        },
+        "attribution_required": false,
+        "attribution": "Edition prepared by Standard Ebooks volunteers (a courtesy credit, not a requirement).",
+        "trademark_note": "The publisher's name and logo do not appear in the shipped file; see CREDITS.md.",
+        "limits": null
+      },
+      "featured": null,
+      "preset_version": null
+    },
+    {
+      "work_id": "irving-sleepy-hollow-and-rip-van-winkle",
+      "title": "The Legend of Sleepy Hollow and Rip Van Winkle",
+      "sort_title": "Legend of Sleepy Hollow and Rip Van Winkle, The",
+      "authors": [
+        {
+          "name": "Washington Irving",
+          "sort_name": "Irving, Washington",
+          "born": 1783,
+          "died": 1859,
+          "wikipedia": "https://en.wikipedia.org/wiki/Washington_Irving"
+        }
+      ],
+      "contributors": [],
+      "first_published": 1820,
+      "language": "en-US",
+      "document_type": "short-story-collection",
+      "genres": [
+        "fantasy",
+        "literary-fiction"
+      ],
+      "description": "Three tales from The Sketch Book: a headless horseman in the Hudson valley, a man who sleeps for twenty years, and a bridegroom who may be a ghost.",
+      "content_notes": [],
+      "word_count": 25366,
+      "chapters": [
+        {
+          "id": "the-legend-of-sleepy-hollow",
+          "title": "The Legend of Sleepy Hollow"
+        },
+        {
+          "id": "rip-van-winkle",
+          "title": "Rip Van Winkle: A Posthumous Writing of Diedrich Knickerbocker"
+        },
+        {
+          "id": "the-spectre-bridegroom",
+          "title": "The Spectre Bridegroom: A Traveller’s Tale"
+        }
+      ],
+      "chapters_read": 3,
+      "edition": {
+        "edition_id": "standardebooks:washington-irving/the-sketchbook-of-geoffrey-crayon-gent@5a61d30",
+        "source": "Standard Ebooks",
+        "source_url": "https://standardebooks.org/ebooks/washington-irving/the-sketchbook-of-geoffrey-crayon-gent",
+        "source_revision": "5a61d30",
+        "source_released": "2026-09-09T15:46:11Z",
+        "source_file": "washington-irving_the-sketchbook-of-geoffrey-crayon-gent.epub",
+        "source_sha256": "d8899b60de63daa534747985b1d470adcbb93898b747e1f1e9c3df2eb2a8b111",
+        "source_bytes": 889037,
+        "transcription": [
+          "https://www.gutenberg.org/ebooks/2048",
+          "https://books.google.com/books?id=BX5NAAAAYAAJ"
+        ],
+        "changes": [
+          "Images, figures and the list of illustrations removed (the app reads text).",
+          "The publisher's title page, imprint, colophon and uncopyright pages removed, with its logo; the edition is credited in CREDITS.md instead.",
+          "The editor's endnotes and their markers removed.",
+          "Chapter headings written out for listening (\"Chapter 1: Down the Rabbit-Hole\" instead of a Roman numeral).",
+          "Links replaced by their text; nothing in a shipped book points anywhere.",
+          "Only part of the collection ships: the-legend-of-sleepy-hollow, rip-van-winkle, the-spectre-bridegroom."
+        ],
+        "selection": {
+          "from": "The Sketchbook of Geoffrey Crayon, Gent.",
+          "items": [
+            "the-legend-of-sleepy-hollow",
+            "rip-van-winkle",
+            "the-spectre-bridegroom"
+          ]
+        }
+      },
+      "file": "works/irving-sleepy-hollow-and-rip-van-winkle.epub",
+      "bytes": 62416,
+      "sha256": "de15e5c8d60f48ce555694d1dad54c83848b622407acf99684c5ba1267d81dcd",
+      "text_version": 1,
+      "cover": {
+        "file": "covers/irving-sleepy-hollow-and-rip-van-winkle.jpg",
+        "bytes": 49793,
+        "sha256": "75389338a64b7873c766b38798279f536420ac0668061d3fd2fb4b3c82045181",
+        "artwork": "The Headless Horseman Pursuing Ichabod Crane (1858), John Quidor",
+        "artist_died": 1881,
+        "design": "Standard Ebooks cover composition (CC0), scaled for the library"
+      },
+      "cover_note": null,
+      "rights": {
+        "status": "public-domain-us",
+        "worldwide": true,
+        "basis": "First published 1820. Washington Irving died 1859. Every known contributor died more than 70 years ago.",
+        "licence": "CC0 1.0 (edition) / public domain in the United States (text)",
+        "licence_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "evidence": [
+          "dc:rights in each edition's content.opf: text and artwork believed public domain in the United States; contributors dedicate their work under CC0 1.0",
+          "each edition's uncopyright.xhtml (kept in the source file, removed from what ships)",
+          "https://standardebooks.org/about (content produced by or for Standard Ebooks L3C is dedicated to the public domain)"
+        ],
+        "verified_on": "2026-10-21",
+        "permits": {
+          "redistribution": true,
+          "modification": true,
+          "commercial": true,
+          "performance": true
+        },
+        "attribution_required": false,
+        "attribution": "Edition prepared by Standard Ebooks volunteers (a courtesy credit, not a requirement).",
+        "trademark_note": "The publisher's name and logo do not appear in the shipped file; see CREDITS.md.",
+        "limits": null
+      },
+      "featured": null,
+      "preset_version": null
+    },
+    {
+      "work_id": "the-innocence-of-father-brown",
+      "title": "The Innocence of Father Brown",
+      "sort_title": "Innocence of Father Brown, The",
+      "authors": [
+        {
+          "name": "G. K. Chesterton",
+          "sort_name": "Chesterton, G. K.",
+          "born": 1874,
+          "died": 1936,
+          "wikipedia": "https://en.wikipedia.org/wiki/G._K._Chesterton"
+        }
+      ],
+      "contributors": [],
+      "first_published": 1911,
+      "language": "en-GB",
+      "document_type": "short-story-collection",
+      "genres": [
+        "mystery"
+      ],
+      "description": "Amateur detective and Catholic priest Father Brown solves mysteries in this first collection of Father Brown short stories.",
+      "content_notes": [
+        "Written in 1911; a few stories carry the ethnic and religious prejudices of their time."
+      ],
+      "word_count": 80251,
+      "chapters": [
+        {
+          "id": "dedication",
+          "title": "Dedication"
+        },
+        {
+          "id": "the-blue-cross",
+          "title": "The Blue Cross"
+        },
+        {
+          "id": "the-secret-garden",
+          "title": "The Secret Garden"
+        },
+        {
+          "id": "the-queer-feet",
+          "title": "The Queer Feet"
+        },
+        {
+          "id": "the-flying-stars",
+          "title": "The Flying Stars"
+        },
+        {
+          "id": "the-invisible-man",
+          "title": "The Invisible Man"
+        },
+        {
+          "id": "the-honour-of-israel-gow",
+          "title": "The Honour of Israel Gow"
+        },
+        {
+          "id": "the-wrong-shape",
+          "title": "The Wrong Shape"
+        },
+        {
+          "id": "the-sins-of-prince-saradine",
+          "title": "The Sins of Prince Saradine"
+        },
+        {
+          "id": "the-hammer-of-god",
+          "title": "The Hammer of God"
+        },
+        {
+          "id": "the-eye-of-apollo",
+          "title": "The Eye of Apollo"
+        },
+        {
+          "id": "the-sign-of-the-broken-sword",
+          "title": "The Sign of the Broken Sword"
+        },
+        {
+          "id": "the-three-tools-of-death",
+          "title": "The Three Tools of Death"
+        }
+      ],
+      "chapters_read": 13,
+      "edition": {
+        "edition_id": "standardebooks:g-k-chesterton/the-innocence-of-father-brown@6ab1146",
+        "source": "Standard Ebooks",
+        "source_url": "https://standardebooks.org/ebooks/g-k-chesterton/the-innocence-of-father-brown",
+        "source_revision": "6ab1146",
+        "source_released": "2026-09-07T16:45:32Z",
+        "source_file": "g-k-chesterton_the-innocence-of-father-brown.epub",
+        "source_sha256": "24ca612385e2d7bae61efb293fa0c6d6254ba1b3549541e500a61d1c3248473d",
+        "source_bytes": 823719,
+        "transcription": [
+          "https://www.gutenberg.org/ebooks/204",
+          "https://catalog.hathitrust.org/Record/000663081"
+        ],
+        "changes": [
+          "Images, figures and the list of illustrations removed (the app reads text).",
+          "The publisher's title page, imprint, colophon and uncopyright pages removed, with its logo; the edition is credited in CREDITS.md instead.",
+          "The editor's endnotes and their markers removed.",
+          "Chapter headings written out for listening (\"Chapter 1: Down the Rabbit-Hole\" instead of a Roman numeral).",
+          "Links replaced by their text; nothing in a shipped book points anywhere."
+        ],
+        "selection": null
+      },
+      "file": "works/the-innocence-of-father-brown.epub",
+      "bytes": 190280,
+      "sha256": "50ec309e6726b4f8bb707ca1905068fff8063d1e4361d2e0643f1f4a8f6959a4",
+      "text_version": 1,
+      "cover": {
+        "file": "covers/the-innocence-of-father-brown.jpg",
+        "bytes": 69990,
+        "sha256": "600ede1c07fc30c500e894e2e0289292b0b2649308f7612b5ce9a80bb05384d8",
+        "artwork": "Marissal, Path to the Front of the Church (1866), Jean-Baptiste-Camille Corot",
+        "artist_died": 1875,
+        "design": "Standard Ebooks cover composition (CC0), scaled for the library"
+      },
+      "cover_note": null,
+      "rights": {
+        "status": "public-domain-us",
+        "worldwide": true,
+        "basis": "First published 1911. G. K. Chesterton died 1936. Every known contributor died more than 70 years ago.",
+        "licence": "CC0 1.0 (edition) / public domain in the United States (text)",
+        "licence_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "evidence": [
+          "dc:rights in each edition's content.opf: text and artwork believed public domain in the United States; contributors dedicate their work under CC0 1.0",
+          "each edition's uncopyright.xhtml (kept in the source file, removed from what ships)",
+          "https://standardebooks.org/about (content produced by or for Standard Ebooks L3C is dedicated to the public domain)"
+        ],
+        "verified_on": "2026-10-21",
+        "permits": {
+          "redistribution": true,
+          "modification": true,
+          "commercial": true,
+          "performance": true
+        },
+        "attribution_required": false,
+        "attribution": "Edition prepared by Standard Ebooks volunteers (a courtesy credit, not a requirement).",
+        "trademark_note": "The publisher's name and logo do not appear in the shipped file; see CREDITS.md.",
+        "limits": null
+      },
+      "featured": null,
+      "preset_version": null
+    },
+    {
+      "work_id": "whitman-selected-poems",
+      "title": "Song of Myself and Other Poems",
+      "sort_title": "Song of Myself and Other Poems",
+      "authors": [
+        {
+          "name": "Walt Whitman",
+          "sort_name": "Whitman, Walt",
+          "born": 1819,
+          "died": 1892,
+          "wikipedia": "https://en.wikipedia.org/wiki/Walt_Whitman"
+        }
+      ],
+      "contributors": [],
+      "first_published": 1855,
+      "language": "en-US",
+      "document_type": "poetry-collection",
+      "genres": [
+        "poetry"
+      ],
+      "description": "Eight poems from Leaves of Grass, including the whole of Song of Myself, Crossing Brooklyn Ferry, O Captain! My Captain! and When Lilacs Last in the Dooryard Bloom'd.",
+      "content_notes": [],
+      "word_count": 21097,
+      "chapters": [
+        {
+          "id": "ones-self-i-sing",
+          "title": "One’s-Self I Sing"
+        },
+        {
+          "id": "i-hear-america-singing",
+          "title": "I Hear America Singing"
+        },
+        {
+          "id": "song-of-myself",
+          "title": "Song of Myself"
+        },
+        {
+          "id": "crossing-brooklyn-ferry",
+          "title": "Crossing Brooklyn Ferry"
+        },
+        {
+          "id": "when-i-heard-the-learnd-astronomer",
+          "title": "When I Heard the Learn’d Astronomer"
+        },
+        {
+          "id": "when-lilacs-last-in-the-dooryard-bloomd",
+          "title": "When Lilacs Last in the Dooryard Bloom’d"
+        },
+        {
+          "id": "o-captain-my-captain",
+          "title": "O Captain! My Captain!"
+        },
+        {
+          "id": "a-noiseless-patient-spider",
+          "title": "A Noiseless Patient Spider"
+        }
+      ],
+      "chapters_read": 8,
+      "edition": {
+        "edition_id": "standardebooks:walt-whitman/leaves-of-grass@ef6b8e1",
+        "source": "Standard Ebooks",
+        "source_url": "https://standardebooks.org/ebooks/walt-whitman/leaves-of-grass",
+        "source_revision": "ef6b8e1",
+        "source_released": "2026-09-04T23:17:16Z",
+        "source_file": "walt-whitman_leaves-of-grass.epub",
+        "source_sha256": "c97c69c8f6b77142a25197e19f57c9965f97747c0cf527b2d030183012b96466",
+        "source_bytes": 947026,
+        "transcription": [
+          "https://www.gutenberg.org/ebooks/1322",
+          "https://archive.org/details/leavesgrass03whitgoog"
+        ],
+        "changes": [
+          "Images, figures and the list of illustrations removed (the app reads text).",
+          "The publisher's title page, imprint, colophon and uncopyright pages removed, with its logo; the edition is credited in CREDITS.md instead.",
+          "The editor's endnotes and their markers removed.",
+          "Chapter headings written out for listening (\"Chapter 1: Down the Rabbit-Hole\" instead of a Roman numeral).",
+          "Links replaced by their text; nothing in a shipped book points anywhere.",
+          "Only part of the collection ships: inscriptions#ones-self-i-sing, inscriptions#i-hear-america-singing, song-of-myself, crossing-brooklyn-ferry, by-the-roadside#when-i-heard-the-learnd-astronomer, memories-of-president-lincoln#when-lilacs-last-in-the-dooryard-bloomd, memories-of-president-lincoln#o-captain-my-captain, whispers-of-heavenly-death#a-noiseless-patient-spider."
+        ],
+        "selection": {
+          "from": "Leaves of Grass",
+          "items": [
+            "inscriptions#ones-self-i-sing",
+            "inscriptions#i-hear-america-singing",
+            "song-of-myself",
+            "crossing-brooklyn-ferry",
+            "by-the-roadside#when-i-heard-the-learnd-astronomer",
+            "memories-of-president-lincoln#when-lilacs-last-in-the-dooryard-bloomd",
+            "memories-of-president-lincoln#o-captain-my-captain",
+            "whispers-of-heavenly-death#a-noiseless-patient-spider"
+          ]
+        }
+      },
+      "file": "works/whitman-selected-poems.epub",
+      "bytes": 57430,
+      "sha256": "3b0d02ed604be07186d60a540f77aed13db378493bc709d3ab7fb2dc5448c323",
+      "text_version": 1,
+      "cover": null,
+      "cover_note": "The illustrator's dates could not be confirmed, so the painting's status outside the United States is unknown; a plain cover is shown instead.",
+      "rights": {
+        "status": "public-domain-us",
+        "worldwide": true,
+        "basis": "First published 1855. Walt Whitman died 1892. Every known contributor died more than 70 years ago.",
+        "licence": "CC0 1.0 (edition) / public domain in the United States (text)",
+        "licence_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "evidence": [
+          "dc:rights in each edition's content.opf: text and artwork believed public domain in the United States; contributors dedicate their work under CC0 1.0",
+          "each edition's uncopyright.xhtml (kept in the source file, removed from what ships)",
+          "https://standardebooks.org/about (content produced by or for Standard Ebooks L3C is dedicated to the public domain)"
+        ],
+        "verified_on": "2026-10-21",
+        "permits": {
+          "redistribution": true,
+          "modification": true,
+          "commercial": true,
+          "performance": true
+        },
+        "attribution_required": false,
+        "attribution": "Edition prepared by Standard Ebooks volunteers (a courtesy credit, not a requirement).",
+        "trademark_note": "The publisher's name and logo do not appear in the shipped file; see CREDITS.md.",
+        "limits": null
+      },
+      "featured": null,
+      "preset_version": null
+    },
+    {
+      "work_id": "thoreau-selected-essays",
+      "title": "Civil Disobedience and Other Essays",
+      "sort_title": "Civil Disobedience and Other Essays",
+      "authors": [
+        {
+          "name": "Henry David Thoreau",
+          "sort_name": "Thoreau, Henry David",
+          "born": 1817,
+          "died": 1862,
+          "wikipedia": "https://en.wikipedia.org/wiki/Henry_David_Thoreau"
+        }
+      ],
+      "contributors": [],
+      "first_published": 1849,
+      "language": "en-US",
+      "document_type": "essay",
+      "genres": [
+        "philosophy",
+        "history"
+      ],
+      "description": "Three essays: the argument that a person must not let a government make them an agent of injustice, a walk that becomes a meditation on wildness, and a case for living deliberately.",
+      "content_notes": [],
+      "word_count": 29909,
+      "chapters": [
+        {
+          "id": "on-the-duty-of-civil-disobedience",
+          "title": "On the Duty of Civil Disobedience"
+        },
+        {
+          "id": "walking",
+          "title": "Walking"
+        },
+        {
+          "id": "life-without-principle",
+          "title": "Life Without Principle"
+        }
+      ],
+      "chapters_read": 3,
+      "edition": {
+        "edition_id": "standardebooks:henry-david-thoreau/essays@e2e1890",
+        "source": "Standard Ebooks",
+        "source_url": "https://standardebooks.org/ebooks/henry-david-thoreau/essays",
+        "source_revision": "e2e1890",
+        "source_released": "2026-09-09T15:46:05Z",
+        "source_file": "henry-david-thoreau_essays.epub",
+        "source_sha256": "119b65b51e4322a5972f04fdf2394d0fe91c3c5f69f5ea0879af5600c89a1fe0",
+        "source_bytes": 1297533,
+        "transcription": [
+          "https://www.gutenberg.org/ebooks/60951",
+          "https://en.wikisource.org/wiki/The_Dial/Volume_1/Aulus_Persius_Flaccus",
+          "https://www.gutenberg.org/ebooks/9846",
+          "https://en.wikisource.org/wiki/Dark_Ages",
+          "https://en.wikisource.org/wiki/The_United_States_Democratic_Review/Volume_13/The_Landlord",
+          "https://www.gutenberg.org/ebooks/63459",
+          "https://en.wikisource.org/wiki/Yankee_in_Canada_(1866)/Herald_of_Freedom",
+          "https://en.wikisource.org/wiki/Yankee_in_Canada_(1866)/Wendell_Phillips_Before_the_Concord_Lyceum",
+          "https://en.wikisource.org/wiki/Yankee_in_Canada_(1866)/Thomas_Carlyle_and_His_Works",
+          "https://www.gutenberg.org/ebooks/71",
+          "https://en.wikisource.org/wiki/Sir_Walter_Raleigh/Main",
+          "https://en.wikisource.org/wiki/Yankee_in_Canada_(1866)/Slavery_in_Massachusetts",
+          "https://en.wikisource.org/wiki/Yankee_in_Canada_(1866)/Life_without_Principle",
+          "https://www.gutenberg.org/ebooks/42500",
+          "https://www.gutenberg.org/ebooks/2567",
+          "https://www.walden.org/what-we-do/library/thoreau/mr-thoreaus-remarks",
+          "https://en.wikisource.org/wiki/Yankee_in_Canada_(1866)/The_Last_Days_of_John_Brown",
+          "https://www.gutenberg.org/ebooks/34392",
+          "https://en.wikisource.org/wiki/The_Atlantic_Monthly/Volume_14/Number_86/The_Highland_Light",
+          "https://en.wikisource.org/wiki/Yankee_in_Canada_(1866)",
+          "https://archive.org/details/service1902thor",
+          "https://books.google.com/books?id=t5c_AQAAMAAJ",
+          "https://archive.org/details/sim_boston-miscellany-of-literature-and-fashion_1843_3_3",
+          "https://archive.org/details/dial02riplgoog",
+          "https://catalog.hathitrust.org/Record/011682134",
+          "https://archive.org/details/dial03riplgoog",
+          "https://archive.org/details/the-liberator-1845-3-28",
+          "https://books.google.com/books?id=Fs01AQAAMAAJ",
+          "https://archive.org/details/cu31924031042173",
+          "https://archive.org/details/sirwalterraleigh00thor",
+          "https://archive.org/details/the-liberator-1854-7-21",
+          "https://catalog.hathitrust.org/Record/000597656",
+          "https://catalog.hathitrust.org/Record/000597656",
+          "https://archive.org/details/ASPC0005147600",
+          "https://archive.org/details/the-liberator-1860-7-27",
+          "https://archive.org/details/excursionhenry00thorrich",
+          "https://archive.org/details/yankeeincanadawi00thor"
+        ],
+        "changes": [
+          "Images, figures and the list of illustrations removed (the app reads text).",
+          "The publisher's title page, imprint, colophon and uncopyright pages removed, with its logo; the edition is credited in CREDITS.md instead.",
+          "The editor's endnotes and their markers removed.",
+          "Chapter headings written out for listening (\"Chapter 1: Down the Rabbit-Hole\" instead of a Roman numeral).",
+          "Links replaced by their text; nothing in a shipped book points anywhere.",
+          "Only part of the collection ships: on-the-duty-of-civil-disobedience, walking, life-without-principle."
+        ],
+        "selection": {
+          "from": "Essays",
+          "items": [
+            "on-the-duty-of-civil-disobedience",
+            "walking",
+            "life-without-principle"
+          ]
+        }
+      },
+      "file": "works/thoreau-selected-essays.epub",
+      "bytes": 71553,
+      "sha256": "4578ccb053dc755064773841fd08b2a54c283291e61c44abb718cdc2bc38af24",
+      "text_version": 1,
+      "cover": {
+        "file": "covers/thoreau-selected-essays.jpg",
+        "bytes": 67247,
+        "sha256": "ccab8c2678df8ddcca3abb5d7571ea5316821f0d94051ab1977cc18d43cfb3a9",
+        "artwork": "West Wind, Algonquin Park (1917), Tom Thomson",
+        "artist_died": 1917,
+        "design": "Standard Ebooks cover composition (CC0), scaled for the library"
+      },
+      "cover_note": null,
+      "rights": {
+        "status": "public-domain-us",
+        "worldwide": true,
+        "basis": "First published 1849. Henry David Thoreau died 1862. Every known contributor died more than 70 years ago.",
+        "licence": "CC0 1.0 (edition) / public domain in the United States (text)",
+        "licence_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "evidence": [
+          "dc:rights in each edition's content.opf: text and artwork believed public domain in the United States; contributors dedicate their work under CC0 1.0",
+          "each edition's uncopyright.xhtml (kept in the source file, removed from what ships)",
+          "https://standardebooks.org/about (content produced by or for Standard Ebooks L3C is dedicated to the public domain)"
+        ],
+        "verified_on": "2026-10-21",
+        "permits": {
+          "redistribution": true,
+          "modification": true,
+          "commercial": true,
+          "performance": true
+        },
+        "attribution_required": false,
+        "attribution": "Edition prepared by Standard Ebooks volunteers (a courtesy credit, not a requirement).",
+        "trademark_note": "The publisher's name and logo do not appear in the shipped file; see CREDITS.md.",
+        "limits": null
+      },
+      "featured": null,
+      "preset_version": null
+    },
+    {
+      "work_id": "emerson-selected-essays",
+      "title": "Self-Reliance and Other Essays",
+      "sort_title": "Self-Reliance and Other Essays",
+      "authors": [
+        {
+          "name": "Ralph Waldo Emerson",
+          "sort_name": "Emerson, Ralph Waldo",
+          "born": 1803,
+          "died": 1882,
+          "wikipedia": "https://en.wikipedia.org/wiki/Ralph_Waldo_Emerson"
+        }
+      ],
+      "contributors": [],
+      "first_published": 1841,
+      "language": "en-US",
+      "document_type": "essay",
+      "genres": [
+        "philosophy"
+      ],
+      "description": "Four essays from Emerson's two series: trust yourself, see nature whole, keep a friend, and live with experience as it comes.",
+      "content_notes": [],
+      "word_count": 31860,
+      "chapters": [
+        {
+          "id": "self-reliance",
+          "title": "Self-Reliance"
+        },
+        {
+          "id": "nature",
+          "title": "Nature"
+        },
+        {
+          "id": "friendship",
+          "title": "Friendship"
+        },
+        {
+          "id": "experience",
+          "title": "Experience"
+        }
+      ],
+      "chapters_read": 4,
+      "edition": {
+        "edition_id": "standardebooks:ralph-waldo-emerson/essays@707e059",
+        "source": "Standard Ebooks",
+        "source_url": "https://standardebooks.org/ebooks/ralph-waldo-emerson/essays",
+        "source_revision": "707e059",
+        "source_released": "2026-08-26T17:52:43Z",
+        "source_file": "ralph-waldo-emerson_essays.epub",
+        "source_sha256": "140f20164e33e5d9b18f2071fac94c5c886522c4e2a6dae7cf3194840ae3f496",
+        "source_bytes": 932896,
+        "transcription": [
+          "https://www.gutenberg.org/ebooks/2944",
+          "https://www.gutenberg.org/ebooks/2945",
+          "https://archive.org/details/essaysseries00emerrich"
+        ],
+        "changes": [
+          "Images, figures and the list of illustrations removed (the app reads text).",
+          "The publisher's title page, imprint, colophon and uncopyright pages removed, with its logo; the edition is credited in CREDITS.md instead.",
+          "The editor's endnotes and their markers removed.",
+          "Chapter headings written out for listening (\"Chapter 1: Down the Rabbit-Hole\" instead of a Roman numeral).",
+          "Links replaced by their text; nothing in a shipped book points anywhere.",
+          "Only part of the collection ships: self-reliance, nature, friendship, experience."
+        ],
+        "selection": {
+          "from": "Essays",
+          "items": [
+            "self-reliance",
+            "nature",
+            "friendship",
+            "experience"
+          ]
+        }
+      },
+      "file": "works/emerson-selected-essays.epub",
+      "bytes": 77775,
+      "sha256": "22c1d5b4e70331ed365bbaea006a4fc9a217fbf306f81b74922aa8df690b5ff3",
+      "text_version": 1,
+      "cover": {
+        "file": "covers/emerson-selected-essays.jpg",
+        "bytes": 42003,
+        "sha256": "1f3224895d0b192e02b86204ca0ebd152fe8a76dca7ef855341eb9348745f14c",
+        "artwork": "New England Scenery (1839), Thomas Cole",
+        "artist_died": 1848,
+        "design": "Standard Ebooks cover composition (CC0), scaled for the library"
+      },
+      "cover_note": null,
+      "rights": {
+        "status": "public-domain-us",
+        "worldwide": true,
+        "basis": "First published 1841. Ralph Waldo Emerson died 1882. Every known contributor died more than 70 years ago.",
+        "licence": "CC0 1.0 (edition) / public domain in the United States (text)",
+        "licence_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "evidence": [
+          "dc:rights in each edition's content.opf: text and artwork believed public domain in the United States; contributors dedicate their work under CC0 1.0",
+          "each edition's uncopyright.xhtml (kept in the source file, removed from what ships)",
+          "https://standardebooks.org/about (content produced by or for Standard Ebooks L3C is dedicated to the public domain)"
+        ],
+        "verified_on": "2026-10-21",
+        "permits": {
+          "redistribution": true,
+          "modification": true,
+          "commercial": true,
+          "performance": true
+        },
+        "attribution_required": false,
+        "attribution": "Edition prepared by Standard Ebooks volunteers (a courtesy credit, not a requirement).",
+        "trademark_note": "The publisher's name and logo do not appear in the shipped file; see CREDITS.md.",
+        "limits": null
+      },
+      "featured": null,
+      "preset_version": null
+    },
+    {
+      "work_id": "meditations",
+      "title": "Meditations",
+      "sort_title": "Meditations",
+      "authors": [
+        {
+          "name": "Marcus Aurelius",
+          "sort_name": "Marcus Aurelius",
+          "born": 121,
+          "died": 180,
+          "wikipedia": "https://en.wikipedia.org/wiki/Marcus_Aurelius"
+        }
+      ],
+      "contributors": [
+        {
+          "role": "translator",
+          "name": "George Long",
+          "died": 1879,
+          "note": "The 1862 English translation."
+        }
+      ],
+      "first_published": 1862,
+      "language": "en-GB",
+      "document_type": "essay",
+      "genres": [
+        "philosophy"
+      ],
+      "description": "The personal diary of the Roman Emperor, in which he lays out his thoughts and philosophical musings on the Stoic philosophy and way of life.",
+      "content_notes": [],
+      "word_count": 45612,
+      "chapters": [
+        {
+          "id": "book-1",
+          "title": "Book I"
+        },
+        {
+          "id": "book-2",
+          "title": "Book II"
+        },
+        {
+          "id": "book-3",
+          "title": "Book III"
+        },
+        {
+          "id": "book-4",
+          "title": "Book IV"
+        },
+        {
+          "id": "book-5",
+          "title": "Book V"
+        },
+        {
+          "id": "book-6",
+          "title": "Book VI"
+        },
+        {
+          "id": "book-7",
+          "title": "Book VII"
+        },
+        {
+          "id": "book-8",
+          "title": "Book VIII"
+        },
+        {
+          "id": "book-9",
+          "title": "Book IX"
+        },
+        {
+          "id": "book-10",
+          "title": "Book X"
+        },
+        {
+          "id": "book-11",
+          "title": "Book XI"
+        },
+        {
+          "id": "book-12",
+          "title": "Book XII"
+        }
+      ],
+      "chapters_read": 12,
+      "edition": {
+        "edition_id": "standardebooks:marcus-aurelius/meditations/george-long@3a47d37",
+        "source": "Standard Ebooks",
+        "source_url": "https://standardebooks.org/ebooks/marcus-aurelius/meditations/george-long",
+        "source_revision": "3a47d37",
+        "source_released": "2026-09-07T16:46:00Z",
+        "source_file": "marcus-aurelius_meditations_george-long.epub",
+        "source_sha256": "c2b77e9daa37694b978f78f9ae2d801fd263be533af187e8b36b7da28845e0c8",
+        "source_bytes": 733307,
+        "transcription": [
+          "http://classics.mit.edu/Antoninus/meditations.html",
+          "http://books.google.com/books?id=i9iUswYUMmUC"
+        ],
+        "changes": [
+          "Images, figures and the list of illustrations removed (the app reads text).",
+          "The publisher's title page, imprint, colophon and uncopyright pages removed, with its logo; the edition is credited in CREDITS.md instead.",
+          "The editor's endnotes and their markers removed.",
+          "Chapter headings written out for listening (\"Chapter 1: Down the Rabbit-Hole\" instead of a Roman numeral).",
+          "Links replaced by their text; nothing in a shipped book points anywhere."
+        ],
+        "selection": null
+      },
+      "file": "works/meditations.epub",
+      "bytes": 103902,
+      "sha256": "a4e17fc3ad95ccc65cdf7dac4936dd85e24f52f092857d6ac3ac67ed6aee3341",
+      "text_version": 1,
+      "cover": {
+        "file": "covers/meditations.jpg",
+        "bytes": 69456,
+        "sha256": "af0e6c42ad027cdf597cafc2f76d57aa20b01a74a089b8f7c27deb07486b4611",
+        "artwork": "After the Audience (1879), Sir Lawrence Alma-Tadema",
+        "artist_died": 1912,
+        "design": "Standard Ebooks cover composition (CC0), scaled for the library"
+      },
+      "cover_note": null,
+      "rights": {
+        "status": "public-domain-us",
+        "worldwide": true,
+        "basis": "First published 1862. Marcus Aurelius died 180; George Long died 1879. Every known contributor died more than 70 years ago.",
+        "licence": "CC0 1.0 (edition) / public domain in the United States (text)",
+        "licence_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "evidence": [
+          "dc:rights in each edition's content.opf: text and artwork believed public domain in the United States; contributors dedicate their work under CC0 1.0",
+          "each edition's uncopyright.xhtml (kept in the source file, removed from what ships)",
+          "https://standardebooks.org/about (content produced by or for Standard Ebooks L3C is dedicated to the public domain)"
+        ],
+        "verified_on": "2026-10-21",
+        "permits": {
+          "redistribution": true,
+          "modification": true,
+          "commercial": true,
+          "performance": true
+        },
+        "attribution_required": false,
+        "attribution": "Edition prepared by Standard Ebooks volunteers (a courtesy credit, not a requirement).",
+        "trademark_note": "The publisher's name and logo do not appear in the shipped file; see CREDITS.md.",
+        "limits": null
+      },
+      "featured": null,
+      "preset_version": null
+    },
+    {
+      "work_id": "narrative-of-the-life-of-frederick-douglass",
+      "title": "Narrative of the Life of Frederick Douglass",
+      "sort_title": "Narrative of the Life of Frederick Douglass",
+      "authors": [
+        {
+          "name": "Frederick Douglass",
+          "sort_name": "Douglass, Frederick",
+          "born": 1818,
+          "died": 1895,
+          "wikipedia": "https://en.wikipedia.org/wiki/Frederick_Douglass"
+        }
+      ],
+      "contributors": [
+        {
+          "role": "writer of preface",
+          "name": "William Lloyd Garrison",
+          "died": 1879,
+          "note": null
+        },
+        {
+          "role": "writer of introductory letter",
+          "name": "Wendell Phillips",
+          "died": 1884,
+          "note": null
+        }
+      ],
+      "first_published": 1845,
+      "language": "en-US",
+      "document_type": "memoir",
+      "genres": [
+        "memoir",
+        "history",
+        "biography"
+      ],
+      "description": "Frederick Douglass describes his youth as a slave in Maryland and his desire to be a free man.",
+      "content_notes": [
+        "A first-hand account of slavery: it describes violence, and quotes the language of enslavers as it was spoken."
+      ],
+      "word_count": 40782,
+      "chapters": [
+        {
+          "id": "preface",
+          "title": "Preface"
+        },
+        {
+          "id": "letter-from-wendell-phillips-esq",
+          "title": "Letter from Wendell Phillips, Esq."
+        },
+        {
+          "id": "chapter-1",
+          "title": "Chapter 1"
+        },
+        {
+          "id": "chapter-2",
+          "title": "Chapter 2"
+        },
+        {
+          "id": "chapter-3",
+          "title": "Chapter 3"
+        },
+        {
+          "id": "chapter-4",
+          "title": "Chapter 4"
+        },
+        {
+          "id": "chapter-5",
+          "title": "Chapter 5"
+        },
+        {
+          "id": "chapter-6",
+          "title": "Chapter 6"
+        },
+        {
+          "id": "chapter-7",
+          "title": "Chapter 7"
+        },
+        {
+          "id": "chapter-8",
+          "title": "Chapter 8"
+        },
+        {
+          "id": "chapter-9",
+          "title": "Chapter 9"
+        },
+        {
+          "id": "chapter-10",
+          "title": "Chapter 10"
+        },
+        {
+          "id": "chapter-11",
+          "title": "Chapter 11"
+        },
+        {
+          "id": "appendix",
+          "title": "Appendix"
+        }
+      ],
+      "chapters_read": 14,
+      "edition": {
+        "edition_id": "standardebooks:frederick-douglass/narrative-of-the-life-of-frederick-douglass@e293ab4",
+        "source": "Standard Ebooks",
+        "source_url": "https://standardebooks.org/ebooks/frederick-douglass/narrative-of-the-life-of-frederick-douglass",
+        "source_revision": "e293ab4",
+        "source_released": "2026-08-04T14:51:15Z",
+        "source_file": "frederick-douglass_narrative-of-the-life-of-frederick-douglass.epub",
+        "source_sha256": "82fa0f4924369d2fe3689f4f28dcb5c67c7d0f13742008481be65ea47e387512",
+        "source_bytes": 416801,
+        "transcription": [
+          "https://www.gutenberg.org/ebooks/23",
+          "https://catalog.hathitrust.org/Record/009260192"
+        ],
+        "changes": [
+          "Images, figures and the list of illustrations removed (the app reads text).",
+          "The publisher's title page, imprint, colophon and uncopyright pages removed, with its logo; the edition is credited in CREDITS.md instead.",
+          "The editor's endnotes and their markers removed.",
+          "Chapter headings written out for listening (\"Chapter 1: Down the Rabbit-Hole\" instead of a Roman numeral).",
+          "Links replaced by their text; nothing in a shipped book points anywhere."
+        ],
+        "selection": null
+      },
+      "file": "works/narrative-of-the-life-of-frederick-douglass.epub",
+      "bytes": 101843,
+      "sha256": "4ac5557f0a621e0919409ecb89ea9425ae98b1e7703388344a235995fa8e1d7f",
+      "text_version": 1,
+      "cover": {
+        "file": "covers/narrative-of-the-life-of-frederick-douglass.jpg",
+        "bytes": 22079,
+        "sha256": "99737f579e528d7c0a7990ab25191c81f0d997a270d6dee5c0bb35e3ec7bd027",
+        "artwork": "Frederick Douglass (c. 1844), unknown artist",
+        "artist_died": null,
+        "design": "Standard Ebooks cover composition (CC0), scaled for the library"
+      },
+      "cover_note": null,
+      "rights": {
+        "status": "public-domain-us",
+        "worldwide": true,
+        "basis": "First published 1845. Frederick Douglass died 1895; William Lloyd Garrison died 1879; Wendell Phillips died 1884. Every known contributor died more than 70 years ago.",
+        "licence": "CC0 1.0 (edition) / public domain in the United States (text)",
+        "licence_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "evidence": [
+          "dc:rights in each edition's content.opf: text and artwork believed public domain in the United States; contributors dedicate their work under CC0 1.0",
+          "each edition's uncopyright.xhtml (kept in the source file, removed from what ships)",
+          "https://standardebooks.org/about (content produced by or for Standard Ebooks L3C is dedicated to the public domain)"
+        ],
+        "verified_on": "2026-10-21",
+        "permits": {
+          "redistribution": true,
+          "modification": true,
+          "commercial": true,
+          "performance": true
+        },
+        "attribution_required": false,
+        "attribution": "Edition prepared by Standard Ebooks volunteers (a courtesy credit, not a requirement).",
+        "trademark_note": "The publisher's name and logo do not appear in the shipped file; see CREDITS.md.",
+        "limits": null
+      },
+      "featured": null,
+      "preset_version": null
+    },
+    {
+      "work_id": "up-from-slavery",
+      "title": "Up from Slavery",
+      "sort_title": "Up from Slavery",
+      "authors": [
+        {
+          "name": "Booker T. Washington",
+          "sort_name": "Washington, Booker T.",
+          "born": 1856,
+          "died": 1915,
+          "wikipedia": "https://en.wikipedia.org/wiki/Booker_T._Washington"
+        }
+      ],
+      "contributors": [
+        {
+          "role": "writer of introduction",
+          "name": "Walter H. Page",
+          "died": 1918,
+          "note": null
+        }
+      ],
+      "first_published": 1901,
+      "language": "en-GB",
+      "document_type": "memoir",
+      "genres": [
+        "memoir",
+        "history"
+      ],
+      "description": "The autobiography of Booker T. Washington, former slave and founder of the Tuskegee Institute.",
+      "content_notes": [
+        "An autobiography that begins in slavery and uses the language of its time about race."
+      ],
+      "word_count": 77235,
+      "chapters": [
+        {
+          "id": "dedication",
+          "title": "Dedication"
+        },
+        {
+          "id": "preface",
+          "title": "Preface"
+        },
+        {
+          "id": "introduction",
+          "title": "Introduction"
+        },
+        {
+          "id": "chapter-1",
+          "title": "Chapter 1: A Slave Among Slaves"
+        },
+        {
+          "id": "chapter-2",
+          "title": "Chapter 2: Boyhood Days"
+        },
+        {
+          "id": "chapter-3",
+          "title": "Chapter 3: The Struggle for an Education"
+        },
+        {
+          "id": "chapter-4",
+          "title": "Chapter 4: Helping Others"
+        },
+        {
+          "id": "chapter-5",
+          "title": "Chapter 5: The Reconstruction Period"
+        },
+        {
+          "id": "chapter-6",
+          "title": "Chapter 6: Black Race and Red Race"
+        },
+        {
+          "id": "chapter-7",
+          "title": "Chapter 7: Early Days at Tuskegee"
+        },
+        {
+          "id": "chapter-8",
+          "title": "Chapter 8: Teaching School in a Stable and a Henhouse"
+        },
+        {
+          "id": "chapter-9",
+          "title": "Chapter 9: Anxious Days and Sleepless Nights"
+        },
+        {
+          "id": "chapter-10",
+          "title": "Chapter 10: A Harder Task Than Making Bricks Without Straw"
+        },
+        {
+          "id": "chapter-11",
+          "title": "Chapter 11: Making Their Beds Before They Could Lie on Them"
+        },
+        {
+          "id": "chapter-12",
+          "title": "Chapter 12: Raising Money"
+        },
+        {
+          "id": "chapter-13",
+          "title": "Chapter 13: Two Thousand Miles for a Five-Minute Speech"
+        },
+        {
+          "id": "chapter-14",
+          "title": "Chapter 14: The Atlanta Exposition Address"
+        },
+        {
+          "id": "chapter-15",
+          "title": "Chapter 15: The Secret of Success in Public Speaking"
+        },
+        {
+          "id": "chapter-16",
+          "title": "Chapter 16: Europe"
+        },
+        {
+          "id": "chapter-17",
+          "title": "Chapter 17: Last Words"
+        }
+      ],
+      "chapters_read": 20,
+      "edition": {
+        "edition_id": "standardebooks:booker-t-washington/up-from-slavery@e81e10f",
+        "source": "Standard Ebooks",
+        "source_url": "https://standardebooks.org/ebooks/booker-t-washington/up-from-slavery",
+        "source_revision": "e81e10f",
+        "source_released": "2026-08-15T17:38:53Z",
+        "source_file": "booker-t-washington_up-from-slavery.epub",
+        "source_sha256": "4da3910f3aeedd73c43f8535748b49d9631015f6d862f14cddd9a8b05969a0bb",
+        "source_bytes": 656256,
+        "transcription": [
+          "https://www.gutenberg.org/ebooks/2376",
+          "https://archive.org/details/upfromslaveryan06washgoog"
+        ],
+        "changes": [
+          "Images, figures and the list of illustrations removed (the app reads text).",
+          "The publisher's title page, imprint, colophon and uncopyright pages removed, with its logo; the edition is credited in CREDITS.md instead.",
+          "The editor's endnotes and their markers removed.",
+          "Chapter headings written out for listening (\"Chapter 1: Down the Rabbit-Hole\" instead of a Roman numeral).",
+          "Links replaced by their text; nothing in a shipped book points anywhere."
+        ],
+        "selection": null
+      },
+      "file": "works/up-from-slavery.epub",
+      "bytes": 178986,
+      "sha256": "e5cf9fbd7fa73fb71970c1386fc52f0f3620036cc828b974cffbedca20d2341c",
+      "text_version": 1,
+      "cover": {
+        "file": "covers/up-from-slavery.jpg",
+        "bytes": 44201,
+        "sha256": "b23bbc77eff6e9524be6b0f6e36b3305a4205666ea712c5454d0be49ff390bbb",
+        "artwork": "The Power of Music (1847), William Sidney Mount",
+        "artist_died": 1868,
+        "design": "Standard Ebooks cover composition (CC0), scaled for the library"
+      },
+      "cover_note": null,
+      "rights": {
+        "status": "public-domain-us",
+        "worldwide": true,
+        "basis": "First published 1901. Booker T. Washington died 1915; Walter H. Page died 1918. Every known contributor died more than 70 years ago.",
+        "licence": "CC0 1.0 (edition) / public domain in the United States (text)",
+        "licence_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "evidence": [
+          "dc:rights in each edition's content.opf: text and artwork believed public domain in the United States; contributors dedicate their work under CC0 1.0",
+          "each edition's uncopyright.xhtml (kept in the source file, removed from what ships)",
+          "https://standardebooks.org/about (content produced by or for Standard Ebooks L3C is dedicated to the public domain)"
+        ],
+        "verified_on": "2026-10-21",
+        "permits": {
+          "redistribution": true,
+          "modification": true,
+          "commercial": true,
+          "performance": true
+        },
+        "attribution_required": false,
+        "attribution": "Edition prepared by Standard Ebooks volunteers (a courtesy credit, not a requirement).",
+        "trademark_note": "The publisher's name and logo do not appear in the shipped file; see CREDITS.md.",
+        "limits": null
+      },
+      "featured": null,
+      "preset_version": null
+    },
+    {
+      "work_id": "the-picture-of-dorian-gray",
+      "title": "The Picture of Dorian Gray",
+      "sort_title": "Picture of Dorian Gray, The",
+      "authors": [
+        {
+          "name": "Oscar Wilde",
+          "sort_name": "Wilde, Oscar",
+          "born": 1854,
+          "died": 1900,
+          "wikipedia": "https://en.wikipedia.org/wiki/Oscar_Wilde"
+        }
+      ],
+      "contributors": [],
+      "first_published": 1890,
+      "language": "en-GB",
+      "document_type": "novel",
+      "genres": [
+        "literary-fiction",
+        "horror"
+      ],
+      "description": "A Victorian dandy turns to a life of debauchery after a magical portrait stops him from aging.",
+      "content_notes": [],
+      "word_count": 80198,
+      "chapters": [
+        {
+          "id": "preface",
+          "title": "Preface"
+        },
+        {
+          "id": "chapter-1",
+          "title": "Chapter 1"
+        },
+        {
+          "id": "chapter-2",
+          "title": "Chapter 2"
+        },
+        {
+          "id": "chapter-3",
+          "title": "Chapter 3"
+        },
+        {
+          "id": "chapter-4",
+          "title": "Chapter 4"
+        },
+        {
+          "id": "chapter-5",
+          "title": "Chapter 5"
+        },
+        {
+          "id": "chapter-6",
+          "title": "Chapter 6"
+        },
+        {
+          "id": "chapter-7",
+          "title": "Chapter 7"
+        },
+        {
+          "id": "chapter-8",
+          "title": "Chapter 8"
+        },
+        {
+          "id": "chapter-9",
+          "title": "Chapter 9"
+        },
+        {
+          "id": "chapter-10",
+          "title": "Chapter 10"
+        },
+        {
+          "id": "chapter-11",
+          "title": "Chapter 11"
+        },
+        {
+          "id": "chapter-12",
+          "title": "Chapter 12"
+        },
+        {
+          "id": "chapter-13",
+          "title": "Chapter 13"
+        },
+        {
+          "id": "chapter-14",
+          "title": "Chapter 14"
+        },
+        {
+          "id": "chapter-15",
+          "title": "Chapter 15"
+        },
+        {
+          "id": "chapter-16",
+          "title": "Chapter 16"
+        },
+        {
+          "id": "chapter-17",
+          "title": "Chapter 17"
+        },
+        {
+          "id": "chapter-18",
+          "title": "Chapter 18"
+        },
+        {
+          "id": "chapter-19",
+          "title": "Chapter 19"
+        },
+        {
+          "id": "chapter-20",
+          "title": "Chapter 20"
+        }
+      ],
+      "chapters_read": 21,
+      "edition": {
+        "edition_id": "standardebooks:oscar-wilde/the-picture-of-dorian-gray@c6b6877",
+        "source": "Standard Ebooks",
+        "source_url": "https://standardebooks.org/ebooks/oscar-wilde/the-picture-of-dorian-gray",
+        "source_revision": "c6b6877",
+        "source_released": "2026-08-04T14:57:09Z",
+        "source_file": "oscar-wilde_the-picture-of-dorian-gray.epub",
+        "source_sha256": "8613aa7fd5874c4b9fce62245220545711bff0cc128cc914648ff0e20241ec78",
+        "source_bytes": 634177,
+        "transcription": [
+          "https://www.gutenberg.org/ebooks/174",
+          "https://archive.org/details/pictureofdoriang00wildiala"
+        ],
+        "changes": [
+          "Images, figures and the list of illustrations removed (the app reads text).",
+          "The publisher's title page, imprint, colophon and uncopyright pages removed, with its logo; the edition is credited in CREDITS.md instead.",
+          "The editor's endnotes and their markers removed.",
+          "Chapter headings written out for listening (\"Chapter 1: Down the Rabbit-Hole\" instead of a Roman numeral).",
+          "Links replaced by their text; nothing in a shipped book points anywhere."
+        ],
+        "selection": null
+      },
+      "file": "works/the-picture-of-dorian-gray.epub",
+      "bytes": 194283,
+      "sha256": "3fa6d64696a7a8a3ef12ce7ef449bd540d5a4a3474ca6842949db369610da339",
+      "text_version": 1,
+      "cover": {
+        "file": "covers/the-picture-of-dorian-gray.jpg",
+        "bytes": 43648,
+        "sha256": "45de085ac8db9997be7c69a582bd8d89d688c9bc2f88befe774830fac54bec95",
+        "artwork": "The Garden (1899), John Collier",
+        "artist_died": 1934,
+        "design": "Standard Ebooks cover composition (CC0), scaled for the library"
+      },
+      "cover_note": null,
+      "rights": {
+        "status": "public-domain-us",
+        "worldwide": true,
+        "basis": "First published 1890. Oscar Wilde died 1900. Every known contributor died more than 70 years ago.",
+        "licence": "CC0 1.0 (edition) / public domain in the United States (text)",
+        "licence_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "evidence": [
+          "dc:rights in each edition's content.opf: text and artwork believed public domain in the United States; contributors dedicate their work under CC0 1.0",
+          "each edition's uncopyright.xhtml (kept in the source file, removed from what ships)",
+          "https://standardebooks.org/about (content produced by or for Standard Ebooks L3C is dedicated to the public domain)"
+        ],
+        "verified_on": "2026-10-21",
+        "permits": {
+          "redistribution": true,
+          "modification": true,
+          "commercial": true,
+          "performance": true
+        },
+        "attribution_required": false,
+        "attribution": "Edition prepared by Standard Ebooks volunteers (a courtesy credit, not a requirement).",
+        "trademark_note": "The publisher's name and logo do not appear in the shipped file; see CREDITS.md.",
+        "limits": null
+      },
+      "featured": null,
+      "preset_version": null
+    },
+    {
+      "work_id": "dickinson-poems",
+      "title": "Poems",
+      "sort_title": "Poems (Dickinson)",
+      "authors": [
+        {
+          "name": "Emily Dickinson",
+          "sort_name": "Dickinson, Emily",
+          "born": 1830,
+          "died": 1886,
+          "wikipedia": "https://en.wikipedia.org/wiki/Emily_Dickinson"
+        }
+      ],
+      "contributors": [
+        {
+          "role": "editor",
+          "name": "Mabel Loomis Todd",
+          "died": 1932,
+          "note": "With T. W. Higginson, edited the three series (1890, 1891, 1896) and gave many poems their titles."
+        },
+        {
+          "role": "editor",
+          "name": "Thomas Wentworth Higginson",
+          "died": 1911,
+          "note": null
+        }
+      ],
+      "first_published": 1890,
+      "language": "en-US",
+      "document_type": "poetry-collection",
+      "genres": [
+        "poetry"
+      ],
+      "description": "The three series of Emily Dickinson's poems published by her friends in the 1890s, in their four sections: Life, Love, Nature, and Time and Eternity.",
+      "content_notes": [],
+      "word_count": 30847,
+      "chapters": [
+        {
+          "id": "series-1-preface",
+          "title": "First Series: Preface"
+        },
+        {
+          "id": "series-1-life",
+          "title": "First Series: Life"
+        },
+        {
+          "id": "series-1-love",
+          "title": "First Series: Love"
+        },
+        {
+          "id": "series-1-nature",
+          "title": "First Series: Nature"
+        },
+        {
+          "id": "series-1-time-and-eternity",
+          "title": "First Series: Time and Eternity"
+        },
+        {
+          "id": "series-2-preface",
+          "title": "Second Series: Preface"
+        },
+        {
+          "id": "series-2-life",
+          "title": "Second Series: Life"
+        },
+        {
+          "id": "series-2-love",
+          "title": "Second Series: Love"
+        },
+        {
+          "id": "series-2-nature",
+          "title": "Second Series: Nature"
+        },
+        {
+          "id": "series-2-time-and-eternity",
+          "title": "Second Series: Time and Eternity"
+        },
+        {
+          "id": "series-3-preface",
+          "title": "Third Series: Preface"
+        },
+        {
+          "id": "series-3-life",
+          "title": "Third Series: Life"
+        },
+        {
+          "id": "series-3-love",
+          "title": "Third Series: Love"
+        },
+        {
+          "id": "series-3-nature",
+          "title": "Third Series: Nature"
+        },
+        {
+          "id": "series-3-time-and-eternity",
+          "title": "Third Series: Time and Eternity"
+        }
+      ],
+      "chapters_read": 15,
+      "edition": {
+        "edition_id": "gutenberg:12242@c3af83011e49",
+        "source": "Project Gutenberg (text taken as public domain, with its licence and trademark removed)",
+        "source_url": "https://www.gutenberg.org/ebooks/12242",
+        "source_revision": "c3af83011e49",
+        "source_released": null,
+        "source_file": "gutenberg-12242/12242-0.txt",
+        "source_sha256": "c3af83011e494155b576cf0ecbb675d2db15b68efa273ba3769c8bd0aaf191e7",
+        "source_bytes": 176641,
+        "transcription": [
+          "https://gutenberg.pglaf.org/1/2/2/4/12242/12242-0.txt"
+        ],
+        "changes": [
+          "The Project Gutenberg start and end markers and the transcriber's note removed, as the Project Gutenberg licence allows for stripped text; the Project Gutenberg name is not used on the book.",
+          "Poems set as verse with their stanzas; the editors' section headings kept."
+        ],
+        "selection": null
+      },
+      "file": "works/dickinson-poems.epub",
+      "bytes": 99154,
+      "sha256": "894d7476086d2c1611623f545e9c10035ec71efc0935c1875daa654764cac3c4",
+      "text_version": 1,
+      "cover": null,
+      "cover_note": "The text source has no cover; a plain cover is shown.",
+      "rights": {
+        "status": "public-domain-us",
+        "worldwide": true,
+        "basis": "First published 1890. Emily Dickinson died 1886; Mabel Loomis Todd died 1932; Thomas Wentworth Higginson died 1911. Every known contributor died more than 70 years ago.",
+        "licence": "Public domain (United States); Project Gutenberg text with its licence removed",
+        "licence_url": "https://www.gutenberg.org/policy/license.html",
+        "evidence": [
+          "https://www.gutenberg.org/ebooks/12242 (Public domain in the USA)",
+          "LICENSE.txt beside the file on the mirror: confirmed public domain in the United States",
+          "Author died 1886; the editors died 1911 and 1932"
+        ],
+        "verified_on": "2026-10-21",
+        "permits": {
+          "redistribution": true,
+          "modification": true,
+          "commercial": true,
+          "performance": true
+        },
+        "attribution_required": false,
+        "attribution": "Transcription from Project Gutenberg (a courtesy credit; the trademark is not used).",
+        "trademark_note": "The Project Gutenberg name and licence were removed as its licence allows for stripped text.",
+        "limits": null
+      },
+      "featured": null,
+      "preset_version": null
+    }
+  ]
+}

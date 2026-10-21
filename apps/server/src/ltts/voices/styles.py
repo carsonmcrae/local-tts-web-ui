@@ -22,6 +22,7 @@ import json
 import logging
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
+from importlib import resources
 from pathlib import Path
 
 from ltts.engines.base import VoiceBuilder
@@ -79,7 +80,8 @@ def prompt_for_number(number: int) -> str | None:
 
 @functools.cache
 def _passages() -> dict[str, str]:
-    data: dict[str, str] = json.loads(Path(__file__).with_name("passages.json").read_text(encoding="utf-8"))
+    # Package data, read like the model store's manifest, so it works wherever the server is installed.
+    data: dict[str, str] = json.loads(resources.files("ltts.voices").joinpath("passages.json").read_text("utf-8"))
     return data
 
 

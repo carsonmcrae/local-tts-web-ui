@@ -11,27 +11,43 @@ Everything you put into the app or make with it:
 - generated speech, exports, your reading progress, bookmarks and notes, pronunciations and
   preferences.
 
-All of it lives in the `data/` folder (see [Installation](Installation#where-things-are-stored)).
-There are no accounts, analytics or telemetry, and documents and recordings never leave the machine.
-By design, the server logs identifiers only, never document text, recordings or original file names.
+All of it lives in TTSNative's data folder: `data/` in a source install (see
+[Installation](Installation#where-things-are-stored)), or `%LOCALAPPDATA%\com.ttsnative.desktop\data`
+in the [Windows app](Windows-App#where-your-data-is). **Settings → Storage** shows the exact path.
+There are no accounts, analytics or telemetry, and documents and recordings never leave the machine
+unless you send an export to your own Audiobookshelf server. By design, the server logs identifiers
+only, never document text, recordings or original file names.
 
 ## What is downloaded, and from where
 
-Downloads only happen when you install or update the app (`npm install` and the first `npm run dev`
-afterwards) and when you install an optional engine. After that, the app works fully offline. The
-[Windows app](Windows-App) also checks GitHub for new official versions (Settings → About can turn this
-off); the check is an ordinary download of a small public file and carries no information about you.
+From source, downloads happen when you install or update the app (`npm install` and the first
+`npm run dev` afterwards) and when you install an optional engine. The Windows app's installer already
+contains Python, the server and the Kokoro voice model, so it downloads nothing to start reading; if
+WebView2 is missing (it is part of Windows 11), the installer fetches Microsoft's installer for it.
+After that, the app works fully offline. The [Windows app](Windows-App) also checks GitHub for new
+official versions (Settings → About can turn this off); the check is an ordinary download of a small
+public file and carries no information about you.
 
-| What                                    | When                                          | From                                                               | Checked by                                                      |
-| --------------------------------------- | --------------------------------------------- | ------------------------------------------------------------------ | --------------------------------------------------------------- |
-| uv (Python manager)                     | First run, unless uv 0.9.0+ is on your `PATH` | uv's GitHub releases                                               | Pinned size and SHA-256                                         |
-| Python 3.12 and server packages         | First run, and after updates                  | Via uv, from `github.com`, `pypi.org` and `files.pythonhosted.org` | Exact versions from the committed lockfile                      |
-| Kokoro model (about 340 MB)             | First run, or from Settings                   | The kokoro-onnx release on GitHub                                  | Pinned URL, exact size and SHA-256                              |
-| Chatterbox Turbo weights (about 3 GB)   | Only if you install voice cloning             | Resemble AI's repository on Hugging Face, at a pinned revision     | Pinned URL, exact size and SHA-256                              |
-| Chatterbox runtime (PyTorch and others) | Only if you install voice cloning             | PyTorch from `download.pytorch.org`, other packages from PyPI      | Exact versions from the worker's lockfile                       |
-| npm packages                            | `npm install`                                 | The npm registry                                                   | Exact versions in `package-lock.json`; install scripts disabled |
-| Update check (Windows app only)         | At most twice a day; can be turned off        | `latest.json` of the latest GitHub Release                         | Sends nothing about you or your documents                       |
-| Updates (Windows app only)              | When you choose Install and restart           | The installer attached to that GitHub Release                      | Signature checked against the key built into the app            |
+| What                                    | When                                          | From                                                                                                 | Checked by                                                      |
+| --------------------------------------- | --------------------------------------------- | ---------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| uv (Python manager)                     | First run, unless uv 0.9.0+ is on your `PATH` | uv's GitHub releases                                                                                 | Pinned size and SHA-256                                         |
+| Python 3.12 and server packages         | First run, and after updates                  | Via uv, from `github.com`, `pypi.org` and `files.pythonhosted.org`                                   | Exact versions from the committed lockfile                      |
+| Kokoro model (about 340 MB)             | First run, or from Settings                   | The kokoro-onnx release on GitHub                                                                    | Pinned URL, exact size and SHA-256                              |
+| Chatterbox Turbo weights (about 3 GB)   | Only if you install voice cloning             | Resemble AI's repository on Hugging Face, at a pinned revision                                       | Pinned URL, exact size and SHA-256                              |
+| Chatterbox runtime (PyTorch and others) | Only if you install voice cloning             | Via uv: Python 3.11 from `github.com`, PyTorch from `download.pytorch.org`, other packages from PyPI | Exact versions from the worker's lockfile                       |
+| npm packages                            | `npm install`                                 | The npm registry                                                                                     | Exact versions in `package-lock.json`; install scripts disabled |
+| Update check (Windows app only)         | At most twice a day; can be turned off        | `latest.json` of the latest GitHub Release                                                           | Sends nothing about you or your documents                       |
+| Updates (Windows app only)              | When you choose Install and restart           | The installer attached to that GitHub Release                                                        | Signature checked against the key built into the app            |
+
+Two other features reach beyond your computer, and only when you use them:
+
+- **Importing a web page** (Library → **Import a web page**, on the computer only): the computer
+  fetches that one public page. Only `http` and `https` addresses on the standard ports are accepted,
+  every address the name resolves to must be a public internet address (never your home network),
+  each redirect is checked again, and only the page itself is downloaded.
+- **Audiobookshelf**: **Test connection** and **Send to Audiobookshelf** contact only the server
+  address you entered in **Settings → Audiobookshelf**, with your API key, and upload only the export
+  you send (with its title, author and cover).
 
 Model files are only fetched over HTTPS from approved hosts (GitHub and Hugging Face), checked again on
 every redirect, and installed only after their size and SHA-256 match. If a host isn't approved or a
@@ -69,7 +85,8 @@ and [supply chain](https://github.com/carsonmcrae/ttsnative/blob/main/docs/secur
 again after every restart. On Windows it only opens on a network Windows lists as private; on a Mac
 or Linux you confirm each time that it's a home network you trust. Paired devices can read and
 listen, but can't change LAN, speech API or Audiobookshelf settings, record or manage voices,
-install engines, delete documents or exports, cancel exports or send them to Audiobookshelf.
+install engines, import web pages, delete documents or exports, cancel exports or send them to
+Audiobookshelf ([What Works Where](What-Works-Where) has the full list).
 Requests through a proxy or tunnel are refused. The older network mode is off unless you start the
 server with `--allow-network`. When either is on:
 
@@ -82,8 +99,11 @@ server with `--allow-network`. When either is on:
 
 - Only Linux puts a memory limit on the document-parsing process. The time and size limits apply
   everywhere.
-- The optional Chatterbox environment has known lower-severity advisories in `torch` and `setuptools`.
-  The default Kokoro reader doesn't install them.
+- The optional Chatterbox environment has one known low-severity advisory, in `torch`
+  (`torch.jit.script`, which the voice-cloning engine never calls). Its fix needs a newer `torch` that
+  has no matching `torchaudio` yet. The default Kokoro reader doesn't install either.
+- The Windows app isn't code-signed yet, so Windows SmartScreen warns when you run the installer.
+  Updates are still checked against the project's own update signature before they install.
 - Some runtime dependencies are GPL-licensed (espeak-ng and phonemizer).
 
 The [threat model](https://github.com/carsonmcrae/ttsnative/blob/main/docs/security/threat-model.md)

@@ -35,21 +35,29 @@ from the server itself. Under `npm run dev` the page you are looking at comes fr
 server on another port (5173 by default): use the port Settings shows, not the one in your
 browser's address bar.
 
-The port is **8765** unless it is busy when TTSNative starts:
+The usual port depends on how you run TTSNative, and it moves if that port is busy when TTSNative
+starts:
 
-- `npm run start` and `npm run dev` start on 8765, or on the port in `LTTS_API_PORT` (`npm run start`
-  also still reads the older `LTTS_PORT`). If that port is taken (by another program, or another copy of
-  TTSNative), they use the next free one (8766, 8767…), print a warning in the terminal, and keep it
-  until TTSNative stops. The next start tries the usual port again.
-- `ltts serve --port <port>` uses exactly that port, and stops with an error if it is busy.
+- **The Windows app** starts on **8770**. If that is taken, it uses the next free port up to 8789, and
+  keeps it until the app closes; if none of them is free, the app says so and doesn't start. The app
+  ignores `LTTS_*` environment variables, so its port can't be set.
+- **`npm run start` and `npm run dev`** start on **8765**, or on the port in `LTTS_API_PORT`
+  (`npm run start` also still reads the older `LTTS_PORT`). If that port is taken (by another program,
+  or another copy of TTSNative), they use the next free one (8766, 8767…), print a warning in the
+  terminal, and keep it until TTSNative stops.
+- **`ltts serve --port <port>`** uses exactly that port, and stops with an error if it is busy.
+
+Either way, the next start tries the usual port again. To find the port TTSNative is using now, look
+under **Address** in **Settings → Local speech API**. The Windows app also notes it ("server starting
+on port …") in `desktop.log`, in the folder **Settings → About → Open log folder** opens.
 
 When the port changes, programs set up with the old address can't connect. Worse, if another
 program now answers on the old port, they would send it their requests, token included. So Settings
-remembers the port a program last used and, while TTSNative is on another one, shows **The speech
-API moved from port 8765 to port 8766** until a program uses the new address. Either change your
-programs to the new address, or close whatever is using the usual port and restart TTSNative. To
-keep the address fixed, choose a port nothing else uses, set it in `LTTS_API_PORT` each time you
-start TTSNative, and use it in your programs.
+remembers the port a program last used and, while TTSNative is on another one, shows a warning such
+as **The speech API moved from port 8765 to port 8766** until a program uses the new address. Either
+change your programs to the new address, or close whatever is using the usual port and restart
+TTSNative. From source, to keep the address fixed, choose a port nothing else uses, set it in `LTTS_API_PORT` each
+time you start TTSNative, and use it in your programs. In the Windows app, keep 8770 free.
 
 From another device (only when you allow it, see [Security and privacy](#security-and-privacy)), use
 this computer's network address with the same port, such as `http://192.168.1.20:8765/v1`;
@@ -57,7 +65,8 @@ this computer's network address with the same port, such as `http://192.168.1.20
 
 ## Make speech
 
-The examples use port 8765; use the one Settings shows.
+The examples use port 8765, a source install's usual port; use the one Settings shows (8770 or above
+in the Windows app).
 
 With curl (on Windows PowerShell, type `curl.exe`):
 

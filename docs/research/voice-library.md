@@ -182,7 +182,8 @@ a fine-tuned Piper voice of a consenting narrator ever beats Kokoro, which nothi
   OS, CPU, cores, RAM, GPU and driver, how busy the CPU was at the start, package versions, each engine's
   revision and device, and the pinned model checksums. The panel order comes from `--seed`; cloned voices are
   seeded from the text; Kokoro's vocoder adds random noise, so its samples differ slightly from run to run
-  (same words, inaudible differences), which the repeatability column shows.
+  (same words; whether the differences can be heard has not been tested), which the repeatability column
+  shows.
 - **Cold and warm measured apart.** Cold start: every engine unloaded and its model files verified again, as
   after the app starts, then the first sentence (the operating system may still cache the files). Warm first
   sentence: the model loaded, a sentence not in the cache. Median sentence and real-time factor: every
@@ -194,47 +195,28 @@ a fine-tuned Piper voice of a consenting narrator ever beats Kokoro, which nothi
 
 ### Measurements
 
-**First run, 2026-10-21,** with the benchmark's first version: "Load" is the model load alone and "first
-sentence" the first sentence after it, so cold and warm start are not yet separated, and the environment was
-noted by hand. A second run with the separate cold, warm and cached timings and the recorded environment
-(section 5's method) is in progress and will replace this table.
+Second run, 2026-10-22, commit `5d2a35c` (the code #45 merged), corpus `a80a88196d84`, seed 3: Windows 11 (10.0.26200); AMD Ryzen 9 5950X 16-Core Processor, 16 cores and 32 threads; 63.9 GB RAM; NVIDIA GeForce RTX 3080 (10 GB, driver 610.88); onnxruntime 1.30.0, kokoro-onnx 0.6.1; Chatterbox on cuda with torch 2.11.0+cu126. The CPU was 12.1 % busy when the run started, and other sessions' builds and tests ran during parts of it, so these speeds are pessimistic against the idle figures in [performance.md](../guides/performance.md). Memory is the benchmark process with every service and the engine's worker; GPU memory is what the whole card reported, so it is given only for the voices that use the GPU.
 
-Measured while other sessions' servers and a full test suite were running, so the speeds are pessimistic
-against the idle figures in [performance.md](../guides/performance.md) (Kokoro real-time factor 0.21 there).
-"RTF" is generation seconds per second of audio over the whole 17 minutes a voice read; "first sentence" is
-the first sentence after the model loaded; peak memory is the benchmark process with every service and
-the engine's worker, so it is above the server's usual footprint.
+| Voice                             | Device | Cold start | Warm first sentence | Median sentence | Cached sentence | Real-time factor | Memory loaded / peak | GPU memory used by the voice | Same text twice                             |
+| --------------------------------- | ------ | ---------- | ------------------- | --------------- | --------------- | ---------------- | -------------------- | ---------------------------- | ------------------------------------------- |
+| Kokoro af_heart (default)         | CPU    | 3.2 s      | 0.76 s              | 1.13 s          | 163 ms          | 0.32             | 534 MB / 968 MB      | not used                     | length differs by a few ms                  |
+| Kokoro af_bella                   | CPU    | 3.0 s      | 1.01 s              | 1.60 s          | 157 ms          | 0.43             | 560 MB / 975 MB      | not used                     | length differs by a few ms                  |
+| Kokoro af_nicole                  | CPU    | 5.1 s      | 1.56 s              | 1.60 s          | 233 ms          | 0.33             | 576 MB / 1.4 GB      | not used                     | length differs by a few ms                  |
+| Kokoro bf_emma                    | CPU    | 3.5 s      | 0.90 s              | 1.13 s          | 165 ms          | 0.31             | 561 MB / 880 MB      | not used                     | same length; samples differ by up to 0.6306 |
+| Kokoro bm_george                  | CPU    | 2.9 s      | 0.86 s              | 0.98 s          | 163 ms          | 0.24             | 564 MB / 996 MB      | not used                     | length differs by a few ms                  |
+| Kokoro am_michael                 | CPU    | 2.4 s      | 0.86 s              | 1.05 s          | 196 ms          | 0.26             | 575 MB / 1001 MB     | not used                     | length differs by a few ms                  |
+| Kokoro am_fenrir                  | CPU    | 2.9 s      | 0.77 s              | 0.98 s          | 171 ms          | 0.29             | 564 MB / 884 MB      | not used                     | length differs by a few ms                  |
+| Chatterbox default                | CUDA   | 31.9 s     | 2.55 s              | 2.78 s          | 32 ms           | 0.77             | 2.2 GB / 2.5 GB      | about 3.4 GB                 | same length; samples differ by up to 0.0048 |
+| Owner's studio voice (local only) | CUDA   | 27.8 s     | 2.16 s              | 2.64 s          | 20 ms           | 0.73             | 2.2 GB / 2.6 GB      | about 3.2 GB                 | same length; samples differ by up to 0.0054 |
 
-| Voice                              | Engine, device   | Load   | First sentence | Median sentence | RTF  | Peak RSS           | Same text twice                                       |
-| ---------------------------------- | ---------------- | ------ | -------------- | --------------- | ---- | ------------------ | ----------------------------------------------------- |
-| Kokoro af_heart (default, grade A) | Kokoro, CPU      | 1.5 s  | 1.9 s          | 1.09 s          | 0.31 | 968 MB             | Length differs by a few ms; samples differ            |
-| Kokoro af_bella (A-)               | Kokoro, CPU      | loaded | 2.1 s          | 0.85 s          | 0.26 | 1.3 GB             | same                                                  |
-| Kokoro af_nicole (B-)              | Kokoro, CPU      | loaded | 2.7 s          | 1.47 s          | 0.30 | 1.5 GB             | same                                                  |
-| Kokoro bf_emma (B-)                | Kokoro, CPU      | loaded | 4.0 s          | 1.45 s          | 0.39 | 1.5 GB             | same                                                  |
-| Kokoro bm_george (C)               | Kokoro, CPU      | loaded | 4.1 s          | 1.18 s          | 0.31 | 1.5 GB             | same                                                  |
-| Kokoro am_michael (C+)             | Kokoro, CPU      | loaded | 3.9 s          | 1.26 s          | 0.34 | 1.5 GB             | same                                                  |
-| Kokoro am_fenrir (C+)              | Kokoro, CPU      | loaded | 1.9 s          | 0.94 s          | 0.30 | 1.5 GB             | Same length; samples differ (max 0.87 full scale)     |
-| Chatterbox default                 | Chatterbox, CUDA | 36 s   | 4.8 s          | 2.61 s          | 0.81 | 2.6 GB (+4 GB GPU) | Same length; samples differ by at most 0.005 (seeded) |
-| Owner's studio voice (local only)  | Chatterbox, CUDA | loaded | 5.9 s          | 2.49 s          | 0.74 | 2.7 GB (+4 GB GPU) | Same length; samples differ by at most 0.005 (seeded) |
+Every voice read all 13 passages with no failures. What the numbers say:
 
-What the numbers say:
+- **Kokoro starts in 2.4 to 5.1 s from cold** (including verifying its model files), then reads a new sentence in 0.76 to 1.56 s, at 0.24 to 0.43 of real time even on a busy CPU: two to four times faster than listening, with about 0.55 GB of memory once loaded.
+- **Chatterbox Turbo on the GPU starts in 28 to 32 s from cold** (starting its worker, verifying 3 GB of weights and loading them), then reads at 0.73 to 0.77 of real time with sentences of 2.64 to 2.78 s, using about 2.2 GB of memory and 3.2 to 3.5 GB of GPU memory. On a CPU it would be several times slower than real time, so any voice built on it stays an optional install with a GPU recommended.
+- **A sentence already in the cache** comes back in 20 to 230 ms; playback asks for it again only after a skip or a change of voice.
+- **Repeatability:** cloned voices are seeded from the text, so the same sentence comes out the same length with sample differences under 0.006. Kokoro's vocoder adds random noise and kokoro-onnx places pauses from the audio it detects, so the same passage can differ by a few milliseconds and in its samples. Whether those differences can be heard has not been tested by listening; the app generates each sentence once and caches it, so playback, exports and highlighting always use the same audio.
 
-- **Kokoro keeps up with reading on this CPU with three to four times to spare**, even under load, and
-  every passage rendered without an error. Nicole and Emma are the slowest (longer, more deliberate
-  readings), Bella the fastest.
-- **Kokoro's output is not bit-identical from one run to the next.** Its vocoder adds a random noise
-  source for unvoiced sound, so the same sentence differs by up to 0.05–0.08 of full scale between runs
-  (three direct runs of one sentence, same length), and kokoro-onnx places its pauses from the audio it
-  detects, so a whole passage can differ in length by a few milliseconds. This is inaudible, and the app
-  caches every sentence, so playback, exports and highlighting never see two versions of one sentence.
-- **Chatterbox Turbo on the GPU generated at 0.74–0.81 of real time under load** (0.58 when idle, per
-  performance.md): fast enough for continuous reading on an RTX 3080, with a 36-second first load and
-  2.5-second sentences, and about 4 GB of GPU memory. Every passage rendered; the seeded, retried
-  sentences came out the same length both times with sample differences under 0.005. On a CPU it
-  would be several times slower than real time, which is why any voice built on it stays an
-  optional, GPU-recommended install, never the default.
-- **Peak memory** rose from 968 MB with one voice to 1.5 GB with the clips of seven voices held by the
-  benchmark process; the server itself was measured at about 700 MB before.
+The first run on 2026-10-21 (the benchmark's first version) gave the same picture: Kokoro at 0.26 to 0.39 of real time and Chatterbox at 0.74 to 0.81.
 
 ### What the text layer still gets wrong (from the phonemes, not from listening)
 

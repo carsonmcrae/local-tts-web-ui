@@ -155,7 +155,7 @@ pinned model checksums. Re-run with the same `settings` on the same commit to co
   synthesis path (planner, pronunciations, English reading, pauses), without the audio cache.
 - **Cached sentence**: the same sentence asked again, served from the audio cache.
 - **Repeatability**: Kokoro adds random noise in its vocoder, so the same sentence differs slightly from
-  run to run (inaudibly); cloned voices are seeded from the text. The panel's order comes from `--seed`.
+  run to run (whether audibly hasn't been tested); cloned voices are seeded from the text. The panel's order comes from `--seed`.
 - GPU memory is what the whole card reports, including other programs; CPU load at the start is recorded
   because other programs slow a run down.
 """

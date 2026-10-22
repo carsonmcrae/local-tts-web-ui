@@ -62,6 +62,7 @@
     "media:screenshots": "npm run build && node scripts/capture-screenshots.mjs",
     "media:voices": "node scripts/media/voice-samples.mjs",
     "music:build": "node scripts/media/music-library.mjs",
+    "perf:listening": "node tests/perf/long-listening.mjs",
     "site:build": "node scripts/site/build-site.mjs --out .tools/site --base-url https://example.invalid",
     "check": "npm run format:check && npm run lint && npm run typecheck && npm run api:check && npm run deps:check && npm run duplication && npm run test && npm run build"
   },

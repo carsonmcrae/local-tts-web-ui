@@ -47,6 +47,7 @@ jobs:
   shell:
     name: Desktop shell (fmt, clippy, tests)
     runs-on: windows-2025
+    timeout-minutes: 30 # catches a hung job; real runs take 1-8 min
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/rust
@@ -100,6 +101,7 @@ jobs:
   installer:
     name: Windows installer (build and smoke test)
     runs-on: windows-2025
+    timeout-minutes: 45 # catches a hung job; real runs take 10-21 min
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -147,6 +149,7 @@ jobs:
   update:
     name: Update path (two builds, verified update)
     runs-on: windows-2025
+    timeout-minutes: 60 # catches a hung job; real runs take 15-28 min
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:

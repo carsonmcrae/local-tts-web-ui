@@ -16,3 +16,6 @@ bump: none
   job saves the Cargo and runtime caches right after its build (so a failing test still leaves them warm)
   and the update job only restores them; a lockfile change starts from the newest cache for the same
   toolchain; the Cargo cache leaves out the copied runtime and the built installer.
+- Every CI and Desktop job has a timeout well above its real run time (30 minutes for CI jobs and the
+  desktop shell checks, 45 for the installer job, 60 for the update path), so a hung job fails instead of
+  running for GitHub's six-hour default.

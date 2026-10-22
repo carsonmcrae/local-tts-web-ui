@@ -13,7 +13,7 @@
  *   unpaired devices here (app/App.tsx).
  */
 import { Link2 } from 'lucide-react';
-import type { FormEvent } from 'react';
+import type { SubmitEvent } from 'react';
 import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router';
 import { describeError } from '@/api/client';
@@ -55,7 +55,7 @@ function PairForm({ initialCode, returnTo }: Readonly<{ initialCode: string; ret
   const [name, setName] = useState(() => deviceName(navigator.userAgent, navigator.maxTouchPoints));
   const [problem, setProblem] = useState<string | null>(null);
 
-  const submit = (event: FormEvent) => {
+  const submit = (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
     const clean = cleanCode(code);
     if (clean.length !== CODE_LENGTH) {

@@ -29,7 +29,7 @@ export function SpeechApiIndicator({ variant }: Readonly<{ variant: 'sidebar' | 
       className="flex items-center gap-2 rounded-[var(--radius-md)] px-2 py-1.5 text-xs text-muted hover:bg-surface-2"
     >
       <span aria-hidden="true" className={DOT} />
-      Speech API in use
+      <span>Speech API in use</span>
     </NavLink>
   );
 }

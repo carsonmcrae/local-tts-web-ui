@@ -47,17 +47,21 @@ export function tuningSampleUrl(profileId: string, arm: TuningArm, index: number
   return `/api/voice-profiles/${profileId}/tuning/samples/${arm}/${index}`;
 }
 
+/** Where each decision about a fine-tune is sent, under the voice's own address. */
+const TUNING_DECISIONS = {
+  keep: { path: 'tuning/keep', method: 'POST' },
+  discard: { path: 'tuning', method: 'DELETE' },
+  remove: { path: 'adapter', method: 'DELETE' },
+} as const;
+
 /** Keep the waiting fine-tune, discard it, or stop using a kept one; the voice lists refresh. */
 export function useTuningDecision() {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, decision }: { id: string; decision: 'keep' | 'discard' | 'remove' }) =>
-      api<VoiceProfile>(
-        decision === 'remove'
-          ? `/api/voice-profiles/${id}/adapter`
-          : `/api/voice-profiles/${id}/tuning${decision === 'keep' ? '/keep' : ''}`,
-        { method: decision === 'keep' ? 'POST' : 'DELETE' },
-      ),
+    mutationFn: ({ id, decision }: { id: string; decision: keyof typeof TUNING_DECISIONS }) => {
+      const { path, method } = TUNING_DECISIONS[decision];
+      return api<VoiceProfile>(`/api/voice-profiles/${id}/${path}`, { method });
+    },
     onSuccess: () => {
       void client.invalidateQueries({ queryKey: keys.profiles });
       void client.invalidateQueries({ queryKey: keys.voices });

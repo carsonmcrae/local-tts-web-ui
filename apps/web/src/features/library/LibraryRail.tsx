@@ -94,22 +94,23 @@ function RailItem({
         over && 'bg-accent-soft outline-2 outline-accent',
       )}
       style={{ paddingLeft: depth * 14 }}
-      onDragOver={onDrop ? (event) => setOver(draggedDocument(event) !== null) : undefined}
-      onDragLeave={onDrop ? () => setOver(false) : undefined}
-      onDrop={
-        onDrop
-          ? (event) => {
-              const documentId = draggedDocument(event);
-              setOver(false);
-              if (documentId) onDrop(documentId);
-            }
-          : undefined
-      }
     >
       {toggle ?? <span className="w-6 shrink-0" />}
       <Link
         to={{ pathname: '/library', search: viewSearch(item) }}
         aria-current={active ? 'page' : undefined}
+        // Dropped on the link, and the row lights up; Move to folder… is the keyboard path.
+        onDragOver={onDrop ? (event) => setOver(draggedDocument(event) !== null) : undefined}
+        onDragLeave={onDrop ? () => setOver(false) : undefined}
+        onDrop={
+          onDrop
+            ? (event) => {
+                const documentId = draggedDocument(event);
+                setOver(false);
+                if (documentId) onDrop(documentId);
+              }
+            : undefined
+        }
         className={cn(
           'flex min-h-9 min-w-0 flex-1 items-center gap-2 rounded-[var(--radius-md)] px-2 text-sm',
           active

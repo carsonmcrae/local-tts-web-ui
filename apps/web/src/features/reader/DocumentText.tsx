@@ -12,7 +12,7 @@
  *   without fighting a user who scrolls away.
  * Does NOT belong: Section navigation or player controls.
  */
-import type { KeyboardEvent } from 'react';
+import type { KeyboardEvent, ReactNode } from 'react';
 import { useEffect, useId, useMemo, useRef } from 'react';
 import type { SegmentOut } from '@/api/types';
 import { readingTextStyle, useReadingText } from '@/lib/readingText';
@@ -32,6 +32,9 @@ export function toBlocks(segments: readonly SegmentOut[]): Block[] {
   }
   return blocks;
 }
+
+/** What follows a sentence that isn't the last in its block: a line break where the text had one. */
+const separator = (segment: SegmentOut): ReactNode => (segment.boundary === 'line' ? <br /> : ' ');
 
 /** Arrow keys move focus between sentences (reading order); Enter and Space play from one. */
 const MOVES: Readonly<Record<string, number>> = {
@@ -229,13 +232,7 @@ export function DocumentText({
                 onSelect={onSelect}
                 onMove={focusNeighbour}
               />
-              {position < block.segments.length - 1 ? (
-                segment.boundary === 'line' ? (
-                  <br />
-                ) : (
-                  ' '
-                )
-              ) : null}
+              {position < block.segments.length - 1 ? separator(segment) : null}
             </span>
           );
         });

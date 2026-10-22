@@ -166,8 +166,9 @@ export function UsageLine({ status, now }: Readonly<{ status: SpeechApiStatus; n
   const voices = useVoices();
   const { usage } = status;
   const voice = voices.data?.find((item) => item.id === usage.lastVoiceId)?.name;
+  const withVoice = voice ? `, with ${voice}` : '';
   const last = usage.lastUsedAt
-    ? `Last used ${timeAgo(usage.lastUsedAt, now)}${voice ? `, with ${voice}` : ''}.`
+    ? `Last used ${timeAgo(usage.lastUsedAt, now)}${withVoice}.`
     : 'Not used since TTSNative started.';
   return (
     <StatusRegion label="Speech API use" className="text-sm">
@@ -195,7 +196,7 @@ export function ApiAddress({ status }: Readonly<{ status: SpeechApiStatus }>) {
   const copy = useCopy();
   const { port, lastUsedPort } = status;
   const base = apiBase(port);
-  const pagePort = window.location.port; // under npm run dev, the web dev server's, not the API's
+  const pagePort = globalThis.location.port; // under npm run dev, the web dev server's, not the API's
   const notPagePort =
     port !== null && pagePort !== '' && pagePort !== String(port)
       ? `, not ${pagePort} as in your browser's address bar: under npm run dev, this page comes from a separate web server`

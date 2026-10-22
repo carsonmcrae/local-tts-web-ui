@@ -37,7 +37,7 @@ export type InstallEvent =
   | { event: 'installing' };
 
 export function isDesktop(): boolean {
-  return (window as { __TTSNATIVE_DESKTOP__?: boolean }).__TTSNATIVE_DESKTOP__ === true;
+  return (globalThis as { __TTSNATIVE_DESKTOP__?: boolean }).__TTSNATIVE_DESKTOP__ === true;
 }
 
 export const desktop = {

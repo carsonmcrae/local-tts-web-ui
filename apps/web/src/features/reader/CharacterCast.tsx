@@ -26,6 +26,11 @@ import { Field, Input, Select } from '@/components/ui/Field';
 import { onThisComputer } from '@/features/lan/LanIndicator';
 import { voiceLabel } from './StyleSentencesDialog';
 
+/** "Nicole · 12 lines", or just the name of a character with no lines found. */
+function characterLabel({ name, lines }: Readonly<{ name: string; lines: number }>): string {
+  return lines ? `${name} · ${lines} lines` : name;
+}
+
 export function CharacterCast({
   documentId,
   onChanged,
@@ -58,10 +63,7 @@ export function CharacterCast({
         <ul className="flex flex-col gap-3">
           {list.map((character) => (
             <li key={character.name} className="flex flex-col gap-1">
-              <Field
-                label={`${character.name}${character.lines ? ` · ${character.lines} lines` : ''}`}
-                hint={character.sample ?? undefined}
-              >
+              <Field label={characterLabel(character)} hint={character.sample ?? undefined}>
                 {({ id, describedBy }) => (
                   <Select
                     id={id}
@@ -168,12 +170,13 @@ export function CharacterCast({
           ) : null}
         </div>
       </details>
-      {[assign, savePreset, applyPreset, deletePreset].map((mutation, position) =>
-        mutation.isError ? (
-          <Banner key={position} tone="error">
-            {describeError(mutation.error)}
-          </Banner>
-        ) : null,
+      {Object.entries({ assign, savePreset, applyPreset, deletePreset }).map(
+        ([action, mutation]) =>
+          mutation.isError ? (
+            <Banner key={action} tone="error">
+              {describeError(mutation.error)}
+            </Banner>
+          ) : null,
       )}
     </section>
   );

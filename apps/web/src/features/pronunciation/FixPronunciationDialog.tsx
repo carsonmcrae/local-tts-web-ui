@@ -149,7 +149,7 @@ export function FixPronunciationDialog(props: Readonly<FixProps>) {
     props.onClose();
     // The dialog only hands focus back to a trigger, and this one has none: once it has gone,
     // focus returns to what had it before.
-    window.setTimeout(() => opener?.focus({ preventScroll: true }), 0);
+    globalThis.setTimeout(() => opener?.focus({ preventScroll: true }), 0);
   };
   return (
     <Dialog

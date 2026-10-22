@@ -26,6 +26,45 @@ const LABELS: Readonly<Record<string, string>> = {
   dialogue: 'dialogue',
 };
 
+/** Build (or rebuild) the styles from the kept takes, and go back to the previous expression. */
+function ExpressionActions({
+  profile,
+  rebuild,
+  building,
+  restoring,
+  onBuild,
+  onRestore,
+}: Readonly<{
+  profile: VoiceProfile;
+  /** The voice has styles already. */
+  rebuild: boolean;
+  building: boolean;
+  restoring: boolean;
+  onBuild: () => void;
+  onRestore: () => void;
+}>) {
+  return (
+    <div className="flex flex-wrap gap-2">
+      {profile.canRefine ? (
+        <Button size="sm" icon={<Wand2 size={14} />} loading={building} onClick={onBuild}>
+          {rebuild ? 'Rebuild expression' : 'Improve expression'}
+        </Button>
+      ) : null}
+      {profile.hasPreviousStyles ? (
+        <Button
+          size="sm"
+          variant="ghost"
+          icon={<Undo2 size={14} />}
+          loading={restoring}
+          onClick={onRestore}
+        >
+          Switch to the previous expression
+        </Button>
+      ) : null}
+    </div>
+  );
+}
+
 export function VoiceStyles({ profile }: Readonly<{ profile: VoiceProfile }>) {
   const build = useBuildStyles();
   const restore = useRestoreStyles();
@@ -55,29 +94,14 @@ export function VoiceStyles({ profile }: Readonly<{ profile: VoiceProfile }>) {
       )}
       {running && job.data ? <JobProgress job={job.data} label="Improving expression" /> : null}
       {!running && (profile.canRefine || profile.hasPreviousStyles) ? (
-        <div className="flex flex-wrap gap-2">
-          {profile.canRefine ? (
-            <Button
-              size="sm"
-              icon={<Wand2 size={14} />}
-              loading={build.isPending}
-              onClick={() => build.mutate(profile.id)}
-            >
-              {styles.length > 0 ? 'Rebuild expression' : 'Improve expression'}
-            </Button>
-          ) : null}
-          {profile.hasPreviousStyles ? (
-            <Button
-              size="sm"
-              variant="ghost"
-              icon={<Undo2 size={14} />}
-              loading={restore.isPending}
-              onClick={() => restore.mutate(profile.id)}
-            >
-              Switch to the previous expression
-            </Button>
-          ) : null}
-        </div>
+        <ExpressionActions
+          profile={profile}
+          rebuild={styles.length > 0}
+          building={build.isPending}
+          restoring={restore.isPending}
+          onBuild={() => build.mutate(profile.id)}
+          onRestore={() => restore.mutate(profile.id)}
+        />
       ) : null}
       {job.data?.status === 'failed' ? <Banner tone="error">{job.data.message}</Banner> : null}
       {build.isError ? <Banner tone="error">{describeError(build.error)}</Banner> : null}

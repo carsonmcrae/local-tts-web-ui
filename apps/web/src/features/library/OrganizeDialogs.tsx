@@ -333,12 +333,22 @@ function EditDialog({ documents, onClose }: Readonly<DialogProps>) {
   );
 }
 
+/** What deleting `documents` removes; an included book stays in Explore. */
+function deleteWarning(documents: readonly DocumentSummary[]): string {
+  const [only] = documents;
+  if (documents.length === 1 && only) {
+    return only.bundledWorkId
+      ? `“${only.title}” and its reading progress will be removed from your library. The book stays in Explore, so you can open it again later.`
+      : `“${only.title}” and its reading progress will be permanently removed from this computer.`;
+  }
+  return `${pluralize(documents.length, 'document')} and their reading progress will be permanently removed from this computer.`;
+}
+
 function DeleteDialog({ documents, onClose }: Readonly<DialogProps>) {
   const remove = useDeleteDocument();
   const { controller, state } = usePlayer();
   const [busy, setBusy] = useState(false);
   const [failure, setFailure] = useState<unknown>(null);
-  const [only] = documents;
   const confirm = async () => {
     setBusy(true);
     try {
@@ -361,11 +371,7 @@ function DeleteDialog({ documents, onClose }: Readonly<DialogProps>) {
       }
       description={
         <>
-          {documents.length === 1 && only
-            ? only.bundledWorkId
-              ? `“${only.title}” and its reading progress will be removed from your library. The book stays in Explore, so you can open it again later.`
-              : `“${only.title}” and its reading progress will be permanently removed from this computer.`
-            : `${pluralize(documents.length, 'document')} and their reading progress will be permanently removed from this computer.`}
+          {deleteWarning(documents)}
           {failure ? (
             <span role="alert" className="mt-2 block text-danger">
               {describeError(failure)}

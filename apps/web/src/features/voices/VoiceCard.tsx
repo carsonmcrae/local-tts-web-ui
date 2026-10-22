@@ -75,6 +75,29 @@ function describeVoice(voice: VoiceInfo): string {
   return `${voice.language}${gender} · ${ENGINE_NAMES[voice.engineId] ?? voice.engineId}`;
 }
 
+/** The voice's one-line credit, with a link to the library's full credits when it has them. */
+function VoiceCredit({ voice }: Readonly<{ voice: VoiceInfo }>) {
+  if (!voice.credit) return null;
+  return (
+    <p className="text-xs leading-snug text-subtle">
+      {voice.credit}
+      {voice.attribution ? (
+        <>
+          {' · '}
+          <a
+            href={`#${CREDITS_ID}`}
+            onClick={showCredits}
+            aria-label={`Credits for ${voice.name}`}
+            className="font-medium text-accent-text underline-offset-2 hover:underline"
+          >
+            Credits
+          </a>
+        </>
+      ) : null}
+    </p>
+  );
+}
+
 export function VoiceCard({
   voice,
   isDefault,
@@ -132,24 +155,7 @@ export function VoiceCard({
       {voice.description ? (
         <p className="text-[13px] leading-snug text-muted">{voice.description}</p>
       ) : null}
-      {voice.credit ? (
-        <p className="text-xs leading-snug text-subtle">
-          {voice.credit}
-          {voice.attribution ? (
-            <>
-              {' · '}
-              <a
-                href={`#${CREDITS_ID}`}
-                onClick={showCredits}
-                aria-label={`Credits for ${voice.name}`}
-                className="font-medium text-accent-text underline-offset-2 hover:underline"
-              >
-                Credits
-              </a>
-            </>
-          ) : null}
-        </p>
-      ) : null}
+      <VoiceCredit voice={voice} />
       {previewError ? (
         <p className="text-[13px] text-danger" role="alert">
           {previewError}

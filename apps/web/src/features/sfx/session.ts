@@ -168,8 +168,8 @@ export class SfxSession {
     this.engine.stop(PREVIEW_KEY, FADES.cut);
     const sound = soundId === null ? undefined : this.sounds.get(soundId);
     if (!sound) {
-      if (soundId !== null) this.fail(soundId, 'missing');
-      else this.set({ previewId: null });
+      if (soundId === null) this.set({ previewId: null });
+      else this.fail(soundId, 'missing');
       return;
     }
     this.set({ previewId: sound.id, notice: null });
@@ -269,12 +269,11 @@ export class SfxSession {
 
   private fail(soundId: string, reason: 'unavailable' | 'failed' | 'missing'): void {
     const name = this.sounds.get(soundId)?.name ?? soundId;
-    const message =
-      reason === 'unavailable'
-        ? 'Sound effects aren’t available in this browser.'
-        : reason === 'missing'
-          ? `“${name}” isn’t in the sound library, so it is skipped.`
-          : `“${name}” couldn’t be played. The narration carries on.`;
+    const message = {
+      unavailable: 'Sound effects aren’t available in this browser.',
+      missing: `“${name}” isn’t in the sound library, so it is skipped.`,
+      failed: `“${name}” couldn’t be played. The narration carries on.`,
+    }[reason];
     this.set({
       notice: { soundId, message },
       previewId: null,

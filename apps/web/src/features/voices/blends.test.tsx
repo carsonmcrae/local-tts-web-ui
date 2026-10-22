@@ -3,7 +3,7 @@
 /**
  * Purpose: Tests for blending built-in voices into a new one.
  * Scope: The dialog's voices, shares shown as percentages (and moved), adding and removing parts (four
- *   at most), refusing the same voice twice, saving the blend or explaining a refusal, closing with
+ *   at most, each row keeping its own controls), refusing the same voice twice, saving the blend or explaining a refusal, closing with
  *   Escape, listing and deleting blends, and hiding the feature until two built-in Kokoro voices are
  *   installed.
  * Does NOT belong: Browsing and previewing voices (voices.test.tsx).
@@ -47,13 +47,18 @@ function api(
   });
 }
 
+/** Opens the Voice Library and its Blend voices dialog. */
+async function openBlendDialog() {
+  const user = userEvent.setup();
+  renderWithApp(<VoiceLibraryPage />);
+  await user.click(await screen.findByRole('button', { name: 'Blend voices' }));
+  return { user, dialog: await screen.findByRole('dialog', { name: 'Blend voices' }) };
+}
+
 describe('Voice blends', () => {
   it('mixes built-in voices with shares, and never offers cloned voices', async () => {
     const { calls } = api();
-    const user = userEvent.setup();
-    renderWithApp(<VoiceLibraryPage />);
-    await user.click(await screen.findByRole('button', { name: 'Blend voices' }));
-    const dialog = await screen.findByRole('dialog', { name: 'Blend voices' });
+    const { user, dialog } = await openBlendDialog();
     const first = within(dialog).getByLabelText('Voice 1');
     expect(
       within(first)
@@ -85,6 +90,18 @@ describe('Voice blends', () => {
       ],
     });
     expect(await screen.findByText('Warm mix is ready')).toBeInTheDocument();
+  });
+
+  it('keeps a row’s own controls when an earlier voice is removed', async () => {
+    api();
+    const { user, dialog } = await openBlendDialog();
+    await user.click(within(dialog).getByRole('button', { name: 'Add a voice' }));
+    const third = within(dialog).getByLabelText('Voice 3');
+    await user.click(within(dialog).getByRole('button', { name: 'Remove voice 1' }));
+    // The third row moves up as itself (so focus stays put), now named Voice 2.
+    expect(within(dialog).getByLabelText('Voice 2')).toBe(third);
+    expect(third).toHaveValue(heart.id);
+    expect(within(dialog).getByLabelText('Voice 1')).toHaveValue(george.id);
   });
 
   it('moves the shares, stops at four voices, closes with Escape and explains a refusal', async () => {

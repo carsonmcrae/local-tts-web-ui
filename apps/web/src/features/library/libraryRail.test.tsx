@@ -215,13 +215,15 @@ describe('Library rail', () => {
     const transfer = (data: string) => ({
       dataTransfer: { types: [DOCUMENT_DRAG_TYPE], getData: () => data },
     });
-    const fantasy = link(/Fantasy/).parentElement as HTMLElement;
+    // Documents are dropped on a view's link; its whole row shows that it will take them.
+    const fantasy = link(/Fantasy/);
+    const row = fantasy.parentElement as HTMLElement;
     fireEvent.dragOver(fantasy, { dataTransfer: { types: ['Files'], getData: () => '' } });
-    expect(fantasy).not.toHaveClass('bg-accent-soft');
+    expect(row).not.toHaveClass('bg-accent-soft');
     fireEvent.dragOver(fantasy, transfer(docs[1]?.id ?? ''));
-    expect(fantasy).toHaveClass('bg-accent-soft');
+    expect(row).toHaveClass('bg-accent-soft');
     fireEvent.dragLeave(fantasy, transfer(''));
-    expect(fantasy).not.toHaveClass('bg-accent-soft');
+    expect(row).not.toHaveClass('bg-accent-soft');
     fireEvent.drop(fantasy, transfer(''));
     fireEvent.drop(fantasy, transfer(docs[1]?.id ?? ''));
     await waitFor(() =>
@@ -229,7 +231,7 @@ describe('Library rail', () => {
         `{"documentIds":["${docs[1]?.id}"],"folderId":"${F2}"}`,
       ),
     );
-    fireEvent.drop(link(/All documents/).parentElement as HTMLElement, transfer(docs[0]?.id ?? ''));
+    fireEvent.drop(link(/All documents/), transfer(docs[0]?.id ?? ''));
     await waitFor(() =>
       expect(calls.filter((c) => c.path === '/api/library/organize').at(-1)?.body).toBe(
         `{"documentIds":["${docs[0]?.id}"],"folderId":null}`,

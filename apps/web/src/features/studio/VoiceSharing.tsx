@@ -21,7 +21,7 @@ import {
 import type { VoiceProfile } from '@/api/types';
 import { Button } from '@/components/ui/Button';
 import { closeOnly, Dialog } from '@/components/ui/Dialog';
-import { Banner } from '@/components/ui/Feedback';
+import { Banner, StatusRegion } from '@/components/ui/Feedback';
 import { Checkbox, Field, Input } from '@/components/ui/Field';
 import { VoiceFilePreview } from './VoiceFilePreview';
 
@@ -168,9 +168,7 @@ export function ImportVoiceButton() {
             />
           </div>
           {preview.isPending ? (
-            <p className="text-sm text-muted" role="status">
-              Checking the voice file…
-            </p>
+            <StatusRegion className="text-sm text-muted">Checking the voice file…</StatusRegion>
           ) : null}
           {preview.isError ? <Banner tone="error">{describeError(preview.error)}</Banner> : null}
           {preview.data ? <VoiceFilePreview preview={preview.data} /> : null}

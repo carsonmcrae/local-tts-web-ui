@@ -11,7 +11,8 @@
 import { FolderOpen, History, RefreshCw, ScrollText, Sparkles } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
-import { Badge } from '@/components/ui/Feedback';
+import { Badge, StatusRegion } from '@/components/ui/Feedback';
+import { WebLink } from '@/components/ui/WebLink';
 import { desktop } from '@/lib/desktop';
 import {
   RELEASES_URL,
@@ -25,8 +26,6 @@ import { ReleaseHistoryDialog } from './ReleaseHistoryDialog';
 import { UpdateDialog } from './UpdateDialog';
 import type { Updates } from './UpdatesProvider';
 import { useUpdates } from './UpdatesProvider';
-
-const linkClass = 'font-medium text-accent-text underline-offset-2 hover:underline';
 
 function status(updates: Updates): string {
   const { result, checking, info } = updates;
@@ -48,9 +47,7 @@ function DesktopControls() {
   const [open, setOpen] = useState(false);
   return (
     <div className="flex flex-col gap-3">
-      <p className="text-sm" role="status">
-        {status(updates)}
-      </p>
+      <StatusRegion className="text-sm">{status(updates)}</StatusRegion>
       <div className="flex flex-wrap gap-2">
         <Button
           icon={<RefreshCw size={15} />}
@@ -93,7 +90,7 @@ function DesktopControls() {
           checked={updates.info?.autoCheck ?? true}
           onChange={(event) => void updates.setAutoCheck(event.target.checked)}
         />
-        Check for updates automatically (asks GitHub at most twice a day)
+        <span>Check for updates automatically (asks GitHub at most twice a day)</span>
       </label>
       {updates.available ? (
         <UpdateDialog update={updates.available} open={open} onOpenChange={setOpen} />
@@ -127,10 +124,7 @@ export function AboutUpdates({ version }: Readonly<{ version: string }>) {
       ) : (
         <p className="text-sm text-muted">
           This copy runs from TTSNative’s source code, so it updates when you pull new code. New
-          versions and the Windows app are on{' '}
-          <a href={RELEASES_URL} target="_blank" rel="noopener noreferrer" className={linkClass}>
-            GitHub Releases
-          </a>
+          versions and the Windows app are on <WebLink href={RELEASES_URL}>GitHub Releases</WebLink>
           .
         </p>
       )}

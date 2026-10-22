@@ -33,8 +33,8 @@ export function usePronunciationPreview(voiceId: string, pace = 1) {
       });
       clips.current.set(key, made.audioUrl);
       return made.audioUrl;
-    } catch (failure) {
-      setError(describeError(failure));
+    } catch (error_) {
+      setError(describeError(error_));
       return null;
     } finally {
       setLoading(null);

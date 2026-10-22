@@ -22,15 +22,26 @@ const EXPLAIN_AFTER = 2; // failed checks
 /** 1 s, 2 s, 4 s, 8 s, 16 s, then every 30 s. */
 const waitAfter = (failures: number) => Math.min(1000 * 2 ** failures, 30_000);
 
+interface Round {
+  failures: number;
+  wait: number;
+}
+
+/** One more failed check: wait longer before the next. */
+const failedAgain = ({ failures }: Round): Round => ({
+  failures: failures + 1,
+  wait: waitAfter(failures + 1),
+});
+
 function Reconnecting() {
-  const [round, setRound] = useState({ failures: 0, wait: waitAfter(0) });
+  const [round, setRound] = useState<Round>({ failures: 0, wait: waitAfter(0) });
   useEffect(() => {
     let cancelled = false;
     const timer = setTimeout(() => {
       // Any answer (even a refusal) means the server is back; this component then goes away.
       void api('/api/health').catch((error: unknown) => {
         if (cancelled || !(error instanceof ApiError && error.status === 0)) return;
-        setRound(({ failures }) => ({ failures: failures + 1, wait: waitAfter(failures + 1) }));
+        setRound(failedAgain);
       });
     }, round.wait);
     return () => {

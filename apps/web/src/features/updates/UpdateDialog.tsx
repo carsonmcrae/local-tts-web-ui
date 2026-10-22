@@ -11,6 +11,7 @@ import { Download, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
 import { Banner, ProgressBar, StatusRegion } from '@/components/ui/Feedback';
+import { WebLink } from '@/components/ui/WebLink';
 import type { FoundUpdate } from '@/lib/desktop';
 import { parseReleaseMarkdown } from '@/lib/releaseHistory';
 import { ReleaseNotesView } from './ReleaseNotesView';
@@ -18,6 +19,15 @@ import type { InstallState } from './UpdatesProvider';
 import { useUpdates } from './UpdatesProvider';
 
 const WEBSITE = 'https://ttsnative.com/#download';
+
+/** The website's download section, for installing by hand when the update fails. */
+function WebsiteLink() {
+  return (
+    <WebLink href={WEBSITE} className="inline-flex items-center gap-1">
+      ttsnative.com <ExternalLink size={12} aria-hidden="true" />
+    </WebLink>
+  );
+}
 
 function Progress({ install }: Readonly<{ install: InstallState }>) {
   if (install.phase === 'idle' || install.phase === 'failed') return null;
@@ -72,16 +82,7 @@ export function UpdateDialog({
         <Progress install={install} />
         {install.phase === 'failed' ? (
           <Banner tone="error" title="The update wasn’t installed">
-            {install.message} You can also download the installer from{' '}
-            <a
-              href={WEBSITE}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 font-medium text-accent-text underline-offset-2 hover:underline"
-            >
-              ttsnative.com <ExternalLink size={12} aria-hidden="true" />
-            </a>
-            .
+            {install.message} You can also download the installer from <WebsiteLink />.
           </Banner>
         ) : null}
         {notes.summary || notes.sections.length ? (

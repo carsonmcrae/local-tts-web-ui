@@ -28,7 +28,7 @@ declare const __RELEASE_HISTORY__: ReleaseNotes[] | undefined;
 export const RELEASES_URL = 'https://github.com/carsonmcrae/ttsnative/releases';
 
 export function releaseHistory(): ReleaseNotes[] {
-  return typeof __RELEASE_HISTORY__ === 'undefined' ? [] : __RELEASE_HISTORY__;
+  return __RELEASE_HISTORY__ ?? [];
 }
 
 /** "TTSNative 2.1.0", or the name a version was released under ("Local TTS 2.0.0"). */

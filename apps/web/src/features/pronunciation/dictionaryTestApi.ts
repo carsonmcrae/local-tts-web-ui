@@ -25,9 +25,14 @@ export const rule = (
   createdAt: '2026-10-20T10:00:00+00:00',
 });
 
+/** The JSON a request carried, read as the server reads it. */
+async function bodyOf<T>(init: RequestInit): Promise<T> {
+  return (await new Response(init.body).json()) as T;
+}
+
 /** A clip for each word or respelling, as the server answers a preview. */
-function previewClip(_url: URL, init: RequestInit) {
-  const body = JSON.parse(String(init.body)) as { text: string; respelling: boolean };
+async function previewClip(_url: URL, init: RequestInit) {
+  const body = await bodyOf<{ text: string; respelling: boolean }>(init);
   const kind = body.respelling ? 'respelled' : 'written';
   return { audioUrl: `/api/audio/${kind}-${encodeURIComponent(body.text)}`, durationS: 0.8 };
 }
@@ -36,14 +41,14 @@ function previewClip(_url: URL, init: RequestInit) {
 export function dictionaryRoutes(state: { rules: Pronunciation[] }) {
   return {
     'GET /api/pronunciations': () => state.rules,
-    'POST /api/pronunciations': (_url: URL, init: RequestInit) => {
-      const body = JSON.parse(String(init.body)) as Pronunciation;
+    'POST /api/pronunciations': async (_url: URL, init: RequestInit) => {
+      const body = await bodyOf<Pronunciation>(init);
       const added = rule(body.word, body.sayAs, body);
       state.rules = [...state.rules, added];
       return json(added, 201);
     },
-    'PUT /api/pronunciations/': (url: URL, init: RequestInit) => {
-      const body = JSON.parse(String(init.body)) as Pronunciation;
+    'PUT /api/pronunciations/': async (url: URL, init: RequestInit) => {
+      const body = await bodyOf<Pronunciation>(init);
       const id = url.pathname.split('/').pop();
       state.rules = state.rules.map((r) =>
         r.id === id ? { ...r, ...body, documentTitle: body.documentId ? 'Wardens' : null } : r,

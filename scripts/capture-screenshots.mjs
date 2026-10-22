@@ -20,6 +20,7 @@ const PORT = '8796';
 const BASE = `http://127.0.0.1:${PORT}`;
 const OUT = path.join(repoRoot, 'docs', 'images');
 const FIXTURES = path.join(repoRoot, 'tests', 'fixtures', 'documents');
+const TASKKILL = path.join(process.env.SystemRoot ?? 'C:/Windows', 'System32', 'taskkill.exe');
 const JSON_HEADERS = { 'content-type': 'application/json', 'x-ltts-client': 'screenshots' };
 
 /** @param {import('@playwright/test').Page} page @param {string} name */
@@ -172,7 +173,7 @@ async function main() {
   } finally {
     // On Windows, kill() ends the wrapper only; the server it started would keep the port.
     if (process.platform === 'win32' && server.pid)
-      spawnSync('taskkill', ['/PID', String(server.pid), '/T', '/F'], { stdio: 'ignore' });
+      spawnSync(TASKKILL, ['/PID', String(server.pid), '/T', '/F'], { stdio: 'ignore' });
     else server.kill();
   }
 }

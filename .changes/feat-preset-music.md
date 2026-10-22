@@ -6,7 +6,7 @@ bump: patch
 
 - In a curated book's reading experience, the recommended background music track is named the way
   the player names it, and **Use this track** makes it this device's choice in the player at the
-  suggested level. Music still stays off until you turn it on there.
+  recommended level. Music still stays off until you turn it on there.
 
 ## Fixed
 

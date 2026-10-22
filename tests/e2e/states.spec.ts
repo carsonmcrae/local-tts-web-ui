@@ -84,6 +84,70 @@ test.describe('phones @mobile', () => {
     }
   });
 
+  test('every control on every page is at least 24 px square (WCAG 2.5.8)', async ({ page }) => {
+    await pasteText(page, 'Touch targets matter. Every control should be easy to hit.', 'Touch');
+    const reader = new URL(page.url()).pathname;
+    for (const path of [
+      '/library',
+      '/explore',
+      '/voices',
+      '/studio',
+      '/exports',
+      '/settings',
+      reader,
+    ]) {
+      await page.goto(path);
+      // Measured once the page has drawn its controls, not while it is still loading.
+      await page.waitForLoadState('networkidle');
+      await expect(page.getByRole('heading', { level: 1 }).first()).toBeVisible();
+      const small = await page.evaluate(() =>
+        [
+          // Mirrors hidden from assistive technology (a checkbox's form input) aren't targets.
+          ...document.querySelectorAll<HTMLElement>(
+            ':is(button, [role="slider"], [role="switch"], select, input:not([type="hidden"])):not([aria-hidden="true"])',
+          ),
+        ]
+          .map((element) => {
+            // What a finger presses: a slider's whole track rather than the thumb the role sits
+            // on, and a control's label too when pressing the label works it (a card-sized radio).
+            const label =
+              element instanceof HTMLInputElement || element instanceof HTMLButtonElement
+                ? element.labels?.[0]
+                : undefined;
+            const target =
+              element.getAttribute('role') === 'slider'
+                ? (element.closest<HTMLElement>('[data-orientation]:not([role="slider"])') ??
+                  element)
+                : element;
+            const own = target.getBoundingClientRect();
+            const box = label
+              ? (() => {
+                  // Pressing either works, so the target is both together.
+                  const other = label.getBoundingClientRect();
+                  const visible = own.width > 1 && own.height > 1 ? own : other;
+                  const left = Math.min(visible.left, other.left);
+                  const top = Math.min(visible.top, other.top);
+                  return {
+                    width: Math.max(visible.right, other.right) - left,
+                    height: Math.max(visible.bottom, other.bottom) - top,
+                  };
+                })()
+              : own;
+            const name = element.getAttribute('aria-label') ?? label?.textContent ?? '';
+            return { box, name: name.trim().slice(0, 40), tag: element.tagName.toLowerCase() };
+          })
+          // Visually hidden controls without a label of their own are left out.
+          .filter(({ box }) => box.width > 1 && box.height > 1)
+          .filter(({ box }) => box.width < 24 || box.height < 24)
+          .map(
+            ({ box, name, tag }) =>
+              `${tag} "${name}" ${Math.round(box.width)}×${Math.round(box.height)}`,
+          ),
+      );
+      expect(small, path).toEqual([]);
+    }
+  });
+
   test('uploads work from a phone', async ({ page }) => {
     await uploadFixture(page, 'sample.pdf');
     await expect(page.getByText('Harbour Stories').first()).toBeVisible();

@@ -1,20 +1,32 @@
 {
   "version": "2.2.0",
-  "commit": "66d626e3d0366d79e5cb19a3ec9fbdd817c7e26c",
-  "analysedAt": "2026-10-22T21:32:48+0000",
+  "commit": "cca275b529655023cc3ec137c4fc0b8f734b3543",
+  "analysedAt": "2026-10-22T23:25:30+0000",
   "gate": "OK",
   "conditions": [
     {
       "metric": "new_coverage",
       "status": "OK",
       "actual": "100.0",
-      "threshold": "80"
+      "threshold": "100"
+    },
+    {
+      "metric": "coverage",
+      "status": "OK",
+      "actual": "100.0",
+      "threshold": "100"
     },
     {
       "metric": "new_duplicated_lines_density",
       "status": "OK",
       "actual": "0.0",
-      "threshold": "3"
+      "threshold": "0"
+    },
+    {
+      "metric": "duplicated_lines_density",
+      "status": "OK",
+      "actual": "0.0",
+      "threshold": "0"
     },
     {
       "metric": "new_security_hotspots_reviewed",
@@ -24,6 +36,18 @@
     },
     {
       "metric": "new_violations",
+      "status": "OK",
+      "actual": "0",
+      "threshold": "0"
+    },
+    {
+      "metric": "security_hotspots_reviewed",
+      "status": "OK",
+      "actual": "100.0",
+      "threshold": "100"
+    },
+    {
+      "metric": "violations",
       "status": "OK",
       "actual": "0",
       "threshold": "0"
@@ -40,6 +64,6 @@
     "security_hotspots": "0",
     "security_hotspots_reviewed": "100.0",
     "code_smells": "0",
-    "ncloc": "51679"
+    "ncloc": "51991"
   }
 }

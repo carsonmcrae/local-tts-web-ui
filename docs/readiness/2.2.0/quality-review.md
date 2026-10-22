@@ -1,22 +1,23 @@
 # Code-quality review: 2.2.0
 
-SonarQube analysed `66d626e` on 2026-10-22 (local server, project `local-tts-web-ui`); the result the
+SonarQube analysed `cca275b` on 2026-10-22 (local server, project `local-tts-web-ui`), judged by the
+"TTSNative" gate described under Policy; the result the
 release gate reads is in [quality.json](quality.json). This page says what that analysis covered, what
 it didn't, and why each remaining finding was accepted rather than changed.
 
 ## Result
 
-| Measure                                | Value                                           |
-| -------------------------------------- | ----------------------------------------------- |
-| Quality gate                           | Passed                                          |
-| Line coverage                          | 100 % (18,651 lines)                            |
-| Branch coverage                        | 100 % (6,589 conditions)                        |
-| Duplicated lines and blocks            | 0 % and 0                                       |
-| Bugs, vulnerabilities, code smells     | 0, 0, 0                                         |
-| Security hotspots                      | 26 found, 26 reviewed (all safe, reasons below) |
-| Accepted issues                        | 6, plus 6 marked false positive (reasons below) |
-| Reliability, security, maintainability | A, A, A                                         |
-| Lines of code analysed                 | 51,679 in 454 files                             |
+| Measure                                  | Value                                           |
+| ---------------------------------------- | ----------------------------------------------- |
+| Quality gate ("TTSNative", 8 conditions) | Passed                                          |
+| Line coverage                            | 100 % (18,651 lines)                            |
+| Branch coverage                          | 100 % (6,589 conditions)                        |
+| Duplicated lines and blocks              | 0 % and 0                                       |
+| Bugs, vulnerabilities, code smells       | 0, 0, 0                                         |
+| Security hotspots                        | 27 found, 27 reviewed (all safe, reasons below) |
+| Accepted issues                          | 6, plus 6 marked false positive (reasons below) |
+| Reliability, security, maintainability   | A, A, A                                         |
+| Lines of code analysed                   | 51,991 in 456 files                             |
 
 The first analysis of the integrated branch (`c086acf`) failed the gate with 173 open issues (11 bugs,
 2 vulnerabilities, 160 code smells) and 26 unreviewed hotspots. 161 were fixed in the code, with no
@@ -79,7 +80,7 @@ Desktop workflow checks it with rustfmt, `cargo clippy -D warnings` (with and wi
 `synthesis/render.py`: SonarQube resolves typeshed's `_DataclassT` to its bound instead of the argument's
 type. `mypy --strict` infers the exact dataclass, and the server passes it.
 
-## Security hotspots (26, all reviewed safe)
+## Security hotspots (27, all reviewed safe)
 
 - **Regular expressions that could backtrack (14):** two see user input and are bounded first (an
   imported HTML file's first 4 KB; a text selection, refused over 1,000 characters before any pattern
@@ -87,7 +88,7 @@ type. `mypy --strict` infers the exact dataclass, and the server passes it.
 - **`http` addresses (6):** a language model on this computer (loopback only, enforced), the LAN address
   (R-6), and four XML namespace names that are never fetched.
 - **Pseudorandom generators (2):** seeded shuffles that hide which voice is which in blind listening tests.
-- **`PATH` lookups (2):** release tooling calling `gh` and `tar` on the maintainer's computer or a
+- **`PATH` lookups (3):** release tooling calling `gh` (twice) and `tar` on the maintainer's computer or a
   GitHub-hosted runner.
 
 Each verdict is recorded in SonarQube with its reasoning.

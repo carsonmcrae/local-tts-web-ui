@@ -16,6 +16,7 @@ import {
   applyConditions,
   escapeHtml,
   fillDownload,
+  fillHead,
   fillLatest,
   fillReleasePage,
   githubReleases,
@@ -239,4 +240,19 @@ test('the footer names the latest release, or nothing before the first one', () 
     fillLatest(page, RELEASES[0] ?? null),
     'a <a href="%BASE_URL%/releases/2.0.0/">Local TTS 2.0.0 (2.0.0, October 19, 2026)</a>b',
   );
+});
+
+test('the shared head goes where a page asks, relative to the page folder', () => {
+  const shared = `<!--\n  Purpose: shared.\n-->\n<meta name="a" content="%BASE_URL%/x.png" />\n<link rel="stylesheet" href="%ROOT%styles.css" />\n`;
+  const page = '  <head>\n    <title>t</title>\n    <!-- head:shared -->\n  </head>';
+  assert.equal(
+    fillHead(page, shared, 'index.html'),
+    '  <head>\n    <title>t</title>\n    <meta name="a" content="%BASE_URL%/x.png" />\n    <link rel="stylesheet" href="styles.css" />\n  </head>',
+  );
+  assert.match(fillHead(page, shared, 'download/index.html'), /href="\.\.\/styles\.css"/);
+  assert.match(
+    fillHead(page, shared, 'releases/2.0.0/index.html'),
+    /href="\.\.\/\.\.\/styles\.css"/,
+  );
+  assert.equal(fillHead('<head></head>', shared, 'index.html'), '<head></head>');
 });

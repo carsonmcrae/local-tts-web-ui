@@ -20,4 +20,7 @@ docs: unchanged
   graphics card); the Copy button keeps an accessible name through its states (`demo.js`); the sitemap
   lists `/download/` only while an installer exists; `build-site.mjs --expect-installer X.Y.Z` fails a
   build that would not advertise that installer, and `release.yml` passes the released version to the
-  Pages dispatch (`pages.yml` input `expect_installer`).
+  Pages dispatch (`pages.yml` input `expect_installer`). The head every page shares (social image,
+  theme colours, icons, stylesheets) lives once in `site/partials/head.html`; `fillHead` inserts it
+  where a page says `<!-- head:shared -->`, with icon and stylesheet links relative to the page's
+  folder, and the link check resolves relative links from that folder.

@@ -80,6 +80,30 @@ export function keepUnreleased(html) {
   return html.replace(/<!-- if:(released-[0-9.]+) -->([\s\S]*?)<!-- \/if:\1 -->/g, '$2');
 }
 
+export const HEAD_MARK = '<!-- head:shared -->';
+
+/**
+ * Puts the head every page shares (site/partials/head.html: social image, card type, theme colours,
+ * icons, stylesheets) where a page says `<!-- head:shared -->`, indented like the mark, with `%ROOT%`
+ * pointing at the site root from that page's folder so a local build opens from disk at any depth.
+ * A page without the mark (404.html) is left alone.
+ * @param {string} html
+ * @param {string} shared the partial
+ * @param {string} page the page's path in the site, e.g. releases/2.0.0/index.html
+ */
+export function fillHead(html, shared, page) {
+  const at = html.indexOf(HEAD_MARK);
+  if (at === -1) return html;
+  const indent = /[ \t]*$/.exec(html.slice(0, at))?.[0] ?? '';
+  const root = '../'.repeat(page.split('/').length - 1);
+  const lines = shared
+    .replace(/<!--[\s\S]*?-->\s*/, '')
+    .trim()
+    .split('\n')
+    .map((line) => line.replaceAll('%ROOT%', root));
+  return html.replace(HEAD_MARK, lines.join(`\n${indent}`));
+}
+
 /**
  * @param {string} html
  * @param {Installer | null} installer

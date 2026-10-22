@@ -30,6 +30,7 @@ import { readReleases } from '../lib/releases.mjs';
 import {
   applyConditions,
   fillDownload,
+  fillHead,
   fillLatest,
   fillReleasePage,
   githubReleases,
@@ -67,8 +68,9 @@ export function applyRequirements(/** @type {string} */ html, /** @type {string}
  * @param {string} html
  * @param {string} out
  * @param {string} [base]
+ * @param {string} [page] the page's path in the site; a relative link is resolved from its folder
  */
-export function brokenLinks(html, out, base = '') {
+export function brokenLinks(html, out, base = '', page = 'index.html') {
   const ids = new Set([...html.matchAll(/\sid="([^"]+)"/g)].map((m) => m[1]));
   const refs = [...html.matchAll(/\s(?:href|src|srcset|poster)="([^"]+)"/g)].map((m) =>
     String(m[1]),
@@ -79,7 +81,8 @@ export function brokenLinks(html, out, base = '') {
     // An anchor reached through the base URL is on the home page, not on this one.
     if (local.startsWith('#')) return own ? false : !ids.has(local.slice(1));
     if (/^(https?:|mailto:|data:)/.test(local) || local === './') return false;
-    return !existsSync(path.join(out, local.split(/[?#]/)[0] ?? ''));
+    const from = own ? out : path.join(out, path.dirname(page));
+    return !existsSync(path.join(from, local.split(/[?#]/)[0] ?? ''));
   });
 }
 
@@ -138,6 +141,8 @@ async function main() {
     throw new Error(`--base-url must be a plain http(s) origin, got "${base}"`);
   rmSync(out, { recursive: true, force: true });
   cpSync(path.join(repoRoot, 'site'), out, { recursive: true });
+  // The shared head partial is inserted into the pages, never published on its own.
+  rmSync(path.join(out, 'partials'), { recursive: true, force: true });
 
   const media = path.join(repoRoot, 'docs', 'media');
   mkdirSync(path.join(out, 'media'), { recursive: true });
@@ -172,18 +177,25 @@ async function main() {
   // published site drops such blocks (it never shows an unreleased card); a local build keeps them so
   // the layout can be checked.
   const undecided = github ? dropUnreleased : keepUnreleased;
-  const fill = (/** @type {string} */ html) =>
+  const shared = readFileSync(path.join(repoRoot, 'site', 'partials', 'head.html'), 'utf8');
+  const fill = (/** @type {string} */ html, /** @type {string} */ page) =>
     fillLatest(
-      fillDownload(undecided(applyConditions(applyRequirements(html, out), released)), installer),
+      fillDownload(
+        undecided(applyConditions(applyRequirements(fillHead(html, shared, page), out), released)),
+        installer,
+      ),
       latest,
     ).replaceAll('%BASE_URL%', () => base);
   const pages = ['index.html', 'download/index.html', '404.html'].map((page) => ({
     page,
-    html: fill(readFileSync(path.join(out, page), 'utf8')),
+    html: fill(readFileSync(path.join(out, page), 'utf8'), page),
   }));
   const template = readFileSync(path.join(out, 'releases.html'), 'utf8');
   for (const page of releasePages(releases)) {
-    pages.push({ page: page.file, html: fill(fillReleasePage(template, releases, page)) });
+    pages.push({
+      page: page.file,
+      html: fill(fillReleasePage(template, releases, page), page.file),
+    });
   }
   for (const { page, html } of pages) {
     mkdirSync(path.dirname(path.join(out, page)), { recursive: true });
@@ -192,7 +204,9 @@ async function main() {
   // Every page exists now, so the links between them can be checked.
   const problems = pages
     .filter(({ page }) => page !== '404.html')
-    .flatMap(({ page, html }) => brokenLinks(html, out, base).map((ref) => `${page}: ${ref}`));
+    .flatMap(({ page, html }) =>
+      brokenLinks(html, out, base, page).map((ref) => `${page}: ${ref}`),
+    );
   writeFileSync(
     path.join(out, 'sitemap.xml'),
     `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${sitemapUrls(

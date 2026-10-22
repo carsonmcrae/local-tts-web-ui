@@ -1,0 +1,995 @@
+{
+  "version": 1,
+  "sounds": [
+    {
+      "id": "rain-light",
+      "name": "Light rain",
+      "category": "weather",
+      "description": "Steady light rain with soft drops.",
+      "keywords": [
+        "rain",
+        "drizzle",
+        "shower",
+        "wet"
+      ],
+      "file": "rain-light.mp3",
+      "durationSeconds": 8.0,
+      "bytes": 63216,
+      "sha256": "e8277674f3bdf5797e1001c4159d02c15540a4c9a5ff8ef681cde5ae5abff0f4",
+      "gain": 0.45,
+      "loop": true,
+      "events": [
+        "rain-light"
+      ],
+      "licence": {
+        "name": "MIT",
+        "url": "https://github.com/carsonmcrae/ttsnative/blob/main/LICENSE"
+      },
+      "attribution": null,
+      "source": "Synthesised by scripts/media/sound-library.py in the TTSNative repository"
+    },
+    {
+      "id": "rain-heavy",
+      "name": "Heavy rain",
+      "category": "weather",
+      "description": "Pouring rain, dense and close.",
+      "keywords": [
+        "rain",
+        "downpour",
+        "storm",
+        "pouring"
+      ],
+      "file": "rain-heavy.mp3",
+      "durationSeconds": 8.0,
+      "bytes": 61752,
+      "sha256": "8f0755b37dd1049cd8816f9ef7ca1df5bf5ce294806fd056611f755739d69de4",
+      "gain": 0.45,
+      "loop": true,
+      "events": [
+        "rain-heavy"
+      ],
+      "licence": {
+        "name": "MIT",
+        "url": "https://github.com/carsonmcrae/ttsnative/blob/main/LICENSE"
+      },
+      "attribution": null,
+      "source": "Synthesised by scripts/media/sound-library.py in the TTSNative repository"
+    },
+    {
+      "id": "thunder-distant",
+      "name": "Distant thunder",
+      "category": "weather",
+      "description": "A long, low rumble far away.",
+      "keywords": [
+        "thunder",
+        "storm",
+        "rumble",
+        "distant"
+      ],
+      "file": "thunder-distant.mp3",
+      "durationSeconds": 7.0,
+      "bytes": 29208,
+      "sha256": "b10eab64d4e3f44cd81601e969045295d763a38f0c872f95bfb447e6fc8efd06",
+      "gain": 0.8,
+      "loop": false,
+      "events": [
+        "thunder-distant"
+      ],
+      "licence": {
+        "name": "MIT",
+        "url": "https://github.com/carsonmcrae/ttsnative/blob/main/LICENSE"
+      },
+      "attribution": null,
+      "source": "Synthesised by scripts/media/sound-library.py in the TTSNative repository"
+    },
+    {
+      "id": "thunder-close",
+      "name": "Thunder overhead",
+      "category": "weather",
+      "description": "A crack and a rolling rumble.",
+      "keywords": [
+        "thunder",
+        "storm",
+        "crack",
+        "lightning"
+      ],
+      "file": "thunder-close.mp3",
+      "durationSeconds": 5.75,
+      "bytes": 24816,
+      "sha256": "91bc7c5c1626da5178339a712f70443a1e9c27d8f30743146dca10271f5b7385",
+      "gain": 0.7,
+      "loop": false,
+      "events": [
+        "thunder-close"
+      ],
+      "licence": {
+        "name": "MIT",
+        "url": "https://github.com/carsonmcrae/ttsnative/blob/main/LICENSE"
+      },
+      "attribution": null,
+      "source": "Synthesised by scripts/media/sound-library.py in the TTSNative repository"
+    },
+    {
+      "id": "wind-gust",
+      "name": "A gust of wind",
+      "category": "weather",
+      "description": "One gust that rises and dies away.",
+      "keywords": [
+        "wind",
+        "gust",
+        "breeze",
+        "draught"
+      ],
+      "file": "wind-gust.mp3",
+      "durationSeconds": 4.5,
+      "bytes": 26280,
+      "sha256": "2266539251b0b682118c8caa289eb623d03225b5b0feb39f27872bb7627dd6dd",
+      "gain": 0.6,
+      "loop": false,
+      "events": [
+        "wind-gust"
+      ],
+      "licence": {
+        "name": "MIT",
+        "url": "https://github.com/carsonmcrae/ttsnative/blob/main/LICENSE"
+      },
+      "attribution": null,
+      "source": "Synthesised by scripts/media/sound-library.py in the TTSNative repository"
+    },
+    {
+      "id": "wind-howl",
+      "name": "Howling wind",
+      "category": "weather",
+      "description": "Wind moaning and whistling without a break.",
+      "keywords": [
+        "wind",
+        "gale",
+        "storm",
+        "howl",
+        "blizzard"
+      ],
+      "file": "wind-howl.mp3",
+      "durationSeconds": 9.5,
+      "bytes": 68208,
+      "sha256": "4f56613ebec8ba35c944218b3d7fba47c729d3352ab580e39eb28579a0d3b7f3",
+      "gain": 0.4,
+      "loop": true,
+      "events": [
+        "wind-howl"
+      ],
+      "licence": {
+        "name": "MIT",
+        "url": "https://github.com/carsonmcrae/ttsnative/blob/main/LICENSE"
+      },
+      "attribution": null,
+      "source": "Synthesised by scripts/media/sound-library.py in the TTSNative repository"
+    },
+    {
+      "id": "stream",
+      "name": "A running stream",
+      "category": "nature",
+      "description": "Water running over stones with small bubbles.",
+      "keywords": [
+        "stream",
+        "brook",
+        "river",
+        "water",
+        "creek"
+      ],
+      "file": "stream.mp3",
+      "durationSeconds": 8.0,
+      "bytes": 63312,
+      "sha256": "93ddbb83721ad5ef20fdea3bc113cd68b56945facffd895fce3e1e5b074d12e3",
+      "gain": 0.4,
+      "loop": true,
+      "events": [
+        "stream"
+      ],
+      "licence": {
+        "name": "MIT",
+        "url": "https://github.com/carsonmcrae/ttsnative/blob/main/LICENSE"
+      },
+      "attribution": null,
+      "source": "Synthesised by scripts/media/sound-library.py in the TTSNative repository"
+    },
+    {
+      "id": "waves",
+      "name": "Waves on the shore",
+      "category": "nature",
+      "description": "Slow waves breaking and washing back.",
+      "keywords": [
+        "sea",
+        "waves",
+        "ocean",
+        "shore",
+        "beach",
+        "surf"
+      ],
+      "file": "waves.mp3",
+      "durationSeconds": 12.0,
+      "bytes": 85704,
+      "sha256": "3ac5db7070bcb7e26cc6eb4f525167d31e79eddc5eb6fb9fbb562b82b2ba0d5a",
+      "gain": 0.4,
+      "loop": true,
+      "events": [
+        "waves"
+      ],
+      "licence": {
+        "name": "MIT",
+        "url": "https://github.com/carsonmcrae/ttsnative/blob/main/LICENSE"
+      },
+      "attribution": null,
+      "source": "Synthesised by scripts/media/sound-library.py in the TTSNative repository"
+    },
+    {
+      "id": "fire-crackle",
+      "name": "A crackling fire",
+      "category": "nature",
+      "description": "A fire with a low glow, crackles and pops.",
+      "keywords": [
+        "fire",
+        "hearth",
+        "campfire",
+        "crackle",
+        "flames"
+      ],
+      "file": "fire-crackle.mp3",
+      "durationSeconds": 8.0,
+      "bytes": 68160,
+      "sha256": "7909d71001d6c5c2595678636dffda1f9a08b72ba5b89fcc1f70484830750283",
+      "gain": 0.4,
+      "loop": true,
+      "events": [
+        "fire-crackle"
+      ],
+      "licence": {
+        "name": "MIT",
+        "url": "https://github.com/carsonmcrae/ttsnative/blob/main/LICENSE"
+      },
+      "attribution": null,
+      "source": "Synthesised by scripts/media/sound-library.py in the TTSNative repository"
+    },
+    {
+      "id": "crickets",
+      "name": "Crickets at night",
+      "category": "nature",
+      "description": "A few crickets chirping.",
+      "keywords": [
+        "crickets",
+        "night",
+        "insects",
+        "summer"
+      ],
+      "file": "crickets.mp3",
+      "durationSeconds": 8.5,
+      "bytes": 73200,
+      "sha256": "5e1bdbee01ca31ada524e7b070532b13cc713409ae42a3c32704222ef585a4b3",
+      "gain": 0.3,
+      "loop": true,
+      "events": [
+        "crickets"
+      ],
+      "licence": {
+        "name": "MIT",
+        "url": "https://github.com/carsonmcrae/ttsnative/blob/main/LICENSE"
+      },
+      "attribution": null,
+      "source": "Synthesised by scripts/media/sound-library.py in the TTSNative repository"
+    },
+    {
+      "id": "birdsong",
+      "name": "Birdsong",
+      "category": "nature",
+      "description": "Two birds trading short phrases.",
+      "keywords": [
+        "birds",
+        "song",
+        "morning",
+        "garden",
+        "dawn"
+      ],
+      "file": "birdsong.mp3",
+      "durationSeconds": 6.5,
+      "bytes": 26736,
+      "sha256": "24bcf0824fd09dae1f894ccd16c6b2a9aec7afd95bb9ea3bb03c0ca77d475171",
+      "gain": 0.45,
+      "loop": false,
+      "events": [
+        "birdsong"
+      ],
+      "licence": {
+        "name": "MIT",
+        "url": "https://github.com/carsonmcrae/ttsnative/blob/main/LICENSE"
+      },
+      "attribution": null,
+      "source": "Synthesised by scripts/media/sound-library.py in the TTSNative repository"
+    },
+    {
+      "id": "owl",
+      "name": "An owl's hoot",
+      "category": "animals",
+      "description": "Two soft hoots.",
+      "keywords": [
+        "owl",
+        "night",
+        "hoot",
+        "forest"
+      ],
+      "file": "owl.mp3",
+      "durationSeconds": 3.2,
+      "bytes": 13584,
+      "sha256": "5758de93f0d23f3d70702f457ff21869fbdf51c0cc3c8481c30eb6aaf2b16fe5",
+      "gain": 0.6,
+      "loop": false,
+      "events": [
+        "owl"
+      ],
+      "licence": {
+        "name": "MIT",
+        "url": "https://github.com/carsonmcrae/ttsnative/blob/main/LICENSE"
+      },
+      "attribution": null,
+      "source": "Synthesised by scripts/media/sound-library.py in the TTSNative repository"
+    },
+    {
+      "id": "wolf-howl",
+      "name": "A wolf's howl",
+      "category": "animals",
+      "description": "A single long howl.",
+      "keywords": [
+        "wolf",
+        "howl",
+        "night",
+        "wild"
+      ],
+      "file": "wolf-howl.mp3",
+      "durationSeconds": 5.0,
+      "bytes": 29136,
+      "sha256": "9726150309edd1ee00ee59ab50c6f5d704235178432a6521ee2a32e09fc81eb8",
+      "gain": 0.55,
+      "loop": false,
+      "events": [
+        "wolf-howl"
+      ],
+      "licence": {
+        "name": "MIT",
+        "url": "https://github.com/carsonmcrae/ttsnative/blob/main/LICENSE"
+      },
+      "attribution": null,
+      "source": "Synthesised by scripts/media/sound-library.py in the TTSNative repository"
+    },
+    {
+      "id": "dog-bark",
+      "name": "A dog barking",
+      "category": "animals",
+      "description": "Three barks.",
+      "keywords": [
+        "dog",
+        "bark",
+        "hound"
+      ],
+      "file": "dog-bark.mp3",
+      "durationSeconds": 2.6,
+      "bytes": 11664,
+      "sha256": "6a22ad3ba237a8ce6b3da93ca43478c6fba84d874740c9a6246ecd37cccd308d",
+      "gain": 0.6,
+      "loop": false,
+      "events": [
+        "dog-bark"
+      ],
+      "licence": {
+        "name": "MIT",
+        "url": "https://github.com/carsonmcrae/ttsnative/blob/main/LICENSE"
+      },
+      "attribution": null,
+      "source": "Synthesised by scripts/media/sound-library.py in the TTSNative repository"
+    },
+    {
+      "id": "horse-hooves",
+      "name": "Horse's hooves",
+      "category": "animals",
+      "description": "A horse galloping past.",
+      "keywords": [
+        "horse",
+        "hooves",
+        "gallop",
+        "rider",
+        "carriage"
+      ],
+      "file": "horse-hooves.mp3",
+      "durationSeconds": 5.5,
+      "bytes": 25848,
+      "sha256": "c8f678ee15e65ad19539932f5b77cfc6ffe035d2a746c15fddbe26b9dfde296b",
+      "gain": 0.6,
+      "loop": false,
+      "events": [
+        "horse-hooves"
+      ],
+      "licence": {
+        "name": "MIT",
+        "url": "https://github.com/carsonmcrae/ttsnative/blob/main/LICENSE"
+      },
+      "attribution": null,
+      "source": "Synthesised by scripts/media/sound-library.py in the TTSNative repository"
+    },
+    {
+      "id": "door-creak",
+      "name": "A creaking door",
+      "category": "doors",
+      "description": "An old door opening slowly on dry hinges.",
+      "keywords": [
+        "door",
+        "creak",
+        "hinge",
+        "gate",
+        "open"
+      ],
+      "file": "door-creak.mp3",
+      "durationSeconds": 2.4,
+      "bytes": 13776,
+      "sha256": "61456de2964d43a93bc21828363e1085fefbe4d3556a869e904c91e7b42f6510",
+      "gain": 0.65,
+      "loop": false,
+      "events": [
+        "door-creak"
+      ],
+      "licence": {
+        "name": "MIT",
+        "url": "https://github.com/carsonmcrae/ttsnative/blob/main/LICENSE"
+      },
+      "attribution": null,
+      "source": "Synthesised by scripts/media/sound-library.py in the TTSNative repository"
+    },
+    {
+      "id": "door-close",
+      "name": "A door closing",
+      "category": "doors",
+      "description": "A door closed with a soft thump and a latch.",
+      "keywords": [
+        "door",
+        "close",
+        "shut",
+        "latch"
+      ],
+      "file": "door-close.mp3",
+      "durationSeconds": 1.7,
+      "bytes": 8496,
+      "sha256": "2e45527e2beb9fbc4d365f22d4bd91edd976b0280bdec6abb822f7560ab87b40",
+      "gain": 0.6,
+      "loop": false,
+      "events": [
+        "door-close"
+      ],
+      "licence": {
+        "name": "MIT",
+        "url": "https://github.com/carsonmcrae/ttsnative/blob/main/LICENSE"
+      },
+      "attribution": null,
+      "source": "Synthesised by scripts/media/sound-library.py in the TTSNative repository"
+    },
+    {
+      "id": "door-slam",
+      "name": "A door slamming",
+      "category": "doors",
+      "description": "A door slammed hard.",
+      "keywords": [
+        "door",
+        "slam",
+        "bang"
+      ],
+      "file": "door-slam.mp3",
+      "durationSeconds": 2.5,
+      "bytes": 12840,
+      "sha256": "1e0274d858ce5b2ed815bb6ff0d8413667e9382d3c30545f579f01f25ecb6f38",
+      "gain": 0.7,
+      "loop": false,
+      "events": [
+        "door-slam"
+      ],
+      "licence": {
+        "name": "MIT",
+        "url": "https://github.com/carsonmcrae/ttsnative/blob/main/LICENSE"
+      },
+      "attribution": null,
+      "source": "Synthesised by scripts/media/sound-library.py in the TTSNative repository"
+    },
+    {
+      "id": "door-knock",
+      "name": "A knock at the door",
+      "category": "doors",
+      "description": "Three knocks on a wooden door.",
+      "keywords": [
+        "door",
+        "knock",
+        "visitor"
+      ],
+      "file": "door-knock.mp3",
+      "durationSeconds": 2.25,
+      "bytes": 10920,
+      "sha256": "5c8128c5633cd268ff1bfad9a307fa71d7af55dd636d3cb75f5ef18e6af4b013",
+      "gain": 0.7,
+      "loop": false,
+      "events": [
+        "door-knock"
+      ],
+      "licence": {
+        "name": "MIT",
+        "url": "https://github.com/carsonmcrae/ttsnative/blob/main/LICENSE"
+      },
+      "attribution": null,
+      "source": "Synthesised by scripts/media/sound-library.py in the TTSNative repository"
+    },
+    {
+      "id": "footsteps-wood",
+      "name": "Footsteps on wood",
+      "category": "footsteps",
+      "description": "Six unhurried steps on floorboards.",
+      "keywords": [
+        "footsteps",
+        "walking",
+        "floor",
+        "stairs",
+        "corridor"
+      ],
+      "file": "footsteps-wood.mp3",
+      "durationSeconds": 4.32,
+      "bytes": 19152,
+      "sha256": "03f7b2de610c17f46abbebf0e74ec50aa1b6544999ae3a2b429d09e418580f3c",
+      "gain": 0.6,
+      "loop": false,
+      "events": [
+        "footsteps-wood"
+      ],
+      "licence": {
+        "name": "MIT",
+        "url": "https://github.com/carsonmcrae/ttsnative/blob/main/LICENSE"
+      },
+      "attribution": null,
+      "source": "Synthesised by scripts/media/sound-library.py in the TTSNative repository"
+    },
+    {
+      "id": "footsteps-stone",
+      "name": "Footsteps on stone",
+      "category": "footsteps",
+      "description": "Six steps on stone with a little echo.",
+      "keywords": [
+        "footsteps",
+        "walking",
+        "street",
+        "stone",
+        "echo"
+      ],
+      "file": "footsteps-stone.mp3",
+      "durationSeconds": 4.7,
+      "bytes": 24912,
+      "sha256": "30362862792654b2709b9c2968688dcebbfdc77c5ac742eff8325d897c078c1d",
+      "gain": 0.6,
+      "loop": false,
+      "events": [
+        "footsteps-stone"
+      ],
+      "licence": {
+        "name": "MIT",
+        "url": "https://github.com/carsonmcrae/ttsnative/blob/main/LICENSE"
+      },
+      "attribution": null,
+      "source": "Synthesised by scripts/media/sound-library.py in the TTSNative repository"
+    },
+    {
+      "id": "footsteps-gravel",
+      "name": "Footsteps on gravel",
+      "category": "footsteps",
+      "description": "Six crunching steps on gravel.",
+      "keywords": [
+        "footsteps",
+        "walking",
+        "gravel",
+        "path",
+        "snow"
+      ],
+      "file": "footsteps-gravel.mp3",
+      "durationSeconds": 4.44,
+      "bytes": 21576,
+      "sha256": "d09c32c52413ef592fb43dfefd54df170ec899a67e60553628330c7a2bd4f5a3",
+      "gain": 0.6,
+      "loop": false,
+      "events": [
+        "footsteps-gravel"
+      ],
+      "licence": {
+        "name": "MIT",
+        "url": "https://github.com/carsonmcrae/ttsnative/blob/main/LICENSE"
+      },
+      "attribution": null,
+      "source": "Synthesised by scripts/media/sound-library.py in the TTSNative repository"
+    },
+    {
+      "id": "footsteps-run",
+      "name": "Running footsteps",
+      "category": "footsteps",
+      "description": "Ten quick, light steps.",
+      "keywords": [
+        "footsteps",
+        "running",
+        "chase",
+        "hurry"
+      ],
+      "file": "footsteps-run.mp3",
+      "durationSeconds": 3.5,
+      "bytes": 16848,
+      "sha256": "1a9b7b2711f1b1d6678bfce798535316b1f39f8b4cbe7d2586eee910fccdd601",
+      "gain": 0.6,
+      "loop": false,
+      "events": [
+        "footsteps-run"
+      ],
+      "licence": {
+        "name": "MIT",
+        "url": "https://github.com/carsonmcrae/ttsnative/blob/main/LICENSE"
+      },
+      "attribution": null,
+      "source": "Synthesised by scripts/media/sound-library.py in the TTSNative repository"
+    },
+    {
+      "id": "clock-tick",
+      "name": "A ticking clock",
+      "category": "household",
+      "description": "A clock ticking once a second.",
+      "keywords": [
+        "clock",
+        "tick",
+        "time",
+        "watch",
+        "waiting"
+      ],
+      "file": "clock-tick.mp3",
+      "durationSeconds": 4.0,
+      "bytes": 19872,
+      "sha256": "0cfedd0b7d5339c03716b8848615d2b227eff1ac6a65817399544a8ebde8239c",
+      "gain": 0.35,
+      "loop": true,
+      "events": [
+        "clock-tick"
+      ],
+      "licence": {
+        "name": "MIT",
+        "url": "https://github.com/carsonmcrae/ttsnative/blob/main/LICENSE"
+      },
+      "attribution": null,
+      "source": "Synthesised by scripts/media/sound-library.py in the TTSNative repository"
+    },
+    {
+      "id": "clock-chime",
+      "name": "A clock chiming",
+      "category": "household",
+      "description": "A clock striking three.",
+      "keywords": [
+        "clock",
+        "chime",
+        "strike",
+        "hour"
+      ],
+      "file": "clock-chime.mp3",
+      "durationSeconds": 6.5,
+      "bytes": 27936,
+      "sha256": "3edae076311ca81efb6d94343280a1fefb7b2fb8335dd5d8f540cc077c7b0411",
+      "gain": 0.55,
+      "loop": false,
+      "events": [
+        "clock-chime"
+      ],
+      "licence": {
+        "name": "MIT",
+        "url": "https://github.com/carsonmcrae/ttsnative/blob/main/LICENSE"
+      },
+      "attribution": null,
+      "source": "Synthesised by scripts/media/sound-library.py in the TTSNative repository"
+    },
+    {
+      "id": "bell-toll",
+      "name": "A tolling bell",
+      "category": "fantasy",
+      "description": "A large bell tolling twice.",
+      "keywords": [
+        "bell",
+        "toll",
+        "church",
+        "tower"
+      ],
+      "file": "bell-toll.mp3",
+      "durationSeconds": 7.0,
+      "bytes": 29016,
+      "sha256": "1c841db80ada53bc324fcfcb5f58f653d9ab3a7d92d32c1c6e13966a78ff6fd9",
+      "gain": 0.6,
+      "loop": false,
+      "events": [
+        "bell-toll"
+      ],
+      "licence": {
+        "name": "MIT",
+        "url": "https://github.com/carsonmcrae/ttsnative/blob/main/LICENSE"
+      },
+      "attribution": null,
+      "source": "Synthesised by scripts/media/sound-library.py in the TTSNative repository"
+    },
+    {
+      "id": "sword-clash",
+      "name": "Clashing swords",
+      "category": "fantasy",
+      "description": "Two strikes of steel on steel.",
+      "keywords": [
+        "sword",
+        "steel",
+        "battle",
+        "duel",
+        "clash"
+      ],
+      "file": "sword-clash.mp3",
+      "durationSeconds": 2.0,
+      "bytes": 9816,
+      "sha256": "582223c4451093a49bc7efbdfcd4c2923429e2a0f1559dfba8489d1daf5e88fc",
+      "gain": 0.65,
+      "loop": false,
+      "events": [
+        "sword-clash"
+      ],
+      "licence": {
+        "name": "MIT",
+        "url": "https://github.com/carsonmcrae/ttsnative/blob/main/LICENSE"
+      },
+      "attribution": null,
+      "source": "Synthesised by scripts/media/sound-library.py in the TTSNative repository"
+    },
+    {
+      "id": "glass-break",
+      "name": "Breaking glass",
+      "category": "impacts",
+      "description": "Glass shattering and scattering.",
+      "keywords": [
+        "glass",
+        "shatter",
+        "break",
+        "window",
+        "bottle"
+      ],
+      "file": "glass-break.mp3",
+      "durationSeconds": 2.2,
+      "bytes": 14544,
+      "sha256": "472b7db252e1907ce76f614ee90cb11d71f20d2d48827c805f26bed7f2c861ac",
+      "gain": 0.65,
+      "loop": false,
+      "events": [
+        "glass-break"
+      ],
+      "licence": {
+        "name": "MIT",
+        "url": "https://github.com/carsonmcrae/ttsnative/blob/main/LICENSE"
+      },
+      "attribution": null,
+      "source": "Synthesised by scripts/media/sound-library.py in the TTSNative repository"
+    },
+    {
+      "id": "thud",
+      "name": "A heavy thud",
+      "category": "impacts",
+      "description": "Something heavy hitting the floor.",
+      "keywords": [
+        "thud",
+        "fall",
+        "drop",
+        "impact",
+        "thump"
+      ],
+      "file": "thud.mp3",
+      "durationSeconds": 1.7,
+      "bytes": 7896,
+      "sha256": "390cfc2874c8e58fc3ddfa2cd3799cd6ed5db34395b68f44bae957fa31f88170",
+      "gain": 0.7,
+      "loop": false,
+      "events": [
+        "thud"
+      ],
+      "licence": {
+        "name": "MIT",
+        "url": "https://github.com/carsonmcrae/ttsnative/blob/main/LICENSE"
+      },
+      "attribution": null,
+      "source": "Synthesised by scripts/media/sound-library.py in the TTSNative repository"
+    },
+    {
+      "id": "gunshot",
+      "name": "A gunshot",
+      "category": "impacts",
+      "description": "One shot with an echo.",
+      "keywords": [
+        "gun",
+        "shot",
+        "pistol",
+        "rifle",
+        "fire"
+      ],
+      "file": "gunshot.mp3",
+      "durationSeconds": 2.7,
+      "bytes": 14184,
+      "sha256": "d0434dfef9831122ec954ffdf7702c0ff0648836c2a133131d8620d488d474f6",
+      "gain": 0.6,
+      "loop": false,
+      "events": [
+        "gunshot"
+      ],
+      "licence": {
+        "name": "MIT",
+        "url": "https://github.com/carsonmcrae/ttsnative/blob/main/LICENSE"
+      },
+      "attribution": null,
+      "source": "Synthesised by scripts/media/sound-library.py in the TTSNative repository"
+    },
+    {
+      "id": "explosion",
+      "name": "An explosion",
+      "category": "impacts",
+      "description": "A blast with a long rumble and debris.",
+      "keywords": [
+        "explosion",
+        "blast",
+        "bomb",
+        "boom"
+      ],
+      "file": "explosion.mp3",
+      "durationSeconds": 4.2,
+      "bytes": 18336,
+      "sha256": "7ab2b00a356316e472d559ba561a0382199453f5e316f3753f36126ba9ca76ac",
+      "gain": 0.6,
+      "loop": false,
+      "events": [
+        "explosion"
+      ],
+      "licence": {
+        "name": "MIT",
+        "url": "https://github.com/carsonmcrae/ttsnative/blob/main/LICENSE"
+      },
+      "attribution": null,
+      "source": "Synthesised by scripts/media/sound-library.py in the TTSNative repository"
+    },
+    {
+      "id": "car-pass",
+      "name": "A passing car",
+      "category": "vehicles",
+      "description": "A car approaching and driving past.",
+      "keywords": [
+        "car",
+        "engine",
+        "traffic",
+        "road",
+        "vehicle"
+      ],
+      "file": "car-pass.mp3",
+      "durationSeconds": 5.5,
+      "bytes": 33168,
+      "sha256": "b2c38397a1d8db74d1e5dbc6a842706bd2ffca7a8d913af3433c06068c7d6983",
+      "gain": 0.55,
+      "loop": false,
+      "events": [
+        "car-pass"
+      ],
+      "licence": {
+        "name": "MIT",
+        "url": "https://github.com/carsonmcrae/ttsnative/blob/main/LICENSE"
+      },
+      "attribution": null,
+      "source": "Synthesised by scripts/media/sound-library.py in the TTSNative repository"
+    },
+    {
+      "id": "train-pass",
+      "name": "A passing train",
+      "category": "vehicles",
+      "description": "A train clattering past with a whistle.",
+      "keywords": [
+        "train",
+        "railway",
+        "station",
+        "locomotive"
+      ],
+      "file": "train-pass.mp3",
+      "durationSeconds": 10.0,
+      "bytes": 59520,
+      "sha256": "9be7f4ec02af433d912353d65f210c6bff038ab5d803d7ce56973cfea1bad8dc",
+      "gain": 0.5,
+      "loop": false,
+      "events": [
+        "train-pass"
+      ],
+      "licence": {
+        "name": "MIT",
+        "url": "https://github.com/carsonmcrae/ttsnative/blob/main/LICENSE"
+      },
+      "attribution": null,
+      "source": "Synthesised by scripts/media/sound-library.py in the TTSNative repository"
+    },
+    {
+      "id": "crowd-murmur",
+      "name": "A murmuring crowd",
+      "category": "ambience",
+      "description": "Many voices talking, none of them clear.",
+      "keywords": [
+        "crowd",
+        "voices",
+        "tavern",
+        "market",
+        "room",
+        "people"
+      ],
+      "file": "crowd-murmur.mp3",
+      "durationSeconds": 9.5,
+      "bytes": 70008,
+      "sha256": "cdf47afa8a4d8bfddaebd02e61a5cedae96387f342e67f5a9ec7b151d13b3f47",
+      "gain": 0.35,
+      "loop": true,
+      "events": [
+        "crowd-murmur"
+      ],
+      "licence": {
+        "name": "MIT",
+        "url": "https://github.com/carsonmcrae/ttsnative/blob/main/LICENSE"
+      },
+      "attribution": null,
+      "source": "Synthesised by scripts/media/sound-library.py in the TTSNative repository"
+    },
+    {
+      "id": "city-distant",
+      "name": "A city in the distance",
+      "category": "ambience",
+      "description": "Far-off traffic and a horn.",
+      "keywords": [
+        "city",
+        "traffic",
+        "street",
+        "town",
+        "night"
+      ],
+      "file": "city-distant.mp3",
+      "durationSeconds": 9.5,
+      "bytes": 51648,
+      "sha256": "6f3a1fb2c469e97f31ae67ccd29a12d03c5e841a2938cbfcda42f87daf8f73f9",
+      "gain": 0.35,
+      "loop": true,
+      "events": [
+        "city-distant"
+      ],
+      "licence": {
+        "name": "MIT",
+        "url": "https://github.com/carsonmcrae/ttsnative/blob/main/LICENSE"
+      },
+      "attribution": null,
+      "source": "Synthesised by scripts/media/sound-library.py in the TTSNative repository"
+    },
+    {
+      "id": "machine-hum",
+      "name": "Humming machinery",
+      "category": "mechanical",
+      "description": "A steady electrical hum with a faint tick.",
+      "keywords": [
+        "machine",
+        "engine",
+        "hum",
+        "generator",
+        "factory"
+      ],
+      "file": "machine-hum.mp3",
+      "durationSeconds": 6.5,
+      "bytes": 48168,
+      "sha256": "9362c0f0281692954e2b67160e53954645a0e7e06c2a51dfa704428564ef8a0f",
+      "gain": 0.35,
+      "loop": true,
+      "events": [
+        "machine-hum"
+      ],
+      "licence": {
+        "name": "MIT",
+        "url": "https://github.com/carsonmcrae/ttsnative/blob/main/LICENSE"
+      },
+      "attribution": null,
+      "source": "Synthesised by scripts/media/sound-library.py in the TTSNative repository"
+    }
+  ]
+}

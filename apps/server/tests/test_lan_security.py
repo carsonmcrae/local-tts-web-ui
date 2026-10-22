@@ -73,6 +73,11 @@ REACHABLE = {
     "PUT /api/library/works/{work_id}/hidden", "GET /api/library/works/credits",
     "GET /api/documents/{document_id}/preset", "POST /api/documents/{document_id}/preset/apply",
     "DELETE /api/documents/{document_id}/preset",
+    "GET /api/sound-effects/library", "GET /api/documents/{document_id}/sound-effects",
+    "POST /api/documents/{document_id}/sound-effects", "POST /api/documents/{document_id}/sound-effects/analyse",
+    "POST /api/documents/{document_id}/sound-effects/review",
+    "PATCH /api/documents/{document_id}/sound-effects/{effect_id}",
+    "DELETE /api/documents/{document_id}/sound-effects/{effect_id}",
 }  # fmt: skip
 SAMPLES = {"voice_id": "kokoro:af_heart", "engine_id": "kokoro", "key": "a" * 64}
 

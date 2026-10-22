@@ -15,6 +15,7 @@
     "**/*.lock",
     "**/package-lock.json",
     "apps/web/src/api/schema.gen.ts",
+    "docs/research/sound-effects-listening.html",
     "tests/fixtures/**",
     "apps/desktop/runtime/**",
     "apps/desktop/src-tauri/target/**"

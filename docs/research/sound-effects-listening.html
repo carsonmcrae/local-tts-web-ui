@@ -423,7 +423,6 @@
       </tbody>
     </table>
 
-    <audio id="bedPlayer" loop></audio>
     <script>
       const players = [...document.querySelectorAll('tbody audio')];
       const master = document.getElementById('master');
@@ -438,16 +437,39 @@
         audio.loop = box.checked;
         box.addEventListener('change', () => (audio.loop = box.checked));
       }
-      const bed = document.getElementById('bedPlayer');
-      document.getElementById('bed').addEventListener('change', (event) => {
+      // The narration bed loops through Web Audio from the chosen file's decoded samples.
+      let bedContext = null;
+      let bedGain = null;
+      let bedSource = null;
+      const stopBed = () => {
+        if (!bedSource) return;
+        bedSource.stop();
+        bedSource.disconnect();
+        bedSource = null;
+      };
+      document.getElementById('bed').addEventListener('change', async (event) => {
         const file = event.target.files[0];
         if (!file) return;
-        bed.src = URL.createObjectURL(file);
-        bed.play();
+        if (!bedContext) {
+          bedContext = new AudioContext();
+          bedGain = bedContext.createGain();
+          bedGain.gain.value = document.getElementById('bedLevel').value / 100;
+          bedGain.connect(bedContext.destination);
+        }
+        const buffer = await bedContext.decodeAudioData(await file.arrayBuffer());
+        stopBed();
+        bedSource = bedContext.createBufferSource();
+        bedSource.buffer = buffer;
+        bedSource.loop = true;
+        bedSource.connect(bedGain);
+        bedSource.start();
       });
-      document.getElementById('bedLevel').addEventListener('input', (event) => (bed.volume = event.target.value / 100));
+      document.getElementById('bedLevel').addEventListener('input', (event) => {
+        if (bedGain) bedGain.gain.value = event.target.value / 100;
+      });
       document.getElementById('stopAll').addEventListener('click', () => {
-        for (const audio of [...players, bed]) { audio.pause(); audio.currentTime = 0; }
+        for (const audio of players) { audio.pause(); audio.currentTime = 0; }
+        stopBed();
       });
       const KEY = 'sfx-listening-notes';
       let notes = {};

@@ -182,6 +182,12 @@ def _sentence(conn: sqlite3.Connection, document_id: str, index: int) -> sqlite3
     return row
 
 
+def _require_end(sound: catalogue.SoundOut | None, until: int | None) -> None:
+    """An ambience (a looping sound) always has the sentence it lasts to; without one it would never stop."""
+    if sound is not None and sound.loop and until is None:
+        raise AppError("An ambience needs the sentence it lasts to.", code="effect_span")
+
+
 def _check_until(conn: sqlite3.Connection, document_id: str, index: int, until: int | None) -> None:
     if until is None:
         return
@@ -212,6 +218,7 @@ class SoundEffectStore:
 
     def add(self, document_id: str, effect: EffectIn) -> EffectOut:
         sound = _sound(effect.sound_id)
+        _require_end(sound, effect.until_segment)
         with self._db.connect() as conn:
             _ensure_document(conn, document_id)
             sentence = _sentence(conn, document_id, effect.segment_index)
@@ -232,12 +239,13 @@ class SoundEffectStore:
         fields: dict[str, Any] = change.model_dump(exclude_unset=True, by_alias=False)
         with self._db.connect() as conn:
             row = self._row(conn, document_id, effect_id)
-            if "sound_id" in fields:
-                sound = _sound(fields["sound_id"])
+            sound = _sound(fields["sound_id"]) if "sound_id" in fields else catalogue.sound(row["sound_id"])
+            if "sound_id" in fields and sound is not None:
                 if row["origin"] == "manual":
                     fields["event"] = sound.events[0]
                 if not sound.loop:
                     fields["until_segment"] = None
+            _require_end(sound, fields.get("until_segment", row["until_idx"]))
             if "until_segment" in fields:
                 _check_until(conn, document_id, row["segment_idx"], fields["until_segment"])
             columns = {**_UPDATABLE, "event": "event"}

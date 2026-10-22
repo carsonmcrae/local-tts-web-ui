@@ -159,13 +159,17 @@ def test_adding_changing_and_removing_effects(client: TestClient) -> None:
         error(client.post(base, json={"segmentIndex": 1, "soundId": "rain-light", "untilSegment": 50}))
         == "segment_not_found"
     )
+    # An ambience always has the sentence it lasts to; without one it would never stop.
+    assert error(client.post(base, json={"segmentIndex": 1, "soundId": "rain-light"})) == "effect_span"
     assert client.post(base, json={"segmentIndex": 1, "soundId": "thud", "volume": 500}).status_code == 422
     assert client.post(base, json={"segmentIndex": 1, "soundId": "thud", "offsetMs": 99_999}).status_code == 422
     assert client.post(base, json={"segmentIndex": 1, "soundId": "../thud"}).status_code == 422
     assert client.post(base, json={"segmentIndex": 1, "soundId": "thud", "command": "x"}).status_code == 422
-    # A one-shot sound never keeps an ambience span.
+    # A one-shot sound never keeps an ambience span, and cannot become an ambience without an end.
     one_shot = client.post(base, json={"segmentIndex": 2, "soundId": "thud", "untilSegment": 4}).json()
     assert one_shot["untilSegment"] is None and one_shot["volume"] == 70
+    assert error(client.patch(f"{base}/{one_shot['id']}", json={"soundId": "rain-light"})) == "effect_span"
+    assert error(client.patch(f"{base}/{effect['id']}", json={"untilSegment": None})) == "effect_span"
 
     changed = client.patch(
         f"{base}/{effect['id']}", json={"soundId": "owl", "position": 1, "offsetMs": 500, "volume": 20}

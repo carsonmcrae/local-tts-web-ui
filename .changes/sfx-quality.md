@@ -18,6 +18,8 @@ docs: changed
 
 ## Technical
 
+- Store: adding or changing an effect refuses a looping sound with no end sentence (`effect_span`),
+  so an ambience can never be left to loop until the narration pauses.
 - Catalogue: `experimental` and `qualityNote` per sound in `ltts/sfx/library.json` (the switch is
   `EXPERIMENTAL` in `scripts/media/sfx_recipes.py`, one line per sound; the generator writes both
   fields); `catalogue.suggestable(event)` and a `default_sound` that prefers a credible sound;

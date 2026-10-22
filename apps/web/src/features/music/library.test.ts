@@ -1,0 +1,99 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Carson McRae
+/**
+ * Purpose: Keep the bundled music library and its licence records honest.
+ * Scope: Every track in library.json has a unique id, a known category, a file in public/music of
+ *   the recorded size and SHA-256, a source and licence that allow redistribution, editing and
+ *   commercial use, and an entry in CREDITS.md; no audio file ships without a record. Also the
+ *   small helpers for labels and URLs.
+ * Does NOT belong: Playback (engine.test.ts, session.test.ts).
+ */
+import { createHash } from 'node:crypto';
+import { readdirSync, readFileSync } from 'node:fs';
+import path from 'node:path';
+import { describe, expect, it } from 'vitest';
+import type { MusicCategory, MusicTrack } from './library';
+import { CATEGORIES, categoryLabel, TRACKS, trackUrl } from './library';
+import library from './library.json';
+
+/** The full record of a track in library.json, beyond what the app reads. */
+interface TrackRecord extends MusicTrack {
+  bytes: number;
+  sha256: string;
+  source: string;
+  licence: MusicTrack['licence'] & { verifiedAt: string; archived: string };
+  permits: { modification: boolean; redistribution: boolean; commercial: boolean };
+}
+
+const RECORDS = library.tracks as readonly TrackRecord[];
+
+/** apps/web/public/music, found from this test file (import.meta.url isn't a file URL under jsdom). */
+const musicFile = (name = '') =>
+  path.join(path.dirname(expect.getState().testPath ?? ''), '../../../public/music', name);
+const ALLOWED_LICENCES = new Set(['CC0 1.0', 'Public domain', 'CC BY 4.0']);
+
+const audioFiles = () => readdirSync(musicFile()).filter((name) => name.endsWith('.webm'));
+
+describe('music library', () => {
+  it('offers a small library covering every category', () => {
+    expect(TRACKS.length).toBeGreaterThanOrEqual(8);
+    expect(TRACKS.length).toBeLessThanOrEqual(15);
+    for (const category of CATEGORIES)
+      expect(
+        TRACKS.some((track) => track.category === category.id),
+        category.id,
+      ).toBe(true);
+  });
+
+  it('records every track with a unique id, a known category and a bundled file', () => {
+    const ids = new Set(TRACKS.map((track) => track.id));
+    expect(ids.size).toBe(TRACKS.length);
+    for (const track of RECORDS) {
+      expect(CATEGORIES.map((category) => category.id)).toContain(track.category);
+      const data = readFileSync(musicFile(track.file));
+      expect(data.length, track.file).toBe(track.bytes);
+      expect(createHash('sha256').update(data).digest('hex'), track.file).toBe(track.sha256);
+      expect(track.durationSeconds).toBeGreaterThan(30);
+    }
+    expect(audioFiles().sort()).toEqual(RECORDS.map((track) => track.file).sort());
+  });
+
+  it('only includes music whose licence allows shipping, editing and commercial use', () => {
+    for (const track of RECORDS) {
+      expect(ALLOWED_LICENCES, track.id).toContain(track.licence.name);
+      expect(track.licence.url).toMatch(/^https:\/\//);
+      expect(track.licence.verifiedAt).toMatch(/^https:\/\//);
+      // An independent copy of the source page, as evidence that outlives the page itself.
+      expect(track.licence.archived.endsWith(`/${track.source}`), track.id).toBe(true);
+      expect(track.licence.archived).toMatch(/^https:\/\/web\.archive\.org\/web\/\d{14}\//);
+      expect(track.source).toMatch(/^https:\/\//);
+      expect(track.permits, track.id).toEqual({
+        modification: true,
+        redistribution: true,
+        commercial: true,
+      });
+      // Only an attribution licence may (and must) carry a credit line.
+      expect(track.attribution === null, track.id).toBe(track.licence.name !== 'CC BY 4.0');
+    }
+  });
+
+  it('credits every track in the notes that ship beside the music', () => {
+    const credits = readFileSync(musicFile('CREDITS.md'), 'utf8');
+    for (const track of RECORDS) {
+      for (const fact of [
+        track.title,
+        track.creator,
+        track.source,
+        track.licence.name,
+        track.sha256,
+      ])
+        expect(credits, `${track.id}: ${fact}`).toContain(fact);
+    }
+  });
+
+  it('labels categories and builds URLs under /music/', () => {
+    expect(categoryLabel('lofi')).toBe('Lo-fi');
+    expect(categoryLabel('unknown' as MusicCategory)).toBe('unknown');
+    expect(trackUrl({ file: 'rain.webm' } as MusicTrack)).toBe('/music/rain.webm');
+  });
+});

@@ -209,6 +209,12 @@ of the section being read. While a timer runs, the button shows the minutes left
 section"). Playback always stops between sentences, ready to carry on from the next one; **Off**
 cancels the timer.
 
+## Background music and the audio mixer
+
+The sliders button in the player bar opens the audio mixer: the narration's volume and, beneath it,
+background music that plays quietly under the narration once you turn it on. See
+[Background Music and the Audio Mixer](Background-Music).
+
 ## Reading text
 
 Settings → Appearance changes how the text looks on this device: **Text size** (Small to Extra

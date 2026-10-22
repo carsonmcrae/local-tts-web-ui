@@ -2,8 +2,8 @@
 // Copyright (c) 2026 Carson McRae
 /**
  * Purpose: The persistent audio player docked at the bottom of every screen.
- * Scope: Wires player state to the transport, position, voice, speed, bookmark, sleep-timer and
- *   export controls; persists voice/speed choices as preferences; enables keyboard shortcuts;
+ * Scope: Wires player state to the transport, position, voice, speed, bookmark, audio-mixer,
+ *   sleep-timer and export controls; persists voice/speed choices as preferences; enables keyboard shortcuts;
  *   collapses to a compact layout on phones and announces errors to assistive technology.
  * Does NOT belong: Playback logic (controller.ts) or presentational pieces (PlayerParts.tsx).
  */
@@ -13,6 +13,7 @@ import { Link } from 'react-router';
 import { usePreferences, useSavePreferences, useVoices } from '@/api/queries';
 import { IconButton } from '@/components/ui/Button';
 import { useBookmarkToggle } from '@/features/bookmarks/useBookmarkToggle';
+import { MixerMenu } from '@/features/mixer/MixerMenu';
 import { ExportDialog } from '@/features/reader/ExportDialog';
 import type { PlayerState } from './controller';
 import {
@@ -124,6 +125,11 @@ export function PlayerBar() {
             <p className="truncate text-xs text-muted">{section?.title ?? <>&nbsp;</>}</p>
           </Link>
           <Transport controller={controller} busy={busy} playing={status === 'playing' || busy} />
+          {/* The audio mixer sits where there is room: beside the transport on phones (the position row is
+              full there), and at the end of the position row on wider screens. */}
+          <div className="flex md:hidden">
+            <MixerMenu />
+          </div>
           <div className="hidden items-center gap-0.5 md:flex md:w-56 md:justify-end lg:w-64">
             {voicePicker(false)}
             <SpeedMenu rate={rate} onChange={changeRate} />
@@ -172,6 +178,9 @@ export function PlayerBar() {
               size="sm"
               onClick={() => setExportOpen(true)}
             />
+          </div>
+          <div className="-ml-1 hidden md:flex">
+            <MixerMenu />
           </div>
         </div>
       </div>

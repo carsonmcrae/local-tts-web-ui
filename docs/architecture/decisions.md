@@ -337,6 +337,47 @@ when a choice changes the stack, a trust boundary, data storage or the setup exp
     range is very short; require at least a few words.
   - Engines read short fragments less naturally than whole sentences.
 
+## ADR-18: Background music plays in the browser, beside the narration, never mixed into it
+
+- **Context:** Listeners want quiet music under a long narration. Narration plays one sentence at a
+  time through a single audio element (ADR-3); a second sound must not delay, interrupt or change it,
+  and must not start by itself.
+- **Decision:**
+  - **A separate player.** Music is a Web Audio graph of its own (decoded track → fade gain → volume
+    gain → speakers) that follows the narration player's state from outside: it plays while the
+    narration plays or fetches the next sentence, pauses (keeping its place) when narration pauses,
+    stops on errors and at the end. The narration's audio is never routed through it, so a broken or
+    missing track can only silence the music. The player itself gains two things: a narration
+    volume for the audio mixer, and the rule that a sentence playing to its end (which fires a
+    `pause` just before `ended`) is not a pause.
+  - **One audio mixer.** A single button in the player holds every level: narration (the audio
+    element's `volume`; fixed by iPhones, which the mixer says) and background music, with room for
+    further channels such as sound effects (ADR-22).
+  - **Opt-in per narration.** A narration session is one document in the player: it begins when a
+    different document (or none) is loaded, and ends when the document finishes, is closed or
+    deleted, or the page reloads. Music is off at the start of every session. Pausing, seeking,
+    changing voice, speed or pace, and a sleep timer keep the session. The chosen track and both
+    volumes are remembered on this device (localStorage, like the reading text); "on" never is.
+  - **Bundled, checked tracks.** A small library ships with the web build under `/music/` as Opus in
+    WebM (decodable by Chromium, Firefox and Safari), loudness-matched below the narration and
+    prepared to loop. `library.json` records each track's source, creator and licence; only CC0 or
+    public-domain recordings (or licences that allow redistribution, editing and commercial use) are
+    included. Tracks are served by the local server, so music needs no internet.
+  - **Gentle changes.** Turning music on or off, pausing and switching tracks fade or crossfade;
+    loops are sample-accurate (`AudioBufferSourceNode.loop`). One track plays at a time, and an old
+    one is stopped and disconnected once its fade ends.
+- **Alternatives:**
+  - **Mixing on the server into each sentence.** Rejected: it changes every sentence's audio and cache
+    key, restarts the music at every sentence and ties music to voices.
+  - **Routing the narration through Web Audio** (for a shared mix or speech-driven ducking).
+    Rejected for now: a suspended audio context would silence the narration itself.
+  - **A looping `<audio>` element.** Rejected: loops leave an audible gap in several browsers.
+- **Consequences:** A decoded track lives in memory while it plays (about 23 MB a minute for 48 kHz
+  stereo), so tracks are kept short and only the current one (and the last preview) is kept. Automatic
+  ducking isn't built: the browser can't see pauses inside a sentence's audio without routing the
+  narration. Exported audio has no music yet; an export would mix the same files on the server with
+  the same gain and loop rules, and must keep the tracks' licence terms.
+
 ## ADR-19: A Tauri window around the existing UI and server, with a bundled Python
 
 - **Context:** People without developer tools should install TTSNative like any Windows app. The React

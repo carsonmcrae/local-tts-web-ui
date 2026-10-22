@@ -42,6 +42,8 @@ export interface PlayerState {
   currentTime: number;
   duration: number;
   sleep: SleepTimer | null;
+  /** Narration loudness, 0–1 (the audio mixer's narration channel). */
+  volume: number;
 }
 
 interface SegmentAudio {
@@ -54,6 +56,10 @@ export interface MediaLike {
   currentTime: number;
   playbackRate: number;
   preservesPitch?: boolean;
+  /** True once a sentence has played to its end. */
+  readonly ended?: boolean;
+  /** Narration loudness, 0–1 (some phones keep it at 1 and use the device volume). */
+  volume?: number;
   play(): Promise<void>;
   pause(): void;
   addEventListener(
@@ -112,6 +118,7 @@ export class PlaybackController {
       currentTime: 0,
       duration: 0,
       sleep: null,
+      volume: 1,
       ...initial,
     };
     deps.media.addEventListener('ended', () => this.onEnded());
@@ -119,7 +126,9 @@ export class PlaybackController {
       this.set({ currentTime: deps.media.currentTime }),
     );
     deps.media.addEventListener('pause', () => {
-      if (this.state.status === 'playing') this.set({ status: 'paused' });
+      // A sentence that plays to its end fires 'pause' just before 'ended': that is the narration
+      // moving on to the next sentence, not the listener pausing.
+      if (this.state.status === 'playing' && !deps.media.ended) this.set({ status: 'paused' });
     });
     deps.media.addEventListener('play', () => {
       if (this.state.status === 'paused') this.set({ status: 'playing' });
@@ -211,6 +220,13 @@ export class PlaybackController {
   setRate(rate: number): void {
     this.deps.media.playbackRate = rate;
     this.set({ rate });
+  }
+
+  /** Narration loudness, 0–1, on top of the device volume (background music has its own). */
+  setVolume(volume: number): void {
+    const level = Math.min(Math.max(volume, 0), 1);
+    this.deps.media.volume = level;
+    this.set({ volume: level });
   }
 
   setVoice(voiceId: string): Promise<void> {

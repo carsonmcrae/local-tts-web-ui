@@ -206,6 +206,7 @@ Kokoro 82M v1.0 (Apache-2.0): licenses\\kokoro\\README.txt and licenses\\Apache-
 
 6. WEB INTERFACE
 Bundled JavaScript packages and fonts: web\\THIRD-PARTY-LICENSES.md and web\\FONT-LICENSES.txt.
+Background music (CC0 and public-domain recordings, credited anyway): web\\music\\CREDITS.md.
 
 7. TTSNative.exe (Rust crates compiled into the desktop shell for Windows: ${rust.count})
 Each crate's source is at the address shown. The Microsoft WebView2 loader (WebView2LoaderStatic.lib

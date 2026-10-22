@@ -1,19 +1,18 @@
 # A more natural voice library: audit, research and measurements
 
 > **In short:** No new voice ships from this work, and that is the finding, not a failure of effort. No
-> English speech source read today documents the speaker's authorization to have their recognisable voice
+> English speech source read so far documents the speaker's authorization to have their recognisable voice
 > reproduced and distributed (LibriVox material is public domain as audio and unresolved as identity; Common
 > Voice forbids identifying speakers; Jenny (Dioco) comes closest), the preset-voice engines with permissive
-> weights are rated below Kokoro on the one independent arena that lists it, and Piper's voices sit below
-> Kokoro in every comparison while inheriting research-licensed checkpoints. What did move the sound of
-> every existing voice is the text layer: English voices now read money, times, phone numbers, years and
-> abbreviations as a narrator does, every voice card says what model it comes from and that it is
-> synthetic, and the measurements show that `kokoro-onnx` feeds Kokoro a phoneme transcription (espeak-ng)
-> the model was not trained on (misaki): 60 of 61 benchmark sentences differ, several homographs with them.
-> Three blind listening packs are ready for the owner. The proposals are a misaki phonemiser for Kokoro if
-> the owner prefers it by ear, and a narrator programme that asks named LibriVox readers and Dioco for
-> written authorization and ships their voices as checked `.ttsvoice` packs for the existing cloning
-> engine, instead of a scraped library.
+> weights rate below Kokoro on the one independent arena that lists it, and Piper's voices sit below Kokoro
+> while inheriting research-licensed checkpoints. What changes for every existing English voice is the text
+> layer: money, clock times, phone numbers, years, chapter numerals and abbreviations are read as a narrator
+> reads them, but only where the meaning is clear (code, formulas, ratios, verses, lists of numbers and
+> ambiguous abbreviations are left alone, tested on 219 cases). Every voice card says what model it comes
+> from and that it is synthetic. `kokoro-onnx` feeds Kokoro espeak-ng phonemes although the model was trained
+> on misaki's; whether misaki sounds better is for a blind comparison with a decision rule fixed in advance
+> (section 6), not for the phoneme differences. A narrator programme (written, specific permission from each
+> speaker) is the proposed route to new human voices; nobody has been contacted.
 
 Research date: 2026-10-21. Branch `feat/voice-library`. Labels: **documented** (read on the cited page or in
 this repository's code), **measured** (run on this computer), **claimed** (an author's own claim) and
@@ -165,185 +164,188 @@ a fine-tuned Piper voice of a consenting narrator ever beats Kokoro, which nothi
 
 ## 5. Benchmark
 
-`tests/perf/narration_corpus.json` holds 13 passages written for this benchmark on 2026-10-21, so no voice
-was built from them and no reference recording contains them: long-form fantasy, literary fiction, a
-three-character dialogue, an emotional passage, complex sentences, unusual names, questions and
-exclamations, numbers and dates, abbreviations, homographs, a quiet descriptive passage, paragraph and
-chapter transitions, and a 900-word chapter for fatigue listening.
+### Corpus, integrity and privacy
 
-`tests/perf/narration_benchmark.py` reads them with any set of voices through the real path (pasted
-document → sentences → the synthesis service with its pauses and polish) and records, per voice, the load
-time, first and median sentence latency, real-time factor, peak memory of the server and worker, GPU memory,
-loudness, pause share, pace, clipping and whether the same text comes out the same twice. It then writes a
-blind panel (`ltts voice-panel`) of the shorter passages and an anonymised long-form folder.
+- **Original text.** `tests/perf/narration_corpus.json` holds 13 passages written for this benchmark on
+  2026-10-21: long-form fantasy, literary fiction, a three-character dialogue, an emotional passage, complex
+  sentences, unusual names, questions, numbers and dates, abbreviations, homographs, a quiet passage, chapter
+  transitions and a 900-word chapter for fatigue listening. No voice was built from them. The homograph
+  passage was rewritten on 2026-10-22 because its first version followed the pattern of a widely circulated,
+  unattributed list of homograph examples ("the dove dove", "polish the Polish"); every sentence is now new.
+  `tests/perf/g2p_corpus.json` (35 sentences for the phonemiser comparison) was written on 2026-10-22.
+- **Audio stays local.** Benchmark and listening-pack audio, including the owner's own studio voice, is
+  written only to git-ignored folders (`.tools/`); the benchmark refuses an output folder inside the
+  repository that Git would track (`bench_support.check_output`). CI never runs the benchmark, and no
+  workflow uploads anything under `.tools/` (its artifacts are the installer, desktop logs, release files and
+  the Playwright report). Nothing generated was committed or pushed.
+- **Reproducible.** `metrics.json` records the commit, the corpus checksum, the exact settings and seed, the
+  OS, CPU, cores, RAM, GPU and driver, how busy the CPU was at the start, package versions, each engine's
+  revision and device, and the pinned model checksums. The panel order comes from `--seed`; cloned voices are
+  seeded from the text; Kokoro's vocoder adds random noise, so its samples differ slightly from run to run
+  (same words; whether the differences can be heard has not been tested), which the repeatability column
+  shows.
+- **Cold and warm measured apart.** Cold start: every engine unloaded and its model files verified again, as
+  after the app starts, then the first sentence (the operating system may still cache the files). Warm first
+  sentence: the model loaded, a sentence not in the cache. Median sentence and real-time factor: every
+  sentence through the app's own synthesis path, with the voice's cache purged first. Cached: the same
+  sentence served from the audio cache.
+- **Automated measurements and listening judgements never mix.** `summary.md` and `metrics.*` hold speed,
+  memory and signal statistics only; listening results exist only when a person has rated the blind pages
+  (section 6), and are reported separately with who listened and how.
 
-### Measurements (2026-10-21, this computer: 32-thread Zen 3, 64 GB, RTX 3080 10 GB)
+### Measurements
 
-Measured while other sessions' servers and a full test suite were running, so the speeds are pessimistic
-against the idle figures in [performance.md](../guides/performance.md) (Kokoro real-time factor 0.21 there).
-"RTF" is generation seconds per second of audio over the whole 17 minutes a voice read; "first sentence" is
-the first sentence after the model loaded; peak memory is the benchmark process with every service and
-the engine's worker, so it is above the server's usual footprint.
+Second run, 2026-10-22, commit `5d2a35c` (the code #45 merged), corpus `a80a88196d84`, seed 3: Windows 11 (10.0.26200); AMD Ryzen 9 5950X 16-Core Processor, 16 cores and 32 threads; 63.9 GB RAM; NVIDIA GeForce RTX 3080 (10 GB, driver 610.88); onnxruntime 1.30.0, kokoro-onnx 0.6.1; Chatterbox on cuda with torch 2.11.0+cu126. The CPU was 12.1 % busy when the run started, and other sessions' builds and tests ran during parts of it, so these speeds are pessimistic against the idle figures in [performance.md](../guides/performance.md). Memory is the benchmark process with every service and the engine's worker; GPU memory is what the whole card reported, so it is given only for the voices that use the GPU.
 
-| Voice                              | Engine, device   | Load   | First sentence | Median sentence | RTF  | Peak RSS           | Same text twice                                       |
-| ---------------------------------- | ---------------- | ------ | -------------- | --------------- | ---- | ------------------ | ----------------------------------------------------- |
-| Kokoro af_heart (default, grade A) | Kokoro, CPU      | 1.5 s  | 1.9 s          | 1.09 s          | 0.31 | 968 MB             | Length differs by a few ms; samples differ            |
-| Kokoro af_bella (A-)               | Kokoro, CPU      | loaded | 2.1 s          | 0.85 s          | 0.26 | 1.3 GB             | same                                                  |
-| Kokoro af_nicole (B-)              | Kokoro, CPU      | loaded | 2.7 s          | 1.47 s          | 0.30 | 1.5 GB             | same                                                  |
-| Kokoro bf_emma (B-)                | Kokoro, CPU      | loaded | 4.0 s          | 1.45 s          | 0.39 | 1.5 GB             | same                                                  |
-| Kokoro bm_george (C)               | Kokoro, CPU      | loaded | 4.1 s          | 1.18 s          | 0.31 | 1.5 GB             | same                                                  |
-| Kokoro am_michael (C+)             | Kokoro, CPU      | loaded | 3.9 s          | 1.26 s          | 0.34 | 1.5 GB             | same                                                  |
-| Kokoro am_fenrir (C+)              | Kokoro, CPU      | loaded | 1.9 s          | 0.94 s          | 0.30 | 1.5 GB             | Same length; samples differ (max 0.87 full scale)     |
-| Chatterbox default                 | Chatterbox, CUDA | 36 s   | 4.8 s          | 2.61 s          | 0.81 | 2.6 GB (+4 GB GPU) | Same length; samples differ by at most 0.005 (seeded) |
-| Owner's studio voice (local only)  | Chatterbox, CUDA | loaded | 5.9 s          | 2.49 s          | 0.74 | 2.7 GB (+4 GB GPU) | Same length; samples differ by at most 0.005 (seeded) |
+| Voice                             | Device | Cold start | Warm first sentence | Median sentence | Cached sentence | Real-time factor | Memory loaded / peak | GPU memory used by the voice | Same text twice                             |
+| --------------------------------- | ------ | ---------- | ------------------- | --------------- | --------------- | ---------------- | -------------------- | ---------------------------- | ------------------------------------------- |
+| Kokoro af_heart (default)         | CPU    | 3.2 s      | 0.76 s              | 1.13 s          | 163 ms          | 0.32             | 534 MB / 968 MB      | not used                     | length differs by a few ms                  |
+| Kokoro af_bella                   | CPU    | 3.0 s      | 1.01 s              | 1.60 s          | 157 ms          | 0.43             | 560 MB / 975 MB      | not used                     | length differs by a few ms                  |
+| Kokoro af_nicole                  | CPU    | 5.1 s      | 1.56 s              | 1.60 s          | 233 ms          | 0.33             | 576 MB / 1.4 GB      | not used                     | length differs by a few ms                  |
+| Kokoro bf_emma                    | CPU    | 3.5 s      | 0.90 s              | 1.13 s          | 165 ms          | 0.31             | 561 MB / 880 MB      | not used                     | same length; samples differ by up to 0.6306 |
+| Kokoro bm_george                  | CPU    | 2.9 s      | 0.86 s              | 0.98 s          | 163 ms          | 0.24             | 564 MB / 996 MB      | not used                     | length differs by a few ms                  |
+| Kokoro am_michael                 | CPU    | 2.4 s      | 0.86 s              | 1.05 s          | 196 ms          | 0.26             | 575 MB / 1001 MB     | not used                     | length differs by a few ms                  |
+| Kokoro am_fenrir                  | CPU    | 2.9 s      | 0.77 s              | 0.98 s          | 171 ms          | 0.29             | 564 MB / 884 MB      | not used                     | length differs by a few ms                  |
+| Chatterbox default                | CUDA   | 31.9 s     | 2.55 s              | 2.78 s          | 32 ms           | 0.77             | 2.2 GB / 2.5 GB      | about 3.4 GB                 | same length; samples differ by up to 0.0048 |
+| Owner's studio voice (local only) | CUDA   | 27.8 s     | 2.16 s              | 2.64 s          | 20 ms           | 0.73             | 2.2 GB / 2.6 GB      | about 3.2 GB                 | same length; samples differ by up to 0.0054 |
 
-What the numbers say:
+Every voice read all 13 passages with no failures. What the numbers say:
 
-- **Kokoro keeps up with reading on this CPU with three to four times to spare**, even under load, and
-  every passage rendered without an error. Nicole and Emma are the slowest (longer, more deliberate
-  readings), Bella the fastest.
-- **Kokoro's output is not bit-identical from one run to the next.** Its vocoder adds a random noise
-  source for unvoiced sound, so the same sentence differs by up to 0.05–0.08 of full scale between runs
-  (three direct runs of one sentence, same length), and kokoro-onnx places its pauses from the audio it
-  detects, so a whole passage can differ in length by a few milliseconds. This is inaudible, and the app
-  caches every sentence, so playback, exports and highlighting never see two versions of one sentence.
-- **Chatterbox Turbo on the GPU generated at 0.74–0.81 of real time under load** (0.58 when idle, per
-  performance.md): fast enough for continuous reading on an RTX 3080, with a 36-second first load and
-  2.5-second sentences, and about 4 GB of GPU memory. Every passage rendered; the seeded, retried
-  sentences came out the same length both times with sample differences under 0.005. On a CPU it
-  would be several times slower than real time, which is why any voice built on it stays an
-  optional, GPU-recommended install, never the default.
-- **Peak memory** rose from 968 MB with one voice to 1.5 GB with the clips of seven voices held by the
-  benchmark process; the server itself was measured at about 700 MB before.
+- **Kokoro starts in 2.4 to 5.1 s from cold** (including verifying its model files), then reads a new sentence in 0.76 to 1.56 s, at 0.24 to 0.43 of real time even on a busy CPU: two to four times faster than listening, with about 0.55 GB of memory once loaded.
+- **Chatterbox Turbo on the GPU starts in 28 to 32 s from cold** (starting its worker, verifying 3 GB of weights and loading them), then reads at 0.73 to 0.77 of real time with sentences of 2.64 to 2.78 s, using about 2.2 GB of memory and 3.2 to 3.5 GB of GPU memory. On a CPU it would be several times slower than real time, so any voice built on it stays an optional install with a GPU recommended.
+- **A sentence already in the cache** comes back in 20 to 230 ms; playback asks for it again only after a skip or a change of voice.
+- **Repeatability:** cloned voices are seeded from the text, so the same sentence comes out the same length with sample differences under 0.006. Kokoro's vocoder adds random noise and kokoro-onnx places pauses from the audio it detects, so the same passage can differ by a few milliseconds and in its samples. Whether those differences can be heard has not been tested by listening; the app generates each sentence once and caches it, so playback, exports and highlighting always use the same audio.
 
-Per-clip loudness, pause share and pace for every voice and passage are in `.tools/bench/metrics.csv`.
+The first run on 2026-10-21 (the benchmark's first version) gave the same picture: Kokoro at 0.26 to 0.39 of real time and Chatterbox at 0.74 to 0.81.
 
-### What the text layer still gets wrong (heard in the clips, independent of voice)
+### What the text layer still gets wrong (from the phonemes, not from listening)
 
-The homograph, number and abbreviation passages were rendered after the English reading rules of
-section 7; the remaining defects belong to the phonemiser: "lead mine", "took a bow", "winds wind",
-"caught a bass", "the dove dove", "Polish the Polish", "the does", "a minute amount", and the Polish and
-Welsh names, which espeak-ng spells out or guesses. misaki fixes four of these (section 5's phoneme
-comparison) and would need a dictionary entry or the pronunciation dictionary for the rest.
+Nobody has listened to these clips yet; this comes from reading espeak-ng's phoneme strings for the
+homograph and name sentences. espeak-ng reads "lead mine" as "leed", "took a bow" and "tied a bow" alike,
+"wind the clock" as the noun, "the tear in the chart" as crying, "caught a bass" as the instrument, and "the
+dove dove", "polish the Polish", "the does" and "a minute amount" one way each, and it guesses at Polish and
+Welsh names. The English reading rules (section 7) deliberately leave these alone: they are pronunciation,
+not numbers or abbreviations. The phonemiser comparison below is about exactly this class.
 
-### Phonemiser comparison (misaki against espeak-ng, Kokoro af_heart)
+### Phonemiser comparison (misaki against espeak-ng): what is measured, and what isn't
 
-61 benchmark sentences were phonemised both ways in an isolated environment and synthesised from the
-phonemes with the same voice and seed-free path (`.tools/g2p-ab`). Phoneme strings differ for 60 of 61;
-the only sentence that agrees is a short exclamation. The differences are systematic: misaki writes
-diphthongs as single tokens (`A`, `I`, `W`, `Y`, `O`), no length marks, `T` for the flapped t and `ʧ`/`ʤ`
-for affricates, exactly the token set the model's vocabulary holds (all six diphthong tokens are in the
-ONNX vocabulary and misaki produced no symbol outside it), while espeak writes `eɪ aɪ aʊ ɔɪ oʊ`, `iː ɑː
-ɔː`, `ɾ` and `tʃ dʒ`. On the homographs misaki reads "tear the page", "wound a bandage", "Present the
-present" and "plays live" correctly where espeak does not, and gets "bass player" wrong where espeak gets
-it right; both get "Polish", "does" and "minute" wrong. Which side sounds better is for the blind pairs
-(section 6); the phoneme evidence alone says the app is feeding Kokoro a transcription it was not trained
-on.
+- **Different, not yet better.** misaki's phoneme string differs from espeak-ng's for all 35 sentences of
+  `g2p_corpus.json` (and 60 of 61 benchmark sentences earlier). The differences are systematic: misaki writes
+  diphthongs as single tokens, no length marks, a flapped t and affricates as single symbols, which is the
+  token set Kokoro v1.0 was trained on (hexgrad: "As of v1.0, the Kokoro model is trained on the Misaki G2P
+  engine"); it produced no symbol outside the model's vocabulary. Its part-of-speech tagging chooses
+  homograph readings that espeak-ng doesn't. None of this shows that it sounds better; only the blind
+  comparison can.
+- **Cost, measured on this computer:** misaki with spaCy's small English model loads in 6.4 s, takes 4.8 ms
+  per sentence (6.2 ms at the 95th percentile; espeak-ng takes about 0.2 ms) and adds about 280 MB of
+  memory. Kokoro's synthesis time is the same either way (the same model reads both). A 6-second load
+  would have to happen in the background, never before the first sentence.
 
 ## 6. Blind listening (for the owner; not yet done)
 
-No listening result is claimed in this document. Three packs are ready, all local, none shared:
+No listening result is claimed in this document. The packs below were made on 2026-10-22 with the final
+reading rules and replace the first ones (`.tools/bench` and `.tools/g2p-ab`, which used the earlier rules
+and homograph passage and asked the wrong question about pronunciation).
 
-1. **Voices panel** `.tools/bench/panel/listen.html`: nine passages read by af_heart, bf_emma, am_michael,
-   the Chatterbox default voice and the owner's own studio voice, numbered in a new random order per
-   passage; rate each clip for naturalness and likeness, tick garbled words, pick the best; then
-   `ltts voice-panel score .tools/bench/panel answers.json`.
-2. **Long-form fatigue** `.tools/bench/longform/listen.html`: the 900-word chapter by every voice, anonymised;
-   notes per voice; `key.json` unblinds.
-3. **Phonemiser pairs** `.tools/g2p-ab/listen/listen.html`: 31 pairs (homographs, names, narration, dialogue)
-   of af_heart with espeak against misaki phonemes, X/Y shuffled; then
-   `ltts voice-ab score .tools/g2p-ab/listen answers.json` (A is espeak, B is misaki).
+1. **Pronunciation pack** `.tools/g2p-v2/pack/listen.html` (first priority): 39 pairs, the same sentence
+   read by the same voice with espeak-ng and with misaki phonemes, in a seeded random order, loudness
+   levelled; two US voices (af_heart, am_michael) and two UK voices (bf_emma, bm_george); homographs, names,
+   rare words, numbers and abbreviations, narration, dialogue and questions; four catch trials repeat a
+   clip. For each clip: words said wrongly (a note gives the intended reading where needed), any word
+   skipped, added or garbled, and naturalness from 1 to 5; then which you would rather hear. Score with
+   `python tests/perf/g2p_compare.py score .tools/g2p-v2/work .tools/g2p-v2/pack answers.json`.
+2. **Voices panel** `.tools/bench-v2/panel/listen.html`: nine passages read by af_heart, bf_emma, am_michael,
+   the Chatterbox default and the owner's own studio voice (local only), rated for likeness and naturalness
+   with garbled words marked; score with
+   `ltts voice-panel score .tools/bench-v2/panel answers.json --pair chatterbox:default,kokoro:af_heart`.
+3. **Long-form** `.tools/bench-v2/longform/listen.html`: the 900-word chapter by all nine voices, anonymised,
+   for notes on fatigue and mispronunciations.
 
-Decision rules proposed in advance: a phonemiser change is adopted only if misaki is preferred in at least
-20 of 31 pairs (p ≈ 0.07 against chance at 31 pairs; 21 gives p ≈ 0.04); a candidate voice joins the
-library only if its naturalness rating beats af_heart's on the paired sign test at p < 0.05 and no
-passage is marked garbled more often than the baseline.
+**The misaki decision rule, fixed before listening** (`RULE` in `g2p_compare.py`). misaki is adopted, with
+espeak-ng kept as the fallback, only if every condition holds:
+
+1. **Reliable listener:** at least 3 of the 4 catch trials heard as "no preference".
+2. **Pronunciation:** at least 25 % fewer wrongly pronounced words in total, no more than one extra wrong word
+   in either the US or UK voices, and no more skipped, added or garbled words.
+3. **Clear preference, with its uncertainty:** either a mean naturalness gain of at least 0.3 points whose
+   95 % bootstrap interval is above zero, or a preference share whose 95 % Wilson interval is above one half.
+   With 35 pairs and no ties, that needs about 24 preferences for misaki; 20 of 31 would not be enough.
+4. **No kind of sentence clearly worse:** misaki may not lose by two items or more in any of the seven kinds.
+5. **Affordable:** at most 50 ms median and 150 ms at the 95th percentile per sentence, at most 300 MB more
+   memory and a load of at most 10 s (measured: 4.8 ms, 6.2 ms, about 280 MB, 6.4 s).
+
+espeak-ng is kept if misaki is as good or worse; the result is inconclusive otherwise. One listener can only
+show a large difference, so even a passing result is provisional until a second listener agrees, and only
+then would an integration proposal (dependencies, packaging, licences, model integrity and performance) be
+written. The same caution applies to voices: a voice joins only if its naturalness beats af_heart's on the
+paired sign test (p < 0.05) for at least two of three listeners, with no more garbled words.
 
 ## 7. What to change, and what not to
 
-### Done on this branch (no new voices, no new engines, no downloads)
+### Done on this branch (no new voices, no new engines, nothing downloaded into the app)
 
-1. **English voices read money, times, phone numbers, years, chapter numerals and abbreviations as a
-   narrator does** (`synthesis/english.py`, applied to English voices of every engine after the pronunciation
-   dictionary). The defects it fixes were measured in the text layer (section 1), so they were defects of
-   every voice at once. Each rule is a bounded regular expression with a linearity test.
-2. **Every voice says where it comes from.** Voice cards and the voice list API carry an attribution naming
-   the model and licence and saying the voice is synthetic, not a recording (Kokoro-82M Apache-2.0; Chatterbox
-   Turbo MIT and watermarked; custom voices conditioned on a consented recording; blends).
-3. **A repeatable benchmark** (section 5) and the blind listening packs (section 6).
+1. **English reading rules, made conservative** (`synthesis/english.py`). A probe of realistic and ambiguous
+   text found the first version misreading code (`return $1;` as "1 dollar"), ratios and verses (1:25, John
+   3:16), lists of numbers and dates (read digit by digit), quantities ("in 1024 blocks" as a year), street
+   names ("Elm Dr." as Doctor) and "no." used as a word. Each rule was narrowed, not widened: a sentence that
+   looks like code or a formula is left alone; times need a cue word or AM/PM; phone numbers need +, a
+   leading 0, the US pattern or a cue word; years need a cue word and a following word that reads as a year;
+   ¥, bare degrees and the plus sign go to espeak-ng, which already reads them correctly; a sentence keeps
+   the full stop an abbreviation took. 219 rule cases (by kind: money, times, years, numbers, code and
+   formulas, dates and units, abbreviations, references), with idempotence and linear-time checks, and path
+   tests show that a saved pronunciation wins; that the written text, sentences, search, word counts and
+   export subtitles stay as written; and that playback, export, regeneration, preview and the local speech
+   API ask the engine for the same words. A known limit: a bare "$1" in otherwise plain prose ("echo $1 and
+   $2") is read as money.
+2. **Every voice says where it comes from:** model, licence, and that it is synthetic, not a recording.
+3. **A reproducible, private benchmark** and the blind listening packs (sections 5 and 6).
 
 ### Not done, and why
 
-- **No voice was added.** No English source read today documents the speaker's authorization for synthetic
-  reproduction and distribution (section 2); the preset-voice engines with permissive weights are rated
-  below Kokoro or have undocumented voice provenance (section 3); Piper's voices sit below Kokoro in every
-  informal comparison and inherit research-licensed checkpoints (section 4). Adding any of them would mean
-  lowering either the authorization standard or the quality bar. Nothing was downloaded.
-- **No engine was added.** The only permissive engine with independent evidence of beating Kokoro
-  (Ming-3.0-tts-0.5B) is a data-centre GPU model with undocumented voices; a hands-on test is a separate,
-  approved experiment, not a library change.
+- **No voice was added.** No English source read so far documents the speaker's authorization for synthetic
+  reproduction and distribution (section 2); permissively licensed preset-voice engines rate below Kokoro or
+  have undocumented voice origins (section 3); Piper's voices rate below Kokoro and inherit research-licensed
+  checkpoints (section 4).
+- **No engine or phonemiser was changed.** misaki waits for the blind comparison and its rule (section 6).
 
 ### Proposed, for the owner's decision
 
-**A. Phonemise Kokoro with misaki, the G2P it was trained on.** Evidence: hexgrad's statement, 60 of 61
-benchmark sentences phonemised differently by espeak, misaki's correct homographs (section 5), and the 31
-blind pairs in `.tools/g2p-ab/listen` for the owner's ears. Cost: misaki 0.9.4 (Apache-2.0) plus spaCy with
-its small English model (a 12.8 MB wheel from spaCy's GitHub releases, to be pinned by hash) and num2words.
-misaki 0.9.4 imports torch and transformers at module level for an optional neural fallback that an espeak
-fallback replaces; the app must not take torch into the server environment, so adoption means either a misaki
-release that imports them lazily or a trimmed, attributed copy of its English G2P (Apache-2.0 allows it).
-Non-English voices keep espeak. The Kokoro engine revision changes, so cached audio is generated again once.
-Adopt only if the owner prefers the misaki side of the blind pairs.
+**A. misaki for Kokoro, only if it passes the blind rule.** Then a separate integration proposal would cover:
+misaki (Apache-2.0) and spaCy (MIT) as server dependencies; spaCy's small English model as a pinned,
+checksum-verified download through the model store (a spaCy model is a Python package that runs code on
+import, so it needs the same review as a dependency); misaki 0.9.4's module-level imports of torch and
+transformers, which the server must not take (a misaki release importing them lazily, or a trimmed and
+attributed copy of its English G2P); misaki's `phonemizer-fork`, which must not share an environment with
+kokoro-onnx's `phonemizer`; loading in the background; espeak-ng kept for non-English voices and as the
+fallback; the Kokoro engine revision, so cached English audio is regenerated once; the desktop runtime's size
+and notices; and the cost measured above.
 
-**B. A narrator programme instead of a scraped library (Strategy B: authorized references for Chatterbox
-Turbo).** The engine, the studio session, the `.ttsvoice` package and the download-and-verify path all exist.
-What is missing is people, and section 2 says where to find them: the ten Hi-Fi TTS readers (17–58 hours of
-clean long-form LibriVox reading each; contact by forum private message or through LibriVox), Linda Johnson,
-Dioco for Jenny, and the Kyutai voice donors once the donation terms have been read in full.
-
-- Ask each narrator in writing for the eight elements the datasets note lists: identity, permission to
-  train or condition a model on their voice, permission to redistribute the resulting voice asset inside
-  TTSNative to third-party users, commercial and non-commercial generated speech, how they wish to be
-  credited, purpose limits, revocability, and country of residence. Keep the signed statement with the
-  voice's provenance record.
-- Record or import at least ten minutes of clean speech per narrator through the studio session (its 48
-  passages are already a recording script), build the voice locally, and ship it as a `.ttsvoice` pack
-  listed in a voice-pack manifest: pinned URL on a trusted host, size, SHA-256, licence and credit, installed
-  through the model store (atomic, resumable, cancellable, removable, offline afterwards), requiring the
-  optional Chatterbox engine and saying so, with a GPU recommended.
-- Keep six good voices as the target (US and UK narrators, warm, deep, expressive, neutral), each chosen by
-  a blind panel on the benchmark corpus against the Kokoro baseline, and never the owner's own voice.
-- Revocation: a narrator who withdraws is removed from the manifest; installed copies carry the credit and
-  the date of authorization.
+**B. A narrator programme** ([narrator-programme.md](../legal/narrator-programme.md)): written, specific,
+informed permission from each speaker; the rights TTSNative needs; attribution; withdrawal and takedown;
+no re-sharing of programme voice files; packaging through the model store; recruiting and blind evaluation of
+four to six voices. Nobody has been contacted.
 
 **C. Later experiments (each its own approval):** Ming-3.0-tts-0.5B and Qwen3-TTS CustomVoice as an
 optional GPU "high quality" mode, judged on the same corpus and panel; Chatterbox Nano for CPU cloning.
 
 **D. Keep saying no to:** Common Voice (identity clause), LibriVox-derived voices without the reader's written
-authorization, Piper voices, Kokoro's unnamed voice origins presented as anything but what hexgrad states.
+authorization, Piper voices, and Kokoro's unnamed voice origins presented as anything but what hexgrad states.
 
 ## 8. Security review
 
-- **Trust boundaries kept.** No download, dependency or security setting of the app changed. The two code
-  changes are pure Python string rewriting (bounded regular expressions, with a test that a hostile input
-  stays linear) and new metadata strings; the model store, host allow-list, checksum and `require_intact`
-  paths are untouched and still cover every file an engine loads.
-- **Research was reading only.** Three research helpers read pages through fetch tools under the same rules:
-  no downloads, installs or commands from any page; every fact labelled; pages that addressed AI agents listed
-  (section 9) and ignored.
-- **The evaluation environment** (`.tools/misaki-env`, git-ignored, outside the app) holds spaCy 3.8.16, the
-  `en_core_web_sm` 3.8.0 wheel from spaCy's GitHub releases, misaki 0.9.4 installed without its dependencies,
-  num2words, kokoro-onnx 0.6.1 and onnxruntime, all as wheels; torch and transformers were replaced by empty
-  stub modules so misaki's unused neural fallback is never built. Two lessons for any integration: misaki's
-  `phonemizer-fork` and kokoro-onnx's `phonemizer` share one import name and must never share an environment
-  (the fork mis-split "11,000" in the scratch environment; the app's phonemizer reads it correctly), and a
-  spaCy model is a Python package that runs code on import, so it needs the same pinning and review as any
-  dependency.
-- **Benchmark scripts** run with the real app services on a throw-away data directory and read only the
-  installed, verified models; nothing in `.tools` is part of the app.
-- **Remaining risks, unchanged by this work:** Kokoro's undocumented voice origins (legal audit R7, now at
-  least stated on every card); Chatterbox's `conds.pt` pickle (read with `weights_only=True`); the owner's own
-  voice data, which stays in `data/` and is excluded from anything shipped.
+- **Trust boundaries kept.** No download, dependency or security setting of the app changed. The code changes
+  are pure Python string rewriting (bounded regular expressions; a hostile input stays linear) and metadata
+  strings; the model store, host allow-list, checksums and `require_intact` are untouched.
+- **Research was reading only:** no downloads, installs or commands from any page; pages addressing AI agents
+  are listed in section 9 and were ignored.
+- **The evaluation environment** (`.tools/misaki-env`, git-ignored, outside the app, made on 2026-10-21 and
+  not changed since) holds spaCy 3.8.16, `en_core_web_sm` 3.8.0, misaki 0.9.4 (installed without its
+  dependencies), num2words, phonemizer-fork, kokoro-onnx 0.6.1 and onnxruntime, all wheels. The comparison
+  script writes empty stand-ins for torch and transformers so misaki's unused neural fallback never loads.
+- **Benchmark privacy:** see section 5; the owner's recordings and every clip made from them stay in
+  git-ignored folders on this computer.
+- **Remaining risks, unchanged by this work:** Kokoro's undocumented voice origins (legal audit R7, now stated
+  on every card); Chatterbox's `conds.pt` pickle (read with `weights_only=True`).
 
 ## 9. Pages that addressed AI agents (ignored)
 

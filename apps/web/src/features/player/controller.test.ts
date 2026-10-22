@@ -101,6 +101,41 @@ describe('PlaybackController', () => {
     expect(controller.getState().status).toBe('ended');
   });
 
+  it('never plays or prefetches skipped sentences, in either direction', async () => {
+    const { controller, media, requests } = setup();
+    // The document's skipped sentences: a header, and the page number and header between pages.
+    await controller.load({ ...DOC, skipped: new Set([0, 2, 3]) }, 0, true);
+    expect(controller.getState().segmentIndex).toBe(1);
+    expect(requests.map((r) => r.index)).toEqual([1, 4, 5]);
+    media.emit('ended');
+    await flush();
+    expect(media.src).toBe('blob:kokoro:a:4');
+    await controller.previous();
+    expect(controller.getState().segmentIndex).toBe(1);
+    await controller.nextSection(); // the section starts with a skipped sentence
+    expect(controller.getState().segmentIndex).toBe(4);
+    controller.pause();
+    await controller.seek(2); // shown while paused (to review it), but never played
+    expect(controller.getState().segmentIndex).toBe(2);
+    await controller.play();
+    expect(controller.getState()).toMatchObject({ segmentIndex: 4, status: 'playing' });
+    controller.refresh({ ...DOC, skipped: new Set([0, 2, 3, 5]) }); // read by hand no more
+    media.emit('ended');
+    expect(controller.getState().status).toBe('ended');
+  });
+
+  it('falls back to the nearest read sentence behind, or stays put when every sentence is skipped', async () => {
+    const { controller, requests } = setup();
+    // Sentences 5 and 6 are a page number and a footer: stepping forward from 4 has nowhere to go.
+    await controller.load({ ...DOC, skipped: new Set([4, 5]) }, 3, true);
+    await controller.next();
+    expect(controller.getState()).toMatchObject({ segmentIndex: 3, status: 'playing' });
+    // A page of nothing but page numbers: play what was asked for rather than nothing at all.
+    await controller.load({ ...DOC, skipped: new Set([0, 1, 2, 3, 4, 5]) }, 2, true);
+    expect(controller.getState().segmentIndex).toBe(2);
+    expect(requests.at(-1)?.index).toBe(2);
+  });
+
   it('never plays stale audio when the listener skips quickly', async () => {
     const { controller, media, requests } = setup();
     let release: () => void = () => undefined;

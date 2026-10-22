@@ -1,13 +1,14 @@
 # Settings and models
 
-**Settings** has seven sections: **Appearance**, **Playback**, **Pronunciation**, **Engines &
-models**, **Storage**, **Privacy** and **About**. On wide screens, an index on the left jumps between them.
+**Settings** has ten sections: **Appearance**, **Playback**, **Pronunciation**, **Engines &
+models**, **Storage**, **Phones and tablets**, **Audiobookshelf**, **Local speech API**, **Privacy**
+and **About**. On wide screens, an index on the left jumps between them.
 
 ## Appearance
 
-Choose the **System**, **Light** or **Dark** theme, and the reading text's **Text size**, **Line
-spacing** and **Typeface** (with a preview). These are saved on this device only, so each browser can
-have its own.
+Choose the **System**, **Light** or **Dark** theme, **Standard** or **High** contrast, and the
+reading text's **Text size**, **Line spacing**, **Typeface** and **Letter and word spacing** (with a
+preview). These are saved on this device only, so each browser can have its own.
 
 ## Playback
 
@@ -27,11 +28,24 @@ more detail.
 ## Pronunciation
 
 Teach every voice how to say a word: enter the **Word or name** as it is written and how to **Say it
-as**, spelled the way it sounds (for example "Kael" → "Kale", "Dr." → "Doctor"). **Hear it** plays it
-in the current reading voice. Words match whole words in any letter case; tick **Only when the letter
-case matches** for words such as "US". Rules apply to reading, previews and exports, and only the
-sentences that contain a changed word are generated again. Up to 500 words; rules are plain text,
-never patterns.
+as**, written the way it sounds, with no phonetic symbols (gnocchi → NYOH-kee, quinoa → KEEN-wah,
+Nguyen → Win, "Dr." → "Doctor"). Join syllables with hyphens and put the stressed one in capitals; it
+is read as one word, never spelled out. **Hear as written** and **Hear respelling** play the word and
+the respelling side by side in the current reading voice before you save. Words match whole words in
+any letter case; tick **Only when the letter case matches** for words such as "US".
+
+Your documents' text never changes, only what is spoken. Rules apply to reading and exports, and
+rules for all documents to voice previews and the [local speech API](#local-speech-api) too; only
+the sentences that contain a changed word are generated again. Words added here apply to **All
+documents**. To fix a word in one document only, select it in the reader and choose **Fix
+pronunciation** (see [Reading Documents](Reading-Documents#fixing-a-words-pronunciation)). The list
+shows each rule's scope, **All documents** or **Only in** a document; a document's rule wins over the
+one for all documents there, and **Change** can move it to all documents. A document's rules are
+deleted with it.
+
+Up to 500 words for all documents, and up to 500 more for each document; rules are plain text, never
+patterns. Hearing a word before saving it is limited to 30 previews a minute, of up to 200 characters
+each.
 
 ## Engines & models
 
@@ -75,12 +89,37 @@ a limit (2 GB by default, `LTTS_AUDIO_CACHE_MAX_MB`); older audio is removed aut
 full. **Clear audio cache** deletes all generated audio after you confirm. Documents, voices and models
 are kept, and audio is generated again as you listen.
 
+## Phones and tablets
+
+**LAN mode**, off until you switch it on, lets phones and tablets on the same Wi-Fi read and listen.
+The section says what a paired device can and can't do before the switch, then shows the address to
+open, a QR code and a one-time pairing code, the paired devices (each can be removed) and **Turn off
+LAN mode**. It turns itself off when TTSNative restarts. See [Other Devices](Other-Devices).
+
+## Local speech API
+
+For advanced users: an optional, OpenAI-compatible endpoint (`/v1/audio/speech`) that lets
+scripts, screen readers and home automation on this computer read text aloud with TTSNative
+voices. It is **off** until you open **Speech API settings** and switch it on, and programs need a
+token, which is shown once (only a fingerprint of it is kept). Custom voices can't be used until
+you allow each one, web pages can never call it, and other devices are refused unless you allow
+them (which only matters while LAN mode or network mode is on). OpenAI's voice names (`alloy`,
+`nova`…) work too, each reading with a built-in Kokoro voice. The section shows the exact address
+programs use, `http://127.0.0.1:<port>/v1` with TTSNative's own port (under `npm run dev`, not the
+one in your browser's address bar), and warns you when TTSNative has moved to another port since a
+program last used it, as it does when its usual port is busy at startup. It also shows when the API
+was last used, and the sidebar shows **Speech API in use** while a program is using it. See the
+[local speech API guide](https://github.com/carsonmcrae/ttsnative/blob/main/docs/guides/local-speech-api.md)
+for examples (curl, Python, the OpenAI SDK), the voice names, limits and how it is protected.
+
 ## Privacy
 
 A summary of how the app treats your data: no accounts, analytics or telemetry; documents, recordings
 and generated audio stay on this computer; the only network requests are model downloads you start
-yourself; everything works offline once models are installed. If the server was started in network
-mode, a **Network access is on** warning appears here (see [Other Devices](Other-Devices)).
+yourself, web pages you choose to import and books you send to your own Audiobookshelf; everything
+works offline once models are installed. While LAN mode is on, a **LAN mode is on** warning appears
+here, and if the server was started in network mode, a **Network access is on** warning (see
+[Other Devices](Other-Devices)).
 
 ## About
 

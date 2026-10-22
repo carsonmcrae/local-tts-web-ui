@@ -71,6 +71,11 @@ class Settings(BaseSettings):
     warm_up_engines: bool = True
     clone_worker_idle_unload_s: float = Field(default=600.0, ge=30)
 
+    # The optional local speech API (off until it is switched on in Settings; see docs/guides/local-speech-api.md).
+    speech_api_max_chars: int = Field(default=4_000, ge=100, le=20_000)
+    speech_api_requests_per_minute: int = Field(default=60, ge=1, le=600)
+    speech_api_timeout_s: float = Field(default=120.0, ge=5, le=900)
+
     @field_validator("host")
     @classmethod
     def _strip_host(cls, value: str) -> str:

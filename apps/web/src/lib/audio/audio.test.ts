@@ -9,7 +9,12 @@
  */
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { analyzeSamples } from './analysis';
-import { explainMicrophoneError, MicrophoneError, MicRecorder } from './recorder';
+import {
+  describeMicrophoneError,
+  explainMicrophoneError,
+  MicrophoneError,
+  MicRecorder,
+} from './recorder';
 import { decodeToClip, mixToMono, resampleLinear } from './wav';
 
 afterEach(() => vi.unstubAllGlobals());
@@ -134,6 +139,7 @@ describe('microphone errors', () => {
       code: 'unknown',
       name: 'MicrophoneError',
     });
+    expect(describeMicrophoneError(own)).toBe('In use.'); // no hint: the message stands alone
   });
 });
 

@@ -11,7 +11,7 @@
 import { createRequire } from 'node:module';
 import path from 'node:path';
 import { setup } from './setup.mjs';
-import { BootstrapError, color, ok, printFailure, step } from './lib/log.mjs';
+import { BootstrapError, color, ok, printFailure, step, warn } from './lib/log.mjs';
 import { repoRoot, serverDir, webDir } from './lib/paths.mjs';
 import { findFreePort, startManaged, stopManaged, waitForHttp } from './lib/processes.mjs';
 import { uvEnv } from './lib/uv.mjs';
@@ -38,6 +38,11 @@ async function main() {
     ]);
   }
 
+  if (apiPort !== API_PORT) {
+    warn(
+      `Port ${API_PORT} is busy, so the API is on port ${apiPort} this time. Programs that use the local speech API need the new port.`,
+    );
+  }
   step(`Starting API on http://${HOST}:${apiPort} and web UI on http://${HOST}:${webPort}…`);
   const api = startManaged({
     name: 'api',

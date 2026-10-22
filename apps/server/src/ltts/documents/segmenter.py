@@ -23,9 +23,13 @@ _ABBREVIATIONS = {
     "mt", "ft", "rev", "u.s", "u.k", "a.m", "p.m", "jan", "feb", "mar", "apr", "jun", "jul", "aug",
     "sep", "sept", "oct", "nov", "dec",
 }  # fmt: skip
+# Speech marks (``speech_marks.py``) are private-use characters; they sit beside punctuation like quotes.
+FIRST_MARK, MAX_MARKS = 0xF0000, 5_000  # supplementary private use: not in real text
+PAUSE_MARK = chr(0x100000)  # ends its sentence
+_MARK_CHARS = f"{PAUSE_MARK}{chr(FIRST_MARK)}-{chr(FIRST_MARK + MAX_MARKS - 1)}"
 # A run of sentence punctuation is only tried from its first character: a match can never start inside
 # the run, and trying each later position would make a long run ("!!!!…") cost quadratic time.
-_CANDIDATE = re.compile(r"(?<![.!?…])[.!?…]+[\"'”’)\]]*\s+")
+_CANDIDATE = re.compile(r"(?<![.!?…])[.!?…]+[\"'”’)\]" + _MARK_CHARS + r"]*\s+")
 _CLAUSE = re.compile(r"(?<=[;:,—])\s+")
 _NON_SPACE = re.compile(r"\S")
 
@@ -66,6 +70,30 @@ def _is_false_break(text: str, end: int) -> bool:
 
 
 def split_sentences(paragraph: str) -> list[str]:
+    if PAUSE_MARK not in paragraph:
+        return _split_plain(paragraph)
+    # A speech-mark pause ends its sentence; the mark stays at the end of it for the annotations.
+    pieces = paragraph.split(PAUSE_MARK)
+    sentences: list[str] = []
+    for position, piece in enumerate(pieces):
+        found = _split_plain(piece)
+        if position < len(pieces) - 1:
+            if found:
+                found[-1] += PAUSE_MARK
+            elif sentences:
+                sentences[-1] += PAUSE_MARK
+        sentences += found
+    # A mark left on its own (after a full stop) belongs to the sentence before it.
+    merged: list[str] = []
+    for sentence in sentences:
+        if merged and all(char.isspace() or char == PAUSE_MARK or ord(char) >= FIRST_MARK for char in sentence):
+            merged[-1] += sentence.strip()
+        else:
+            merged.append(sentence)
+    return merged
+
+
+def _split_plain(paragraph: str) -> list[str]:
     sentences: list[str] = []
     start = 0
     for match in _CANDIDATE.finditer(paragraph):
@@ -129,6 +157,7 @@ def _block_segments(
             block.kind,
             last_boundary if i == len(parts) - 1 else "sentence",
             text,
+            block.furniture,
         )
         for i, text in enumerate(parts)
     ]

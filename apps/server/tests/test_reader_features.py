@@ -24,7 +24,7 @@ from fastapi.testclient import TestClient
 from conftest import FakeEngine, wait_job
 from ltts.container import Services
 from ltts.documents import bookmarks
-from ltts.exports.service import srt_time
+from ltts.exports.assemble import srt_time
 from ltts.pronunciation import store
 from ltts.pronunciation.store import PronunciationIn, PronunciationOut, compile_rules
 

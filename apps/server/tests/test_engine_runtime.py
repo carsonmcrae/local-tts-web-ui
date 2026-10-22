@@ -44,6 +44,7 @@ class FakeKokoro:
 
     def __init__(self) -> None:
         self.created: list[tuple[str, str, float, str]] = []
+        self.styles: list[np.ndarray] = []
 
     @classmethod
     def from_session(cls, session: Any, voices_path: str) -> FakeKokoro:
@@ -55,9 +56,15 @@ class FakeKokoro:
     def get_voices(self) -> list[str]:
         return ["bf_emma", "af_heart"]
 
-    def create(self, text: str, voice: str, speed: float, lang: str) -> tuple[np.ndarray, int]:
+    def get_voice_style(self, name: str) -> np.ndarray:
+        return np.full((2, 4), 1.0 if name == "af_heart" else 3.0, dtype=np.float32)
+
+    def create(self, text: str, voice: Any, speed: float, lang: str) -> tuple[np.ndarray, int]:
         if text == "unspeakable":
             raise ValueError("phonemes failed")
+        if not isinstance(voice, str):
+            self.styles.append(voice)
+            voice = "<blend>"
         self.created.append((text, voice, speed, lang))
         if text == "silence":
             return np.zeros(0, dtype=np.float64), 24_000
@@ -110,6 +117,16 @@ def test_kokoro_loads_once_on_the_cpu_and_speaks(kokoro: KokoroEngine) -> None:
     assert kokoro.revision() == f"{ARTIFACT}/kokoro-onnx-0.6"
     # ONNX Runtime's usage telemetry is switched off before the model loads.
     assert sys.modules["onnxruntime"].telemetry_off == [True] and os.environ["ORT_DISABLE_TELEMETRY"] == "1"
+
+
+def test_kokoro_speaks_a_blend_as_the_weighted_mix_of_its_voices(kokoro: KokoroEngine) -> None:
+    spec = VoiceSpec("af_heart", language_code="en-us", blend=(("af_heart", 0.75), ("bf_emma", 0.25)))
+    kokoro.synthesize("Mixed.", spec, 1.0)
+    assert kokoro._model.created[-1][1] == "<blend>"
+    np.testing.assert_allclose(kokoro._model.styles[-1], np.full((2, 4), 0.75 * 1.0 + 0.25 * 3.0))
+    with pytest.raises(SynthesisError) as unknown:
+        kokoro.synthesize("Hi.", VoiceSpec("af_heart", blend=(("af_heart", 0.5), ("zz_nobody", 0.5))), 1.0)
+    assert unknown.value.code == "voice_not_found"
 
 
 def test_kokoro_rejects_unknown_voices_and_reports_failed_passages(
@@ -218,7 +235,7 @@ def chatterbox(settings: Settings) -> ChatterboxEngine:
 
 
 def test_chatterbox_identity_and_worker_command(chatterbox: ChatterboxEngine) -> None:
-    assert chatterbox.revision() == "chatterbox-turbo/worker-1"
+    assert chatterbox.revision() == "chatterbox-turbo/worker-5"
     argv = chatterbox._worker_argv()
     assert argv[1:] == ["-I", "-m", "ltts_chatterbox_worker"] and argv[0] == str(chatterbox._python)
 

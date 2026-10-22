@@ -9,10 +9,11 @@
  */
 import { screen, waitFor, within } from '@testing-library/react';
 import type { UserEvent } from '@testing-library/user-event';
+import userEvent from '@testing-library/user-event';
 import { expect } from 'vitest';
 import type { JobOut, SessionTake, VoiceSession } from '@/api/types';
 import type * as PcmModule from '@/lib/audio/pcmRecorder';
-import { json, kokoro, mockApi, preferences, voice, voiceProfile } from './render';
+import { json, kokoro, mockApi, preferences, renderWithApp, voice, voiceProfile } from './render';
 
 /** What the fake microphone does next, and which inputs were opened. */
 export const mic: { startError: unknown; started: (string | undefined)[] } = {
@@ -67,10 +68,18 @@ export const take = (number: number, promptId: string | null, speechS = 12): Ses
   createdAt: '2026-10-20T10:00:00+00:00',
 }); // prettier-ignore
 
-export const studioSession = (overrides: Partial<VoiceSession> = {}): VoiceSession => ({
-  id: ID, takes: [], usableSpeechS: 0, requiredSpeechS: 20, candidates: [], buildJobId: null, cleanup: null,
-  createdAt: '2026-10-20T10:00:00+00:00', updatedAt: '2026-10-20T10:00:00+00:00', ...overrides,
-}); // prettier-ignore
+const STYLES = ['narration', 'question', 'lively', 'dialogue', 'calm'];
+
+export const studioSession = (overrides: Partial<VoiceSession> = {}): VoiceSession => {
+  const complete = (overrides.usableSpeechS ?? 0) >= (overrides.requiredSpeechS ?? 20);
+  return {
+    id: ID, takes: [], usableSpeechS: 0, requiredSpeechS: 20, minimumSpeechS: 45, canBuild: complete, complete,
+    tier: complete ? 'complete' : 'starting', styles: STYLES.map((style) => ({ style, takes: 0, needed: 3 })),
+    suggested: complete ? [] : ['foundation'], advice: null,
+    candidates: [], buildJobId: null, cleanup: null, createdAt: '2026-10-20T10:00:00+00:00',
+    updatedAt: '2026-10-20T10:00:00+00:00', ...overrides,
+  };
+}; // prettier-ignore
 
 export const job = (status: JobOut['status'], message = ''): JobOut => ({
   id: JOB, kind: 'voice-build', status, progress: 0.4, message, payload: { sessionId: ID }, result: null,
@@ -97,7 +106,9 @@ export function studioApi(initial: VoiceSession | null, overrides: Record<string
     const number = Number(url.pathname.split('/').at(-1));
     const saved = take(number, url.searchParams.get('promptId'));
     const takes = [...session.takes.filter((item) => item.number !== number), saved];
-    state.session = { ...session, takes, usableSpeechS: takes.length * 12 };
+    const usableSpeechS = takes.length * 12;
+    const complete = usableSpeechS >= session.requiredSpeechS;
+    state.session = { ...session, takes, usableSpeechS, complete, canBuild: complete };
     return saved;
   };
   const post = (url: URL) => {
@@ -163,4 +174,15 @@ export async function recordTake(
   );
   tick(3);
   await user.click(within(dialog).getByRole('button', { name: 'Stop' }));
+}
+
+/** Open Voice Studio and continue the session in progress; returns the wizard dialog. */
+export async function resumeStudioSession() {
+  // Imported here, not at the top: tests mock pcmRecorder with fakePcmModule from this file, and a
+  // top-level import of the page (which loads pcmRecorder) would make that mock wait on itself.
+  const { default: VoiceStudioPage } = await import('@/features/studio/VoiceStudioPage');
+  const user = userEvent.setup();
+  renderWithApp(<VoiceStudioPage />);
+  await user.click(await screen.findByRole('button', { name: 'Continue' }));
+  return { user, dialog: await screen.findByRole('dialog', { name: 'Create a studio voice' }) };
 }

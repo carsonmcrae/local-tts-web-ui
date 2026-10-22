@@ -4,7 +4,9 @@
  * Purpose: Render one section's text for reading along, with the spoken sentence highlighted.
  * Scope: Groups segments into headings and paragraphs in the reader's chosen size, spacing and
  *   typeface, highlights the active segment (sentence-level timing is exact because each segment is
- *   its own audio clip), marks bookmarked sentences (with an accessible description), starts
+ *   its own audio clip), marks bookmarked sentences and sentences with their own voice or effect
+ *   (each with an accessible description) and shows skipped ones muted and labelled "skipped" (in
+ *   their accessible name too), starts
  *   playback from any clicked or keyboard-activated sentence (the text is a single tab stop; arrow
  *   keys move between sentences, Enter or Space plays), and keeps the active sentence in view
  *   without fighting a user who scrolls away.
@@ -42,8 +44,13 @@ const MOVES: Readonly<Record<string, number>> = {
 interface SentenceProps {
   segment: SegmentOut;
   active: boolean;
-  /** The id of the hidden "Bookmarked" text when this sentence is bookmarked. */
+  bookmarked: boolean;
+  /** The ids of the hidden texts describing it: "Bookmarked", and its voice or effect. */
   describedBy: string | undefined;
+  /** How the sentence is styled ("Read by Sam · Telephone call"), when it is. */
+  styled: string | undefined;
+  /** Left out when reading aloud. */
+  skipped: boolean;
   tabStop: boolean;
   onSelect: (index: number) => void;
   onMove: (index: number, step: number) => void;
@@ -52,7 +59,10 @@ interface SentenceProps {
 function Sentence({
   segment,
   active,
+  bookmarked,
   describedBy,
+  styled,
+  skipped,
   tabStop,
   onSelect,
   onMove,
@@ -75,16 +85,31 @@ function Sentence({
     <span // NOSONAR(typescript:S6819): inline sentence control, see the comment above
       role="button"
       tabIndex={tabStop ? 0 : -1}
-      className="reader-seg"
+      className={skipped ? 'reader-seg text-muted' : 'reader-seg'}
       data-index={segment.index}
       data-active={active}
-      data-bookmarked={describedBy !== undefined}
+      data-bookmarked={bookmarked}
+      data-styled={styled !== undefined}
+      data-skipped={skipped}
+      title={skipped ? [styled, 'Skipped when reading aloud'].filter(Boolean).join(' · ') : styled}
       aria-describedby={describedBy}
       aria-current={active ? 'true' : undefined}
-      onClick={() => onSelect(segment.index)}
+      // Dragging across text to select it (to give it a voice or effect) mustn't start playback.
+      onClick={() => {
+        if (document.getSelection()?.isCollapsed !== false) onSelect(segment.index);
+      }}
       onKeyDown={onKeyDown}
     >
       {segment.text}
+      {skipped ? (
+        // Not colour alone: a visible label, also part of the sentence's accessible name.
+        <>
+          {' '}
+          <span className="inline-block rounded-[3px] border border-line px-1 align-[0.12em] font-sans text-[0.62em] leading-snug font-medium tracking-wide uppercase select-none">
+            skipped
+          </span>
+        </>
+      ) : null}
     </span>
   );
 }
@@ -93,6 +118,10 @@ interface DocumentTextProps {
   segments: readonly SegmentOut[];
   activeIndex: number | null;
   bookmarked: ReadonlySet<number>;
+  /** Descriptions of the sentences with their own voice or effect, by segment index. */
+  styled?: ReadonlyMap<number, string>;
+  /** Sentences left out when reading aloud. */
+  skipped?: ReadonlySet<number>;
   autoScroll: boolean;
   onSelect: (index: number) => void;
 }
@@ -101,12 +130,15 @@ export function DocumentText({
   segments,
   activeIndex,
   bookmarked,
+  styled,
+  skipped,
   autoScroll,
   onSelect,
 }: Readonly<DocumentTextProps>) {
   const blocks = useMemo(() => toBlocks(segments), [segments]);
   const [readingText] = useReadingText();
   const bookmarkLabel = useId();
+  const styleLabel = useId();
   const container = useRef<HTMLDivElement>(null);
   const lastUserScroll = useRef(0);
 
@@ -157,19 +189,34 @@ export function DocumentText({
         Bookmarked
       </span>
       {blocks.map((block) => {
-        const content = block.segments.map((segment, position) => (
-          <span key={segment.index}>
-            <Sentence
-              segment={segment}
-              active={segment.index === activeIndex}
-              describedBy={bookmarked.has(segment.index) ? bookmarkLabel : undefined}
-              tabStop={segment.index === tabStop}
-              onSelect={onSelect}
-              onMove={focusNeighbour}
-            />
-            {position < block.segments.length - 1 ? ' ' : null}
-          </span>
-        ));
+        const content = block.segments.map((segment, position) => {
+          const style = styled?.get(segment.index);
+          const described = [
+            bookmarked.has(segment.index) ? bookmarkLabel : '',
+            style ? `${styleLabel}-${segment.index}` : '',
+          ].filter(Boolean);
+          return (
+            <span key={segment.index}>
+              {style ? (
+                <span id={`${styleLabel}-${segment.index}`} hidden>
+                  {style}
+                </span>
+              ) : null}
+              <Sentence
+                segment={segment}
+                active={segment.index === activeIndex}
+                bookmarked={bookmarked.has(segment.index)}
+                describedBy={described.length ? described.join(' ') : undefined}
+                styled={style}
+                skipped={skipped?.has(segment.index) ?? false}
+                tabStop={segment.index === tabStop}
+                onSelect={onSelect}
+                onMove={focusNeighbour}
+              />
+              {position < block.segments.length - 1 ? ' ' : null}
+            </span>
+          );
+        });
         return block.kind === 'heading' ? (
           <h2
             key={block.key}

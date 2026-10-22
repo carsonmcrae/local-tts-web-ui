@@ -290,7 +290,9 @@ describe('Voices and library flows', () => {
     await user.type(within(dialog).getByLabelText('Text'), 'Hello world.');
     await user.click(within(dialog).getByRole('button', { name: 'Add to library' }));
     await waitFor(() => expect(router.state.location.pathname).toBe(`/read/${'a'.repeat(32)}`));
-    expect(calls.find((c) => c.method === 'POST')?.body).toBe('{"text":"Hello world."}');
+    expect(calls.find((c) => c.method === 'POST')?.body).toBe(
+      '{"text":"Hello world.","speechMarks":false}',
+    );
   });
 });
 

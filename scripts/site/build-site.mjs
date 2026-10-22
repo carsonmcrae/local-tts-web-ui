@@ -92,6 +92,9 @@ async function main() {
   const out = path.resolve(option('--out'));
   let base = option('--base-url');
   while (base.endsWith('/')) base = base.slice(0, -1);
+  // The base URL comes from the Pages configuration, and goes into HTML and XML unescaped.
+  if (!/^https?:\/\/[\w.-]+(:\d+)?(\/[\w./-]*)?$/.test(base))
+    throw new Error(`--base-url must be a plain http(s) origin, got "${base}"`);
   rmSync(out, { recursive: true, force: true });
   cpSync(path.join(repoRoot, 'site'), out, { recursive: true });
 
@@ -102,7 +105,17 @@ async function main() {
   )) {
     copyFileSync(path.join(media, file), path.join(out, 'media', file));
   }
-  cpSync(path.join(repoRoot, 'docs', 'images'), path.join(out, 'images'), { recursive: true });
+  // Only the screenshots the pages use: docs/images also holds ones meant for the README.
+  const sources = ['index.html', '404.html'].map((page) =>
+    readFileSync(path.join(out, page), 'utf8'),
+  );
+  const wanted = new Set(
+    sources.flatMap((html) => [...html.matchAll(/images\/([\w.-]+)/g)].map((m) => String(m[1]))),
+  );
+  mkdirSync(path.join(out, 'images'), { recursive: true });
+  for (const file of wanted) {
+    copyFileSync(path.join(repoRoot, 'docs', 'images', file), path.join(out, 'images', file));
+  }
 
   const { releases, installer } = await releaseInfo();
   const latest = releases[0] ?? null;

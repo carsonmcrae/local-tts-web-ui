@@ -2,7 +2,7 @@
 // Copyright (c) 2026 Carson McRae
 /**
  * Purpose: The library — the app's home screen.
- * Scope: Upload/paste entry points, drag-and-drop anywhere on the page, a "continue listening" card
+ * Scope: Upload/paste/web page entry points, drag-and-drop anywhere on the page, a "continue listening" card
  *   for the most recent document, the searchable, sortable document list, a one-click sample, and
  *   loading/empty/error states.
  * Does NOT belong: Reading view (ReaderPage).
@@ -28,6 +28,7 @@ import {
   UploadStatus,
   useDocumentIntake,
 } from './UploadArea';
+import { WebPageDialog } from './WebPageDialog';
 
 function ContinueCard({
   id,
@@ -102,8 +103,9 @@ function LibraryContent({
           title="Drop a document here to start listening"
           actions={emptyActions}
         >
-          PDF, Word (DOCX), EPUB, Markdown and plain text, up to 25 MB. Text is extracted on this
-          computer; scanned PDFs without a text layer aren't supported yet.
+          PDF, Word (DOCX), EPUB, Kindle (MOBI), FB2, HTML, Markdown and plain text, up to 25 MB, or
+          a web page by its address. Text is extracted on this computer; scanned PDFs without a text
+          layer aren't supported yet.
         </EmptyState>
       </div>
     );
@@ -130,6 +132,7 @@ export default function LibraryPage() {
   const paste = usePasteText();
   const navigate = useNavigate();
   const [pasteOpen, setPasteOpen] = useState(false);
+  const [webOpen, setWebOpen] = useState(false);
 
   const trySample = () =>
     paste.mutate(
@@ -145,7 +148,13 @@ export default function LibraryPage() {
       <PageHeader
         title="Library"
         description="Documents stay on this computer. Pick up exactly where you left off."
-        actions={<UploadButtons onFile={intake.submit} onPaste={() => setPasteOpen(true)} />}
+        actions={
+          <UploadButtons
+            onFile={intake.submit}
+            onPaste={() => setPasteOpen(true)}
+            onWebPage={() => setWebOpen(true)}
+          />
+        }
       />
       <DefaultVoicesBanner />
       <UploadStatus
@@ -162,7 +171,11 @@ export default function LibraryPage() {
         documents={documents}
         emptyActions={
           <>
-            <UploadButtons onFile={intake.submit} onPaste={() => setPasteOpen(true)} />
+            <UploadButtons
+              onFile={intake.submit}
+              onPaste={() => setPasteOpen(true)}
+              onWebPage={() => setWebOpen(true)}
+            />
             <Button
               variant="ghost"
               icon={<Sparkles size={16} />}
@@ -175,6 +188,7 @@ export default function LibraryPage() {
         }
       />
       <PasteTextDialog open={pasteOpen} onOpenChange={setPasteOpen} />
+      <WebPageDialog open={webOpen} onOpenChange={setWebOpen} />
     </DropTarget>
   );
 }

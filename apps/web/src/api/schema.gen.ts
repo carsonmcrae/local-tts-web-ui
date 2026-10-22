@@ -24,6 +24,40 @@ export type paths = {
     patch?: never;
     trace?: never;
   };
+  '/api/cast-presets': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List Presets */
+    get: operations['list_presets_api_cast_presets_get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/cast-presets/{preset_id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /** Delete Preset */
+    delete: operations['delete_preset_api_cast_presets__preset_id__delete'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/documents': {
     parameters: {
       query?: never;
@@ -98,6 +132,179 @@ export type paths = {
     patch: operations['update_bookmark_api_documents__document_id__bookmarks__bookmark_id__patch'];
     trace?: never;
   };
+  '/api/documents/{document_id}/cast': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /**
+     * Update Cast
+     * @description Choose the voice for quoted dialogue (null: the reading voice) and whether it is split from narration.
+     */
+    put: operations['update_cast_api_documents__document_id__cast_put'];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/documents/{document_id}/cast-presets': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Save Preset */
+    post: operations['save_preset_api_documents__document_id__cast_presets_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/documents/{document_id}/cast-presets/{preset_id}/apply': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Apply Preset */
+    post: operations['apply_preset_api_documents__document_id__cast_presets__preset_id__apply_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/documents/{document_id}/characters': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List Characters */
+    get: operations['list_characters_api_documents__document_id__characters_get'];
+    /**
+     * Assign Character
+     * @description Give a character a voice (or, with null, take it away); a name not found in the text is kept too.
+     */
+    put: operations['assign_character_api_documents__document_id__characters_put'];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/documents/{document_id}/cleanup': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get Cleanup
+     * @description What the automatic cleanup found (running headers, footers, page numbers, footnotes, footnote and
+     *     citation markers) and the sentences skipped by hand, each with whether it applies now.
+     */
+    get: operations['get_cleanup_api_documents__document_id__cleanup_get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/documents/{document_id}/cleanup/apply': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Apply Cleanup
+     * @description Skip everything the cleanup found again.
+     */
+    post: operations['apply_cleanup_api_documents__document_id__cleanup_apply_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/documents/{document_id}/cleanup/undo': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Undo Cleanup
+     * @description Read everything the cleanup skipped again; sentences skipped by hand stay skipped.
+     */
+    post: operations['undo_cleanup_api_documents__document_id__cleanup_undo_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/documents/{document_id}/cover': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get Cover */
+    get: operations['get_cover_api_documents__document_id__cover_get'];
+    /** Upload Cover */
+    put: operations['upload_cover_api_documents__document_id__cover_put'];
+    post?: never;
+    /** Delete Cover */
+    delete: operations['delete_cover_api_documents__document_id__cover_delete'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/documents/{document_id}/details': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get Details */
+    get: operations['get_details_api_documents__document_id__details_get'];
+    /** Update Details */
+    put: operations['update_details_api_documents__document_id__details_put'];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/documents/{document_id}/progress': {
     parameters: {
       query?: never;
@@ -167,6 +374,47 @@ export type paths = {
     patch?: never;
     trace?: never;
   };
+  '/api/documents/{document_id}/segments/{index}/takes': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Make Take
+     * @description Generate another take of one sentence to listen to; keep it by setting the sentence's take.
+     */
+    post: operations['make_take_api_documents__document_id__segments__index__takes_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/documents/{document_id}/styles': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get Styles */
+    get: operations['get_styles_api_documents__document_id__styles_get'];
+    /**
+     * Update Styles
+     * @description Set (or, with null, clear) a voice, effect, sound, style, take, pause or skip on the chosen sentences.
+     */
+    put: operations['update_styles_api_documents__document_id__styles_put'];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/documents/text': {
     parameters: {
       query?: never;
@@ -195,6 +443,23 @@ export type paths = {
     put?: never;
     /** Upload Document */
     post: operations['upload_document_api_documents_upload_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/documents/url': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Import Web Page */
+    post: operations['import_web_page_api_documents_url_post'];
     delete?: never;
     options?: never;
     head?: never;
@@ -293,7 +558,8 @@ export type paths = {
       path?: never;
       cookie?: never;
     };
-    get?: never;
+    /** List Exports */
+    get: operations['list_exports_api_exports_get'];
     put?: never;
     /** Start Export */
     post: operations['start_export_api_exports_post'];
@@ -310,11 +576,46 @@ export type paths = {
       path?: never;
       cookie?: never;
     };
-    get?: never;
+    /** Get Export */
+    get: operations['get_export_api_exports__job_id__get'];
     put?: never;
     post?: never;
     /** Delete Export */
     delete: operations['delete_export_api_exports__job_id__delete'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/exports/{job_id}/audiobookshelf': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Send To Audiobookshelf */
+    post: operations['send_to_audiobookshelf_api_exports__job_id__audiobookshelf_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/exports/{job_id}/cancel': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Cancel Export */
+    post: operations['cancel_export_api_exports__job_id__cancel_post'];
+    delete?: never;
     options?: never;
     head?: never;
     patch?: never;
@@ -331,6 +632,23 @@ export type paths = {
     get: operations['download_export_api_exports__job_id__download_get'];
     put?: never;
     post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/exports/{job_id}/pause': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Pause Export */
+    post: operations['pause_export_api_exports__job_id__pause_post'];
     delete?: never;
     options?: never;
     head?: never;
@@ -354,6 +672,23 @@ export type paths = {
     patch?: never;
     trace?: never;
   };
+  '/api/exports/queue': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Export Queue */
+    get: operations['export_queue_api_exports_queue_get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/health': {
     parameters: {
       query?: never;
@@ -365,6 +700,45 @@ export type paths = {
     get: operations['health_api_health_get'];
     put?: never;
     post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/integrations/audiobookshelf': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get Audiobookshelf */
+    get: operations['get_audiobookshelf_api_integrations_audiobookshelf_get'];
+    /** Save Audiobookshelf */
+    put: operations['save_audiobookshelf_api_integrations_audiobookshelf_put'];
+    post?: never;
+    /** Forget Audiobookshelf */
+    delete: operations['forget_audiobookshelf_api_integrations_audiobookshelf_delete'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/integrations/audiobookshelf/test': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Test Audiobookshelf
+     * @description Check an address and key (the saved ones, or ones not saved yet) by listing what the key can upload to.
+     */
+    post: operations['test_audiobookshelf_api_integrations_audiobookshelf_test_post'];
     delete?: never;
     options?: never;
     head?: never;
@@ -422,6 +796,134 @@ export type paths = {
     patch?: never;
     trace?: never;
   };
+  '/api/lan': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Lan Status */
+    get: operations['lan_status_api_lan_get'];
+    /**
+     * Update Lan
+     * @description Turn LAN mode on (on the main server's port, on a network the person trusts) or off; turning it off
+     *     stops listening at once.
+     */
+    put: operations['update_lan_api_lan_put'];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/lan/device': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** This Device */
+    get: operations['this_device_api_lan_device_get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/lan/devices': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /** Remove All Devices */
+    delete: operations['remove_all_devices_api_lan_devices_delete'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/lan/devices/{device_id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /** Remove Device */
+    delete: operations['remove_device_api_lan_devices__device_id__delete'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/lan/pair': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Pair Device
+     * @description Pair the device making the request (on the network) with the code shown on the computer.
+     */
+    post: operations['pair_device_api_lan_pair_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/lan/pairing': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** New Pairing Code */
+    post: operations['new_pairing_code_api_lan_pairing_post'];
+    /** Cancel Pairing Code */
+    delete: operations['cancel_pairing_code_api_lan_pairing_delete'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/lan/pairing/qr.svg': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Pairing Qr */
+    get: operations['pairing_qr_api_lan_pairing_qr_svg_get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/preferences': {
     parameters: {
       query?: never;
@@ -434,6 +936,26 @@ export type paths = {
     /** Put Preferences */
     put: operations['put_preferences_api_preferences_put'];
     post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/pronunciation-preview': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Preview Pronunciation
+     * @description Render a word as written, or its respelling, in a voice; play the clip from ``audioUrl``.
+     */
+    post: operations['preview_pronunciation_api_pronunciation_preview_post'];
     delete?: never;
     options?: never;
     head?: never;
@@ -471,6 +993,62 @@ export type paths = {
     post?: never;
     /** Delete Pronunciation */
     delete: operations['delete_pronunciation_api_pronunciations__rule_id__delete'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/speech-api': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get Speech Api */
+    get: operations['get_speech_api_api_speech_api_get'];
+    /** Save Speech Api */
+    put: operations['save_speech_api_api_speech_api_put'];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/speech-api/activity': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Speech Api Activity
+     * @description Polled by the app shell: cheap, and says nothing beyond on/off and in use.
+     */
+    get: operations['speech_api_activity_api_speech_api_activity_get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/speech-api/token': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Create Token */
+    post: operations['create_token_api_speech_api_token_post'];
+    /** Revoke Token */
+    delete: operations['revoke_token_api_speech_api_token_delete'];
     options?: never;
     head?: never;
     patch?: never;
@@ -546,6 +1124,46 @@ export type paths = {
     patch: operations['update_profile_api_voice_profiles__profile_id__patch'];
     trace?: never;
   };
+  '/api/voice-profiles/{profile_id}/adapter': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /**
+     * Remove Tuning
+     * @description Stop using a kept fine-tune: the voice speaks as it did before.
+     */
+    delete: operations['remove_tuning_api_voice_profiles__profile_id__adapter_delete'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/voice-profiles/{profile_id}/export': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Export Voice
+     * @description The voice as a ``.ttsvoice`` package; ``confirm`` records that the owner chose to share it.
+     */
+    get: operations['export_voice_api_voice_profiles__profile_id__export_get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/voice-profiles/{profile_id}/reference': {
     parameters: {
       query?: never;
@@ -555,6 +1173,104 @@ export type paths = {
     };
     /** Reference Audio */
     get: operations['reference_audio_api_voice_profiles__profile_id__reference_get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/voice-profiles/{profile_id}/styles': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Build Styles
+     * @description Teach a studio voice saved before speaking styles existed how the speaker asks, exclaims and talks.
+     */
+    post: operations['build_styles_api_voice_profiles__profile_id__styles_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/voice-profiles/{profile_id}/styles/restore': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Restore Styles
+     * @description Go back to the expression a voice had before its last rebuild (again to return to the newer one).
+     */
+    post: operations['restore_styles_api_voice_profiles__profile_id__styles_restore_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/voice-profiles/{profile_id}/tuning': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Start Tuning
+     * @description Fine-tune a studio voice on the takes it kept; the result waits to be compared and kept.
+     */
+    post: operations['start_tuning_api_voice_profiles__profile_id__tuning_post'];
+    /** Discard Tuning */
+    delete: operations['discard_tuning_api_voice_profiles__profile_id__tuning_delete'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/voice-profiles/{profile_id}/tuning/keep': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Keep Tuning */
+    post: operations['keep_tuning_api_voice_profiles__profile_id__tuning_keep_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/voice-profiles/{profile_id}/tuning/samples/{arm}/{index}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Tuning Sample
+     * @description A comparison sentence read by the voice as it is (``current``) or with the waiting fine-tune (``tuned``).
+     */
+    get: operations['tuning_sample_api_voice_profiles__profile_id__tuning_samples__arm___index__get'];
     put?: never;
     post?: never;
     delete?: never;
@@ -575,6 +1291,44 @@ export type paths = {
     /** Analyze Recording */
     post: operations['analyze_recording_api_voice_profiles_analyze_post'];
     delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/voice-profiles/blends': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List Blends */
+    get: operations['list_blends_api_voice_profiles_blends_get'];
+    put?: never;
+    /**
+     * Create Blend
+     * @description Mix two to four built-in Kokoro voices into a new voice (weights are normalized).
+     */
+    post: operations['create_blend_api_voice_profiles_blends_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/voice-profiles/blends/{blend_id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /** Delete Blend */
+    delete: operations['delete_blend_api_voice_profiles_blends__blend_id__delete'];
     options?: never;
     head?: never;
     patch?: never;
@@ -611,6 +1365,46 @@ export type paths = {
     get: operations['consent_statement_api_voice_profiles_consent_get'];
     put?: never;
     post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/voice-profiles/import': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Import Voice
+     * @description Import a ``.ttsvoice`` package someone shared, once the importer confirms the owner's permission.
+     */
+    post: operations['import_voice_api_voice_profiles_import_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/voice-profiles/import/preview': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Preview Voice File
+     * @description What a ``.ttsvoice`` package holds, checked exactly as an import would be, without saving it.
+     */
+    post: operations['preview_voice_file_api_voice_profiles_import_preview_post'];
     delete?: never;
     options?: never;
     head?: never;
@@ -739,6 +1533,57 @@ export type paths = {
     patch?: never;
     trace?: never;
   };
+  '/api/voice-sessions/{session_id}/takes/{number}/audio': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Take Audio */
+    get: operations['take_audio_api_voice_sessions__session_id__takes__number__audio_get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/voice-sessions/{session_id}/takes/{number}/previous/audio': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Previous Take Audio */
+    get: operations['previous_take_audio_api_voice_sessions__session_id__takes__number__previous_audio_get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/voice-sessions/{session_id}/takes/{number}/restore': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Restore Take */
+    post: operations['restore_take_api_voice_sessions__session_id__takes__number__restore_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/voice-sessions/microphone-check': {
     parameters: {
       query?: never;
@@ -794,6 +1639,76 @@ export type paths = {
 export type webhooks = Record<string, never>;
 export type components = {
   schemas: {
+    /** AbsFolder */
+    AbsFolder: {
+      /** Id */
+      id: string;
+      /** Path */
+      path: string;
+    };
+    /** AbsLibrary */
+    AbsLibrary: {
+      /** Folders */
+      folders: components['schemas']['AbsFolder'][];
+      /** Id */
+      id: string;
+      /** Name */
+      name: string;
+    };
+    /** AbsSettingsIn */
+    AbsSettingsIn: {
+      /** Apikey */
+      apiKey?: string | null;
+      /** Folderid */
+      folderId?: string | null;
+      /** Libraryid */
+      libraryId?: string | null;
+      /** Url */
+      url: string;
+    };
+    /** AbsSettingsOut */
+    AbsSettingsOut: {
+      /** Configured */
+      configured: boolean;
+      /** Folderid */
+      folderId?: string | null;
+      /**
+       * Haskey
+       * @default false
+       */
+      hasKey: boolean;
+      /** Libraryid */
+      libraryId?: string | null;
+      /** Url */
+      url?: string | null;
+    };
+    /** BlendIn */
+    BlendIn: {
+      /** Name */
+      name: string;
+      /** Parts */
+      parts: components['schemas']['BlendPart'][];
+    };
+    /** BlendOut */
+    BlendOut: {
+      /** Createdat */
+      createdAt: string;
+      /** Id */
+      id: string;
+      /** Name */
+      name: string;
+      /** Parts */
+      parts: components['schemas']['BlendPart'][];
+      /** Voiceid */
+      voiceId: string;
+    };
+    /** BlendPart */
+    BlendPart: {
+      /** Voiceid */
+      voiceId: string;
+      /** Weight */
+      weight: number;
+    };
     /** BookmarkIn */
     BookmarkIn: {
       /**
@@ -840,6 +1755,49 @@ export type components = {
       /** Takenumber */
       takeNumber: number;
     };
+    /** CastPresetIn */
+    CastPresetIn: {
+      /** Name */
+      name: string;
+    };
+    /** CastPresetOut */
+    CastPresetOut: {
+      /** Characters */
+      characters: {
+        [key: string]: string;
+      };
+      /** Createdat */
+      createdAt: string;
+      /** Id */
+      id: string;
+      /** Name */
+      name: string;
+    };
+    /** CastUpdate */
+    CastUpdate: {
+      /** Dialoguevoiceid */
+      dialogueVoiceId?: string | null;
+      /** Splitdialogue */
+      splitDialogue?: boolean | null;
+    };
+    /** CharacterAssignment */
+    CharacterAssignment: {
+      /** Name */
+      name: string;
+      /** Voiceid */
+      voiceId?: string | null;
+    };
+    /** CharacterOut */
+    CharacterOut: {
+      /** Lines */
+      lines: number;
+      /** Name */
+      name: string;
+      /** Sample */
+      sample: string | null;
+      /** Voiceid */
+      voiceId: string | null;
+    };
     /**
      * Cleanup
      * @description How a microphone's recordings are cleaned up before a voice is made from them.
@@ -866,10 +1824,80 @@ export type components = {
        */
       trebleDb: number;
     };
+    /** CleanupItem */
+    CleanupItem: {
+      /** Applied */
+      applied: boolean;
+      /** Index */
+      index: number;
+      /** Markers */
+      markers?: string[];
+      /**
+       * Reason
+       * @enum {string}
+       */
+      reason:
+        'header' | 'footer' | 'page_number' | 'footnote_text' | 'footnote' | 'citation' | 'manual';
+      /** Sectionindex */
+      sectionIndex: number;
+      /** Text */
+      text: string;
+    };
+    /** CleanupOut */
+    CleanupOut: {
+      /** Items */
+      items: components['schemas']['CleanupItem'][];
+      /** Notice */
+      notice?: string | null;
+    };
     /** ConsentInfo */
     ConsentInfo: {
       /** Statement */
       statement: string;
+    };
+    /** DetailsIn */
+    DetailsIn: {
+      /** Author */
+      author?: string | null;
+      /** Description */
+      description?: string | null;
+      /** Narrator */
+      narrator?: string | null;
+    };
+    /** DetailsOut */
+    DetailsOut: {
+      /** Author */
+      author?: string | null;
+      /** Description */
+      description?: string | null;
+      /**
+       * Hascover
+       * @default false
+       */
+      hasCover: boolean;
+      /** Narrator */
+      narrator?: string | null;
+    };
+    /** DeviceOut */
+    DeviceOut: {
+      /** Address */
+      address: string | null;
+      /** Createdat */
+      createdAt: string;
+      /** Expired */
+      expired: boolean;
+      /** Expiresat */
+      expiresAt: string;
+      /** Id */
+      id: string;
+      /** Lastseenat */
+      lastSeenAt: string | null;
+      /** Name */
+      name: string;
+      /** Refusedaddress */
+      refusedAddress?: string | null;
+      /** Refusedat */
+      refusedAt?: string | null;
     };
     /** DocumentDetail */
     DocumentDetail: {
@@ -898,12 +1926,30 @@ export type components = {
       segmentCount: number;
       /** Sizebytes */
       sizeBytes: number;
+      /** Spokencharcount */
+      spokenCharCount: number;
+      /** Spokenwordcount */
+      spokenWordCount: number;
       /** Title */
       title: string;
       /** Warnings */
       warnings: string[];
       /** Wordcount */
       wordCount: number;
+    };
+    /** DocumentStylesOut */
+    DocumentStylesOut: {
+      /** Dialoguevoiceid */
+      dialogueVoiceId: string | null;
+      /** Revision */
+      revision: string;
+      /** Segments */
+      segments: components['schemas']['SegmentStyleOut'][];
+      /**
+       * Splitdialogue
+       * @default true
+       */
+      splitDialogue: boolean;
     };
     /** DocumentSummary */
     DocumentSummary: {
@@ -930,6 +1976,10 @@ export type components = {
       segmentCount: number;
       /** Sizebytes */
       sizeBytes: number;
+      /** Spokencharcount */
+      spokenCharCount: number;
+      /** Spokenwordcount */
+      spokenWordCount: number;
       /** Title */
       title: string;
       /** Wordcount */
@@ -1001,6 +2051,55 @@ export type components = {
        */
       updateAvailable: boolean;
     };
+    /**
+     * ExportOut
+     * @description An export job with what its working folder already holds.
+     */
+    ExportOut: {
+      /**
+       * Format
+       * @enum {string}
+       */
+      format: 'wav' | 'mp3' | 'm4b' | 'epub';
+      job: components['schemas']['JobOut'];
+      /** Queueposition */
+      queuePosition?: number | null;
+      /** Savedsentences */
+      savedSentences: number;
+      /** Sentences */
+      sentences: number;
+      /**
+       * Stale
+       * @default false
+       */
+      stale: boolean;
+      /** Title */
+      title: string;
+      /** Workingbytes */
+      workingBytes: number;
+    };
+    /**
+     * ExportQueueOut
+     * @description How busy exporting is, and why a new export (or a resume) can't start now.
+     */
+    ExportQueueOut: {
+      /** Blocked */
+      blocked: ('queue_full' | 'low_disk') | null;
+      /** Freebytes */
+      freeBytes: number;
+      /** Maxrunning */
+      maxRunning: number;
+      /** Maxwaiting */
+      maxWaiting: number;
+      /** Reservebytes */
+      reserveBytes: number;
+      /** Running */
+      running: number;
+      /** Voicejobrunning */
+      voiceJobRunning: boolean;
+      /** Waiting */
+      waiting: number;
+    };
     /** ExportRequest */
     ExportRequest: {
       /**
@@ -1017,7 +2116,7 @@ export type components = {
        * @default mp3
        * @enum {string}
        */
-      format: 'wav' | 'mp3';
+      format: 'wav' | 'mp3' | 'm4b' | 'epub';
       /** Lastsection */
       lastSection?: number | null;
       /**
@@ -1031,6 +2130,11 @@ export type components = {
        * @default 1
        */
       pace: number;
+      /**
+       * Usecover
+       * @default true
+       */
+      useCover: boolean;
       /** Voiceid */
       voiceId: string;
     };
@@ -1120,14 +2224,89 @@ export type components = {
      * JobStatus
      * @enum {string}
      */
-    JobStatus: 'queued' | 'running' | 'succeeded' | 'failed' | 'canceled' | 'interrupted';
+    JobStatus:
+      'queued' | 'running' | 'succeeded' | 'failed' | 'canceled' | 'interrupted' | 'paused';
+    /** LanStatus */
+    LanStatus: {
+      /** Address */
+      address: string | null;
+      /** Addresses */
+      addresses: components['schemas']['NetworkAddress'][];
+      /** Category */
+      category?: ('private' | 'domain') | null;
+      /** Devices */
+      devices: components['schemas']['DeviceOut'][];
+      /** Enabled */
+      enabled: boolean;
+      /** Interface */
+      interface: string | null;
+      /**
+       * Networkcheck
+       * @default confirm
+       * @enum {string}
+       */
+      networkCheck: 'category' | 'confirm';
+      pairing: components['schemas']['PairingOut'] | null;
+      /** Port */
+      port: number | null;
+      /** Turnedoff */
+      turnedOff?: ('network_changed' | 'network_public' | 'network_unknown') | null;
+      /** Url */
+      url: string | null;
+    };
+    /** LanUpdate */
+    LanUpdate: {
+      /** Address */
+      address?: string | null;
+      /** Enabled */
+      enabled: boolean;
+      /**
+       * Trustednetwork
+       * @default false
+       */
+      trustedNetwork: boolean;
+    };
+    /** NetworkAddress */
+    NetworkAddress: {
+      /** Address */
+      address: string;
+      /** Interface */
+      interface: string;
+      /**
+       * Kind
+       * @enum {string}
+       */
+      kind: 'network' | 'virtual' | 'vpn';
+    };
     /** NoteUpdate */
     NoteUpdate: {
       /** Note */
       note: string;
     };
+    /** PairingOut */
+    PairingOut: {
+      /** Code */
+      code: string;
+      /** Expiresins */
+      expiresInS: number;
+    };
+    /** PairRequest */
+    PairRequest: {
+      /** Code */
+      code: string;
+      /**
+       * Name
+       * @default Phone or tablet
+       */
+      name: string;
+    };
     /** PasteTextRequest */
     PasteTextRequest: {
+      /**
+       * Speechmarks
+       * @default false
+       */
+      speechMarks: boolean;
       /** Text */
       text: string;
       /** Title */
@@ -1177,6 +2356,17 @@ export type components = {
       /** Text */
       text?: string | null;
     };
+    /**
+     * PreviousTakeOut
+     * @description The take a new recording of the same passage replaced, kept to compare with it and restore.
+     */
+    PreviousTakeOut: {
+      /** Createdat */
+      createdAt: string;
+      /** Durations */
+      durationS: number;
+      quality: components['schemas']['QualityReport'];
+    };
     /** ProfileUpdate */
     ProfileUpdate: {
       /** Delivery */
@@ -1193,6 +2383,8 @@ export type components = {
     };
     /** PronunciationIn */
     PronunciationIn: {
+      /** Documentid */
+      documentId?: string | null;
       /**
        * Matchcase
        * @default false
@@ -1207,6 +2399,10 @@ export type components = {
     PronunciationOut: {
       /** Createdat */
       createdAt: string;
+      /** Documentid */
+      documentId?: string | null;
+      /** Documenttitle */
+      documentTitle?: string | null;
       /** Id */
       id: string;
       /**
@@ -1218,6 +2414,30 @@ export type components = {
       sayAs: string;
       /** Word */
       word: string;
+    };
+    /** PronunciationPreviewIn */
+    PronunciationPreviewIn: {
+      /**
+       * Pace
+       * @default 1
+       */
+      pace: number;
+      /**
+       * Respelling
+       * @default false
+       */
+      respelling: boolean;
+      /** Text */
+      text: string;
+      /** Voiceid */
+      voiceId: string;
+    };
+    /** PronunciationPreviewOut */
+    PronunciationPreviewOut: {
+      /** Audiourl */
+      audioUrl: string;
+      /** Durations */
+      durationS: number;
     };
     /** QualityIssue */
     QualityIssue: {
@@ -1233,16 +2453,22 @@ export type components = {
     };
     /** QualityReport */
     QualityReport: {
+      /** Background */
+      background?: string[] | null;
       /** Bodydb */
       bodyDb?: number | null;
       /** Brightnessdb */
       brightnessDb?: number | null;
       /** Clippingratio */
       clippingRatio: number;
+      /** Coverage */
+      coverage?: number | null;
       /** Durations */
       durationS: number;
       /** Issues */
       issues: components['schemas']['QualityIssue'][];
+      /** Noisedbfs */
+      noiseDbfs?: number | null;
       /** Ok */
       ok: boolean;
       /** Pauseratio */
@@ -1255,6 +2481,10 @@ export type components = {
       snrDb: number;
       /** Speechs */
       speechS: number;
+      /** Syllablesexpected */
+      syllablesExpected?: number | null;
+      /** Syllablesheard */
+      syllablesHeard?: number | null;
     };
     /** ReadingProgress */
     ReadingProgress: {
@@ -1344,9 +2574,171 @@ export type components = {
       /** Text */
       text: string;
     };
+    /** SegmentStyleOut */
+    SegmentStyleOut: {
+      /** Effect */
+      effect?:
+        | (
+            | 'loudspeaker'
+            | 'telephone'
+            | 'radio'
+            | 'hall'
+            | 'distant'
+            | 'robot'
+            | 'quiet'
+            | 'memory'
+          )
+        | null;
+      /** Index */
+      index: number;
+      /** Pausems */
+      pauseMs?: number | null;
+      /** Skip */
+      skip?: ('header' | 'footer' | 'page_number' | 'footnote_text' | 'manual') | null;
+      /** Sound */
+      sound?:
+        | (
+            | 'laugh'
+            | 'chuckle'
+            | 'sigh'
+            | 'gasp'
+            | 'cough'
+            | 'clear throat'
+            | 'sniff'
+            | 'groan'
+            | 'shush'
+          )
+        | null;
+      /** Style */
+      style?: ('narration' | 'question' | 'lively' | 'dialogue' | 'calm') | null;
+      /** Take */
+      take?: number | null;
+      /** Voiceid */
+      voiceId?: string | null;
+    };
+    /**
+     * SegmentStyleUpdate
+     * @description Set the given fields on the given sentences; a field sent as null clears it, one left out is kept.
+     */
+    SegmentStyleUpdate: {
+      /** Effect */
+      effect?:
+        | (
+            | 'loudspeaker'
+            | 'telephone'
+            | 'radio'
+            | 'hall'
+            | 'distant'
+            | 'robot'
+            | 'quiet'
+            | 'memory'
+          )
+        | null;
+      /** Indexes */
+      indexes: number[];
+      /** Pausems */
+      pauseMs?: number | null;
+      /** Skip */
+      skip?: boolean | null;
+      /** Sound */
+      sound?:
+        | (
+            | 'laugh'
+            | 'chuckle'
+            | 'sigh'
+            | 'gasp'
+            | 'cough'
+            | 'clear throat'
+            | 'sniff'
+            | 'groan'
+            | 'shush'
+          )
+        | null;
+      /** Style */
+      style?: ('narration' | 'question' | 'lively' | 'dialogue' | 'calm') | null;
+      /** Take */
+      take?: number | null;
+      /** Voiceid */
+      voiceId?: string | null;
+    };
+    /** SentenceTakeOut */
+    SentenceTakeOut: {
+      /** Audiourl */
+      audioUrl: string;
+      /** Durations */
+      durationS: number;
+      /** Take */
+      take: number;
+    };
     /** SessionCreate */
     SessionCreate: {
       cleanup?: components['schemas']['Cleanup'] | null;
+    };
+    /** SpeechApiActivity */
+    SpeechApiActivity: {
+      /** Active */
+      active: boolean;
+      /** Enabled */
+      enabled: boolean;
+    };
+    /** SpeechApiSettingsIn */
+    SpeechApiSettingsIn: {
+      /** Allowedvoices */
+      allowedVoices?: string[];
+      /**
+       * Allownetwork
+       * @default false
+       */
+      allowNetwork: boolean;
+      /** Enabled */
+      enabled: boolean;
+    };
+    /** SpeechApiStatus */
+    SpeechApiStatus: {
+      /** Allowedvoices */
+      allowedVoices: string[];
+      /** Allownetwork */
+      allowNetwork: boolean;
+      /** Enabled */
+      enabled: boolean;
+      /** Hastoken */
+      hasToken: boolean;
+      /** Lastusedport */
+      lastUsedPort: number | null;
+      /** Maxinputchars */
+      maxInputChars: number;
+      /** Networkmode */
+      networkMode: boolean;
+      /** Port */
+      port: number | null;
+      /** Requestsperminute */
+      requestsPerMinute: number;
+      /** Tokencreatedat */
+      tokenCreatedAt: string | null;
+      usage: components['schemas']['SpeechApiUsage'];
+    };
+    /**
+     * SpeechApiToken
+     * @description A new token: the only time it is ever sent.
+     */
+    SpeechApiToken: {
+      /** Createdat */
+      createdAt: string;
+      /** Token */
+      token: string;
+    };
+    /** SpeechApiUsage */
+    SpeechApiUsage: {
+      /** Active */
+      active: boolean;
+      /** Inprogress */
+      inProgress: boolean;
+      /** Lastusedat */
+      lastUsedAt: string | null;
+      /** Lastvoiceid */
+      lastVoiceId: string | null;
+      /** Requests */
+      requests: number;
     };
     /** StorageInfo */
     StorageInfo: {
@@ -1369,12 +2761,29 @@ export type components = {
       /** Voicesbytes */
       voicesBytes: number;
     };
+    /**
+     * StyleCoverage
+     * @description How many clean takes can teach one speaking style (narration, question, lively, dialogue, calm).
+     */
+    StyleCoverage: {
+      /**
+       * Needed
+       * @default 3
+       */
+      needed: number;
+      /** Style */
+      style: string;
+      /** Takes */
+      takes: number;
+    };
     /** SystemInfo */
     SystemInfo: {
       /** Cpucores */
       cpuCores: number;
       /** Gpus */
       gpus: components['schemas']['GpuInfo'][];
+      /** Lanmode */
+      lanMode: boolean;
       /** Limits */
       limits: {
         [key: string]: number;
@@ -1410,6 +2819,7 @@ export type components = {
       durationS: number;
       /** Number */
       number: number;
+      previous?: components['schemas']['PreviousTakeOut'] | null;
       /** Promptid */
       promptId: string | null;
       quality: components['schemas']['QualityReport'];
@@ -1418,6 +2828,51 @@ export type components = {
        * @enum {string}
        */
       source: 'recording' | 'import';
+    };
+    /** TakeRequest */
+    TakeRequest: {
+      /**
+       * Pace
+       * @default 1
+       */
+      pace: number;
+      /** Take */
+      take?: number | null;
+      /** Voiceid */
+      voiceId: string;
+    };
+    /** ThisDevice */
+    ThisDevice: {
+      /** Name */
+      name?: string | null;
+      /** Paired */
+      paired: boolean;
+      /** Reason */
+      reason?: ('expired' | 'address_changed') | null;
+    };
+    /**
+     * TuningCandidate
+     * @description A finished fine-tune waiting for the owner to compare it with the voice as it is, and keep it or not.
+     */
+    TuningCandidate: {
+      /** Bestepoch */
+      bestEpoch: number;
+      /** Createdat */
+      createdAt: string;
+      /** Epochs */
+      epochs: number;
+      /** Gain */
+      gain: number;
+      /** Lossafter */
+      lossAfter: number;
+      /** Lossbefore */
+      lossBefore: number;
+      /** Similarityafter */
+      similarityAfter: number;
+      /** Similaritybefore */
+      similarityBefore: number;
+      /** Texts */
+      texts: string[];
     };
     /** ValidationError */
     ValidationError: {
@@ -1467,8 +2922,63 @@ export type components = {
       /** Qualitygrade */
       qualityGrade?: string | null;
     };
+    /**
+     * VoicePreview
+     * @description What a voice file holds, shown before it is imported (nothing is saved to show it).
+     */
+    VoicePreview: {
+      /** Appversion */
+      appVersion: string | null;
+      /** Consentedat */
+      consentedAt: string;
+      /** Consentstatement */
+      consentStatement: string;
+      /** Createdat */
+      createdAt: string | null;
+      /** Creator */
+      creator: string | null;
+      /**
+       * Delivery
+       * @enum {string}
+       */
+      delivery: 'steady' | 'natural' | 'expressive';
+      /** Description */
+      description: string | null;
+      /** Durations */
+      durationS: number;
+      /** Exportedat */
+      exportedAt: string;
+      /** Formatversion */
+      formatVersion: number;
+      /**
+       * Humanvoice
+       * @default true
+       */
+      humanVoice: boolean;
+      /**
+       * Kind
+       * @enum {string}
+       */
+      kind: 'quick' | 'studio';
+      /** Name */
+      name: string;
+      /** Sizebytes */
+      sizeBytes: number;
+      /** Styles */
+      styles: string[];
+    };
     /** VoiceProfileOut */
     VoiceProfileOut: {
+      /**
+       * Canrefine
+       * @default false
+       */
+      canRefine: boolean;
+      /**
+       * Cantune
+       * @default false
+       */
+      canTune: boolean;
       /** Consentedat */
       consentedAt: string;
       /** Createdat */
@@ -1483,6 +2993,16 @@ export type components = {
       durationS: number;
       /** Engineid */
       engineId: string;
+      /**
+       * Finetuned
+       * @default false
+       */
+      fineTuned: boolean;
+      /**
+       * Haspreviousstyles
+       * @default false
+       */
+      hasPreviousStyles: boolean;
       /** Id */
       id: string;
       /**
@@ -1503,28 +3023,53 @@ export type components = {
        * @default A trimmed copy of your reference recording (WAV). No model is trained or uploaded.
        */
       stores: string;
+      /** Styles */
+      styles?: string[];
+      tuning?: components['schemas']['TuningCandidate'] | null;
       /** Voiceid */
       voiceId: string;
     };
     /** VoiceSessionOut */
     VoiceSessionOut: {
+      /** Advice */
+      advice: ('noisy_takes' | 'no_sound_take') | null;
       /** Buildjobid */
       buildJobId: string | null;
+      /** Canbuild */
+      canBuild: boolean;
       /** Candidates */
       candidates: components['schemas']['CandidateOut'][];
       cleanup: components['schemas']['Cleanup'] | null;
+      /** Complete */
+      complete: boolean;
       /** Createdat */
       createdAt: string;
       /** Id */
       id: string;
+      /** Minimumspeechs */
+      minimumSpeechS: number;
       /** Requiredspeechs */
       requiredSpeechS: number;
+      /** Styles */
+      styles: components['schemas']['StyleCoverage'][];
+      /** Suggested */
+      suggested: string[];
       /** Takes */
       takes: components['schemas']['TakeOut'][];
+      /**
+       * Tier
+       * @enum {string}
+       */
+      tier: 'starting' | 'foundation' | 'developing' | 'complete';
       /** Updatedat */
       updatedAt: string;
       /** Usablespeechs */
       usableSpeechS: number;
+    };
+    /** WebPageRequest */
+    WebPageRequest: {
+      /** Url */
+      url: string;
     };
   };
   responses: never;
@@ -1548,6 +3093,55 @@ export interface operations {
     responses: {
       /** @description Successful Response */
       200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  list_presets_api_cast_presets_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CastPresetOut'][];
+        };
+      };
+    };
+  };
+  delete_preset_api_cast_presets__preset_id__delete: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        preset_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      204: {
         headers: {
           [name: string]: unknown;
         };
@@ -1776,6 +3370,422 @@ export interface operations {
       };
     };
   };
+  update_cast_api_documents__document_id__cast_put: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        document_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CastUpdate'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DocumentStylesOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  save_preset_api_documents__document_id__cast_presets_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        document_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CastPresetIn'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CastPresetOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  apply_preset_api_documents__document_id__cast_presets__preset_id__apply_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        document_id: string;
+        preset_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CharacterOut'][];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  list_characters_api_documents__document_id__characters_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        document_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CharacterOut'][];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  assign_character_api_documents__document_id__characters_put: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        document_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CharacterAssignment'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CharacterOut'][];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  get_cleanup_api_documents__document_id__cleanup_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        document_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CleanupOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  apply_cleanup_api_documents__document_id__cleanup_apply_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        document_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CleanupOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  undo_cleanup_api_documents__document_id__cleanup_undo_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        document_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CleanupOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  get_cover_api_documents__document_id__cover_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        document_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  upload_cover_api_documents__document_id__cover_put: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        document_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DetailsOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  delete_cover_api_documents__document_id__cover_delete: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        document_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  get_details_api_documents__document_id__details_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        document_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DetailsOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  update_details_api_documents__document_id__details_put: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        document_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['DetailsIn'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DetailsOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
   save_progress_api_documents__document_id__progress_put: {
     parameters: {
       query?: never;
@@ -1944,6 +3954,108 @@ export interface operations {
       };
     };
   };
+  make_take_api_documents__document_id__segments__index__takes_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        document_id: string;
+        index: number;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['TakeRequest'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['SentenceTakeOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  get_styles_api_documents__document_id__styles_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        document_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DocumentStylesOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  update_styles_api_documents__document_id__styles_put: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        document_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['SegmentStyleUpdate'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DocumentStylesOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
   paste_text_api_documents_text_post: {
     parameters: {
       query?: never;
@@ -1987,6 +4099,39 @@ export interface operations {
       cookie?: never;
     };
     requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DocumentDetail'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  import_web_page_api_documents_url_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['WebPageRequest'];
+      };
+    };
     responses: {
       /** @description Successful Response */
       201: {
@@ -2154,6 +4299,26 @@ export interface operations {
       };
     };
   };
+  list_exports_api_exports_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ExportOut'][];
+        };
+      };
+    };
+  };
   start_export_api_exports_post: {
     parameters: {
       query?: never;
@@ -2174,6 +4339,37 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['JobOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  get_export_api_exports__job_id__get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        job_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ExportOut'];
         };
       };
       /** @description Validation Error */
@@ -2216,6 +4412,68 @@ export interface operations {
       };
     };
   };
+  send_to_audiobookshelf_api_exports__job_id__audiobookshelf_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        job_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      202: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['JobOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  cancel_export_api_exports__job_id__cancel_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        job_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      202: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['JobOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
   download_export_api_exports__job_id__download_get: {
     parameters: {
       query?: never;
@@ -2233,6 +4491,37 @@ export interface operations {
           [name: string]: unknown;
         };
         content?: never;
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  pause_export_api_exports__job_id__pause_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        job_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      202: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['JobOut'];
+        };
       };
       /** @description Validation Error */
       422: {
@@ -2276,6 +4565,26 @@ export interface operations {
       };
     };
   };
+  export_queue_api_exports_queue_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ExportQueueOut'];
+        };
+      };
+    };
+  };
   health_api_health_get: {
     parameters: {
       query?: never;
@@ -2292,6 +4601,110 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['Health'];
+        };
+      };
+    };
+  };
+  get_audiobookshelf_api_integrations_audiobookshelf_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['AbsSettingsOut'];
+        };
+      };
+    };
+  };
+  save_audiobookshelf_api_integrations_audiobookshelf_put: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['AbsSettingsIn'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['AbsSettingsOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  forget_audiobookshelf_api_integrations_audiobookshelf_delete: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  test_audiobookshelf_api_integrations_audiobookshelf_test_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: {
+      content: {
+        'application/json': components['schemas']['AbsSettingsIn'] | null;
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['AbsLibrary'][];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
         };
       };
     };
@@ -2378,6 +4791,217 @@ export interface operations {
       };
     };
   };
+  lan_status_api_lan_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['LanStatus'];
+        };
+      };
+    };
+  };
+  update_lan_api_lan_put: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['LanUpdate'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['LanStatus'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  this_device_api_lan_device_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ThisDevice'];
+        };
+      };
+    };
+  };
+  remove_all_devices_api_lan_devices_delete: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  remove_device_api_lan_devices__device_id__delete: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        device_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  pair_device_api_lan_pair_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['PairRequest'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DeviceOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  new_pairing_code_api_lan_pairing_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['PairingOut'];
+        };
+      };
+    };
+  };
+  cancel_pairing_code_api_lan_pairing_delete: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  pairing_qr_api_lan_pairing_qr_svg_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'image/svg+xml': unknown;
+        };
+      };
+    };
+  };
   get_preferences_api_preferences_get: {
     parameters: {
       query?: never;
@@ -2418,6 +5042,39 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['Preferences'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  preview_pronunciation_api_pronunciation_preview_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['PronunciationPreviewIn'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['PronunciationPreviewOut'];
         };
       };
       /** @description Validation Error */
@@ -2545,6 +5202,117 @@ export interface operations {
         content: {
           'application/json': components['schemas']['HTTPValidationError'];
         };
+      };
+    };
+  };
+  get_speech_api_api_speech_api_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['SpeechApiStatus'];
+        };
+      };
+    };
+  };
+  save_speech_api_api_speech_api_put: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['SpeechApiSettingsIn'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['SpeechApiStatus'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  speech_api_activity_api_speech_api_activity_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['SpeechApiActivity'];
+        };
+      };
+    };
+  };
+  create_token_api_speech_api_token_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['SpeechApiToken'];
+        };
+      };
+    };
+  };
+  revoke_token_api_speech_api_token_delete: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
       };
     };
   };
@@ -2709,11 +5477,261 @@ export interface operations {
       };
     };
   };
+  remove_tuning_api_voice_profiles__profile_id__adapter_delete: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        profile_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['VoiceProfileOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  export_voice_api_voice_profiles__profile_id__export_get: {
+    parameters: {
+      query?: {
+        confirm?: boolean;
+      };
+      header?: never;
+      path: {
+        profile_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/zip': unknown;
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
   reference_audio_api_voice_profiles__profile_id__reference_get: {
     parameters: {
       query?: never;
       header?: never;
       path: {
+        profile_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  build_styles_api_voice_profiles__profile_id__styles_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        profile_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      202: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['JobOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  restore_styles_api_voice_profiles__profile_id__styles_restore_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        profile_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['VoiceProfileOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  start_tuning_api_voice_profiles__profile_id__tuning_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        profile_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      202: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['JobOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  discard_tuning_api_voice_profiles__profile_id__tuning_delete: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        profile_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['VoiceProfileOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  keep_tuning_api_voice_profiles__profile_id__tuning_keep_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        profile_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['VoiceProfileOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  tuning_sample_api_voice_profiles__profile_id__tuning_samples__arm___index__get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        arm: 'current' | 'tuned';
+        index: number;
         profile_id: string;
       };
       cookie?: never;
@@ -2754,6 +5772,88 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['RecordingCheck'];
+        };
+      };
+    };
+  };
+  list_blends_api_voice_profiles_blends_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['BlendOut'][];
+        };
+      };
+    };
+  };
+  create_blend_api_voice_profiles_blends_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['BlendIn'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['BlendOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  delete_blend_api_voice_profiles_blends__blend_id__delete: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        blend_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
         };
       };
     };
@@ -2808,6 +5908,58 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['ConsentInfo'];
+        };
+      };
+    };
+  };
+  import_voice_api_voice_profiles_import_post: {
+    parameters: {
+      query: {
+        consent: boolean;
+        name?: string | null;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['VoiceProfileOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  preview_voice_file_api_voice_profiles_import_preview_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['VoicePreview'];
         };
       };
     };
@@ -3057,6 +6209,7 @@ export interface operations {
     parameters: {
       query?: {
         promptId?: string | null;
+        text?: string | null;
       };
       header?: never;
       path: {
@@ -3105,6 +6258,102 @@ export interface operations {
           [name: string]: unknown;
         };
         content?: never;
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  take_audio_api_voice_sessions__session_id__takes__number__audio_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        number: number;
+        session_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'audio/wav': unknown;
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  previous_take_audio_api_voice_sessions__session_id__takes__number__previous_audio_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        number: number;
+        session_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'audio/wav': unknown;
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  restore_take_api_voice_sessions__session_id__takes__number__restore_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        number: number;
+        session_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['TakeOut'];
+        };
       };
       /** @description Validation Error */
       422: {

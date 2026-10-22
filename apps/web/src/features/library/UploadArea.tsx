@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 Carson McRae
 /**
- * Purpose: Add documents to the library by file picker, drag-and-drop or pasting text.
+ * Purpose: Add documents to the library by file picker, drag-and-drop, pasting text or a web page.
  * Scope: Client-side pre-checks (type and size, for fast feedback only — the server re-validates
  *   everything), upload progress, server error display, and the paste-text dialog.
  * Does NOT belong: Extraction rules (server) or library listing.
  */
-import { ClipboardPaste, FileUp, UploadCloud } from 'lucide-react';
+import { ClipboardPaste, FileUp, Globe, UploadCloud } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
@@ -18,15 +18,21 @@ import { Banner, StatusRegion } from '@/components/ui/Feedback';
 import { Field, Input, Textarea } from '@/components/ui/Field';
 import { IndeterminateBar } from '@/components/ui/Spinner';
 import { cn } from '@/lib/cn';
+import { SpeechMarksOption } from './SpeechMarksOption';
 
-const ACCEPTED = '.txt,.md,.markdown,.pdf,.docx,.epub';
+const ACCEPTED = '.txt,.md,.markdown,.pdf,.docx,.epub,.html,.htm,.fb2,.fb2.zip,.mobi,.azw,.azw3';
 const ACCEPTED_EXTENSIONS = new Set(ACCEPTED.split(','));
 const CLIENT_MAX_BYTES = 25 * 1024 * 1024;
 
+/** The extension that decides a file's format; FB2 books are often zipped as ".fb2.zip". */
+function extensionOf(name: string): string {
+  const lower = name.toLowerCase();
+  return lower.endsWith('.fb2.zip') ? '.fb2.zip' : lower.slice(lower.lastIndexOf('.'));
+}
+
 export function precheck(file: File, maxBytes = CLIENT_MAX_BYTES): string | null {
-  const extension = file.name.slice(file.name.lastIndexOf('.')).toLowerCase();
-  if (!ACCEPTED_EXTENSIONS.has(extension))
-    return `“${file.name}” isn't a supported format. Use TXT, Markdown, PDF, DOCX or EPUB.`;
+  if (!ACCEPTED_EXTENSIONS.has(extensionOf(file.name)))
+    return `“${file.name}” isn't a supported format. Use TXT, Markdown, PDF, DOCX, EPUB, HTML, FB2 or MOBI.`;
   if (file.size === 0) return `“${file.name}” is empty.`;
   if (file.size > maxBytes)
     return `“${file.name}” is larger than the ${Math.round(maxBytes / 1048576)} MB limit.`;
@@ -64,9 +70,10 @@ export function PasteTextDialog({
   const navigate = useNavigate();
   const [text, setText] = useState('');
   const [title, setTitle] = useState('');
+  const [marks, setMarks] = useState(false);
   const submit = () =>
     paste.mutate(
-      { text, ...(title.trim() ? { title: title.trim() } : {}) },
+      { text, speechMarks: marks, ...(title.trim() ? { title: title.trim() } : {}) },
       {
         onSuccess: (document) => {
           onOpenChange(false);
@@ -121,6 +128,7 @@ export function PasteTextDialog({
             />
           )}
         </Field>
+        <SpeechMarksOption checked={marks} onCheckedChange={setMarks} />
         {paste.isError ? <Banner tone="error">{describeError(paste.error)}</Banner> : null}
       </div>
     </Dialog>
@@ -200,10 +208,14 @@ export function DropTarget({ onFile, children, className }: Readonly<DropTargetP
 export function UploadButtons({
   onFile,
   onPaste,
-}: Readonly<{ onFile: (file: File) => void; onPaste: () => void }>) {
+  onWebPage,
+}: Readonly<{ onFile: (file: File) => void; onPaste: () => void; onWebPage: () => void }>) {
   const input = useRef<HTMLInputElement>(null);
   return (
     <>
+      <Button variant="ghost" icon={<Globe size={16} />} onClick={onWebPage}>
+        Import a web page
+      </Button>
       <Button icon={<ClipboardPaste size={16} />} onClick={onPaste}>
         Paste text
       </Button>

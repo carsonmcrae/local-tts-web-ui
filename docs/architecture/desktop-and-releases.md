@@ -1,7 +1,8 @@
 # Windows app, updates and releases
 
 > **In short:** the Windows app is a small Tauri 2 window around the existing React UI. It starts the
-> existing FastAPI server, bundled with its own Python, on `127.0.0.1` and stops it on exit. A per-user
+> existing FastAPI server, bundled with its own Python, on `127.0.0.1` and stops it on exit (LAN mode,
+> turned on in Settings, adds a second listener on one home-network address until the app restarts). A per-user
 > NSIS installer puts the program in `%LOCALAPPDATA%\TTSNative` and keeps the user's data separately in
 > `%LOCALAPPDATA%\com.ttsnative.desktop`. Updates come only from GitHub Releases and are verified with a
 > signature before anything is installed. Every pull request declares its release impact in a change

@@ -15,7 +15,6 @@ import type {
   DocumentDetail,
   DocumentSummary,
   EngineInfo,
-  ExportRequest,
   JobOut,
   Preferences,
   SectionContent,
@@ -131,7 +130,7 @@ export function useUploadDocument() {
 export function usePasteText() {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: (input: { text: string; title?: string }) =>
+    mutationFn: (input: { text: string; title?: string; speechMarks?: boolean }) =>
       api<DocumentDetail>('/api/documents/text', { method: 'POST', json: input }),
     onSuccess: () => client.invalidateQueries({ queryKey: keys.documents }),
   });
@@ -220,13 +219,6 @@ export function useCancelJob() {
   return useMutation({
     mutationFn: (jobId: string) => api<JobOut>(`/api/jobs/${jobId}/cancel`, { method: 'POST' }),
     onSuccess: (job) => client.setQueryData(keys.job(job.id), job),
-  });
-}
-
-export function useStartExport() {
-  return useMutation({
-    mutationFn: (request: ExportRequest) =>
-      api<JobOut>('/api/exports', { method: 'POST', json: request }),
   });
 }
 
@@ -342,12 +334,21 @@ export function useCreateSession() {
 
 export function useSaveTake() {
   return useSessionMutation(
-    (input: { sessionId: string; number: number; promptId: string; wav: Blob }) =>
+    (input: { sessionId: string; number: number; promptId: string; text: string; wav: Blob }) =>
       api<SessionTake>(`/api/voice-sessions/${input.sessionId}/takes/${input.number}`, {
         method: 'PUT',
-        query: { promptId: input.promptId },
+        query: { promptId: input.promptId, text: input.text },
         body: input.wav,
       }),
+  );
+}
+
+/** Keep the take a re-recording replaced (the newer one is kept in its place, to switch back). */
+export function useRestoreTake() {
+  return useSessionMutation((input: { sessionId: string; number: number }) =>
+    api<SessionTake>(`/api/voice-sessions/${input.sessionId}/takes/${input.number}/restore`, {
+      method: 'POST',
+    }),
   );
 }
 

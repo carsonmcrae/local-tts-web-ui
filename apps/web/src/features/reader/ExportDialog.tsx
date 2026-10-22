@@ -1,22 +1,30 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 Carson McRae
 /**
- * Purpose: Export a document (or a range of chapters) as downloadable audio.
- * Scope: Format (MP3/WAV), single file vs one file per chapter (ZIP + playlist), chapter range,
- *   optional sentence-timed subtitles (SRT, delivered in a ZIP with the audio), live progress with cancel, resume after cancel/failure (cached sentences are reused), and the
- *   download link once ready.
- * Does NOT belong: Export assembly (server) or live playback.
+ * Purpose: Export a document (or a range of chapters) as audio, an M4B audiobook or a read-along
+ *   EPUB.
+ * Scope: Holds the choices (ExportOptions) and the audiobook details (AudiobookDetails), saves
+ *   unsaved details and starts the export once (a double click never starts two), then follows the
+ *   job (ExportStatus: progress, pause, resume, cancel, download, Audiobookshelf) and links to the
+ *   Exports page, where every export can be found again after the app restarts.
+ * Does NOT belong: Export assembly (server), the actions on one export (ExportStatus) or live
+ *   playback.
  */
-import { Download, FileAudio, RotateCcw } from 'lucide-react';
-import { useState } from 'react';
-import { api, describeError } from '@/api/client';
-import { isJobActive, useCancelJob, useJob, usePreferences, useStartExport } from '@/api/queries';
-import type { JobOut, SectionOut } from '@/api/types';
-import { buttonClasses, Button } from '@/components/ui/Button';
+import { FileAudio } from 'lucide-react';
+import { useRef, useState } from 'react';
+import { Link } from 'react-router';
+import { ApiError, describeError } from '@/api/client';
+import { useExportDetail, useStartExport } from '@/api/exportQueries';
+import { isJobActive, useJob, usePreferences } from '@/api/queries';
+import type { ExportFormat, SectionOut } from '@/api/types';
+import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
-import { Banner, ProgressBar } from '@/components/ui/Feedback';
-import { Field, Select, Switch } from '@/components/ui/Field';
-import { formatBytes, formatDuration } from '@/lib/format';
+import { Banner } from '@/components/ui/Feedback';
+import { ExportStatus, FfmpegHelp } from '@/features/exports/ExportStatus';
+import { RESUMABLE } from '@/features/exports/exportText';
+import { AudiobookDetails, useDetailsDraft } from './AudiobookDetails';
+import type { ExportChoices } from './ExportOptions';
+import { choicesToRequest, ExportOptions } from './ExportOptions';
 
 interface ExportDialogProps {
   open: boolean;
@@ -28,64 +36,17 @@ interface ExportDialogProps {
   pace: number;
 }
 
-type Range = 'all' | 'current' | 'custom';
+type Choices = Omit<ExportChoices, 'format'> & { format: ExportFormat | null };
 
-function JobStatus({
-  job,
-  onResume,
-}: Readonly<{ job: JobOut; onResume: (jobId: string) => void }>) {
-  const cancel = useCancelJob();
-  if (isJobActive(job)) {
+function StartProblem({ error }: Readonly<{ error: unknown }>) {
+  if (error instanceof ApiError && error.code === 'ffmpeg_missing') {
     return (
-      <div className="flex flex-col gap-3">
-        <ProgressBar value={job.progress} label="Export progress" />
-        <div className="flex items-center justify-between gap-3 text-sm text-muted">
-          <span aria-live="polite">{job.message}</span>
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => cancel.mutate(job.id)}
-            loading={cancel.isPending}
-          >
-            Cancel
-          </Button>
-        </div>
-      </div>
-    );
-  }
-  if (job.status === 'succeeded' && job.result) {
-    const result = job.result as { filename: string; sizeBytes: number; durationS: number };
-    return (
-      <Banner
-        tone="success"
-        title="Your audio is ready"
-        action={
-          <a
-            href={`/api/exports/${job.id}/download`}
-            download
-            className={buttonClasses('primary', 'sm')}
-          >
-            <Download size={15} /> Download
-          </a>
-        }
-      >
-        {result.filename} · {formatBytes(result.sizeBytes)} · {formatDuration(result.durationS)}
+      <Banner tone="warning" title="M4B needs ffmpeg">
+        <FfmpegHelp resumable={false} />
       </Banner>
     );
   }
-  return (
-    <Banner
-      tone={job.status === 'failed' ? 'error' : 'warning'}
-      title={job.status === 'failed' ? 'Export failed' : 'Export stopped'}
-      action={
-        <Button size="sm" icon={<RotateCcw size={14} />} onClick={() => onResume(job.id)}>
-          Resume
-        </Button>
-      }
-    >
-      {job.message} Sentences already generated are reused when you resume.
-    </Banner>
-  );
+  return <Banner tone="error">{describeError(error)}</Banner>;
 }
 
 export function ExportDialog({
@@ -98,41 +59,51 @@ export function ExportDialog({
   pace,
 }: Readonly<ExportDialogProps>) {
   const preferences = usePreferences();
-  const [chosenFormat, setChosenFormat] = useState<'mp3' | 'wav' | null>(null);
-  const [layout, setLayout] = useState<'single' | 'chapters'>('single');
-  const [captions, setCaptions] = useState(false);
-  const [range, setRange] = useState<Range>('all');
-  const [first, setFirst] = useState(0);
-  const [last, setLast] = useState(Math.max(sections.length - 1, 0));
+  const [choices, setChoices] = useState<Choices>({
+    format: null, // until chosen, the saved preference
+    layout: 'single',
+    captions: false,
+    range: 'all',
+    first: 0,
+    last: Math.max(sections.length - 1, 0),
+  });
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const details = useDetailsDraft(documentId, open && detailsOpen);
   const [jobId, setJobId] = useState<string | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [problem, setProblem] = useState<unknown>(null);
+  const [starting, setStarting] = useState(false);
+  const startingNow = useRef(false); // guards the moment before `starting` re-renders
   const start = useStartExport();
   const job = useJob(jobId);
+  const stopped = job.data ? RESUMABLE.has(job.data.status) : false;
+  const saved = useExportDetail(jobId, stopped);
 
-  const format = chosenFormat ?? preferences.data?.exportFormat ?? 'mp3';
-
-  const bounds = (): [number | null, number | null] => {
-    if (range === 'current') return [currentSection, currentSection];
-    if (range === 'custom') return [Math.min(first, last), Math.max(first, last)];
-    return [null, null];
+  const current: ExportChoices = {
+    ...choices,
+    format: choices.format ?? preferences.data?.exportFormat ?? 'mp3',
   };
 
-  const begin = () => {
-    const [firstSection, lastSection] = bounds();
-    setErrorMessage(null);
-    start.mutate(
-      { documentId, voiceId, pace, format, layout, firstSection, lastSection, captions },
-      {
-        onSuccess: (created) => setJobId(created.id),
-        onError: (error) => setErrorMessage(describeError(error)),
-      },
-    );
-  };
-
-  const resume = (stoppedJobId: string) => {
-    api<JobOut>(`/api/exports/${stoppedJobId}/resume`, { method: 'POST' })
-      .then((created) => setJobId(created.id))
-      .catch((error: unknown) => setErrorMessage(describeError(error)));
+  const begin = async () => {
+    if (startingNow.current) return;
+    startingNow.current = true;
+    setStarting(true);
+    setProblem(null);
+    try {
+      await details.flush();
+      const created = await start.mutateAsync({
+        documentId,
+        voiceId,
+        pace,
+        ...choicesToRequest(current, currentSection),
+        useCover: true,
+      });
+      setJobId(created.id);
+    } catch (error) {
+      setProblem(error);
+    } finally {
+      startingNow.current = false;
+      setStarting(false);
+    }
   };
 
   const active = isJobActive(job.data);
@@ -150,8 +121,8 @@ export function ExportDialog({
           <Button
             variant="primary"
             icon={<FileAudio size={16} />}
-            onClick={begin}
-            loading={start.isPending}
+            onClick={() => void begin()}
+            loading={starting}
             disabled={active}
           >
             Start export
@@ -160,91 +131,38 @@ export function ExportDialog({
       }
     >
       <div className="flex flex-col gap-5">
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field
-            label="Format"
-            hint={format === 'mp3' ? 'Smaller files, plays everywhere.' : 'Lossless, larger files.'}
-          >
-            {({ id, describedBy }) => (
-              <Select
-                id={id}
-                aria-describedby={describedBy}
-                value={format}
-                onChange={(event) => setChosenFormat(event.target.value as 'mp3' | 'wav')}
-              >
-                <option value="mp3">MP3</option>
-                <option value="wav">WAV</option>
-              </Select>
-            )}
-          </Field>
-          <Field
-            label="Files"
-            hint={
-              layout === 'chapters'
-                ? 'A ZIP with one file per chapter and a playlist.'
-                : 'One continuous file.'
-            }
-          >
-            {({ id, describedBy }) => (
-              <Select
-                id={id}
-                aria-describedby={describedBy}
-                value={layout}
-                onChange={(event) => setLayout(event.target.value as 'single' | 'chapters')}
-              >
-                <option value="single">Single file</option>
-                <option value="chapters">One file per chapter</option>
-              </Select>
-            )}
-          </Field>
-        </div>
-        <Field label="What to export">
-          {({ id }) => (
-            <Select
-              id={id}
-              value={range}
-              onChange={(event) => setRange(event.target.value as Range)}
-            >
-              <option value="all">Whole document ({sections.length} sections)</option>
-              <option value="current">Current section only</option>
-              <option value="custom">A range of sections</option>
-            </Select>
-          )}
-        </Field>
-        <Switch
-          checked={captions}
-          onCheckedChange={setCaptions}
-          label="Subtitles"
-          description="Adds a sentence-timed subtitle file (SRT) next to each audio file, for video editors and players that show lyrics or captions."
+        <ExportOptions
+          choices={current}
+          onChange={(change) => setChoices((before) => ({ ...before, ...change }))}
+          sections={sections}
         />
-        {range === 'custom' ? (
-          <div className="grid gap-4 sm:grid-cols-2">
-            {(
-              [
-                ['From', first, setFirst],
-                ['To', last, setLast],
-              ] as const
-            ).map(([label, value, setter]) => (
-              <Field key={label} label={label}>
-                {({ id }) => (
-                  <Select
-                    id={id}
-                    value={value}
-                    onChange={(event) => setter(Number(event.target.value))}
-                  >
-                    {sections.map((section) => (
-                      <option key={section.index} value={section.index}>
-                        {section.index + 1}. {section.title}
-                      </option>
-                    ))}
-                  </Select>
-                )}
-              </Field>
-            ))}
-          </div>
+        <AudiobookDetails
+          documentId={documentId}
+          state={details}
+          open={detailsOpen}
+          onOpenChange={setDetailsOpen}
+        />
+        {problem ? <StartProblem error={problem} /> : null}
+        {job.data ? (
+          <ExportStatus
+            job={job.data}
+            saved={stopped ? saved.data : undefined}
+            onResumed={(resumed) => setJobId(resumed.id)}
+          />
         ) : null}
-        {errorMessage ? <Banner tone="error">{errorMessage}</Banner> : null}
-        {job.data ? <JobStatus job={job.data} onResume={resume} /> : null}
+        {jobId ? (
+          <p className="text-[13px] text-muted">
+            Every export is also listed on{' '}
+            <Link
+              to="/exports"
+              onClick={() => onOpenChange(false)}
+              className="font-medium text-accent-text underline underline-offset-2"
+            >
+              the Exports page
+            </Link>
+            , even after the app restarts.
+          </p>
+        ) : null}
       </div>
     </Dialog>
   );

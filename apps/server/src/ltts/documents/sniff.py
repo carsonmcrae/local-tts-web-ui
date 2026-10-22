@@ -2,16 +2,19 @@
 # Copyright (c) 2026 Carson McRae
 """Purpose: Decide a document's real type from its bytes, not from its name or browser MIME type.
 
-Scope: Magic-byte checks for PDF and ZIP containers (EPUB vs DOCX by their mandatory parts), a
-binary-content check for text formats, and agreement between the claimed extension and content.
+Scope: Magic-byte checks for PDF, MOBI and ZIP containers (EPUB vs DOCX by their mandatory parts,
+FB2 by its book file), markers for HTML and FB2 text, a binary-content check for text formats, and
+agreement between the claimed extension and content.
 Does NOT belong: Parsing content (extractors) or size limits (``service.py``).
 """
 
 from __future__ import annotations
 
+import re
 import zipfile
 from pathlib import Path
 
+from ltts.documents.safezip import is_safe_member_name
 from ltts.documents.structures import DocumentType
 from ltts.errors import UnsupportedDocumentError
 
@@ -23,9 +26,19 @@ EXTENSIONS: dict[str, DocumentType] = {
     ".pdf": DocumentType.PDF,
     ".docx": DocumentType.DOCX,
     ".epub": DocumentType.EPUB,
+    ".html": DocumentType.HTML,
+    ".htm": DocumentType.HTML,
+    ".fb2": DocumentType.FB2,
+    ".mobi": DocumentType.MOBI,
+    ".azw": DocumentType.MOBI,
+    ".azw3": DocumentType.MOBI,  # opened only to explain that KF8 books aren't supported
 }
-SUPPORTED_LABEL = "TXT, Markdown, PDF, DOCX or EPUB"
+FB2_ZIP_SUFFIX = ".fb2.zip"
+SUPPORTED_LABEL = "TXT, Markdown, PDF, DOCX, EPUB, HTML, FB2 or MOBI"
 _TEXT_PROBE_BYTES = 8192
+_HTML_DOCUMENT = re.compile(rb"<(?:!doctype\s+html|html|head|body)[\s>]", re.IGNORECASE)
+_HTML_FRAGMENT = re.compile(rb"^\s*<(?:h[1-6]|p|div|article|main|section|table|title|meta)[\s/>]", re.IGNORECASE)
+_FB2_ROOT = re.compile(rb"<(?:[\w.-]+:)?FictionBook[\s>]")
 
 
 def _zip_kind(path: Path) -> DocumentType | None:
@@ -38,6 +51,8 @@ def _zip_kind(path: Path) -> DocumentType | None:
                     return DocumentType.EPUB
             if "word/document.xml" in names and "[Content_Types].xml" in names:
                 return DocumentType.DOCX
+            if any(name.lower().endswith(".fb2") and is_safe_member_name(name) for name in names):
+                return DocumentType.FB2
     except (zipfile.BadZipFile, OSError, KeyError):
         return None
     return None
@@ -50,10 +65,33 @@ def _looks_binary(head: bytes) -> bool:
     return bool(head) and control / len(head) > 0.05
 
 
+def looks_like_html(head: bytes) -> bool:
+    """Whether text bytes look like an HTML page: a doctype, ``<html>``/``<head>``/``<body>``, or a leading tag."""
+    probe = head[:_TEXT_PROBE_BYTES].removeprefix(b"\xef\xbb\xbf")
+    return not _looks_binary(probe) and bool(_HTML_DOCUMENT.search(probe) or _HTML_FRAGMENT.match(probe))
+
+
+def _text_kind(head: bytes, claimed: DocumentType) -> DocumentType | None:
+    if claimed in (DocumentType.TEXT, DocumentType.MARKDOWN):
+        return claimed
+    if claimed is DocumentType.HTML:
+        return claimed if looks_like_html(head) else None
+    if claimed is DocumentType.FB2:
+        return claimed if _FB2_ROOT.search(head) else None
+    return None
+
+
+def _claimed(filename: str) -> tuple[str, DocumentType | None]:
+    name = filename.lower()
+    if name.endswith(FB2_ZIP_SUFFIX):
+        return FB2_ZIP_SUFFIX, DocumentType.FB2
+    suffix = Path(name).suffix
+    return suffix, EXTENSIONS.get(suffix)
+
+
 def detect_type(path: Path, filename: str) -> DocumentType:
     """Return the verified type or raise ``UnsupportedDocumentError`` with a user-facing reason."""
-    suffix = Path(filename).suffix.lower()
-    claimed = EXTENSIONS.get(suffix)
+    suffix, claimed = _claimed(filename)
     if claimed is None:
         raise UnsupportedDocumentError(
             f"“{suffix or 'no extension'}” files aren't supported. Upload {SUPPORTED_LABEL}.",
@@ -68,10 +106,12 @@ def detect_type(path: Path, filename: str) -> DocumentType:
         actual: DocumentType | None = DocumentType.PDF
     elif head.startswith(b"PK\x03\x04"):
         actual = _zip_kind(path)
+    elif head[60:68] == b"BOOKMOBI":
+        actual = DocumentType.MOBI
     elif _looks_binary(head):
         actual = None
     else:
-        actual = claimed if claimed in (DocumentType.TEXT, DocumentType.MARKDOWN) else None
+        actual = _text_kind(head, claimed)
 
     if actual is None or actual != claimed:
         raise UnsupportedDocumentError(

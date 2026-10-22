@@ -5,7 +5,8 @@
 Scope: Reports install state of the checksum-pinned model artifact (including damaged files), installs,
 repairs and removes it through the model store, verifies every file before lazily loading one ONNX
 session (thread-safe double-checked), lists the 54 built-in voices with metadata, and synthesises
-24 kHz mono audio with a native pace control, rejecting empty or non-finite output.
+24 kHz mono audio with a native pace control, rejecting empty or non-finite output. A blended voice
+is the weighted mix of its built-in voices' style vectors (kokoro-onnx takes a style array directly).
 Does NOT belong: Text segmentation, pauses between segments or caching (``synthesis``).
 """
 
@@ -204,11 +205,16 @@ class KokoroEngine(Engine):
     # -- synthesis -------------------------------------------------------
     def synthesize(self, text: str, voice: VoiceSpec, pace: float) -> AudioClip:
         model = self._ensure_loaded()
-        if voice.key not in self._voice_ids:
+        if voice.key not in self._voice_ids or any(key not in self._voice_ids for key, _ in voice.blend):
             raise SynthesisError("That Kokoro voice doesn't exist.", code="voice_not_found")
         pace = min(max(pace, PACE.minimum), PACE.maximum)
+        style: Any = voice.key
+        if voice.blend:
+            style = sum(
+                np.asarray(model.get_voice_style(key), dtype=np.float32) * weight for key, weight in voice.blend
+            )
         try:
-            samples, sample_rate = model.create(text, voice=voice.key, speed=pace, lang=voice.language_code)
+            samples, sample_rate = model.create(text, voice=style, speed=pace, lang=voice.language_code)
         except Exception as exc:
             # The type only: kokoro-onnx error messages quote the passage (or its phonemes), and logs get
             # pasted into bug reports.

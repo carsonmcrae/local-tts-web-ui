@@ -16,7 +16,7 @@
     },
     "apps/web": {
       "ignore": ["src/api/schema.gen.ts"],
-      "entry": ["public/audio/capture-worklet.js"]
+      "entry": ["public/audio/capture-worklet.js", "public/sw.js"]
     }
   },
   "ignoreUnresolved": ["../../.tools/server-requirements.txt"]

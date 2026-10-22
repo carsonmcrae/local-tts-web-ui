@@ -6,10 +6,11 @@
  *   likeliest studio microphone, opens the chosen one with every browser voice-processing stage off (echo
  *   cancellation, noise suppression, auto-gain), streams raw samples through an AudioWorklet served
  *   same-origin from /audio/capture-worklet.js, drives the same live level meter as MicRecorder, and
- *   releases the microphone on stop or cancel. Returns float samples at the device's own rate.
+ *   releases the microphone on stop or cancel, telling the caller when the device is unplugged
+ *   mid-take. Returns float samples at the device's own rate.
  * Does NOT belong: Encoding (wav.ts), analysis or upload.
  */
-import { explainMicrophoneError, inputLevel, MicrophoneError } from './recorder';
+import { explainMicrophoneError, inputLevel, MicrophoneError, requireSecurePage } from './recorder';
 
 export const WORKLET_URL = '/audio/capture-worklet.js';
 
@@ -65,19 +66,17 @@ export class PcmRecorder {
   private readonly levelBuffer = new Float32Array(2048);
 
   static check(): void {
-    if (!globalThis.isSecureContext)
-      throw new MicrophoneError(
-        'insecure',
-        'Recording needs a secure page (localhost or HTTPS). Open the app on this computer, or import a recording.',
-      );
+    requireSecurePage();
     if (!navigator.mediaDevices?.getUserMedia || typeof AudioWorkletNode === 'undefined')
       throw new MicrophoneError(
         'unsupported',
-        'This browser can’t record studio takes. Use a current Chrome, Edge, Firefox or Safari, or import a recording.',
+        'This browser can’t record studio takes.',
+        'Use a current Chrome, Edge, Firefox or Safari, or import a recording.',
       );
   }
 
-  async start(deviceId?: string): Promise<void> {
+  /** Open the microphone and start capturing; ``onEnded`` runs if the device goes away while recording. */
+  async start(deviceId?: string, onEnded?: () => void): Promise<void> {
     PcmRecorder.check();
     try {
       this.stream = await navigator.mediaDevices.getUserMedia({
@@ -92,9 +91,19 @@ export class PcmRecorder {
     } catch (error) {
       throw explainMicrophoneError(error);
     }
+    for (const track of this.stream.getTracks()) track.onended = () => onEnded?.();
     const context = new AudioContext();
     this.context = context;
-    await context.audioWorklet.addModule(WORKLET_URL);
+    try {
+      await context.audioWorklet.addModule(WORKLET_URL);
+    } catch {
+      this.release();
+      throw new MicrophoneError(
+        'unsupported',
+        'The studio recorder couldn’t start in this browser.',
+        'Reload the page, or use a current Chrome, Edge, Firefox or Safari. You can also import a recording.',
+      );
+    }
     const source = context.createMediaStreamSource(this.stream);
     this.analyser = context.createAnalyser();
     this.analyser.fftSize = 2048;

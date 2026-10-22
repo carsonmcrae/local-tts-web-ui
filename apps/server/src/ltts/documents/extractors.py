@@ -9,15 +9,28 @@ Does NOT belong: Type detection (``sniff.py``) or process isolation (``sandbox.p
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from pathlib import Path
 
 from ltts.documents.extract_docx import extract_docx_file
 from ltts.documents.extract_epub import extract_epub_file
+from ltts.documents.extract_fb2 import extract_fb2_file
+from ltts.documents.extract_html import extract_html_file
 from ltts.documents.extract_markdown import extract_markdown_file
+from ltts.documents.extract_mobi import extract_mobi_file
 from ltts.documents.extract_pdf import extract_pdf_file
 from ltts.documents.extract_text import extract_text_file
 from ltts.documents.structures import DocumentType, Extraction, ExtractionLimits
 from ltts.errors import DocumentExtractionError
+
+_LIMITED: dict[DocumentType, Callable[[Path, str | None, ExtractionLimits], Extraction]] = {
+    DocumentType.PDF: extract_pdf_file,
+    DocumentType.DOCX: extract_docx_file,
+    DocumentType.EPUB: extract_epub_file,
+    DocumentType.HTML: extract_html_file,
+    DocumentType.FB2: extract_fb2_file,
+    DocumentType.MOBI: extract_mobi_file,
+}
 
 
 def _check(extraction: Extraction, limits: ExtractionLimits) -> Extraction:
@@ -37,10 +50,6 @@ def extract(path: Path, doc_type: DocumentType, title: str | None, limits: Extra
         result = extract_text_file(path, title)
     elif doc_type is DocumentType.MARKDOWN:
         result = extract_markdown_file(path, title)
-    elif doc_type is DocumentType.PDF:
-        result = extract_pdf_file(path, title, limits)
-    elif doc_type is DocumentType.DOCX:
-        result = extract_docx_file(path, title, limits)
     else:
-        result = extract_epub_file(path, title, limits)
+        result = _LIMITED[doc_type](path, title, limits)
     return _check(result, limits)

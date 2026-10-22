@@ -8,13 +8,18 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; img-src 'self'; style-src 'self'; font-src 'self'; base-uri 'none'; form-action 'none'"
+    />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
     <title>Page not found · TTSNative</title>
     <meta name="robots" content="noindex" />
     <link rel="icon" href="%BASE_URL%/favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="%BASE_URL%/styles.css" />
   </head>
   <body>
-    <main id="main" class="wrap" style="padding-block: 15vh">
+    <main id="main" class="wrap not-found">
       <p class="eyebrow">404</p>
       <h1>This page doesn't exist</h1>
       <p class="lead">

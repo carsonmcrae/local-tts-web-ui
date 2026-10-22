@@ -4,7 +4,10 @@
 
 Scope: Analyse a recording without storing it (its quality and the cleanup it needs), preview a
 cleanup on it, create a profile from a raw WAV body (with explicit consent and an optional cleanup:
-noise reduction, rumble filter, tone), list/rename/delete profiles, change a profile's delivery, and
+noise reduction, rumble filter, tone), list/rename/delete profiles, change a profile's delivery,
+build a studio voice's speaking styles from its kept takes, fine-tune it on them (start, play the
+comparison samples, keep or discard the result, remove a kept fine-tune), export a voice as a ``.ttsvoice``
+package (after an explicit confirmation) or import one shared with you (with explicit consent), and
 play back a profile's stored reference recording.
 Does NOT belong: Validation and storage rules (``profiles.py``).
 """
@@ -22,8 +25,13 @@ from pydantic import Field
 from ltts.common import MB, ApiModel, ensure_free_space, new_id, save_request_body
 from ltts.container import ServicesDep
 from ltts.engines.base import Delivery
+from ltts.errors import ConflictError
+from ltts.jobs import JobOut
+from ltts.voices.blends import BlendIn, BlendOut
 from ltts.voices.cleanup import MAX_BASS_BOOST_DB, MAX_TREBLE_CUT_DB, Cleanup, RecordingCheck
 from ltts.voices.profiles import CONSENT_STATEMENT, VoiceProfileOut
+from ltts.voices.sharing import MAX_PACKAGE_BYTES, VoicePreview, package_name
+from ltts.voices.tuning import SAMPLE_TEXTS, Arm
 
 router = APIRouter(prefix="/api/voice-profiles", tags=["voice studio"])
 ProfileId = Annotated[str, Path(pattern=r"^[0-9a-f]{32}$")]
@@ -59,6 +67,24 @@ async def receive_upload(request: Request, services: ServicesDep, max_bytes: int
     target = tmp / f"{new_id()}.audio"
     await save_request_body(request, target, max_bytes)
     return target
+
+
+# Declared before the routes with a profile id, which would otherwise match "blends".
+@router.get("/blends")
+def list_blends(services: ServicesDep) -> list[BlendOut]:
+    return services.blends.list_all()
+
+
+@router.post("/blends", status_code=201)
+def create_blend(body: BlendIn, services: ServicesDep) -> BlendOut:
+    """Mix two to four built-in Kokoro voices into a new voice (weights are normalized)."""
+    return services.blends.create(body)
+
+
+@router.delete("/blends/{blend_id}", status_code=204)
+def delete_blend(blend_id: ProfileId, services: ServicesDep) -> Response:
+    services.blends.delete(blend_id)
+    return Response(status_code=204)
 
 
 @router.get("/consent")
@@ -102,6 +128,31 @@ async def create_profile(
         target.unlink(missing_ok=True)
 
 
+@router.post("/import/preview")
+async def preview_voice_file(request: Request, services: ServicesDep) -> VoicePreview:
+    """What a ``.ttsvoice`` package holds, checked exactly as an import would be, without saving it."""
+    target = await receive_upload(request, services, MAX_PACKAGE_BYTES)
+    try:
+        return await run_in_threadpool(services.voice_sharing.preview, target)
+    finally:
+        target.unlink(missing_ok=True)
+
+
+@router.post("/import", status_code=201)
+async def import_voice(
+    request: Request,
+    services: ServicesDep,
+    consent: Annotated[bool, Query()],
+    name: Annotated[str | None, Query(min_length=1, max_length=60)] = None,
+) -> VoiceProfileOut:
+    """Import a ``.ttsvoice`` package someone shared, once the importer confirms the owner's permission."""
+    target = await receive_upload(request, services, MAX_PACKAGE_BYTES)
+    try:
+        return await run_in_threadpool(services.voice_sharing.import_package, target, consent, name)
+    finally:
+        target.unlink(missing_ok=True)
+
+
 @router.get("")
 def list_profiles(services: ServicesDep) -> list[VoiceProfileOut]:
     return services.voices.list_all()
@@ -111,6 +162,67 @@ def list_profiles(services: ServicesDep) -> list[VoiceProfileOut]:
 def update_profile(profile_id: ProfileId, body: ProfileUpdate, services: ServicesDep) -> VoiceProfileOut:
     name = body.name.strip() if body.name else None
     return services.voices.update(profile_id, name=name or None, delivery=body.delivery)
+
+
+@router.post("/{profile_id}/styles/restore")
+def restore_styles(profile_id: ProfileId, services: ServicesDep) -> VoiceProfileOut:
+    """Go back to the expression a voice had before its last rebuild (again to return to the newer one)."""
+    return services.voices.restore_styles(profile_id)
+
+
+@router.post("/{profile_id}/styles", status_code=202)
+def build_styles(profile_id: ProfileId, services: ServicesDep) -> JobOut:
+    """Teach a studio voice saved before speaking styles existed how the speaker asks, exclaims and talks."""
+    return services.studio.refine(profile_id)
+
+
+@router.post("/{profile_id}/tuning", status_code=202)
+def start_tuning(profile_id: ProfileId, services: ServicesDep) -> JobOut:
+    """Fine-tune a studio voice on the takes it kept; the result waits to be compared and kept."""
+    return services.tuning.start(profile_id)
+
+
+@router.get("/{profile_id}/tuning/samples/{arm}/{index}", response_class=FileResponse)
+def tuning_sample(
+    profile_id: ProfileId,
+    arm: Arm,
+    index: Annotated[int, Path(ge=0, lt=len(SAMPLE_TEXTS))],
+    services: ServicesDep,
+) -> FileResponse:
+    """A comparison sentence read by the voice as it is (``current``) or with the waiting fine-tune (``tuned``)."""
+    return FileResponse(services.tuning.sample_path(profile_id, arm, index), media_type="audio/wav")
+
+
+@router.post("/{profile_id}/tuning/keep")
+def keep_tuning(profile_id: ProfileId, services: ServicesDep) -> VoiceProfileOut:
+    return services.tuning.keep(profile_id)
+
+
+@router.delete("/{profile_id}/tuning")
+def discard_tuning(profile_id: ProfileId, services: ServicesDep) -> VoiceProfileOut:
+    return services.tuning.discard(profile_id)
+
+
+@router.delete("/{profile_id}/adapter")
+def remove_tuning(profile_id: ProfileId, services: ServicesDep) -> VoiceProfileOut:
+    """Stop using a kept fine-tune: the voice speaks as it did before."""
+    return services.tuning.remove(profile_id)
+
+
+@router.get("/{profile_id}/export", response_class=Response, responses={200: {"content": {"application/zip": {}}}})
+def export_voice(profile_id: ProfileId, services: ServicesDep, confirm: Annotated[bool, Query()] = False) -> Response:
+    """The voice as a ``.ttsvoice`` package; ``confirm`` records that the owner chose to share it."""
+    if not confirm:
+        raise ConflictError("Confirm that you want to share this voice first.", code="confirm_required")
+    package, profile = services.voice_sharing.export(profile_id)
+    return Response(
+        content=package,
+        media_type="application/zip",
+        headers={
+            "Content-Disposition": f'attachment; filename="{package_name(profile.name)}"',
+            "Cache-Control": "no-store",
+        },
+    )
 
 
 @router.get("/{profile_id}/reference", response_class=FileResponse)

@@ -124,16 +124,23 @@ def test_pdf_rebuilds_paragraphs_and_dehyphenates(tmp_path: Path) -> None:
     assert result.page_count == 1
 
 
-def test_pdf_strips_running_headers_footers_and_page_numbers(tmp_path: Path) -> None:
+def test_pdf_sets_running_headers_footers_and_page_numbers_apart(tmp_path: Path) -> None:
     bodies = ["Rain fell over the quiet harbour town.", "Nobody answered the knock at first.",
               "The lamp flickered twice and went out.", "Morning came slowly over the hills.",
               "She folded the letter and smiled."]  # fmt: skip
     pages = [["THE BOOK TITLE", body, str(n)] for n, body in enumerate(bodies, start=1)]
     result = extract(write(tmp_path, "h.pdf", make_pdf(pages)), DocumentType.PDF, "h", LIMITS)
-    joined = " ".join(texts(result))
-    assert "THE BOOK TITLE" not in joined
-    assert "The lamp flickered twice" in joined
+    text = " ".join(block.text for section in result.sections for block in section.blocks if not block.furniture)
+    assert "THE BOOK TITLE" not in text
+    assert "The lamp flickered twice" in text
     assert [s.title for s in result.sections] == [f"Page {n}" for n in range(1, 6)]
+    # Kept (to be skipped when reading), each a block of its own in its page's section.
+    third = result.sections[2].blocks
+    assert [(b.furniture, b.text) for b in third] == [
+        ("header", "THE BOOK TITLE"),
+        (None, bodies[2]),
+        ("page_number", "3"),
+    ]
 
 
 def test_pdf_outline_defines_chapters(tmp_path: Path) -> None:

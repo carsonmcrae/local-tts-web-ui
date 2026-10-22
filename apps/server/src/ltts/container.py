@@ -18,18 +18,31 @@ from fastapi import Depends, Request
 from ltts.common import MB
 from ltts.db import Database
 from ltts.documents.bookmarks import BookmarkStore
+from ltts.documents.casting import CastingStore
+from ltts.documents.delivery import Sentence
+from ltts.documents.details import DocumentDetailsStore
 from ltts.documents.repository import DocumentRepository
 from ltts.documents.service import DocumentService
+from ltts.documents.speech_marks import MarkHooks, voice_finder
+from ltts.documents.styling import StylingStore
 from ltts.engines.registry import EngineRegistry
+from ltts.exports.audiobookshelf import Audiobookshelf
 from ltts.exports.service import ExportService
 from ltts.jobs import JobManager
+from ltts.lan.service import LanService
 from ltts.modelstore.store import ModelStore
 from ltts.pronunciation.store import PronunciationStore
+from ltts.secrets import SecretStore
+from ltts.speech_api.service import SpeechApi
+from ltts.speech_api.store import SpeechApiStore
 from ltts.synthesis.cache import AudioCache
 from ltts.synthesis.service import SynthesisService
+from ltts.voices.blends import BLEND_ENGINE, PREFIX, BlendStore
 from ltts.voices.profiles import CLONING_ENGINE, VoiceProfileService
 from ltts.voices.sessions import VoiceSessionService
+from ltts.voices.sharing import VoiceSharing
 from ltts.voices.studio import StudioService
+from ltts.voices.tuning import TuningService
 
 if TYPE_CHECKING:
     from ltts.config import Settings
@@ -52,12 +65,21 @@ class Services:
     audio_cache: AudioCache
     synthesis: SynthesisService
     voices: VoiceProfileService
+    blends: BlendStore
+    lan: LanService
     voice_sessions: VoiceSessionService
     studio: StudioService
+    tuning: TuningService
+    voice_sharing: VoiceSharing
     exports: ExportService
     preferences: PreferenceStore
     pronunciations: PronunciationStore
     bookmarks: BookmarkStore
+    styling: StylingStore
+    casting: CastingStore
+    details: DocumentDetailsStore
+    audiobookshelf: Audiobookshelf
+    speech_api: SpeechApi
 
 
 def build_services(
@@ -83,28 +105,51 @@ def build_services(
     registry = EngineRegistry(factory(settings, store), jobs)
     cache = AudioCache(settings.path("cache", "audio"), db, settings.audio_cache_max_mb * MB)
     pronunciations = PronunciationStore(db)
-    synthesis = SynthesisService(registry, cache, documents, pronunciations.apply)
-    voices = VoiceProfileService(settings, db, cache.purge_voice)
+    styling = StylingStore(db, lambda doc: [Sentence(s.index, s.paragraph_index, s.kind, s.text)
+                                             for s in documents.segments_detail(doc)])  # fmt: skip
+    casting = CastingStore(db, styling.lines, lambda doc: {s.index: s.text for s in documents.segments_detail(doc)})
+    details = DocumentDetailsStore(settings, db)
+    synthesis = SynthesisService(registry, cache, documents, pronunciations.apply, styling, casting)
+    speech_store = SpeechApiStore(db, lambda: {profile.voice_id for profile in voices.list_all()})
+
+    def purge_voice(voice_id: str) -> int:
+        purged = cache.purge_voice(voice_id)
+        speech_store.prune_voices()  # a deleted custom voice loses its speech API permission
+        return purged
+
+    voices = VoiceProfileService(settings, db, purge_voice)
     registry.attach_custom_voices(voices.resolve, lambda: voices.as_voices(lambda: registry.is_ready(CLONING_ENGINE)))
+    blends = BlendStore(db, lambda: registry.get(BLEND_ENGINE).voices(), cache.purge_voice)
+    registry.attach_voices(PREFIX, blends.resolve, lambda: blends.as_voices(lambda: registry.is_ready(BLEND_ENGINE)))
     sessions = VoiceSessionService(settings, db, jobs)
     studio = StudioService(sessions, voices, jobs, lambda: registry.voice_builder(CLONING_ENGINE))
+    marks = MarkHooks(voice_finder(lambda: [(v.id, v.name) for v in registry.voices()]), styling.annotate)
     return Services(
         settings=settings,
         db=db,
         jobs=jobs,
         document_repo=documents,
-        document_service=DocumentService(settings, documents, isolate=isolate_extraction),
+        document_service=DocumentService(settings, documents, isolate=isolate_extraction, marks=marks),
         model_store=store,
         engines=registry,
         audio_cache=cache,
         synthesis=synthesis,
         voices=voices,
+        blends=blends,
+        lan=LanService(db),
         voice_sessions=sessions,
         studio=studio,
-        exports=ExportService(settings, jobs, documents, synthesis),
+        tuning=TuningService(voices, jobs, lambda: registry.voice_tuner(CLONING_ENGINE)),
+        voice_sharing=VoiceSharing(settings, voices),
+        exports=ExportService(settings, jobs, documents, synthesis, details),
         preferences=PreferenceStore(db),
         pronunciations=pronunciations,
         bookmarks=BookmarkStore(db),
+        styling=styling,
+        casting=casting,
+        details=details,
+        audiobookshelf=Audiobookshelf(db, SecretStore(settings.path("secrets"))),
+        speech_api=SpeechApi(settings, speech_store, synthesis, registry),
     )
 
 

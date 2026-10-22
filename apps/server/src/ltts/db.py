@@ -138,6 +138,95 @@ MIGRATIONS: tuple[str, ...] = (
         UNIQUE (document_id, segment_idx)
     );
     """,
+    """
+    CREATE TABLE segment_styles (
+        document_id TEXT NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+        segment_idx INTEGER NOT NULL,
+        voice_id TEXT,
+        effect TEXT,
+        sound TEXT,
+        PRIMARY KEY (document_id, segment_idx)
+    );
+    CREATE TABLE document_cast (
+        document_id TEXT PRIMARY KEY REFERENCES documents(id) ON DELETE CASCADE,
+        dialogue_voice_id TEXT
+    );
+    """,
+    """
+    CREATE TABLE document_details (
+        document_id TEXT PRIMARY KEY REFERENCES documents(id) ON DELETE CASCADE,
+        author TEXT,
+        narrator TEXT,
+        description TEXT
+    );
+    CREATE TABLE integrations (
+        name TEXT PRIMARY KEY,
+        config_json TEXT NOT NULL
+    );
+    """,
+    """
+    CREATE TABLE segment_annotations (
+        document_id TEXT NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+        segment_idx INTEGER NOT NULL,
+        kind TEXT NOT NULL,
+        value TEXT NOT NULL,
+        PRIMARY KEY (document_id, segment_idx, kind)
+    );
+    INSERT INTO segment_annotations SELECT document_id, segment_idx, 'voice', voice_id
+        FROM segment_styles WHERE voice_id IS NOT NULL;
+    INSERT INTO segment_annotations SELECT document_id, segment_idx, 'effect', effect
+        FROM segment_styles WHERE effect IS NOT NULL;
+    INSERT INTO segment_annotations SELECT document_id, segment_idx, 'sound', sound
+        FROM segment_styles WHERE sound IS NOT NULL;
+    DROP TABLE segment_styles;
+    ALTER TABLE document_cast ADD COLUMN split_dialogue INTEGER NOT NULL DEFAULT 1;
+    CREATE TABLE document_characters (
+        document_id TEXT NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+        name TEXT NOT NULL,
+        voice_id TEXT NOT NULL,
+        PRIMARY KEY (document_id, name)
+    );
+    CREATE TABLE cast_presets (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        mapping_json TEXT NOT NULL,
+        created_at TEXT NOT NULL
+    );
+    """,
+    # a take recorded again keeps the one it replaced, to compare them and restore the old one
+    """
+    ALTER TABLE voice_takes ADD COLUMN previous_json TEXT;
+    """,
+    # voice blends: a voice mixed from built-in Kokoro voices
+    """
+    CREATE TABLE voice_blends (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        parts_json TEXT NOT NULL,
+        created_at TEXT NOT NULL
+    );
+    """,
+    # phones and tablets paired for LAN mode (only a hash of each device's token)
+    """
+    CREATE TABLE lan_devices (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        token_hash TEXT NOT NULL UNIQUE,
+        created_at TEXT NOT NULL,
+        last_seen_at TEXT
+    );
+    """,
+    # a paired device's cookie works only from the address it paired from; other attempts are kept
+    """
+    ALTER TABLE lan_devices ADD COLUMN address TEXT;
+    ALTER TABLE lan_devices ADD COLUMN refused_address TEXT;
+    ALTER TABLE lan_devices ADD COLUMN refused_at TEXT;
+    """,
+    # a pronunciation can be for one document instead of every one (deleted with that document)
+    """
+    ALTER TABLE pronunciations ADD COLUMN document_id TEXT REFERENCES documents(id) ON DELETE CASCADE;
+    CREATE INDEX pronunciations_by_document ON pronunciations(document_id);
+    """,
 )
 
 

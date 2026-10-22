@@ -4,8 +4,11 @@
  * Purpose: The one way the web app talks to the local server.
  * Scope: JSON and binary requests with the required `X-LTTS-Client` header (the server's CSRF
  *   guard), uniform `ApiError`s carrying the server's stable error codes, and audio blob fetches.
+ *   Every request also tells connection.ts whether the server answered and whether this device
+ *   needs pairing (LAN mode).
  * Does NOT belong: Caching or React state (queries.ts) — keep this framework-free and testable.
  */
+import { reportPairing, reportServerReachable } from './connection';
 
 export const CLIENT_HEADER = { 'X-LTTS-Client': 'web' } as const;
 
@@ -31,7 +34,7 @@ export class ApiError extends Error {
 
 const NETWORK_ERROR: ApiErrorBody = {
   code: 'network_error',
-  message: "Can't reach the local server. Make sure `npm run dev` is still running.",
+  message: "Can't reach the local server. Make sure TTSNative is still running on the computer.",
 };
 
 async function toError(response: Response): Promise<ApiError> {
@@ -82,10 +85,17 @@ async function send(path: string, options: RequestOptions): Promise<Response> {
     });
   } catch (error) {
     if (error instanceof DOMException && error.name === 'AbortError') throw error;
+    reportServerReachable(false);
     throw new ApiError(0, NETWORK_ERROR);
   }
-  if (!response.ok) throw await toError(response);
-  return response;
+  reportServerReachable(true);
+  if (response.ok) {
+    reportPairing(false);
+    return response;
+  }
+  const error = await toError(response);
+  reportPairing(error.status === 401 && error.code === 'device_not_paired');
+  throw error;
 }
 
 export async function api<T>(path: string, options: RequestOptions = {}): Promise<T> {

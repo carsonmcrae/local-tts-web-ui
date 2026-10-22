@@ -17,7 +17,8 @@ import { Slider } from '@/components/ui/Slider';
 import { cn } from '@/lib/cn';
 import { usePlayer } from '@/features/player/PlayerProvider';
 import { SPEEDS } from '@/features/player/useShortcuts';
-import type { LineSpacing, TextSize, Typeface } from '@/lib/readingText';
+import { type ContrastChoice, useContrast } from '@/lib/contrast';
+import type { LetterSpacing, LineSpacing, TextSize, Typeface } from '@/lib/readingText';
 import { readingTextStyle, useReadingText } from '@/lib/readingText';
 import type { ThemeChoice } from '@/lib/theme';
 import { useTheme } from '@/lib/theme';
@@ -42,6 +43,14 @@ const SPACINGS: readonly { value: LineSpacing; label: string }[] = [
 const TYPEFACES: readonly { value: Typeface; label: string }[] = [
   { value: 'serif', label: 'Serif' },
   { value: 'sans', label: 'Sans serif' },
+];
+const LETTERS: readonly { value: LetterSpacing; label: string }[] = [
+  { value: 'normal', label: 'Normal' },
+  { value: 'wide', label: 'Wider' },
+];
+const CONTRASTS: readonly { value: ContrastChoice; label: string }[] = [
+  { value: 'system', label: 'Standard' },
+  { value: 'more', label: 'High' },
 ];
 
 /** A row of mutually exclusive choices drawn as buttons (a radio group). */
@@ -87,11 +96,24 @@ function ChoiceGroup<T extends string>({
 
 export function AppearanceSection() {
   const [theme, setTheme] = useTheme();
+  const [contrast, setContrast] = useContrast();
   const [text, setText] = useReadingText();
   return (
     <Section id="appearance" title="Appearance" description="Saved on this device only.">
       <div className="flex flex-col gap-5">
         <ChoiceGroup label="Theme" options={THEMES} value={theme} onChange={setTheme} />
+        <div className="flex flex-col gap-1.5">
+          <ChoiceGroup
+            label="Contrast"
+            options={CONTRASTS}
+            value={contrast}
+            onChange={setContrast}
+          />
+          <p className="text-[13px] text-muted">
+            High contrast darkens text and lines and outlines the highlighted sentence. Standard
+            follows your system’s contrast setting.
+          </p>
+        </div>
         <div className="flex flex-col gap-3">
           <p className="text-sm font-medium">Reading text</p>
           <ChoiceGroup
@@ -111,6 +133,12 @@ export function AppearanceSection() {
             options={TYPEFACES}
             value={text.typeface}
             onChange={(typeface) => setText({ typeface })}
+          />
+          <ChoiceGroup
+            label="Letter and word spacing"
+            options={LETTERS}
+            value={text.letters}
+            onChange={(letters) => setText({ letters })}
           />
           <p
             aria-label="Reading text preview"

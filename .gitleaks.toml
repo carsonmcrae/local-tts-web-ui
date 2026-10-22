@@ -14,3 +14,9 @@ paths = [
   '''^scripts/toolchain\.json$''',
   '''^apps/server/src/ltts/modelstore/manifest\.json$''',
 ]
+# Two Audiobookshelf test fixtures: made-up keys that look like keys. They stay in the history, so a
+# rename alone would not clear a history scan.
+regexes = [
+  '''abs-test-key-0123456789''',
+  '''secret-key-0123456789''',
+]

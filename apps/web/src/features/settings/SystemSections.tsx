@@ -137,8 +137,8 @@ export function PrivacySection() {
           'No accounts, analytics or telemetry.',
           'Documents, recordings and generated audio are processed and stored only on this computer.',
           isDesktop()
-            ? 'The only network requests are the downloads you start yourself and a check for new TTSNative versions on GitHub, which you can turn off under About.'
-            : 'The only network requests are the model downloads you start yourself (and your browser loading this page).',
+            ? 'The only network requests are the downloads you start yourself, web pages you choose to import, books you send to your own Audiobookshelf, and a check for new TTSNative versions on GitHub, which you can turn off under About.'
+            : 'The only network requests are the model downloads you start yourself, web pages you choose to import, books you send to your own Audiobookshelf, and your browser loading this page.',
           'Once models are installed, everything works offline.',
         ].map((line) => (
           <li key={line} className="flex gap-2.5">
@@ -151,6 +151,12 @@ export function PrivacySection() {
         <Banner tone="warning" className="mt-4" title="Network access is on">
           This server accepts connections from other devices on your network (access token
           required). Restart without --allow-network to turn it off.
+        </Banner>
+      ) : null}
+      {system.data?.lanMode ? (
+        <Banner tone="warning" className="mt-4" title="LAN mode is on">
+          Paired phones and tablets on your network can read and listen. Turn it off in Phones &amp;
+          tablets.
         </Banner>
       ) : null}
     </Section>
@@ -166,7 +172,7 @@ export function diagnosticsReport(info: SystemInfo, webVersion: string): string 
     `GPUs: ${gpus}`,
     `ONNX Runtime providers: ${info.onnxProviders.join(', ')}`,
     `Disk free: ${formatBytes(info.storage.freeBytes)}; models ${formatBytes(info.storage.modelsBytes)}; cache ${formatBytes(info.storage.audioCacheBytes)}`,
-    `Network exposed: ${info.networkExposed ? 'yes' : 'no'}`,
+    `Network exposed: ${info.networkExposed ? 'yes' : 'no'}, LAN mode: ${info.lanMode ? 'on' : 'off'}`,
   ].join('\n');
 }
 

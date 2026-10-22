@@ -137,6 +137,7 @@ Runtime dependencies only (development tooling is not distributed). Model weight
 | pypdfium2==5.14.0 | BSD-3-Clause, Apache-2.0, dependency licenses |  |
 | python-docx==1.2.0 | MIT License |  |
 | python-dotenv==1.2.4 | BSD-3-Clause |  |
+| segno==1.6.6 | BSD License |  |
 | soundfile==0.14.0 | BSD License |  |
 | starlette==1.7.0 | BSD-3-Clause |  |
 | typing_extensions==4.16.0 | PSF-2.0 |  |

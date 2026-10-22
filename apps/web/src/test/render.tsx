@@ -32,11 +32,11 @@ export function json(body: unknown, status = 200): Response {
 }
 
 export function mockApi(routes: Record<string, Handler | unknown>) {
-  const calls: { method: string; path: string; body: unknown }[] = [];
+  const calls: { method: string; path: string; query: URLSearchParams; body: unknown }[] = [];
   const fetchMock = vi.fn(async (input: RequestInfo | URL, init: RequestInit = {}) => {
     const url = new URL(String(input), 'http://127.0.0.1');
     const method = init.method ?? 'GET';
-    calls.push({ method, path: url.pathname, body: init.body });
+    calls.push({ method, path: url.pathname, query: url.searchParams, body: init.body });
     const key = Object.keys(routes)
       .filter((route) => {
         const [m, p] = route.split(' ');
@@ -165,6 +165,8 @@ export const documentDetail = (overrides: Partial<DocumentDetail> = {}): Documen
   sizeBytes: 2_400_000,
   charCount: 9000,
   wordCount: 1500,
+  spokenCharCount: 9000,
+  spokenWordCount: 1500,
   pageCount: 12,
   segmentCount: 4,
   sectionCount: 2,
@@ -227,7 +229,7 @@ export function mockReaderApi(doc: DocumentDetail, overrides: Record<string, unk
 export const voiceProfile = (overrides: Partial<VoiceProfile> = {}): VoiceProfile => ({
   id: 'c'.repeat(32), voiceId: `custom:${'c'.repeat(32)}`, name: 'My voice', engineId: 'chatterbox', durationS: 14,
   sampleRate: 24000, consentedAt: '2026-10-19T10:00:00+00:00', source: 'import', createdAt: '2026-10-19T10:00:00+00:00',
-  stores: 'A trimmed copy of your reference recording (WAV).', kind: 'quick', delivery: 'natural',
+  stores: 'A trimmed copy of your reference recording (WAV).', kind: 'quick', delivery: 'natural', styles: [], canRefine: false, hasPreviousStyles: false, canTune: false, fineTuned: false,
   quality: { durationS: 14, speechS: 12, rmsDbfs: -20, peakDbfs: -1, clippingRatio: 0, pauseRatio: 0.2, snrDb: 40, brightnessDb: -6, ok: true, issues: [] },
   ...overrides,
 }); // prettier-ignore

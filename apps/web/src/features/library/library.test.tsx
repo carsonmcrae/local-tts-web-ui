@@ -52,6 +52,19 @@ function renderLibrary() {
 const pdf = (name = 'notes.pdf', content = '%PDF-1.4') =>
   new File([content], name, { type: 'application/pdf' });
 
+/** An empty library with pasting mocked; returns the empty state's Paste text button. */
+async function openEmptyLibraryPaste() {
+  const { calls } = mockApi({
+    ...base,
+    'GET /api/documents': [],
+    'POST /api/documents/text': documentDetail({ fileType: 'paste' }),
+  });
+  const { user } = renderLibrary();
+  await screen.findByText('Drop a document here to start listening');
+  const [, emptyStatePaste] = screen.getAllByRole('button', { name: 'Paste text' });
+  return { calls, user, emptyStatePaste: emptyStatePaste as HTMLElement };
+}
+
 describe('Adding documents', () => {
   it('rejects unsupported files before uploading and lets the error be dismissed', async () => {
     const { calls } = mockApi({ ...base, 'GET /api/documents': [] });
@@ -117,19 +130,12 @@ describe('Adding documents', () => {
   });
 
   it('pastes text with an optional title, and can be cancelled', async () => {
-    const { calls } = mockApi({
-      ...base,
-      'GET /api/documents': [],
-      'POST /api/documents/text': documentDetail({ fileType: 'paste' }),
-    });
-    const { user } = renderLibrary();
-    await screen.findByText('Drop a document here to start listening');
-    const [, emptyStatePaste] = screen.getAllByRole('button', { name: 'Paste text' });
-    await user.click(emptyStatePaste as HTMLElement);
+    const { calls, user, emptyStatePaste } = await openEmptyLibraryPaste();
+    await user.click(emptyStatePaste);
     let dialog = await screen.findByRole('dialog', { name: 'Paste text' });
     await user.click(within(dialog).getByRole('button', { name: 'Cancel' }));
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
-    await user.click(emptyStatePaste as HTMLElement);
+    await user.click(emptyStatePaste);
     dialog = await screen.findByRole('dialog', { name: 'Paste text' });
     await user.type(within(dialog).getByLabelText('Title (optional)'), '  Notes  ');
     await user.type(within(dialog).getByLabelText('Text'), 'Hello.');
@@ -137,7 +143,24 @@ describe('Adding documents', () => {
     await user.click(within(dialog).getByRole('button', { name: 'Add to library' }));
     await waitFor(() =>
       expect(calls.find((call) => call.method === 'POST')?.body).toBe(
-        '{"text":"Hello.","title":"Notes"}',
+        '{"text":"Hello.","speechMarks":false,"title":"Notes"}',
+      ),
+    );
+  });
+
+  it('can read speech marks in pasted text, explaining them when turned on', async () => {
+    const { calls, user, emptyStatePaste } = await openEmptyLibraryPaste();
+    await user.click(emptyStatePaste);
+    const dialog = await screen.findByRole('dialog', { name: 'Paste text' });
+    expect(within(dialog).queryByText('{sound laugh}')).not.toBeInTheDocument();
+    await user.click(within(dialog).getByRole('checkbox', { name: /Use speech marks/ }));
+    expect(within(dialog).getByText('{sound laugh}')).toBeInTheDocument();
+    await user.click(within(dialog).getByLabelText('Text'));
+    await user.paste('Wait {pause 2s} now.');
+    await user.click(within(dialog).getByRole('button', { name: 'Add to library' }));
+    await waitFor(() =>
+      expect(calls.find((call) => call.method === 'POST')?.body).toBe(
+        '{"text":"Wait {pause 2s} now.","speechMarks":true}',
       ),
     );
   });

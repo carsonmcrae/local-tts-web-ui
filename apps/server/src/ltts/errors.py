@@ -27,13 +27,23 @@ class AppError(Exception):
 
     status_code = 400
     code = "bad_request"
+    headers: dict[str, str] | None = None  # extra response headers, such as Retry-After on a 429
 
-    def __init__(self, message: str, *, code: str | None = None, details: dict[str, Any] | None = None):
+    def __init__(
+        self,
+        message: str,
+        *,
+        code: str | None = None,
+        details: dict[str, Any] | None = None,
+        headers: dict[str, str] | None = None,
+    ):
         super().__init__(message)
         self.message = message
         if code:
             self.code = code
         self.details = details or {}
+        if headers:
+            self.headers = headers
 
 
 class NotFoundError(AppError):
@@ -95,7 +105,7 @@ def install_error_handlers(app: FastAPI) -> None:
 
     @app.exception_handler(AppError)
     async def _app_error(_: Request, exc: AppError) -> JSONResponse:
-        return JSONResponse(_body(exc.code, exc.message, exc.details), status_code=exc.status_code)
+        return JSONResponse(_body(exc.code, exc.message, exc.details), status_code=exc.status_code, headers=exc.headers)
 
     @app.exception_handler(RequestValidationError)
     async def _validation(_: Request, exc: RequestValidationError) -> JSONResponse:

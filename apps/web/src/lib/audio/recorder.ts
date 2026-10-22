@@ -2,16 +2,30 @@
 // Copyright (c) 2026 Carson McRae
 /**
  * Purpose: Record from the microphone with a live input-level meter.
- * Scope: Permission request with plain-language errors (denied, no device, insecure context),
+ * Scope: Permission request with plain-language errors (denied, no device, busy, a device that stopped
+ *   responding, insecure context), each a short message plus a hint on what to do,
  *   MediaRecorder capture in whatever format the browser supports (decoded later by wav.ts), an
  *   AnalyserNode for the level meter, and full release of the microphone on stop/cancel.
  * Does NOT belong: Conversion, analysis or upload.
  */
 
+export type MicrophoneProblem =
+  | 'insecure'
+  | 'unsupported'
+  | 'denied'
+  | 'no-device'
+  | 'busy'
+  | 'device' // the device stopped responding
+  | 'disconnected' // unplugged during a take
+  | 'empty' // a take with no sound at all
+  | 'unknown';
+
+/** A microphone problem: one message saying what happened, and an optional hint on what to do. */
 export class MicrophoneError extends Error {
   constructor(
-    readonly code: 'insecure' | 'unsupported' | 'denied' | 'no-device' | 'busy' | 'unknown',
+    readonly code: MicrophoneProblem,
     message: string,
+    readonly hint?: string,
   ) {
     super(message);
     this.name = 'MicrophoneError';
@@ -24,19 +38,38 @@ export function explainMicrophoneError(error: unknown): MicrophoneError {
   if (name === 'NotAllowedError' || name === 'SecurityError')
     return new MicrophoneError(
       'denied',
-      'Microphone access was blocked. Allow it in your browser’s site settings, then try again.',
+      'Microphone access was blocked.',
+      'Allow the microphone in your browser’s site settings (the icon beside the address), then try again.',
     );
   if (name === 'NotFoundError' || name === 'OverconstrainedError')
     return new MicrophoneError(
       'no-device',
-      'No microphone was found. Connect one, or import an existing recording instead.',
+      'No microphone was found.',
+      'Connect one, or import an existing recording instead.',
     );
   if (name === 'NotReadableError')
     return new MicrophoneError(
       'busy',
-      'The microphone is in use by another app. Close it and try again.',
+      'The microphone is in use by another app.',
+      'Close the other app (a call or another recorder), then try again.',
     );
-  return new MicrophoneError('unknown', 'The microphone could not be started.');
+  if (name === 'AbortError')
+    return new MicrophoneError(
+      'device',
+      'The microphone stopped responding.',
+      'Unplug it and plug it back in, or choose another microphone.',
+    );
+  return new MicrophoneError(
+    'unknown',
+    'The microphone could not be started.',
+    'Reload the page and try again. If it keeps happening, restart the browser.',
+  );
+}
+
+/** The message and its hint as one sentence pair, for places that show a single line. */
+export function describeMicrophoneError(error: unknown): string {
+  const problem = explainMicrophoneError(error);
+  return problem.hint ? `${problem.message} ${problem.hint}` : problem.message;
 }
 
 /** An analyser's current level 0..1: RMS mapped from -60..0 dBFS (0 without an analyser). */
@@ -52,6 +85,16 @@ export function inputLevel(
   return Math.min(Math.max((db + 60) / 60, 0), 1);
 }
 
+/** Browsers only record on a secure page, so a phone on plain HTTP (LAN mode) never can. */
+export function requireSecurePage(): void {
+  if (!globalThis.isSecureContext)
+    throw new MicrophoneError(
+      'insecure',
+      'Recording needs a secure page (localhost or HTTPS).',
+      'Voice Studio records only on the computer running TTSNative: open the app there.',
+    );
+}
+
 export class MicRecorder {
   private stream: MediaStream | null = null;
   private recorder: MediaRecorder | null = null;
@@ -61,11 +104,7 @@ export class MicRecorder {
   private readonly levelBuffer = new Float32Array(2048);
 
   static check(): void {
-    if (!globalThis.isSecureContext)
-      throw new MicrophoneError(
-        'insecure',
-        'Recording needs a secure page (localhost or HTTPS). Import a recording instead, or open the app on this computer.',
-      );
+    requireSecurePage();
     if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined')
       throw new MicrophoneError(
         'unsupported',

@@ -1,0 +1,208 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Carson McRae
+"""Purpose: Tests for studio voices' speaking styles and the polish applied to cloned speech.
+
+Scope: Which style a sentence is read in; which takes teach each style; take numbers mapped back to
+passages; the build job making styles that move into the finished profile and change its cache
+revision, and a styled sentence reaching the engine; building styles for a studio voice saved before they
+existed (and refusing other voices), one rebuild at a time and only from usable takes, even when the
+styles folder is gone; trimming, pause shortening, loudness and the plausibility of a clip's length.
+Does NOT belong: The worker's token extraction (needs the model) or the rest of the build.
+"""
+
+from __future__ import annotations
+
+import shutil
+import threading
+from pathlib import Path
+from typing import Any
+
+import numpy as np
+import pytest
+from fastapi.testclient import TestClient
+
+from conftest import FakeEngine, saved_studio_voice, speech_like, wait_job, wav_bytes
+from ltts.config import Settings
+from ltts.container import Services
+from ltts.engines.cloned_speech import (
+    TARGET_RMS_DBFS,
+    acceptable,
+    count_syllables,
+    is_dialogue,
+    plausibility,
+    polish,
+    sentence_style,
+)
+from ltts.voices.quality import QualityReport
+from ltts.voices.styles import StyleTake, prompt_for_number, style_prompts
+
+RATE = 24_000
+
+
+@pytest.fixture
+def settings(settings: Settings) -> Settings:
+    return settings.model_copy(update={"min_studio_speech_s": 20})
+
+
+def report(**fields: Any) -> QualityReport:
+    base = {"duration_s": 12, "speech_s": 11, "rms_dbfs": -20, "peak_dbfs": -3, "clipping_ratio": 0,
+            "pause_ratio": 0.1, "snr_db": 40, "ok": True, "issues": []}  # fmt: skip
+    return QualityReport.model_validate(base | fields)
+
+
+def test_a_sentence_is_read_in_the_style_its_punctuation_asks_for() -> None:
+    assert sentence_style("Are you coming tonight?") == "question"
+    assert sentence_style("“Where is it?” she asked.") == "dialogue"
+    assert sentence_style("“Is it here?”") == "question"
+    assert sentence_style("What a day!") == "lively"
+    assert sentence_style("The river was wide.") == "narration"
+    assert is_dialogue('"Hi," she said.') and not is_dialogue("Hi, she said.")
+    assert count_syllables("'' 'tis") == 1  # a word of nothing but apostrophes is no word
+
+
+def test_take_numbers_map_back_to_their_passages() -> None:
+    assert prompt_for_number(1) == "narration-1"
+    assert prompt_for_number(9) == "storytelling-1"
+    assert prompt_for_number(32) == "questions-and-surprise-8"
+    assert prompt_for_number(48) == "calm-and-reflective-8"
+    assert prompt_for_number(49) == "foundation"
+    assert prompt_for_number(101) is None and prompt_for_number(0) is None
+
+
+def test_style_prompts_prefer_matching_clean_lively_takes() -> None:
+    def take(name: str, prompt_id: str | None, spread: float = 1.0, **quality: Any) -> StyleTake:
+        return StyleTake(Path(name), prompt_id, report(**quality), spread, quality.pop("typical", True))
+
+    takes = [
+        take("q-flat", "questions-and-surprise-1", 0.5),
+        take("q-lively", "questions-and-surprise-2", 3.5),
+        take("q-noisy", "questions-and-surprise-3", 3.9, snr_db=8),
+        take("q-failed", "questions-and-surprise-4", 3.9, ok=False),
+        take("chat", "conversation-1", 2.0),
+        take("import", None, 4.0),
+        StyleTake(Path("q-stranger"), "questions-and-surprise-5", report(), 4.0, False),
+    ]
+    assert [p.name for p in style_prompts(takes, "question")] == ["q-lively", "q-flat", "chat"]
+    assert style_prompts(takes, "narration") == []  # no narration passages recorded
+
+
+def test_the_build_makes_styles_that_move_into_the_profile(
+    client: TestClient, services: Services, engines: dict[str, FakeEngine]
+) -> None:
+    session_id = client.post("/api/voice-sessions").json()["id"]
+    for number, prompt in [(1, "narration-1"), (17, "conversation-1"), (25, "questions-and-surprise-1"),
+                           (9, "storytelling-1")]:  # fmt: skip
+        client.put(
+            f"/api/voice-sessions/{session_id}/takes/{number}",
+            params={"promptId": prompt},
+            content=wav_bytes(speech_like(12)),
+        )
+    job = wait_job(client, client.post(f"/api/voice-sessions/{session_id}/build").json()["id"])
+    assert job["result"]["styles"] == ["narration", "question", "lively", "dialogue", "calm"]
+    assert dict(engines["chatterbox"].styled)["question"][0] == "025.flac"
+    best = client.get(f"/api/voice-sessions/{session_id}").json()["candidates"][0]["index"]
+    profile = client.post(
+        f"/api/voice-sessions/{session_id}/finish", json={"candidate": best, "name": "Me", "consent": True}
+    ).json()
+    assert profile["styles"] == ["calm", "dialogue", "lively", "narration", "question"]
+    _, spec, revision = services.voices.resolve(profile["id"])
+    assert dict(spec.styles)["question"].name == "question.safetensors" and "styles-" in revision
+    doc = client.post("/api/documents/text", json={"text": "Are you coming tonight?"}).json()
+    read = client.get(f"/api/documents/{doc['id']}/segments/0/audio", params={"voice": profile["voiceId"]})
+    assert read.status_code == 200 and engines["chatterbox"].specs[-1].style == "question"  # part of its cache key
+
+
+def test_a_saved_studio_voice_learns_its_styles_from_its_takes(
+    client: TestClient, services: Services, engines: dict[str, FakeEngine]
+) -> None:
+    profile = saved_studio_voice(client, (2, 18, 26))
+    assert profile["styles"] == []  # takes saved without their passage: as a voice from before styles
+    _, _, before = services.voices.resolve(profile["id"])
+
+    started = client.post(f"/api/voice-profiles/{profile['id']}/styles")
+    assert started.status_code == 202
+    job = wait_job(client, started.json()["id"])
+    assert job["status"] == "succeeded" and job["result"]["styles"] == [
+        "narration",
+        "question",
+        "lively",
+        "dialogue",
+        "calm",
+    ]
+    assert dict(engines["chatterbox"].styled)["question"][0] == "026.flac"  # take 26 read a question passage
+    refreshed = client.get("/api/voice-profiles").json()[0]
+    assert refreshed["styles"] == ["calm", "dialogue", "lively", "narration", "question"]
+    _, _, after = services.voices.resolve(profile["id"])
+    assert after != before
+    assert refreshed["hasPreviousStyles"] is True  # the expression before the rebuild can come back
+
+    url = f"/api/voice-profiles/{profile['id']}/styles/restore"
+    back = client.post(url).json()
+    assert back["styles"] == [] and back["hasPreviousStyles"] is True  # read every sentence the same way again
+    assert services.voices.resolve(profile["id"])[2] == before
+    forward = client.post(url).json()
+    assert forward["styles"] == ["calm", "dialogue", "lively", "narration", "question"]
+    assert services.voices.resolve(profile["id"])[2] == after
+
+    shutil.rmtree(services.voices.takes_dir(profile["id"]))
+    assert client.post(f"/api/voice-profiles/{profile['id']}/styles").json()["error"]["code"] == "not_studio"
+    shutil.rmtree(services.voices.previous_styles_dir(profile["id"]))
+    assert client.post(url).json()["error"]["code"] == "no_previous_styles"
+
+
+def test_a_styles_rebuild_runs_once_at_a_time_and_needs_usable_takes(
+    client: TestClient, services: Services, engines: dict[str, FakeEngine], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    profile = saved_studio_voice(client, (2, 18, 26))
+    url = f"/api/voice-profiles/{profile['id']}/styles"
+    gate = threading.Event()
+    build_style = engines["chatterbox"].build_style
+    monkeypatch.setattr(
+        engines["chatterbox"], "build_style", lambda prompts, output: (gate.wait(5), build_style(prompts, output))[1]
+    )
+    first = client.post(url).json()
+    assert client.post(url).json()["id"] == first["id"]  # one rebuild at a time
+    gate.set()
+    assert wait_job(client, first["id"])["status"] == "succeeded"
+    for take in services.voices.takes_dir(profile["id"]).glob("*.flac"):
+        take.unlink()
+    job = wait_job(client, client.post(url).json()["id"])
+    assert job["status"] == "failed" and job["errorCode"] == "no_takes"
+
+
+def test_styles_are_rebuilt_and_restored_even_when_their_folder_is_gone(client: TestClient, services: Services) -> None:
+    profile = saved_studio_voice(client, (2, 18, 26))
+    styles = services.voices.styles_dir(profile["id"])
+    shutil.rmtree(styles)  # a voice saved before styles existed has no styles folder at all
+    job = wait_job(client, client.post(f"/api/voice-profiles/{profile['id']}/styles").json()["id"])
+    assert job["status"] == "succeeded" and len(job["result"]["styles"]) == 5
+    refreshed = client.get("/api/voice-profiles").json()[0]
+    assert refreshed["hasPreviousStyles"] is True and services.voices.previous_styles_dir(profile["id"]).is_dir()
+    shutil.rmtree(styles)
+    back = client.post(f"/api/voice-profiles/{profile['id']}/styles/restore").json()
+    assert back["styles"] == [] and back["hasPreviousStyles"] is True  # going forward again means having none
+    assert not list(services.voices.previous_styles_dir(profile["id"]).iterdir())
+
+
+def test_polish_trims_shortens_pauses_and_levels_the_speech() -> None:
+    quiet = speech_like(2, rate=RATE, level=0.02, noise=0.0)
+    clip = np.concatenate([np.zeros(RATE), quiet, np.zeros(2 * RATE), quiet, np.zeros(RATE)]).astype(np.float32)
+    polished = polish(clip, RATE)
+    assert 4.2 < len(polished) / RATE < 5.0  # edges trimmed, the 2 s pause cut to 0.3 s
+    voiced = polished[np.abs(polished) > 1e-4]
+    assert 20 * np.log10(np.sqrt(np.mean(voiced**2))) == pytest.approx(TARGET_RMS_DBFS, abs=2.5)
+    assert np.max(np.abs(polished)) <= 10 ** (-1 / 20) + 1e-6
+    silent = np.zeros(RATE, dtype=np.float32)
+    assert polish(silent, RATE) is silent
+    tiny = np.zeros(5, dtype=np.float32)
+    assert polish(tiny, RATE) is tiny  # shorter than one frame
+    spiky = quiet.copy()
+    spiky[len(spiky) // 2] = 0.9  # a click far above the speech: levelling must not push it past the ceiling
+    assert np.max(np.abs(polish(spiky, RATE))) == pytest.approx(10 ** (-1 / 20), abs=1e-6)
+
+
+def test_plausibility_flags_clips_that_stop_early_or_run_on() -> None:
+    text = "The library opens at nine, but most mornings the first visitors arrive early."  # ~20 syllables
+    assert acceptable(plausibility(np.zeros(int(4.5 * RATE), dtype=np.float32), RATE, text))
+    assert not acceptable(plausibility(np.zeros(RATE // 2, dtype=np.float32), RATE, text))
+    assert not acceptable(plausibility(np.zeros(20 * RATE, dtype=np.float32), RATE, text))

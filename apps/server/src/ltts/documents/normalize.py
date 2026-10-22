@@ -4,8 +4,10 @@
 
 Scope: ``clean_text`` makes extracted text safe and tidy for reading (Unicode NFC, control and
 zero-width characters removed, whitespace collapsed). ``speech_text`` rewrites a display string
-into what the voice engine should actually say (typographic punctuation, URLs, footnote markers).
-Does NOT belong: Sentence segmentation (``segmenter.py``) or engine-specific phonemisation.
+into what the voice engine should actually say (typographic punctuation, URLs, dashes, markup); it
+leaves numbers in brackets alone, so ``array[3]`` and ``[0, 1]`` are read as written.
+Does NOT belong: Sentence segmentation (``segmenter.py``), engine-specific phonemisation, or footnote
+and citation markers, which the document cleanup leaves unread where it can be undone (``cleanup.py``).
 """
 
 from __future__ import annotations
@@ -21,7 +23,6 @@ _CONTROL = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f]")
 _SPACE_CHARS = " \t" + "".join(map(chr, [0x00A0, *range(0x2000, 0x200B), 0x202F, 0x205F, 0x3000]))
 _SPACES = re.compile(f"[{re.escape(_SPACE_CHARS)}]+")
 _URL = re.compile(r"\b(?:https?://|www\.)\S+", re.IGNORECASE)
-_FOOTNOTE = re.compile(r"\[(?:\d{1,3}|[a-z])\]|(?<=[a-z.,;])\^\d{1,3}")
 _REPEAT_PUNCT = re.compile(r"([!?])\1+")
 # The leading digit is consumed (and written back) rather than looked behind, so a match can only start at
 # a digit and a long run of whitespace is scanned once instead of once per starting position.
@@ -106,7 +107,6 @@ def _attach_punctuation(text: str) -> str:
 def speech_text(text: str) -> str:
     """Rewrite display text into the string sent to the TTS engine."""
     spoken = _URL.sub(" link ", text)
-    spoken = _FOOTNOTE.sub("", spoken)
     spoken = _DASH_BETWEEN_NUMBERS.sub(r"\1 to ", spoken)
     spoken = spoken.translate(_TRANSLATE)
     spoken = _dash_pauses(spoken)

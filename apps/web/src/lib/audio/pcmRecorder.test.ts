@@ -45,7 +45,8 @@ function connectable() {
 
 function installAudio({ secure = true, worklet = true } = {}) {
   const stopTrack = vi.fn();
-  const getUserMedia = vi.fn(async () => ({ getTracks: () => [{ stop: stopTrack }] }));
+  const track: { stop: () => void; onended?: (() => void) | null } = { stop: stopTrack };
+  const getUserMedia = vi.fn(async () => ({ getTracks: () => [track] }));
   vi.stubGlobal('isSecureContext', secure);
   vi.stubGlobal('navigator', {
     mediaDevices: {
@@ -89,7 +90,7 @@ function installAudio({ secure = true, worklet = true } = {}) {
       },
     );
   } else vi.stubGlobal('AudioWorkletNode', undefined);
-  return { getUserMedia, stopTrack };
+  return { getUserMedia, stopTrack, track };
 }
 
 afterEach(() => {
@@ -172,6 +173,20 @@ describe('PcmRecorder', () => {
     recorder.release();
     expect(audio.nodes[0]?.disconnect).toHaveBeenCalledTimes(1);
     expect(WORKLET_URL).toBe('/audio/capture-worklet.js');
+  });
+
+  it('says when the microphone is unplugged, and when the recorder itself cannot start', async () => {
+    const { track } = installAudio();
+    const unplugged = vi.fn();
+    await new PcmRecorder().start(undefined, unplugged);
+    track.onended?.();
+    expect(unplugged).toHaveBeenCalledTimes(1);
+    installAudio();
+    const failing = class extends (globalThis.AudioContext as unknown as new () => object) {
+      audioWorklet = { addModule: vi.fn(async () => Promise.reject(new Error('blocked'))) };
+    };
+    vi.stubGlobal('AudioContext', failing);
+    await expect(new PcmRecorder().start()).rejects.toMatchObject({ code: 'unsupported' });
   });
 
   it('explains a microphone that could not be opened', async () => {

@@ -109,7 +109,7 @@ def test_takes_reject_bad_audio_and_respect_the_limit(client: TestClient) -> Non
     session_id = client.post("/api/voice-sessions").json()["id"]
     url = f"/api/voice-sessions/{session_id}/takes"
     assert error(client.put(f"{url}/1", content=b"not audio")) == "unsupported_audio"
-    assert error(client.put(f"{url}/1", content=wav_bytes(speech_like(61)))) == "too_long"
+    assert error(client.put(f"{url}/1", content=wav_bytes(speech_like(101)))) == "too_long"
     assert client.put(f"{url}/1", params={"promptId": "Bad Id!"}, content=wav_bytes(speech_like())).status_code == 422
     for number in range(1, 5):
         assert client.put(f"{url}/{number}", content=wav_bytes(speech_like(4))).status_code == 200

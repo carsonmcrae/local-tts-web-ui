@@ -3,8 +3,9 @@
 /**
  * Purpose: Tests for the reading view: contents, paging, play/resume, read-along and its keyboard
  *   model, auto-scroll, correcting a section, and loading/error states.
- * Scope: ReaderPage with ReaderParts, SectionNav and DocumentText against the mocked API; the
- *   player's controller is reached through a small spy component where a test needs to act on it.
+ * Scope: ReaderPage with ReaderParts, SectionNav and DocumentText against the mocked API (and the
+ *   text on its own, with nothing styled or skipped); the player's controller is reached through a
+ *   small spy component where a test needs to act on it.
  * Does NOT belong: Player controls (features/player tests) or exporting (export.test.tsx).
  */
 import { act, screen, waitFor, within } from '@testing-library/react';
@@ -22,6 +23,7 @@ import {
   mockReaderApi,
   renderWithApp,
 } from '@/test/render';
+import { DocumentText } from './DocumentText';
 import ReaderPage from './ReaderPage';
 
 afterEach(() => vi.unstubAllGlobals());
@@ -338,5 +340,21 @@ describe('Reader states', () => {
     renderWithApp(<ReaderPage />, { path: '/read/:documentId', route: `/read/${book.id}` });
     expect(await screen.findByText("This document couldn't be opened")).toBeInTheDocument();
     expect(screen.getByText('The file is damaged.')).toBeInTheDocument();
+  });
+
+  it('renders the text plainly when nothing is styled or skipped', () => {
+    mockApi({});
+    const segment = { index: 0, sectionIndex: 0, paragraphIndex: 0, kind: 'paragraph', boundary: 'sentence', text: 'Plain.' } as const; // prettier-ignore
+    renderWithApp(
+      <DocumentText
+        segments={[segment]}
+        activeIndex={null}
+        bookmarked={new Set()}
+        autoScroll={false}
+        onSelect={vi.fn()}
+      />,
+    );
+    expect(sentence('Plain.')).toHaveAttribute('data-skipped', 'false');
+    expect(sentence('Plain.')).toHaveAttribute('data-styled', 'false');
   });
 });

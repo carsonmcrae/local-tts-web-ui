@@ -4,7 +4,8 @@
 
 Scope: Capability/description models returned to the UI (only supported controls are listed), the
 voice model, the ``Engine`` protocol every engine implements, the ``VoiceBuilder`` protocol a cloning
-engine implements to build studio voices, and shared engine errors.
+engine implements to build studio voices, the ``VoiceTuner`` protocol for fine-tuning one, and shared
+engine errors.
 Does NOT belong: Any concrete engine (``kokoro.py``, ``chatterbox.py``).
 """
 
@@ -85,13 +86,20 @@ class VoiceInfo(ApiModel):
 @dataclass(frozen=True, slots=True)
 class VoiceSpec:
     """What an engine needs to speak with a voice: a built-in key, a reference recording or a built
-    studio voice (cloning engines prefer it), and how lively the delivery should be."""
+    studio voice (cloning engines prefer it) with its speaking styles and fine-tuned adapter, and how
+    lively the delivery should be."""
 
     key: str
     reference_path: Path | None = None
     language_code: str = "en-us"
     conditioning_path: Path | None = None
     delivery: Delivery = "natural"
+    styles: tuple[tuple[str, Path], ...] = ()  # (style, file): prompts for questions, dialogue and more
+    style: str | None = None  # the style this sentence is read in (decided by the planner)
+    take: int = 0  # another take of the same sentence (a different seed); 0 is the first
+    steady: bool = False  # read evenly whatever the delivery (headings, lists, announcements)
+    blend: tuple[tuple[str, float], ...] = ()  # built-in voice keys and weights mixed into one (Kokoro)
+    adapter_path: Path | None = None  # a fine-tune of the model on the voice's takes (built voices only)
 
 
 @dataclass(slots=True)
@@ -121,7 +129,8 @@ class SpeakerIdentity:
 
 @dataclass(frozen=True, slots=True)
 class Audition:
-    """Generate ``texts`` into ``outputs`` with a built voice, seeded, and score them against ``target``."""
+    """Generate ``texts`` into ``outputs`` with a built voice (and optionally a fine-tuned adapter),
+    seeded, and score them against ``target`` (empty: the voice's own speaker)."""
 
     conditioning: Path
     texts: Sequence[str]
@@ -129,6 +138,26 @@ class Audition:
     target: tuple[float, ...]
     seed: int = 0
     delivery: Delivery = "natural"
+    adapter: Path | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class TuningTake:
+    """A take to fine-tune on: the recording, the words read in it, and whether it only checks progress."""
+
+    path: Path
+    text: str
+    held_out: bool = False
+
+
+@dataclass(frozen=True, slots=True)
+class TuningProgress:
+    """How well the model predicts the held-out takes (mean loss per speech token; lower is closer)."""
+
+    epoch: int
+    held_out_loss: float
+    best_epoch: int
+    train_loss: float | None = None
 
 
 class Engine(Protocol):
@@ -173,4 +202,27 @@ class VoiceBuilder(Protocol):
         """Save a voice built from ``prompt``'s sound and style; ``identity`` replaces the take's own."""
         ...
 
+    def build_style(self, prompts: Sequence[Path], output: Path) -> float:
+        """Save a speaking style learnt from ``prompts`` (takes in that style); returns the seconds used."""
+        ...
+
     def audition(self, request: Audition) -> list[float]: ...
+
+
+@runtime_checkable
+class VoiceTuner(VoiceBuilder, Protocol):
+    """A cloning engine that can also fine-tune a built voice on its takes, one epoch per call."""
+
+    def synthesize(self, text: str, voice: VoiceSpec, pace: float) -> AudioClip: ...
+
+    def start_tuning(self, takes: Sequence[TuningTake], conditioning: Path, epochs: int, seed: int) -> TuningProgress:
+        """Prepare a run; returns the held-out loss before any training (epoch 0)."""
+        ...
+
+    def tune_epoch(self) -> TuningProgress: ...
+
+    def save_tuning(self, output: Path) -> TuningProgress:
+        """Save the best epoch's adapter to ``output``."""
+        ...
+
+    def stop_tuning(self) -> None: ...

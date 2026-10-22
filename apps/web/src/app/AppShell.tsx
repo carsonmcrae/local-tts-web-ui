@@ -2,27 +2,40 @@
 // Copyright (c) 2026 Carson McRae
 /**
  * Purpose: Application chrome shared by every route.
- * Scope: Skip link, desktop sidebar (with privacy note, engine status and the version), phone tab bar, the routed
- *   page area, the docked player that persists across navigation, and (in the desktop app) the update
- *   notice and What's new after an update.
+ * Scope: Skip link, desktop sidebar (with privacy note, engine status, the speech API in-use sign,
+ *   the LAN mode sign and the version), phone tab bar (the speech API sign on Settings), the
+ *   reconnect banner, the routed page area, the docked player that persists across navigation, and
+ *   (in the desktop app) the update notice and What's new after an update.
  * Does NOT belong: Page content or player logic.
  */
-import { AudioLines, BookOpen, Info, Mic, Settings, ShieldCheck } from 'lucide-react';
+import {
+  AudioLines,
+  BookHeadphones,
+  BookOpen,
+  Info,
+  Mic,
+  Settings,
+  ShieldCheck,
+} from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Link, NavLink, Outlet } from 'react-router';
 import { useEngines } from '@/api/queries';
 import type { EngineInfo } from '@/api/types';
 import { cn } from '@/lib/cn';
+import { LanIndicator } from '@/features/lan/LanIndicator';
 import { PlayerBar } from '@/features/player/PlayerBar';
 import { UpdateNotice } from '@/features/updates/UpdateNotice';
 import { UpdatesProvider } from '@/features/updates/UpdatesProvider';
 import { WhatsNew } from '@/features/updates/WhatsNew';
 import { appVersion } from '@/lib/version';
+import { ConnectionBanner } from './ConnectionBanner';
+import { SpeechApiIndicator } from './SpeechApiIndicator';
 
 const NAV: readonly { to: string; label: string; icon: ReactNode }[] = [
   { to: '/library', label: 'Library', icon: <BookOpen size={19} /> },
   { to: '/voices', label: 'Voices', icon: <AudioLines size={19} /> },
   { to: '/studio', label: 'Voice Studio', icon: <Mic size={19} /> },
+  { to: '/exports', label: 'Exports', icon: <BookHeadphones size={19} /> },
   { to: '/settings', label: 'Settings', icon: <Settings size={19} /> },
 ];
 
@@ -111,13 +124,17 @@ export function AppShell() {
               <p className="mb-1 flex items-center gap-1.5 font-medium text-text">
                 <ShieldCheck size={14} className="text-success" /> Private by design
               </p>
-              Documents, voices and audio never leave this computer.
+              Documents, voices and audio stay on this computer, unless you send a book to your own
+              Audiobookshelf.
             </div>
             <EngineStatus />
+            <SpeechApiIndicator variant="sidebar" />
+            <LanIndicator />
             <VersionLink />
           </div>
         </aside>
         <div className="flex min-w-0 flex-1 flex-col">
+          <ConnectionBanner />
           <UpdateNotice />
           <WhatsNew version={appVersion()} />
           <main
@@ -132,7 +149,7 @@ export function AppShell() {
           <PlayerBar />
           <nav
             aria-label="Main"
-            className="grid grid-cols-4 border-t border-line bg-surface pb-[env(safe-area-inset-bottom)] md:hidden"
+            className="grid grid-cols-5 border-t border-line bg-surface pb-[env(safe-area-inset-bottom)] md:hidden"
           >
             {NAV.map((item) => (
               <NavLink
@@ -140,13 +157,14 @@ export function AppShell() {
                 to={item.to}
                 className={({ isActive }) =>
                   cn(
-                    'flex min-h-14 flex-col items-center justify-center gap-0.5 text-[11px] font-medium',
+                    'relative flex min-h-14 flex-col items-center justify-center gap-0.5 text-[11px] font-medium',
                     isActive ? 'text-accent-text' : 'text-muted',
                   )
                 }
               >
                 {item.icon}
                 {item.label.replace('Voice Studio', 'Studio')}
+                {item.to === '/settings' ? <SpeechApiIndicator variant="tab" /> : null}
               </NavLink>
             ))}
           </nav>

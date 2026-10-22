@@ -38,8 +38,9 @@ exclude-newer = "14 days"
 # as an sdist and would run its setup.py on install. Drop this after 2026-10-23, when the 14-day window covers it.
 # certifi 2026.10.19 fixes GHSA-6q48-6c7w-9gw2 (security exception, as in apps/server); drop after 2026-11-03.
 # pillow 13.0.0 (2026-10-16) fixes nine advisories (security exception, override below); drop after 2026-10-30.
-# virtualenv 21.14.7 (2026-10-12, via pre-commit) fixes CVE-2026-113725 (security exception); drop after 2026-10-27.
-exclude-newer-package = { omegaconf = "2026-10-10T00:00:00Z", certifi = "2026-10-21T00:00:00Z", pillow = "2026-10-17T00:00:00Z", virtualenv = "2026-10-13T00:00:00Z" }
+# virtualenv 21.14.10 (2026-10-17) fixes CVE-2026-113716, -113722 and -113724 on top of -113725 (security exception;
+# it arrives only through s3tokenizer's pre-commit requirement and nothing here runs it); drop after 2026-10-31.
+exclude-newer-package = { omegaconf = "2026-10-10T00:00:00Z", certifi = "2026-10-21T00:00:00Z", pillow = "2026-10-17T00:00:00Z", virtualenv = "2026-10-18T00:00:00Z" }
 conflicts = [[{ extra = "cpu" }, { extra = "cuda" }]]
 # chatterbox-tts declares gradio as a hard dependency but never imports it; drop it (and its large
 # dependency tree) from this environment. It also pins diffusers==0.29.0, which has high-severity
@@ -64,6 +65,7 @@ override-dependencies = [
   "transformers>=5.11.0,<5.12",
   "setuptools>=83,<85",
   "pillow>=13.0.0,<14",
+  "virtualenv>=21.14.9,<22",
 ]
 
 # chatterbox-tts 0.1.7's declared requirements, verbatim except torch/torchaudio==2.6.0, which become

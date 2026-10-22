@@ -14,17 +14,23 @@ export function StudioIntro() {
     <div className="flex flex-col gap-5">
       <Point icon={<Sparkles size={16} />} title="Built from your best takes">
         You’ll read short passages in different styles. The app measures every take, averages your
-        voice across the whole session, then builds and tests a few voices from your best takes so
-        you can pick the one that sounds most like you. No model is trained.
+        voice across them, then builds and tests a few voices from your best takes so you can pick
+        the one that sounds most like you. When it speaks, the engine hears about 10 seconds of one
+        take for the sound of your voice, plus three takes of each speaking style for its rhythm. No
+        model is trained, so the session stops asking once the voice has what it uses. An
+        experimental fine-tune can be tried afterwards on an NVIDIA graphics card; in a blind test
+        it sounded no clearer than the voice without it, so it isn't a reason to record more.
       </Point>
       <Point icon={<Mic size={16} />} title="A good microphone makes the biggest difference">
         Use a USB or XLR microphone, a hand’s width from your mouth and aimed slightly to the side.
         Laptop and headset mics often sound thin or “tinny”, and the voice copies that. On Windows,
         turn off Audio enhancements for your microphone in Sound settings.
       </Point>
-      <Point icon={<Clock3 size={16} />} title="About 30–45 minutes, at your own pace">
-        Five minutes of speech is enough to build; ten or more is better. Every take is saved as you
-        go, so you can stop and continue later. Already recorded in Audacity or similar? Import it.
+      <Point icon={<Clock3 size={16} />} title="About 15–20 minutes, at your own pace">
+        Usually 12–16 passages (2–3 minutes of speech) give a complete voice, depending on how clean
+        your takes are; the app suggests which ones, and the rest are optional. Every take is saved
+        as you go, so you can stop and continue later. Already recorded in Audacity or similar?
+        Import it.
       </Point>
       <Point icon={<Cpu size={16} />} title="Building needs the voice-cloning engine">
         You can record now and install the engine before building. Building takes a minute or two

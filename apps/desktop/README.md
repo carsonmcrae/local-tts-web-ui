@@ -1,7 +1,9 @@
 # TTSNative for Windows (desktop shell)
 
 The Windows app: a [Tauri 2](https://v2.tauri.app) window that starts the bundled TTSNative server on
-`127.0.0.1` and shows the existing web UI from it. Design and trade-offs:
+`127.0.0.1` and shows the existing web UI from it (LAN mode, when turned on in Settings, adds a second
+listener on one home-network address until the app restarts; the speech API for other programs
+answers on `127.0.0.1` only). Design and trade-offs:
 [docs/architecture/desktop-and-releases.md](../../docs/architecture/desktop-and-releases.md).
 
 | Path                        | What                                                                                      |

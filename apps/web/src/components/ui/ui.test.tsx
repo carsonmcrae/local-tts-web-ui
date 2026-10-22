@@ -12,7 +12,7 @@ import userEvent from '@testing-library/user-event';
 import { useState } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { Button, IconButton } from './Button';
-import { ConfirmDialog, Dialog } from './Dialog';
+import { closeOnly, ConfirmDialog, Dialog } from './Dialog';
 import { Badge, Banner, EmptyState, ProgressBar, StatusRegion } from './Feedback';
 import { Checkbox, Field, Input, Switch } from './Field';
 import { PageHeader, Section, usePageTitle } from './Layout';
@@ -41,6 +41,15 @@ describe('Button', () => {
 });
 
 describe('Dialog', () => {
+  it('a dialog without a trigger can only be closed through onOpenChange', () => {
+    const close = vi.fn();
+    const onOpenChange = closeOnly(close);
+    onOpenChange(true);
+    expect(close).not.toHaveBeenCalled();
+    onOpenChange(false);
+    expect(close).toHaveBeenCalledTimes(1);
+  });
+
   it('uses the title as the description when none is given, and shows the footer', () => {
     render(
       <Dialog open onOpenChange={() => undefined} title="Rename" footer={<button>Save</button>}>

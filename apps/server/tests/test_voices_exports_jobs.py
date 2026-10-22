@@ -5,24 +5,32 @@
 Scope: Reference-quality analysis (pass, too short, too quiet, clipping, noisy), profile creation
 with/without consent and permanent deletion (files, cache, progress references), custom voice
 synthesis routing to the cloning engine with the reference file, exports (WAV, MP3, per-chapter ZIP,
-range, resume) and job failure/cancel/recovery semantics.
+range, resume) and job failure/cancel/recovery semantics, including the job manager's guards: a job the
+database refuses frees its lane place, a restart keeps one place and the new stop switch, a failing
+cleanup is logged, and a running job can't be forgotten.
 Does NOT belong: Real cloning inference (test_inference.py).
 """
 
 from __future__ import annotations
 
 import io
+import logging
+import sqlite3
+import threading
 import time
 import zipfile
 
 import numpy as np
+import pytest
 import soundfile as sf
 from fastapi.testclient import TestClient
 
 from conftest import FakeEngine, speech_like, wait_job, wav_bytes
+from export_support import until
 from ltts.container import Services
-from ltts.errors import AppError
-from ltts.jobs import JobManager, JobStatus
+from ltts.errors import AppError, ConflictError
+from ltts.exports.capacity import EXPORT_LANE, KIND
+from ltts.jobs import JobContext, JobManager, JobStatus
 from ltts.voices.quality import analyze
 
 
@@ -154,3 +162,84 @@ def test_jobs_fail_cancel_and_recover(services: Services) -> None:
     with services.db.connect() as conn:
         conn.execute("UPDATE jobs SET status = 'running' WHERE id = ?", (failed.id,))
     assert jobs.recover() == 1 and jobs.get(failed.id).status == JobStatus.INTERRUPTED
+
+
+def test_a_job_the_database_refuses_frees_its_place_and_a_running_one_cannot_be_forgotten(
+    services: Services, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    jobs: JobManager = services.jobs
+
+    def refuse() -> None:
+        raise sqlite3.OperationalError("database is locked")
+
+    with monkeypatch.context() as patch:
+        patch.setattr(services.db, "connect", refuse)
+        with pytest.raises(sqlite3.OperationalError):
+            jobs.submit(KIND, {}, lambda _ctx: None)
+    assert jobs.occupancy(EXPORT_LANE) == (0, 0)  # its place in the export lane is free again
+    release = threading.Event()
+
+    def hold(ctx: JobContext) -> None:
+        release.wait(5)
+        ctx.check()
+
+    running = jobs.submit(KIND, {}, hold)
+    until(lambda: jobs.get(running.id).status == JobStatus.RUNNING)
+    with pytest.raises(ConflictError) as busy:
+        jobs.forget(running.id)
+    assert busy.value.code == "job_running"
+    assert jobs.restart(running.id, lambda _ctx: None).status == JobStatus.RUNNING  # only a stopped job restarts
+    release.set()
+    until(lambda: jobs.get(running.id).status == JobStatus.SUCCEEDED)
+    jobs.forget(running.id)
+    assert all(job.id != running.id for job in jobs.list_recent())
+
+
+def test_a_job_restarted_while_its_last_run_still_finishes_keeps_one_place_and_the_new_stop_switch(
+    services: Services,
+) -> None:
+    """After an unclean recovery a job can show as interrupted while its thread is still finishing."""
+    jobs: JobManager = services.jobs
+    release_first, second_started = threading.Event(), threading.Event()
+
+    def first(_ctx: JobContext) -> None:
+        release_first.wait(5)
+
+    def second(ctx: JobContext) -> None:
+        second_started.set()
+        while True:
+            ctx.check()
+            time.sleep(0.01)
+
+    job = jobs.submit(KIND, {}, first)
+    until(lambda: jobs.get(job.id).status == JobStatus.RUNNING)
+    assert jobs.recover() == 1  # as at start-up: the run looks interrupted, though its thread is alive
+    assert jobs.restart(job.id, second).status in (JobStatus.QUEUED, JobStatus.RUNNING)
+    assert second_started.wait(5) and jobs.occupancy(EXPORT_LANE) == (1, 0)  # both runs share the one place
+    release_first.set()
+    until(lambda: jobs.get(job.id).status == JobStatus.SUCCEEDED)  # the first run wrote its ending
+    jobs.cancel(job.id)  # reaches the run that is still going
+    until(lambda: jobs.get(job.id).status == JobStatus.CANCELED)
+    assert jobs.occupancy(EXPORT_LANE) == (0, 0)
+
+
+def test_a_cleanup_that_fails_after_a_cancel_is_logged_and_the_job_still_ends(
+    services: Services, caplog: pytest.LogCaptureFixture
+) -> None:
+    jobs: JobManager = services.jobs
+
+    def broken_cleanup(_job_id: str) -> None:
+        raise OSError("folder in use")
+
+    jobs.when_canceled("tidy", broken_cleanup)
+
+    def wait_to_be_stopped(ctx: JobContext) -> None:
+        while True:
+            ctx.check()
+            time.sleep(0.01)
+
+    job = jobs.submit("tidy", {}, wait_to_be_stopped)
+    with caplog.at_level(logging.WARNING, logger="ltts.jobs"):
+        jobs.cancel(job.id)
+        until(lambda: jobs.get(job.id).status == JobStatus.CANCELED)
+    assert any(record.getMessage() == "cleanup after a cancel failed" for record in caplog.records)

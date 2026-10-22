@@ -115,14 +115,16 @@ def test_export_resume_readiness_removal_and_empty_ranges(client: TestClient, se
 
     stopped = wait_job(client, services.jobs.submit("export", body, canceled).id)
     assert stopped["status"] == "canceled"
+    assert client.get(f"/api/exports/{stopped['id']}/download").json()["error"]["code"] == "export_not_ready"
     resumed = client.post(f"/api/exports/{stopped['id']}/resume")
-    assert resumed.status_code == 202
+    assert resumed.status_code == 202 and resumed.json()["id"] == stopped["id"]  # the same export carries on
     finished = wait_job(client, resumed.json()["id"])
     assert finished["status"] == "succeeded"
-
-    assert client.get(f"/api/exports/{stopped['id']}/download").json()["error"]["code"] == "export_not_ready"
+    assert client.get(f"/api/exports/{finished['id']}/download").status_code == 200
+    assert client.post(f"/api/exports/{finished['id']}/resume").json()["error"]["code"] == "not_resumable"
     assert client.delete(f"/api/exports/{finished['id']}").status_code == 204
-    assert client.get(f"/api/exports/{finished['id']}/download").json()["error"]["code"] == "export_missing"
+    gone = client.get(f"/api/exports/{finished['id']}/download")  # deleting removes the export itself
+    assert gone.status_code == 404 and gone.json()["error"]["code"] == "job_not_found"
 
     empty = wait_job(client, client.post("/api/exports", json={**body, "firstSection": 5}).json()["id"])
     assert empty["status"] == "failed" and empty["errorCode"] == "empty_export"

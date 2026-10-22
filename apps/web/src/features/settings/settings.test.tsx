@@ -22,7 +22,7 @@ afterEach(() => vi.unstubAllGlobals());
 const system: SystemInfo = {
   version: '2.0.0', python: '3.12.10', platform: 'Windows 11', machine: 'AMD64', cpuCores: 8,
   memoryTotalBytes: 16 * 1024 ** 3, memoryAvailableBytes: 8 * 1024 ** 3, gpus: [],
-  onnxProviders: ['CPUExecutionProvider'], networkExposed: true, telemetry: false, limits: {},
+  onnxProviders: ['CPUExecutionProvider'], networkExposed: true, lanMode: true, telemetry: false, limits: {},
   storage: { dataDir: 'C:/ltts', freeBytes: 50e9, totalBytes: 100e9, modelsBytes: 3e8, audioCacheBytes: 5e7,
     audioCacheLimitBytes: 1e8, voicesBytes: 1e6, exportsBytes: 2e6, databaseBytes: 3e5 },
 }; // prettier-ignore
@@ -40,6 +40,7 @@ function api(overrides: Record<string, unknown> = {}) {
     ],
     'GET /api/system': system,
     'GET /api/pronunciations': [],
+    'GET /api/integrations/audiobookshelf': { configured: false, hasKey: false },
     'PUT /api/preferences': (_url: URL, init: RequestInit) => JSON.parse(String(init.body)),
     ...overrides,
   });
@@ -58,22 +59,39 @@ function renderSettings(route = '/settings') {
 }
 
 describe('Reading text', () => {
-  it('changes the size, spacing and typeface of the reading text on this device', async () => {
+  it('changes the size, spacing, letter spacing and typeface of the reading text on this device', async () => {
     api();
     const { user } = renderSettings();
     const appearance = await screen.findByRole('region', { name: 'Appearance' });
     await user.click(within(appearance).getByRole('radio', { name: 'Large' }));
     await user.click(within(appearance).getByRole('radio', { name: 'Relaxed' }));
     await user.click(within(appearance).getByRole('radio', { name: 'Sans serif' }));
+    await user.click(within(appearance).getByRole('radio', { name: 'Wider' }));
     const preview = within(appearance).getByLabelText('Reading text preview');
     expect(preview).toHaveAttribute('data-typeface', 'sans');
     expect(preview.style.getPropertyValue('--reader-scale')).toBe('1.15');
     expect(preview.style.getPropertyValue('--reader-leading')).toBe('2.05');
+    expect(preview.style.getPropertyValue('--reader-tracking')).toBe('0.06em');
+    expect(preview.style.getPropertyValue('--reader-word-spacing')).toBe('0.16em');
     expect(JSON.parse(localStorage.getItem('ltts.readingText') ?? '{}')).toEqual({
       size: 'large',
       spacing: 'relaxed',
       typeface: 'sans',
+      letters: 'wide',
     });
+  });
+
+  it('turns on high contrast for this device, and follows the system otherwise', async () => {
+    api();
+    const { user } = renderSettings();
+    const appearance = await screen.findByRole('region', { name: 'Appearance' });
+    const html = document.documentElement;
+    expect(html).not.toHaveClass('contrast-more');
+    await user.click(within(appearance).getByRole('radio', { name: 'High' }));
+    expect(html).toHaveClass('contrast-more');
+    expect(localStorage.getItem('ltts.contrast')).toBe('more');
+    await user.click(within(appearance).getByRole('radio', { name: 'Standard' }));
+    expect(html).not.toHaveClass('contrast-more');
   });
 
   it('reads only sensible saved values and still applies a change without storage', async () => {
@@ -81,7 +99,12 @@ describe('Reading text', () => {
       'ltts.readingText',
       JSON.stringify({ size: 'huge', spacing: 'compact', typeface: 7 }),
     );
-    expect(readReadingText()).toEqual({ size: 'medium', spacing: 'compact', typeface: 'serif' });
+    expect(readReadingText()).toEqual({
+      size: 'medium',
+      spacing: 'compact',
+      typeface: 'serif',
+      letters: 'normal',
+    });
     localStorage.setItem('ltts.readingText', '{not json');
     expect(readReadingText()).toEqual(DEFAULT_READING_TEXT);
     vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
@@ -165,6 +188,8 @@ describe('System sections', () => {
     api();
     renderSettings();
     expect(await screen.findByText('Network access is on')).toBeInTheDocument();
+    expect(screen.getByText('LAN mode is on')).toBeInTheDocument();
+    expect(diagnosticsReport(system, '2.0.0')).toContain('Network exposed: yes, LAN mode: on');
     const about = screen.getByRole('region', { name: 'About & diagnostics' });
     expect(within(about).getByText('None detected (CPU mode)')).toBeInTheDocument();
     expect(within(about).getByText('Python 3.12.10')).toBeInTheDocument();

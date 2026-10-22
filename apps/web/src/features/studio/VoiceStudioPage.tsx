@@ -4,7 +4,8 @@
  * Purpose: Voice Studio — create and manage custom voices.
  * Scope: Cloning-engine status (with install), the list of local voice profiles, empty/loading/error
  *   states, studio sessions in progress (continue or discard), and the entry point that chooses
- *   between the quick and studio creation wizards.
+ *   between the quick and studio creation wizards. On a paired phone or tablet the page only lists
+ *   the voices to choose from: creating, importing and the engine stay on the computer.
  * Does NOT belong: Wizard steps or built-in voice browsing.
  */
 import { Mic, Plus } from 'lucide-react';
@@ -17,7 +18,9 @@ import { ConfirmDialog } from '@/components/ui/Dialog';
 import { Banner, EmptyState, Skeleton, StatusRegion } from '@/components/ui/Feedback';
 import { PageHeader, Section } from '@/components/ui/Layout';
 import { EnginePanel } from '@/features/engines/EngineSetup';
+import { onThisComputer } from '@/features/lan/LanIndicator';
 import { CreateVoiceChooser, type CreationRoute } from './CreateVoiceChooser';
+import { ImportVoiceButton } from './VoiceSharing';
 import { CreateVoiceWizard } from './CreateVoiceWizard';
 import { ProfileCard } from './ProfileCard';
 import { StudioVoiceWizard } from './session/StudioVoiceWizard';
@@ -67,7 +70,7 @@ function ProfileList({
 }: Readonly<{
   profiles: ReturnType<typeof useProfiles>;
   engineReady: boolean;
-  onCreate: () => void;
+  onCreate?: (() => void) | undefined; // absent on a paired phone: voices are made on the computer
 }>) {
   if (profiles.isPending) {
     return (
@@ -91,13 +94,16 @@ function ProfileList({
           icon={<Mic size={26} />}
           title="No custom voices yet"
           actions={
-            <Button variant="primary" icon={<Plus size={16} />} onClick={onCreate}>
-              Create your first voice
-            </Button>
+            onCreate ? (
+              <Button variant="primary" icon={<Plus size={16} />} onClick={onCreate}>
+                Create your first voice
+              </Button>
+            ) : undefined
           }
         >
-          Read a short passage for a quick voice, or record a guided studio session for your most
-          faithful voice. Your recordings never leave this computer.
+          {onCreate
+            ? 'Read a short passage for a quick voice, or record a guided studio session for your most faithful voice. Your recordings never leave this computer.'
+            : 'Voices are created on the computer running TTSNative; they appear here to choose from.'}
         </EmptyState>
       </div>
     );
@@ -119,6 +125,7 @@ export default function VoiceStudioPage() {
   const [route, setRoute] = useState<CreationRoute | null>(null);
   const [resumeId, setResumeId] = useState<string | null>(null);
   const cloning = engines.data?.find((engine) => engine.supportsCloning);
+  const here = onThisComputer(); // a paired phone only chooses a voice (LAN mode refuses the rest)
   const ready = cloning?.status === 'ready';
   const choose = (next: CreationRoute) => {
     setChoosing(false);
@@ -138,12 +145,21 @@ export default function VoiceStudioPage() {
         title="Voice Studio"
         description="Create a narration voice from a short recording of yourself, or of someone who has given you permission."
         actions={
-          <Button variant="primary" icon={<Plus size={16} />} onClick={() => setChoosing(true)}>
-            Create voice
-          </Button>
+          here ? (
+            <div className="flex flex-wrap gap-2">
+              <ImportVoiceButton />
+              <Button variant="primary" icon={<Plus size={16} />} onClick={() => setChoosing(true)}>
+                Create voice
+              </Button>
+            </div>
+          ) : (
+            <p className="text-sm text-muted">
+              Voices are created, imported and changed on the computer running TTSNative.
+            </p>
+          )
         }
       />
-      {cloning && (!ready || cloning.updateAvailable) ? (
+      {here && cloning && (!ready || cloning.updateAvailable) ? (
         <div className="mb-8">
           <Section
             title="Voice-cloning engine"
@@ -167,7 +183,11 @@ export default function VoiceStudioPage() {
       ) : null}
 
       <h2 className="mb-3 text-base font-semibold tracking-tight">Your voices</h2>
-      <ProfileList profiles={profiles} engineReady={ready} onCreate={() => setChoosing(true)} />
+      <ProfileList
+        profiles={profiles}
+        engineReady={ready}
+        onCreate={here ? () => setChoosing(true) : undefined}
+      />
       <CreateVoiceChooser open={choosing} onOpenChange={setChoosing} onChoose={choose} />
       <CreateVoiceWizard open={route === 'quick'} onOpenChange={closeWizard} />
       {route === 'studio' ? (

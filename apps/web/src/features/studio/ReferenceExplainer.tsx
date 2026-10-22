@@ -40,10 +40,11 @@ export function ReferenceExplainer() {
         is enough here. For your most faithful voice, create a studio voice instead: a longer guided
         session that the app builds from your best takes.
       </Point>
-      <Point icon={<Cpu size={16} />} title="No model training (fine-tuning)">
-        A fine-tuned model is trained on 30+ minutes of speech for hours on a GPU. It can sound
-        closer, but this app doesn’t do it: zero-shot cloning is faster, private and good for
-        narration.
+      <Point icon={<Cpu size={16} />} title="No model is trained">
+        Quick and studio voices train nothing: the engine copies your voice from the recording each
+        time it speaks, which is fast and private. A studio voice can try an experimental fine-tune
+        afterwards; in a blind test it didn’t sound clearly better, so it’s kept only if you prefer
+        it.
       </Point>
       <Point icon={<ShieldCheck size={16} />} title="Only voices you have permission to use">
         You’ll confirm that the voice is yours or that the speaker agreed. Generated audio carries

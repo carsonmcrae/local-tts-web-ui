@@ -47,5 +47,8 @@ Everything runs locally: no accounts, no cloud and no telemetry. The app listens
   [changelog](https://github.com/carsonmcrae/ttsnative/blob/main/CHANGELOG.md)
 - [Technical guides](https://github.com/carsonmcrae/ttsnative/tree/main/docs/guides) for
   configuration, testing, performance and troubleshooting
+- [Local speech API](https://github.com/carsonmcrae/ttsnative/blob/main/docs/guides/local-speech-api.md):
+  let scripts, screen readers and home automation on this computer use your voices (optional, off
+  by default)
 - Questions: [Discussions](https://github.com/carsonmcrae/ttsnative/discussions/categories/q-a).
   Bugs: [Issues](https://github.com/carsonmcrae/ttsnative/issues).

@@ -3,8 +3,11 @@
 /**
  * Purpose: One custom voice profile in Voice Studio.
  * Scope: Name, kind (quick or studio), source, length, creation date, consent timestamp, what is
- *   stored; play the stored reference, choose the delivery, rename, use for reading, and permanent
- *   deletion with an explicit confirmation.
+ *   stored; play the stored reference, choose the delivery, a studio voice's speaking styles and
+ *   fine-tune, rename, use for reading, share it as a .ttsvoice file, and permanent deletion with an
+ *   explicit confirmation. On a paired phone or tablet only "Use for reading" is offered: the
+ *   recording, the controls that change the voice and sharing stay on the computer (LAN mode
+ *   refuses them).
  * Does NOT belong: Creation (the wizards).
  */
 import { Check, Pencil, Play, Square, Trash2 } from 'lucide-react';
@@ -24,8 +27,12 @@ import { useToast } from '@/components/ui/Toast';
 import { usePlayer } from '@/features/player/PlayerProvider';
 import { useReadingVoice } from '@/features/player/useReadingVoice';
 import { formatRelativeDate } from '@/lib/format';
+import { onThisComputer } from '@/features/lan/LanIndicator';
 import { DeliveryPicker } from './TestStep';
 import { useClipPlayer } from './useClipPlayer';
+import { ShareVoiceButton } from './VoiceSharing';
+import { VoiceStyles } from './VoiceStyles';
+import { VoiceTuning } from './VoiceTuning';
 
 function describe(profile: VoiceProfile): string {
   if (profile.kind === 'studio')
@@ -52,6 +59,7 @@ export function ProfileCard({
   const playing = reference.playing === referenceUrl;
   const toggleReference = () => reference.toggle(referenceUrl);
   const isDefault = preferences.data?.defaultVoiceId === profile.voiceId;
+  const here = onThisComputer(); // a paired phone may only choose the voice for reading
 
   const deleteProfile = () =>
     remove.mutate(profile.id, {
@@ -81,44 +89,53 @@ export function ProfileCard({
           <h3 className="flex items-center gap-2 font-medium">
             <span className="truncate">{profile.name}</span>
             {profile.kind === 'studio' ? <Badge tone="success">Studio</Badge> : null}
+            {profile.source === 'shared' ? <Badge>Shared</Badge> : null}
             {isDefault ? <Badge tone="accent">Reading voice</Badge> : null}
           </h3>
           <p className="text-[13px] text-muted">
             {describe(profile)} · created {formatRelativeDate(profile.createdAt).toLowerCase()}
           </p>
         </div>
-        <IconButton
-          label={`Rename ${profile.name}`}
-          icon={<Pencil size={15} />}
-          size="sm"
-          onClick={() => setEditing(true)}
-        />
-        <IconButton
-          label={`Delete ${profile.name}`}
-          icon={<Trash2 size={15} />}
-          size="sm"
-          onClick={() => setConfirm(true)}
-        />
+        {here ? (
+          <>
+            <IconButton
+              label={`Rename ${profile.name}`}
+              icon={<Pencil size={15} />}
+              size="sm"
+              onClick={() => setEditing(true)}
+            />
+            <IconButton
+              label={`Delete ${profile.name}`}
+              icon={<Trash2 size={15} />}
+              size="sm"
+              onClick={() => setConfirm(true)}
+            />
+          </>
+        ) : null}
       </div>
       <p className="text-xs leading-relaxed text-subtle">
         Stores: {profile.stores} Consent confirmed{' '}
         {new Date(profile.consentedAt).toLocaleDateString()}.
       </p>
-      {engineReady ? <DeliveryPicker profile={profile} /> : null}
+      {engineReady && here ? <DeliveryPicker profile={profile} /> : null}
+      {engineReady && here ? <VoiceStyles profile={profile} /> : null}
+      {engineReady ? <VoiceTuning profile={profile} /> : null}
       <div className="flex flex-wrap gap-2">
-        <Button
-          size="sm"
-          icon={
-            playing ? (
-              <Square size={13} fill="currentColor" />
-            ) : (
-              <Play size={13} fill="currentColor" />
-            )
-          }
-          onClick={toggleReference}
-        >
-          {playing ? 'Stop' : 'Play recording'}
-        </Button>
+        {here ? ( // a voice's recording never travels to a phone over the network
+          <Button
+            size="sm"
+            icon={
+              playing ? (
+                <Square size={13} fill="currentColor" />
+              ) : (
+                <Play size={13} fill="currentColor" />
+              )
+            }
+            onClick={toggleReference}
+          >
+            {playing ? 'Stop' : 'Play recording'}
+          </Button>
+        ) : null}
         <Button
           size="sm"
           variant={isDefault ? 'subtle' : 'ghost'}
@@ -129,6 +146,7 @@ export function ProfileCard({
         >
           {isDefault ? 'Used for reading' : 'Use for reading'}
         </Button>
+        {here ? <ShareVoiceButton profile={profile} /> : null}
       </div>
       <ConfirmDialog
         open={confirm}

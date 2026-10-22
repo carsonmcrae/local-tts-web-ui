@@ -3,8 +3,10 @@
 """Purpose: JSON-lines worker that loads Chatterbox Turbo once and synthesises on request.
 
 Scope: Ops ``load`` (pick cuda/mps/cpu and load verified local weights), ``synthesize`` (optional
-reference recording or saved studio conditioning, cached per file, plus optional sampling
-settings), the studio ops ``measure``, ``build`` and ``audition`` (see ``studio.py``), ``ping`` and
+reference recording or saved studio conditioning with an optional style prompt and fine-tuned
+adapter, the last few kept loaded, plus optional sampling settings and seed), the studio ops
+``measure``, ``build``, ``style`` and ``audition`` (see ``studio.py``), the fine-tuning ops
+``tune_start``, ``tune_epoch``, ``tune_save`` and ``tune_stop`` (see ``tuning.py``), ``ping`` and
 ``shutdown``. Replies go to a private duplicate of the original stdout; everything libraries print
 goes to stderr. Network access to model hubs is disabled via offline mode before any ML library is
 imported.
@@ -13,13 +15,15 @@ Does NOT belong: Downloads, validation of user input or file management (the ser
 
 from __future__ import annotations
 
+import contextlib
 import json
 import os
 import sys
 import traceback
+from collections import OrderedDict
 from typing import Any
 
-from ltts_chatterbox_worker import studio
+from ltts_chatterbox_worker import studio, tuning
 from ltts_chatterbox_worker.compat import install_pkg_resources_shim
 
 os.environ["HF_HUB_OFFLINE"] = "1"
@@ -28,6 +32,7 @@ os.environ["HF_HUB_DISABLE_TELEMETRY"] = "1"
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 # Perth (Chatterbox's watermarker) imports pkg_resources, which setuptools 81+ no longer ships.
 install_pkg_resources_shim()
+LOADED_VOICES = 8  # studio voices (with their styles) kept ready, so switching per sentence is instant
 
 
 class Worker:
@@ -36,6 +41,9 @@ class Worker:
         self.device = "cpu"
         self.default_conds: Any = None
         self.voice: str | None = None  # which file the model's conditionals came from
+        self.loaded: OrderedDict[str, Any] = OrderedDict()  # recently used studio conditionings
+        self.adapters = tuning.Adapters()  # the fine-tuned adapter merged into the model, if any
+        self.tuning: tuning.Tuning | None = None
 
     def load(self, request: dict[str, Any]) -> dict[str, Any]:
         import torch
@@ -50,6 +58,7 @@ class Worker:
             self.device = "cpu"
         self.model = ChatterboxTurboTTS.from_local(request["modelDir"], self.device)
         self.default_conds = self.model.conds
+        self.adapters, self.tuning = tuning.Adapters(), None
         return {"device": self.device, "torch": torch.__version__, "sampleRate": self.model.sr}
 
     def _loaded(self) -> Any:
@@ -62,9 +71,15 @@ class Worker:
         model = self._loaded()
         conditioning, reference = request.get("conditioning"), request.get("reference")
         if conditioning:
-            voice = f"conditioning:{conditioning}"
+            style = request.get("style")
+            voice = f"conditioning:{conditioning}|{style or ''}"
             if voice != self.voice:
-                model.conds = studio.load_conditioning(conditioning, self.device)
+                if voice not in self.loaded:
+                    self.loaded[voice] = studio.load_conditioning(conditioning, self.device, style)
+                    while len(self.loaded) > LOADED_VOICES:
+                        self.loaded.popitem(last=False)
+                self.loaded.move_to_end(voice)
+                model.conds = self.loaded[voice]
         elif reference:
             voice = f"reference:{reference}"
             if voice != self.voice:
@@ -74,11 +89,23 @@ class Worker:
             model.conds = self.default_conds
         self.voice = voice
 
+    def _adapter(self, request: dict[str, Any]) -> contextlib.AbstractContextManager[None]:
+        """Apply the request's fine-tuned adapter (only a built voice has one), or none."""
+        path = request.get("adapter") if request.get("conditioning") else None
+        if self.tuning is not None:
+            return self.tuning.serving(path)  # the model's weights must stay as they are while training
+        self.adapters.use(self._loaded(), path)
+        return contextlib.nullcontext()
+
     def synthesize(self, request: dict[str, Any]) -> dict[str, Any]:
         import soundfile as sf
 
         self._use_voice(request)
-        samples = studio.generate(self._loaded(), request["text"], studio.sampling(request))
+        seed = request.get("seed")
+        with self._adapter(request):
+            samples = studio.generate(
+                self._loaded(), request["text"], studio.sampling(request), None if seed is None else int(seed)
+            )
         sf.write(request["output"], samples, self.model.sr, subtype="FLOAT")
         return {"output": request["output"], "sampleRate": self.model.sr}
 
@@ -90,10 +117,41 @@ class Worker:
         studio.build(model, request["prompt"], request["output"], request.get("speakerEmb"), request.get("xvector"))
         return {"output": request["output"]}
 
+    def style(self, request: dict[str, Any]) -> dict[str, Any]:
+        seconds = studio.build_style(self._loaded(), request["prompts"], request["output"])
+        self.loaded.clear()  # a rebuilt style file must be read again
+        self.voice = None
+        return {"output": request["output"], "seconds": seconds}
+
     def audition(self, request: dict[str, Any]) -> dict[str, Any]:
-        scores = studio.audition(self._loaded(), request)
-        self.voice = f"conditioning:{request['conditioning']}"
+        with self._adapter(request):
+            scores = studio.audition(self._loaded(), request)
+        self.voice = None  # audition loads its own conditionals, outside the cache
         return {"scores": scores, "sampleRate": self.model.sr}
+
+    def tune_start(self, request: dict[str, Any]) -> dict[str, Any]:
+        model = self._loaded()
+        self.tune_stop(request)
+        self.adapters.use(model, None)  # train on the original weights
+        self.tuning = tuning.Tuning(model, request)
+        return self.tuning.summary()
+
+    def _tuning(self) -> tuning.Tuning:
+        if self.tuning is None:
+            raise RuntimeError("no fine-tuning in progress")
+        return self.tuning
+
+    def tune_epoch(self, _: dict[str, Any]) -> dict[str, Any]:
+        return self._tuning().run_epoch()
+
+    def tune_save(self, request: dict[str, Any]) -> dict[str, Any]:
+        return self._tuning().save(request["output"])
+
+    def tune_stop(self, _: dict[str, Any]) -> dict[str, Any]:
+        if self.tuning is not None:
+            self.tuning.close()
+            self.tuning = None
+        return {}
 
     def ping(self, _: dict[str, Any]) -> dict[str, Any]:
         return {"device": self.device, "loaded": self.model is not None}
@@ -109,7 +167,12 @@ def main() -> None:
         "synthesize": worker.synthesize,
         "measure": worker.measure,
         "build": worker.build,
+        "style": worker.style,
         "audition": worker.audition,
+        "tune_start": worker.tune_start,
+        "tune_epoch": worker.tune_epoch,
+        "tune_save": worker.tune_save,
+        "tune_stop": worker.tune_stop,
         "ping": worker.ping,
     }
     for line in sys.stdin:

@@ -6,16 +6,21 @@ Scope: Installs an isolated, locked environment (CPU or CUDA PyTorch) with uv pl
 weights (verified before every worker load, re-downloaded by a repair), offers an in-place update when
 the worker lock has changed since the install, reports hardware-aware install options, and synthesises
 through ``WorkerClient`` using a custom profile's built studio voice or reference recording (or the
-model's built-in voice), with a delivery preset.
-Builds studio voices (``VoiceBuilder``): measures takes, builds a voice from one take plus a session
-identity, and auditions it. Output is 24 kHz and carries Resemble's imperceptible Perth watermark.
+model's built-in voice), with a delivery preset. A studio voice reads each sentence with the style
+prompt that fits it (questions, lively lines, dialogue, narration). Every sentence is seeded from its
+text (the same sentence always sounds the same), generated again with another seed when the clip is
+implausibly short or long for its text, then polished (edges, long pauses, loudness).
+Builds studio voices (``VoiceBuilder``) and fine-tunes them on an NVIDIA GPU (``VoiceTuner``, an epoch per call).
+Output is 24 kHz and carries Resemble's imperceptible Perth watermark.
 Does NOT belong: Profile storage/consent (``voices``), running uv and the install marker
 (``chatterbox_env.py``) or the worker implementation (``apps/chatterbox-worker``).
 """
 
 from __future__ import annotations
 
+import hashlib
 import logging
+import math
 import os
 import shutil
 import sys
@@ -36,9 +41,11 @@ from ltts.engines.base import (
     InstallOption,
     SpeakerIdentity,
     TakeFeatures,
-    VoiceBuilder,
+    TuningProgress,
+    TuningTake,
     VoiceInfo,
     VoiceSpec,
+    VoiceTuner,
 )
 from ltts.engines.chatterbox_env import (
     PROJECT_DIR,
@@ -48,8 +55,9 @@ from ltts.engines.chatterbox_env import (
     sync_environment,
     write_marker,
 )
+from ltts.engines.cloned_speech import acceptable, plausibility, polish, sentence_style
 from ltts.engines.worker_client import WorkerClient
-from ltts.errors import EngineUnavailableError
+from ltts.errors import ConflictError, EngineUnavailableError
 from ltts.hardware import detect_gpus
 from ltts.jobs import JobContext
 from ltts.modelstore.store import ModelStore, describe_damage
@@ -61,16 +69,19 @@ UPDATE_FREE_BYTES = 1_000 * MB  # an update only replaces the packages whose loc
 LOAD_TIMEOUT_S = 600.0
 SYNTH_TIMEOUT_S = 300.0
 STUDIO_TIMEOUT_S = 600.0  # one measure or build call (the server batches takes to stay well inside it)
-# Sampling for each delivery; "natural" is Turbo's default, so existing voices sound exactly as before.
+ATTEMPTS = 3  # a clip that is implausibly short or long for its text is generated again, with another seed
+TAKE_STEP = 7_919  # seeds of successive takes are far apart, so retries of one take never repeat another
+# Sampling for each delivery; "natural" is Turbo's default. A lower temperature and top-k give steadier
+# prosody and longer, calmer pauses (the settings a published Turbo fine-tune scored best with).
 DELIVERY: dict[Delivery, dict[str, float]] = {
-    "steady": {"temperature": 0.6, "topP": 0.9},
+    "steady": {"temperature": 0.7, "topP": 0.95, "topK": 600},
     "natural": {"temperature": 0.8, "topP": 0.95},
     "expressive": {"temperature": 0.95, "topP": 0.98},
 }
 NOT_INSTALLED = "Chatterbox isn't installed. Install it from Settings → Engines & models."
 
 
-class ChatterboxEngine(Engine, VoiceBuilder):
+class ChatterboxEngine(Engine, VoiceTuner):
     id = "chatterbox"
 
     def __init__(self, settings: Settings, store: ModelStore, project_dir: Path = PROJECT_DIR):
@@ -117,7 +128,7 @@ class ChatterboxEngine(Engine, VoiceBuilder):
         return current is not None and self.is_ready() and self._marker_data().get("lockSha256") != current
 
     def revision(self) -> str:
-        return f"{ARTIFACT}/worker-1"
+        return f"{ARTIFACT}/worker-5"  # 2: seeds, retries, polish, styles; 3-5: room tone (steady, capped)
 
     # -- description ------------------------------------------------------
     def _options(self) -> list[InstallOption]:
@@ -312,6 +323,26 @@ class ChatterboxEngine(Engine, VoiceBuilder):
     # Chatterbox has no pace control; ``pace`` is accepted because every engine shares one signature.
     @override
     def synthesize(self, text: str, voice: VoiceSpec, pace: float) -> AudioClip:
+        styles = dict(voice.styles)
+        style = styles.get(voice.style or sentence_style(text)) or styles.get("narration")
+        seed = (int(hashlib.sha256(text.encode("utf-8")).hexdigest()[:8], 16) + TAKE_STEP * voice.take) % 2**31
+        best, best_ratio = self._attempt(text, voice, style, seed)
+        for attempt in range(1, ATTEMPTS):
+            if acceptable(best_ratio):
+                break
+            log.info("implausible clip, generating again", extra={"ratio": best_ratio, "attempt": attempt})
+            clip, ratio = self._attempt(text, voice, style, seed + attempt)
+            if _distance(ratio) < _distance(best_ratio):
+                best, best_ratio = clip, ratio
+        return best
+
+    def _attempt(self, text: str, voice: VoiceSpec, style: Path | None, seed: int) -> tuple[AudioClip, float]:
+        """One polished clip and how plausible its length is for the text."""
+        clip = self._generate(text, voice, style, seed)
+        polished = AudioClip(polish(clip.samples, clip.sample_rate), clip.sample_rate)
+        return polished, plausibility(polished.samples, polished.sample_rate, text)
+
+    def _generate(self, text: str, voice: VoiceSpec, style: Path | None, seed: int) -> AudioClip:
         output = self._settings.path("tmp") / f"{new_id()}.wav"
         try:
             self._call(
@@ -319,9 +350,12 @@ class ChatterboxEngine(Engine, VoiceBuilder):
                 SYNTH_TIMEOUT_S,
                 text=text,
                 conditioning=str(voice.conditioning_path) if voice.conditioning_path else None,
+                style=str(style) if style and voice.conditioning_path else None,
+                adapter=str(voice.adapter_path) if voice.adapter_path and voice.conditioning_path else None,
                 reference=str(voice.reference_path) if voice.reference_path else None,
                 output=str(output),
-                **DELIVERY[voice.delivery],
+                seed=seed,
+                **DELIVERY["steady" if voice.steady else voice.delivery],
             )
             samples, rate = read_audio(output)
         finally:
@@ -349,18 +383,72 @@ class ChatterboxEngine(Engine, VoiceBuilder):
         self._call("build", STUDIO_TIMEOUT_S, prompt=str(prompt), output=str(output), **session)
 
     @override
+    def build_style(self, prompts: Sequence[Path], output: Path) -> float:
+        reply = self._call("style", STUDIO_TIMEOUT_S, prompts=[str(path) for path in prompts], output=str(output))
+        return float(reply["seconds"])
+
+    @override
     def audition(self, request: Audition) -> list[float]:
+        optional: dict[str, Any] = {"speakerEmb": list(request.target)} if request.target else {}
+        if request.adapter is not None:
+            optional["adapter"] = str(request.adapter)
         reply = self._call(
             "audition",
             SYNTH_TIMEOUT_S * max(len(request.texts), 1),
             conditioning=str(request.conditioning),
             texts=list(request.texts),
             outputs=[str(output) for output in request.outputs],
-            speakerEmb=list(request.target),
             seed=request.seed,
+            **optional,
             **DELIVERY[request.delivery],
         )
         return [float(score) for score in reply["scores"]]
+
+    # -- fine-tuning --------------------------------------------------------
+    @override
+    def start_tuning(self, takes: Sequence[TuningTake], conditioning: Path, epochs: int, seed: int) -> TuningProgress:
+        if not self.is_ready():
+            raise EngineUnavailableError(NOT_INSTALLED, code="engine_not_installed")
+        if self._ensure_worker().get("device") != "cuda":
+            raise ConflictError(
+                "Fine-tuning needs an NVIDIA graphics card, and voice cloning installed for it.", code="needs_gpu"
+            )
+        reply = self._call(
+            "tune_start",
+            STUDIO_TIMEOUT_S,
+            takes=[{"path": str(take.path), "text": take.text, "heldOut": take.held_out} for take in takes],
+            conditioning=str(conditioning),
+            epochs=epochs,
+            seed=seed,
+        )
+        return TuningProgress(epoch=0, held_out_loss=float(reply["baseLoss"]), best_epoch=0)
+
+    @override
+    def tune_epoch(self) -> TuningProgress:
+        reply = self._call("tune_epoch", STUDIO_TIMEOUT_S)
+        return TuningProgress(
+            epoch=int(reply["epoch"]),
+            held_out_loss=float(reply["heldOutLoss"]),
+            best_epoch=int(reply["bestEpoch"]),
+            train_loss=float(reply["trainLoss"]),
+        )
+
+    @override
+    def save_tuning(self, output: Path) -> TuningProgress:
+        reply = self._call("tune_save", STUDIO_TIMEOUT_S, output=str(output))
+        epoch = int(reply["epoch"])
+        return TuningProgress(epoch=epoch, held_out_loss=float(reply["heldOutLoss"]), best_epoch=epoch)
+
+    @override
+    def stop_tuning(self) -> None:
+        """Free the worker's training state; nothing to do when the worker isn't running."""
+        if self._worker is not None and self._worker.loaded:
+            self._worker.call("tune_stop", STUDIO_TIMEOUT_S)
+
+
+def _distance(ratio: float) -> float:
+    """How far a clip's length is from typical for its text, either way (0 is typical)."""
+    return abs(math.log(max(ratio, 1e-3)))
 
 
 def _status_message(ready: bool, *, update: bool) -> str:

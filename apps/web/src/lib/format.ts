@@ -41,6 +41,9 @@ const TYPE_LABELS: Record<string, string> = {
   pdf: 'PDF',
   docx: 'Word',
   epub: 'EPUB',
+  html: 'Web page',
+  fb2: 'FB2',
+  mobi: 'Kindle',
   paste: 'Pasted text',
 };
 

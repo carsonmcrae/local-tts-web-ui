@@ -4,9 +4,9 @@
 
 Scope: Isolated settings (temporary data dir), a deterministic ``FakeEngine`` (sine tones whose
 length follows the text, so API/caching/export logic is testable without models; as a cloning engine
-it also fakes studio-voice measuring, building and auditioning), the wired service
+it also fakes studio-voice measuring, building, auditioning and fine-tuning), the wired service
 container, a TestClient that sends the app's required client header, and shared helpers for
-speech-like recordings, WAV encoding and waiting for background jobs.
+speech-like recordings, WAV encoding, waiting for background jobs and saving a studio voice.
 Does NOT belong: Real-inference fixtures (see test_inference_*.py, marked ``inference``).
 """
 
@@ -27,7 +27,17 @@ from fastapi.testclient import TestClient
 from ltts.app import create_app
 from ltts.config import Settings
 from ltts.container import Services, build_services
-from ltts.engines.base import AudioClip, Audition, EngineInfo, SpeakerIdentity, TakeFeatures, VoiceInfo, VoiceSpec
+from ltts.engines.base import (
+    AudioClip,
+    Audition,
+    EngineInfo,
+    SpeakerIdentity,
+    TakeFeatures,
+    TuningProgress,
+    TuningTake,
+    VoiceInfo,
+    VoiceSpec,
+)
 from ltts.jobs import JobContext
 
 SAMPLE_RATE = 24_000
@@ -43,6 +53,9 @@ class FakeEngine:
         self.calls: list[tuple[str, str, float, Path | None]] = []
         self.specs: list[VoiceSpec] = []
         self.built: list[tuple[str, SpeakerIdentity | None]] = []
+        self.styled: list[tuple[str, list[str]]] = []  # (style, prompt file names) per built style
+        self.tunings: list[dict[str, Any]] = []  # each fine-tuning run: its takes, epochs trained, stopped
+        self.tuning_losses = [4.0, 3.9, 3.85, 3.86, 3.9, 3.95, 4.0, 4.1, 4.2]  # held-out loss by epoch (0: before)
 
     def info(self) -> EngineInfo:
         return EngineInfo(
@@ -123,11 +136,39 @@ class FakeEngine:
         self.built.append((prompt.name, identity))
         output.write_text(prompt.name, encoding="utf-8")
 
+    def build_style(self, prompts: Sequence[Path], output: Path) -> float:
+        self.styled.append((output.stem, [prompt.name for prompt in prompts]))
+        output.write_text(",".join(prompt.name for prompt in prompts), encoding="utf-8")
+        return 15.0
+
     def audition(self, request: Audition) -> list[float]:
         for output in request.outputs:
             output.write_bytes(wav_bytes(speech_like(0.5)))
         score = 0.8 + take_number(Path(request.conditioning.read_text("utf-8"))) % 10 / 100
         return [round(score, 4)] * len(request.outputs)
+
+    # Fine-tuning: the held-out loss follows ``tuning_losses`` epoch by epoch.
+    def start_tuning(self, takes: Sequence[TuningTake], conditioning: Path, epochs: int, seed: int) -> TuningProgress:
+        self.tunings.append({"takes": list(takes), "conditioning": conditioning, "epochs": 0, "stopped": False})
+        return TuningProgress(0, self.tuning_losses[0], 0)
+
+    def _best_epoch(self) -> int:
+        trained = self.tunings[-1]["epochs"]
+        return min(range(trained + 1), key=lambda epoch: self.tuning_losses[epoch])
+
+    def tune_epoch(self) -> TuningProgress:
+        self.tunings[-1]["epochs"] += 1
+        epoch = self.tunings[-1]["epochs"]
+        return TuningProgress(epoch, self.tuning_losses[epoch], self._best_epoch(), self.tuning_losses[epoch])
+
+    def save_tuning(self, output: Path) -> TuningProgress:
+        best = self._best_epoch()
+        output.write_text(f"adapter from epoch {best}", encoding="utf-8")
+        return TuningProgress(best, self.tuning_losses[best], best)
+
+    def stop_tuning(self) -> None:
+        if self.tunings:
+            self.tunings[-1]["stopped"] = True
 
 
 def take_number(path: Path) -> int:
@@ -189,3 +230,16 @@ def wait_job(client: TestClient, job_id: str) -> dict[str, Any]:
             return job
         time.sleep(0.05)
     raise AssertionError("job did not finish")
+
+
+def saved_studio_voice(client: TestClient, numbers: Sequence[int]) -> dict[str, Any]:
+    """A studio voice recorded, built and saved through the API, keeping a take of each passage number."""
+    session_id = client.post("/api/voice-sessions").json()["id"]
+    for number in numbers:
+        client.put(f"/api/voice-sessions/{session_id}/takes/{number}", content=wav_bytes(speech_like(12)))
+    wait_job(client, client.post(f"/api/voice-sessions/{session_id}/build").json()["id"])
+    best = client.get(f"/api/voice-sessions/{session_id}").json()["candidates"][0]["index"]
+    profile: dict[str, Any] = client.post(
+        f"/api/voice-sessions/{session_id}/finish", json={"candidate": best, "name": "Me", "consent": True}
+    ).json()
+    return profile

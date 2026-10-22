@@ -2,9 +2,11 @@
 # Copyright (c) 2026 Carson McRae
 """Purpose: Small, dependency-light audio utilities shared by synthesis, export and voice profiles.
 
-Scope: Natural pauses after segments (by boundary type), click-free fades, peak normalisation,
+Scope: Natural pauses after segments (by boundary type, filled with the clip's room tone when it has an
+audible background), click-free fades, peak normalisation,
 silence trimming, splitting a long recording into takes at pauses, gentle shelving tone correction,
-mono conversion, and WAV encode/decode through soundfile (libsndfile).
+mono conversion, resampling, and encoding (WAV, MP3, FLAC, Ogg Opus, raw PCM) and decoding through
+soundfile (libsndfile).
 Does NOT belong: Engine inference or recording-quality analysis (``voices/quality.py``).
 """
 
@@ -17,10 +19,20 @@ import numpy as np
 import numpy.typing as npt
 import soundfile as sf
 
+from ltts.room_tone import room_tone
+
 Float32Array = npt.NDArray[np.float32]
 
 PAUSE_SECONDS = {"sentence": 0.28, "paragraph": 0.62, "section": 1.2}
 FADE_SECONDS = 0.006
+# libsndfile's container and sample format for each encoded format (exports and the speech API share them).
+ENCODINGS = {
+    "wav": ("WAV", "PCM_16"),
+    "mp3": ("MP3", "MPEG_LAYER_III"),
+    "flac": ("FLAC", "PCM_16"),
+    "opus": ("OGG", "OPUS"),
+    "pcm": ("RAW", "PCM_16"),  # headerless 16-bit little-endian samples
+}
 
 
 def to_mono(samples: npt.NDArray[np.floating]) -> Float32Array:
@@ -38,9 +50,16 @@ def apply_fades(samples: Float32Array, sample_rate: int, seconds: float = FADE_S
     return out
 
 
-def finalize_segment(samples: Float32Array, sample_rate: int, boundary: str) -> Float32Array:
-    """Fade the clip edges and append the pause that follows this kind of boundary."""
-    pause = np.zeros(int(sample_rate * PAUSE_SECONDS.get(boundary, 0.3)), dtype=np.float32)
+def finalize_segment(
+    samples: Float32Array, sample_rate: int, boundary: str, pause_s: float | None = None
+) -> Float32Array:
+    """Fade the clip edges and append the pause that follows this kind of boundary (or ``pause_s``).
+
+    The pause carries the clip's own background (``room_tone``), so a cloned voice's hiss doesn't switch
+    off between sentences; a clean clip gets silence.
+    """
+    seconds = PAUSE_SECONDS.get(boundary, 0.3) if pause_s is None else pause_s
+    pause = room_tone(samples, sample_rate, seconds)
     clipped = np.clip(apply_fades(samples, sample_rate), -1.0, 1.0)
     return np.concatenate([clipped, pause])
 
@@ -134,10 +153,25 @@ def apply_tone(samples: Float32Array, sample_rate: int, treble_db: float, bass_d
     return shaped * np.float32(0.99 / peak) if peak > 0.99 else shaped
 
 
-def encode_wav(samples: Float32Array, sample_rate: int) -> bytes:
+def resample(samples: Float32Array, rate: int, target: int) -> Float32Array:
+    """Linear-interpolation resampling (speech pieces from engines with different rates)."""
+    if rate == target or samples.size == 0:
+        return samples
+    positions = np.linspace(0, samples.size - 1, round(samples.size * target / rate))
+    return np.interp(positions, np.arange(samples.size), samples).astype(np.float32)
+
+
+def encode_audio(samples: Float32Array, sample_rate: int, audio_format: str) -> bytes:
+    """Mono samples as one of ``ENCODINGS``, in memory."""
+    container, subtype = ENCODINGS[audio_format]
     buffer = io.BytesIO()
-    sf.write(buffer, samples, sample_rate, format="WAV", subtype="PCM_16")
+    extra = {"endian": "LITTLE"} if container == "RAW" else {}
+    sf.write(buffer, samples, sample_rate, format=container, subtype=subtype, **extra)
     return buffer.getvalue()
+
+
+def encode_wav(samples: Float32Array, sample_rate: int) -> bytes:
+    return encode_audio(samples, sample_rate, "wav")
 
 
 def read_audio(path: Path) -> tuple[Float32Array, int]:

@@ -2,10 +2,11 @@
 # Copyright (c) 2026 Carson McRae
 """Purpose: SQL access for documents, their segments and reading progress.
 
-Scope: Insert a fully segmented document atomically; list/get/delete; fetch a section's or a single
-segment's text; search a document's sentences; rename a section or move where it starts (keeping
-segments, counts and the longer "end of section" pause in step); save and read progress. Rows are
-mapped to API models here.
+Scope: Insert a fully segmented document atomically (with the sentence annotations its import made,
+such as the automatic cleanup); list/get/delete; fetch a section's or a single segment's text;
+search a document's sentences; rename a section or move where it starts (keeping segments, counts
+and the longer "end of section" pause in step); save and read progress. Rows are mapped to API
+models here, with what is read aloud counted as they are read (``spoken.py``).
 Does NOT belong: Validation or extraction (``service.py``).
 """
 
@@ -13,6 +14,7 @@ from __future__ import annotations
 
 import json
 import sqlite3
+from collections.abc import Sequence
 from dataclasses import asdict
 
 from ltts.common import utc_now
@@ -28,6 +30,7 @@ from ltts.documents.schemas import (
     SectionOut,
     SegmentOut,
 )
+from ltts.documents.spoken import UNREAD_SQL, Unread, unread
 from ltts.documents.structures import SectionInfo, Segment
 from ltts.errors import ConflictError, NotFoundError
 
@@ -42,16 +45,18 @@ ORDER BY COALESCE(p.updated_at, d.created_at) DESC
 """
 
 
-def _summary(row: sqlite3.Row) -> DocumentSummary:
+def _summary(row: sqlite3.Row, unspoken: Unread) -> DocumentSummary:
     progress = None
     if row["p_segment"] is not None:
+        last = unspoken.last_read(row["segment_count"])
         progress = ReadingProgress(
             segment_index=row["p_segment"],
             voice_id=row["p_voice"],
             updated_at=row["p_updated"],
-            # Reaching the last segment counts as finished.
-            percent=round(100 * row["p_segment"] / max(row["segment_count"] - 1, 1), 1),
+            # Reaching the last sentence that is read counts as finished.
+            percent=round(min(100 * row["p_segment"] / max(last, 1), 100), 1),
         )
+    spoken_chars = max(row["char_count"] - unspoken.chars, 0)
     return DocumentSummary(
         id=row["id"],
         title=row["title"],
@@ -60,10 +65,12 @@ def _summary(row: sqlite3.Row) -> DocumentSummary:
         size_bytes=row["size_bytes"],
         char_count=row["char_count"],
         word_count=row["word_count"],
+        spoken_char_count=spoken_chars,
+        spoken_word_count=max(row["word_count"] - unspoken.words, 0),
         page_count=row["page_count"],
         segment_count=row["segment_count"],
         section_count=len(json.loads(row["sections_json"])),
-        estimated_seconds=round(row["char_count"] / CHARS_PER_SECOND, 1),
+        estimated_seconds=round(spoken_chars / CHARS_PER_SECOND, 1),
         created_at=row["created_at"],
         last_opened_at=row["last_opened_at"],
         progress=progress,
@@ -78,7 +85,14 @@ class DocumentRepository:
         with self._db.connect() as conn:
             return int(conn.execute("SELECT COUNT(*) FROM documents").fetchone()[0])
 
-    def insert(self, meta: dict[str, object], sections: list[SectionInfo], segments: list[Segment]) -> None:
+    def insert(
+        self,
+        meta: dict[str, object],
+        sections: list[SectionInfo],
+        segments: list[Segment],
+        annotations: Sequence[tuple[int, str, str]] = (),
+    ) -> None:
+        """Store a document with its sentences and their ``(sentence, kind, value)`` annotations (checked already)."""
         with self._db.connect() as conn:
             conn.execute(
                 """INSERT INTO documents (id, title, filename, file_type, size_bytes, char_count, word_count,
@@ -94,11 +108,16 @@ class DocumentRepository:
                     for s in segments
                 ],
             )
+            conn.executemany(
+                "INSERT INTO segment_annotations (document_id, segment_idx, kind, value) VALUES (?, ?, ?, ?)",
+                [(meta["id"], index, kind, value) for index, kind, value in annotations],
+            )
 
     def list_all(self) -> list[DocumentSummary]:
         with self._db.connect() as conn:
             rows = conn.execute(_SUMMARY_SQL, {"document_id": None}).fetchall()
-        return [_summary(row) for row in rows]
+            unspoken = unread(conn.execute(UNREAD_SQL, {"document_id": None}))
+        return [_summary(row, unspoken.get(row["id"], Unread())) for row in rows]
 
     def get(self, document_id: str) -> DocumentDetail:
         with self._db.connect() as conn:
@@ -106,7 +125,8 @@ class DocumentRepository:
             if row is None:
                 raise NotFoundError(_DOCUMENT_GONE, code="document_not_found")
             conn.execute("UPDATE documents SET last_opened_at = ? WHERE id = ?", (utc_now(), document_id))
-        summary = _summary(row)
+            unspoken = unread(conn.execute(UNREAD_SQL, {"document_id": document_id}))
+        summary = _summary(row, unspoken.get(document_id, Unread()))
         return DocumentDetail(
             **summary.model_dump(),
             sections=[SectionOut(**s) for s in json.loads(row["sections_json"])],
@@ -121,20 +141,13 @@ class DocumentRepository:
             ).fetchall()
         if not rows:
             raise NotFoundError("That section does not exist.", code="section_not_found")
-        return SectionContent(
-            section_index=section_index,
-            segments=[
-                SegmentOut(
-                    index=r["idx"],
-                    section_index=r["section_idx"],
-                    paragraph_index=r["paragraph_idx"],
-                    kind=r["kind"],
-                    boundary=r["boundary"],
-                    text=r["text"],
-                )
-                for r in rows
-            ],
-        )
+        return SectionContent(section_index=section_index, segments=[_segment(r) for r in rows])
+
+    def segments_detail(self, document_id: str) -> list[SegmentOut]:
+        """Every segment of a document, in order, with its paragraph and kind."""
+        with self._db.connect() as conn:
+            rows = conn.execute("SELECT * FROM segments WHERE document_id = ? ORDER BY idx", (document_id,)).fetchall()
+        return [_segment(r) for r in rows]
 
     def update_section(
         self, document_id: str, section_index: int, title: str | None, start_segment: int | None
@@ -233,3 +246,14 @@ def _move_start(
         (document_id, old - 1),
     )
     conn.execute("UPDATE segments SET boundary = 'section' WHERE document_id = ? AND idx = ?", (document_id, start - 1))
+
+
+def _segment(r: sqlite3.Row) -> SegmentOut:
+    return SegmentOut(
+        index=r["idx"],
+        section_index=r["section_idx"],
+        paragraph_index=r["paragraph_idx"],
+        kind=r["kind"],
+        boundary=r["boundary"],
+        text=r["text"],
+    )

@@ -11,7 +11,7 @@ description = "Local-first text-to-speech reader: document extraction, Kokoro sy
 readme = "README.md"
 license = "MIT"
 authors = [{ name = "Carson McRae" }]
-requires-python = ">=3.12,<3.13"
+requires-python = ">=3.12.4,<3.13"  # ipaddress misclassifies some private ranges before 3.12.4 (CVE-2024-4032)
 dependencies = [
   "fastapi>=0.142,<1",
   "starlette>=1.7,<2",  # imported directly: errors.py handles its base HTTPException
@@ -28,6 +28,7 @@ dependencies = [
   "defusedxml>=0.7.1,<0.8",
   "markdown-it-py>=4.2,<5",
   "psutil>=7.2,<8",
+  "segno>=1.6.6,<2",
 ]
 
 [project.urls]

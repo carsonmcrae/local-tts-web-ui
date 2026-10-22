@@ -4,7 +4,7 @@
 
 | Format       | Extensions         | How it's read                                                                                                 |
 | ------------ | ------------------ | ------------------------------------------------------------------------------------------------------------- |
-| PDF          | `.pdf`             | Text PDFs. Running headers, footers and page numbers are removed, and lines are joined back into paragraphs.  |
+| PDF          | `.pdf`             | Text PDFs. Lines are joined back into paragraphs; running headers, page numbers and footnotes are skipped.    |
 | Word         | `.docx`            | Paragraphs and tables in document order; tables are read row by row. Macros and embedded objects are ignored. |
 | EPUB 2 and 3 | `.epub`            | The book's files in reading order. Scripts and styles are ignored.                                            |
 | Markdown     | `.md`, `.markdown` | Links are read as their text and images as their alt text. Code blocks are skipped with a short spoken note.  |
@@ -76,6 +76,52 @@ TTSNative reads the text layer of a PDF. It doesn't support OCR (reading text fr
 To listen to a scanned PDF, export the text from the original document, or run OCR on it with another
 tool first.
 
+## Headers, page numbers and footnote markers
+
+Printed pages repeat things that sound wrong read aloud. When a document is added, TTSNative looks
+for them and skips them when reading. Nothing is deleted, and you can undo it.
+
+- **Running headers and footers** (PDFs): a line at the top or bottom of the page that repeats on at
+  least 40% of the pages, and on three pages or more, such as the book's title or
+  "The Silent Harbour 57". The numbers in it don't matter.
+- **Page numbers**: "12", "Page 12", "12 of 300", "- 12 -" or Roman numerals at the top or bottom of
+  a PDF page, when they count along with the pages. In other formats, paragraphs that only say
+  "Page 12", "12 of 300" or "- 12 -", when at least three of them count up through the document.
+- **Footnotes** (PDFs): the lines a page ends with when they're set in noticeably smaller type than
+  the text, sit below all of it, and start with a number or symbol ("1", "12.", "\*", "†") that marks a
+  word on the same page ("ended.1", "war¹"). Each note is kept as a paragraph of its own after the
+  page's text. A note continued from the previous page, or set in the text's own size, is read.
+- **Footnote markers**: a superscript number after a word ("war¹") isn't spoken, though the word is.
+  A number glued after punctuation ("ended.12") is left out only when the document has a Notes
+  section, or a PDF footnote, holding that note.
+- **Citation markers**: numbers in brackets after a word or a punctuation mark, such as "[12]",
+  "[3, 4]", "[5–7]" or "[12, 15–17]", followed by a space, punctuation or the end of the sentence. The
+  document must have a References or Bibliography section, or at least three of them.
+
+It errs on the side of reading: PDFs of fewer than three pages get no header or page-number finds,
+and years, measurements (20 m², 3.5 kg), decimals, list numbers, chapter numbers, chapter titles from
+the PDF's outline, verse numbers and a heading that appears on a couple of pages are kept. Brackets
+in code and mathematics are always read: `array[3]`, `x[i+1]`, `matrix[2][3]`, `list[-1]`, an
+interval such as [0, 1], "returns [3]", a reference list's own "[1] Smith", and any sentence with
+operators such as `=` or `+` in it, where superscripts aren't footnote markers either (a² + b² = c²).
+
+Skipped sentences stay in the text, greyed out and labelled **skipped**. Playback and exports both
+leave them out, and footnote and citation markers stay in the text too: only what's spoken changes. A
+note at the top of the reader says what was skipped. Open it (**Review**) to see everything by reason
+and choose any sentence to show it in the text, press **Read them all again** to undo the cleanup, or
+**Skip them again** to put it back.
+
+To skip any sentence yourself, select it, choose **Voice & effect** and press **Skip when reading**.
+**Read this sentence** brings back a skipped one, including one the cleanup skipped. Sentences you
+skip yourself stay skipped when you undo the cleanup.
+
+The listening time on library cards and in the reader counts only what is read aloud, and changes as
+soon as you skip a sentence, read one again or undo the cleanup.
+
+Documents added before this version aren't searched again. Numbers in brackets such as "[12]" are now
+read aloud in them (they used to be dropped, and array indexes with them); add a document again to
+have its citation markers and footnotes found.
+
 ## Pasting text
 
 **Paste text** in the Library opens a dialog with an optional **Title** and a **Text** box that counts
@@ -90,11 +136,52 @@ without blank lines is read one paragraph per line. Pasted text is stored only o
 - **Section pager.** The line above the text shows "Section N of M", with **Adjust this section**
   beside it (see [Fixing a chapter](#fixing-a-chapter)); the buttons below the text go to the
   previous and next section.
-- **Click a sentence** to play from there.
+- **Click a sentence** to play from there (selecting text doesn't start playback).
 - **Player bar.** Previous and next sentence, previous and next section, and the position slider.
 - **Keyboard.** See [Keyboard Shortcuts](Keyboard-Shortcuts).
 
 While narration plays, the reader follows it into the next section.
+
+## Voices and effects
+
+Give characters their own voices, and announcements, calls or broadcasts the sound they'd have:
+
+- **Select any text** in the document and choose **Voice & effect** beside it. For the sentences you
+  selected, pick a **Voice** (any built-in voice, for example a British or American accent, or one of
+  your custom voices), an **Effect** (**Loudspeaker announcement**, **Telephone call**, **Radio**,
+  **Large hall**, **Far away** or **Robot**) and, for custom voices, a **Sound before it** (a laugh,
+  a sigh, a gasp…; experimental). When the sentences differ, **Keep as they are** leaves that choice
+  alone. **Clear styling** returns them to the reading voice.
+- **Voices & effects** (above the text) chooses a **Dialogue voice** that reads every sentence with
+  quoted speech, styles the sentence being read (handy on a phone or with the keyboard), and clears
+  all styling.
+
+Styled sentences are underlined with a soft tint; hover over one, or use a screen reader, to hear
+how it's styled. A sentence's own voice comes first, then the dialogue voice for quoted speech, then
+your reading voice. Exports sound the same as playback. A whole sentence is styled, so in
+`"Run!" she shouted.` the narration is read in the dialogue voice too. Deleting a custom voice hands
+its sentences back to the reading voice.
+
+## Fixing a word's pronunciation
+
+When a voice says a name or word wrongly, select it in the text and choose **Fix pronunciation**
+(offered for a word or a phrase of up to six words). In the dialog:
+
+- **Say it as**: write the word the way it sounds. No phonetic symbols are needed: gnocchi →
+  NYOH-kee, quinoa → KEEN-wah, Nguyen → Win. Join syllables with hyphens and put the stressed one in
+  capitals; the voice reads it as one word and never spells the capitals out letter by letter. To
+  have letters spelled, separate them with spaces (U S A).
+- **Hear as written** and **Hear respelling** play the word and your respelling side by side in your
+  reading voice, before anything is saved. The word is played exactly as written, ignoring any saved
+  pronunciation.
+- **Use it in**: **This document** (the default) or **All documents**. A word saved for this document
+  wins over the one for all documents, here only. Saving for all documents replaces this document's
+  own pronunciation of the word, so it says it the new way too.
+
+If the word already has a pronunciation, the dialog starts from it. The text itself never changes,
+only what is spoken: playback and exports both use the fix, and only the sentences containing the
+word are generated again. A document's pronunciations are deleted with it. Every pronunciation is
+listed, and can be changed, in [Settings → Pronunciation](Settings-and-Models#pronunciation).
 
 ## Searching a document
 
@@ -125,8 +212,11 @@ cancels the timer.
 ## Reading text
 
 Settings → Appearance changes how the text looks on this device: **Text size** (Small to Extra
-large), **Line spacing** (Compact, Normal, Relaxed) and **Typeface** (Serif or Sans serif), with a
-preview.
+large), **Line spacing** (Compact, Normal, Relaxed), **Typeface** (Serif or Sans serif) and **Letter
+and word spacing** (Normal or Wider, which many readers with dyslexia find easier), with a preview.
+**Contrast → High** darkens text and lines and outlines the sentence being read; it also turns on by
+itself when your system asks for more contrast. In Windows high-contrast themes the app uses your
+theme's colours, and the sentence being read keeps a visible highlight.
 
 ## Resume
 

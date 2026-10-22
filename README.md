@@ -43,11 +43,16 @@ TTSNative is free and open source (MIT). It was called **Local TTS** until versi
 
 ## Features
 
-- **Reader** — PDF, DOCX, EPUB, Markdown, TXT or pasted text. Sentence-by-sentence read-along, chapter and
-  page navigation, resume where you left off, keyboard shortcuts and lock-screen media controls.
+- **Reader** — PDF, DOCX, EPUB, MOBI, FB2, HTML, Markdown, TXT, a web page by its address or pasted text
+  (with optional speech marks such as `{pause 2s}`). Sentence-by-sentence read-along, chapter and page
+  navigation, resume where you left off, keyboard shortcuts and lock-screen media controls.
 - **Study and listening aids** — search inside a document, bookmarks with notes (exported as Markdown), a
   sleep timer, adjustable text size, spacing and typeface, a searchable and sortable library, and a fix for
   chapters that start in the wrong place.
+- **Characters and effects** — select text to read it in another voice or accent, as a loudspeaker
+  announcement, a phone call or a radio broadcast, give each character a voice (reusable cast presets), or
+  choose one voice for all dialogue while the narration keeps yours; exports sound the same. Blend built-in
+  voices into new ones.
 - **Pronunciation dictionary** — teach every voice how to say character names and unusual words; only the
   sentences that contain a changed word are regenerated.
 - **Starts instantly, even for whole books** — sentences are generated just ahead of you and cached, so
@@ -55,14 +60,20 @@ TTSNative is free and open source (MIT). It was called **Local TTS** until versi
 - **54 natural voices** (Kokoro-82M) across English (US/UK), Spanish, French, Hindi, Italian, Portuguese,
   Japanese and Mandarin, with quality grades and side-by-side comparison on your own passage.
 - **Voice Studio (optional)** — create a voice from a 10–20 second recording or an existing clip, or record a
-  guided studio session (lossless, 48 passages, resumable) that the app builds into your most faithful voice
-  from the best takes. Live quality checks, explicit consent, a delivery setting and one-click permanent deletion.
-- **Export** — WAV or MP3, the whole document or selected chapters, one file or one per chapter, tagged with
-  titles and track numbers, with optional sentence-timed subtitles (SRT).
+  guided studio session (lossless, resumable, a foundation passage and about 15 suggested passages with reading
+  hints, an early version after about a minute) that the app builds into your most faithful voice, with its own
+  speaking styles for questions, dialogue and lively lines, and switches back if a rebuild sounds worse. Takes you can play back, checks that explain what went wrong
+  (completeness and background noise as advice), explicit consent, a delivery setting, sharing as a `.ttsvoice`
+  file and one-click permanent deletion.
+- **Export** — WAV, MP3, M4B audiobooks with chapters and a cover, or read-along EPUB 3; the whole document or
+  selected chapters, one file or one per chapter, with optional sentence-timed subtitles (SRT). Long exports
+  pause, resume and survive a restart, and can be sent to your Audiobookshelf server.
 - **Private by design** — binds to `127.0.0.1`, works offline after setup, and never sends documents or
   recordings anywhere.
-- Light and dark themes, responsive layout for phones and tablets, accessible controls (WCAG 2.2 AA target,
-  axe-checked).
+- **Phones and tablets (optional)** — pair a phone on the same Wi-Fi to read and listen from it; the computer
+  does the reading.
+- Light and dark themes, high contrast, wider letter spacing, responsive layout for phones and tablets,
+  accessible controls (WCAG 2.2 AA target, axe-checked).
 
 ## Quick start
 
@@ -99,12 +110,15 @@ Nothing is installed system-wide. To remove everything, delete the folder.
 
 ## Supported formats
 
-| Format        | Notes                                                                                                                                                                                           |
-| ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| PDF           | Text PDFs; chapters from the outline or one section per page; running headers, footers and page numbers removed. Scanned (image-only) PDFs are detected and reported — OCR isn't supported yet. |
-| DOCX          | Headings become chapters; tables are read row by row. Macros and embedded objects are ignored.                                                                                                  |
-| EPUB 2/3      | Chapters from the table of contents. Scripts and styles are ignored.                                                                                                                            |
-| Markdown, TXT | Headings / "Chapter N" lines become sections; UTF-8, UTF-16 and Windows-1252 text.                                                                                                              |
+| Format        | Notes                                                                                                                                                                                                                              |
+| ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| PDF           | Text PDFs; chapters from the outline or one section per page; running headers, footers and page numbers skipped when reading (still visible; undo). Scanned (image-only) PDFs are detected and reported — OCR isn't supported yet. |
+| DOCX          | Headings become chapters; tables are read row by row. Macros and embedded objects are ignored.                                                                                                                                     |
+| EPUB 2/3      | Chapters from the table of contents. Scripts and styles are ignored.                                                                                                                                                               |
+| Markdown, TXT | Headings / "Chapter N" lines become sections; UTF-8, UTF-16 and Windows-1252 text.                                                                                                                                                 |
+| MOBI          | Kindle MOBI (PalmDOC). DRM-protected books are refused, never unlocked; KF8/AZW3 isn't supported yet.                                                                                                                              |
+| FB2           | FictionBook, also zipped (`.fb2.zip`); sections, authors and footnotes.                                                                                                                                                            |
+| HTML, web     | Saved pages, or a public page by its address: the main text only, without menus, scripts or hidden parts.                                                                                                                          |
 
 Limits (configurable): 25 MB per file, 2 million characters, 2,000 PDF pages.
 
@@ -130,10 +144,15 @@ Limits (configurable): 25 MB per file, 2 million characters, 2,000 PDF pages.
 Chatterbox copies a voice at the moment it speaks from a **reference**: it takes the voice's sound from
 roughly the first 10 seconds and its speaking style from the first 15, so a clean recording matters more
 than a long one. A **quick voice** uses one 10–20 second clip. A **studio voice** comes from a longer guided
-session: the app averages the speaker across every take and builds the voice from the take you choose by
-ear. No model is trained — **fine-tuning** a model on 30+ minutes of audio can sound closer, but it needs
-hours of GPU time and isn't offered here. Recordings are stored only on this computer. You must confirm the voice is yours
-or that the speaker gave permission; generated audio carries Resemble AI's inaudible Perth watermark.
+session: the app averages the speaker across the takes, builds the voice from the take you choose by ear
+and gives each speaking style three takes of its own. No model is trained to build it, so the session asks
+only for what the voice uses and stops when more passages wouldn't change it; measured, a complete session
+scores the same as an early one built from about a dozen takes
+([studio voice audit](docs/research/studio-voice-audit.md)). A studio voice can optionally be
+**fine-tuned** on its takes afterwards (experimental; a few minutes on an NVIDIA GPU); in a blind test it
+didn't sound clearly better, so you keep the result only if you prefer it by ear. Recordings are stored only on this computer. You must confirm the voice
+is yours or that the speaker gave permission; generated audio carries Resemble AI's inaudible Perth
+watermark.
 
 ## Documentation
 
@@ -142,8 +161,9 @@ or that the speaker gave permission; generated audio carries Resemble AI's inaud
 - **Reference ([docs/](docs/))**: [architecture](docs/architecture/overview.md),
   [configuration](docs/guides/configuration.md), [security](docs/security/threat-model.md),
   [testing](docs/guides/testing.md), [releases](docs/guides/release-process.md), the
-  [Windows app and updates](docs/architecture/desktop-and-releases.md) and
-  [the website's domain](docs/guides/custom-domain.md).
+  [Windows app and updates](docs/architecture/desktop-and-releases.md),
+  [the website's domain](docs/guides/custom-domain.md) and the optional
+  [local speech API](docs/guides/local-speech-api.md) for other programs on your computer.
 - **[Release notes](docs/releases/)**, **[changelog](CHANGELOG.md)** and
   **[releases](https://github.com/carsonmcrae/ttsnative/releases)**: every release has plain-language notes
   (also in the app and on the website), a developer changelog, checksums, SBOMs and signed build provenance.
@@ -153,7 +173,8 @@ or that the speaker gave permission; generated audio carries Resemble AI's inaud
 No telemetry, analytics or accounts (ONNX Runtime's default telemetry is switched off). Documents,
 recordings and generated audio stay in the `data/` folder. The only network requests are the downloads
 you start (setup and optional engines) from GitHub, PyPI, npm and Hugging Face, using pinned URLs with
-checksums; like any download, those hosts see your IP address. The Windows app also checks GitHub
+checksums (like any download, those hosts see your IP address), a web page you choose to import, an
+export you choose to send to your own Audiobookshelf server and, in the Windows app, a check of GitHub
 Releases for a new official version at most twice a day (you can turn it off). After that the app works fully offline. See [SECURITY.md](SECURITY.md) and the
 [threat model](docs/security/threat-model.md).
 
@@ -207,7 +228,11 @@ See [CONTRIBUTING.md](CONTRIBUTING.md), [testing](docs/guides/testing.md),
 - OCR for scanned PDFs (optional, to keep setup light)
 - Multilingual voice cloning (Chatterbox Multilingual) and a lighter CPU cloning option
 - Better English pronunciation with the misaki G2P used to train Kokoro
-- M4B audiobook export with chapter markers
+- Improve a saved studio voice later with new takes, comparing before replacing it
+- Voices and effects for part of a sentence ([ADR-17](docs/architecture/decisions.md))
+- A secure (HTTPS) mode for phones and tablets ([design](docs/research/lan-https.md))
+- More expressive questions and exclamations for studio voices, if an engine shows it in a blind test
+  (Chatterbox Turbo has no expression control; see the [studio voice audit](docs/research/studio-voice-audit.md))
 
 ## Responsible use
 

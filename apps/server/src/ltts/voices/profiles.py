@@ -6,9 +6,12 @@ Scope: Quick voices: validates an uploaded reference recording (container, chann
 duration), runs the quality checks (and suggests a cleanup), requires explicit consent, applies the
 chosen cleanup, trims and normalises the clip, and stores only that reference WAV plus metadata under
 ``data/voices/<id>/``; previews a cleanup on a recording. Studio voices: stores a
-finished session's chosen take, its built voice file and the session's takes there. Both have a
-delivery (sampling preset) that is part of the audio cache revision. No model is trained and nothing
-leaves the machine. Deleting a profile removes its recordings, metadata and all audio made with it.
+finished session's chosen take, its built voice file, its speaking styles (``styles.py``) and the
+session's takes there. Shared voices (imported ``.ttsvoice`` packages, ``sharing.py``) store the
+built voice, its styles, a short reference and where it came from. All have a delivery (sampling
+preset) that is part of the audio cache revision, as are a studio voice's styles and the fine-tuned adapter it may
+keep (trained here on its takes, ``tuning.py``; one may also wait to be compared). Nothing leaves the machine.
+Deleting a profile removes its recordings, metadata and all audio made with it.
 Does NOT belong: Cloning inference (engine) or HTTP parsing (``router.py``).
 """
 
@@ -25,6 +28,7 @@ from typing import Literal
 
 import numpy as np
 import soundfile as sf
+from pydantic import Field
 
 from ltts.audio import encode_wav, normalize_peak, read_audio, trim_silence
 from ltts.common import ApiModel, new_id, utc_now
@@ -32,8 +36,10 @@ from ltts.config import Settings
 from ltts.db import Database
 from ltts.engines.base import Delivery, VoiceInfo, VoiceSpec
 from ltts.errors import AppError, ConflictError, NotFoundError, UnsupportedDocumentError
+from ltts.voices.adapters import TuningCandidate, kept_adapter, replace_adapter, waiting_candidate
 from ltts.voices.cleanup import Cleanup, RecordingCheck, apply_cleanup, suggest_cleanup
 from ltts.voices.quality import QualityReport, analyze
+from ltts.voices.styles import styles_in, styles_revision
 
 log = logging.getLogger("ltts.voices")
 CLONING_ENGINE = "chatterbox"
@@ -51,7 +57,13 @@ VoiceKind = Literal["quick", "studio"]
 _STORES: dict[str, str] = {
     "quick": "A trimmed copy of your reference recording (WAV). No model is trained or uploaded.",
     "studio": "Your session recordings (FLAC) and the voice built from them. No model is trained or uploaded.",
+    "tuned": (
+        "Your session recordings (FLAC), the voice built from them and a small fine-tune of the model, "
+        "trained on this computer. Nothing is uploaded."
+    ),
+    "shared": "A voice someone shared with you: its built voice and a short reference recording.",
 }
+SHARED = "shared"
 _COLUMNS = (
     "id",
     "name",
@@ -87,6 +99,13 @@ class VoiceProfileOut(ApiModel):
     kind: VoiceKind = "quick"
     delivery: Delivery = "natural"
     stores: str = _STORES["quick"]
+    # A studio voice's speaking styles (narration, question, lively, dialogue).
+    styles: list[str] = Field(default_factory=list)
+    can_refine: bool = False  # a studio voice that kept its takes can (re)build its styles from them
+    has_previous_styles: bool = False  # the styles before the last rebuild are kept and can be brought back
+    can_tune: bool = False  # ...and be fine-tuned on them
+    fine_tuned: bool = False  # it speaks with a fine-tuned adapter the owner kept
+    tuning: TuningCandidate | None = None  # a fine-tune waiting to be compared and kept or discarded
 
 
 @dataclass(frozen=True, slots=True)
@@ -100,6 +119,21 @@ class StudioVoice:
     quality: QualityReport
     speech_s: float
     delivery: Delivery
+    styles: Path | None = None  # the session's style prompts, moved under the profile
+
+
+@dataclass(frozen=True, slots=True)
+class SharedVoice:
+    """A checked voice package, ready to become a profile."""
+
+    name: str
+    kind: VoiceKind
+    delivery: Delivery
+    duration_s: float
+    reference: Path
+    voice: Path | None  # the built voice (studio voices)
+    styles: Path | None  # its speaking styles
+    origin: dict[str, object]  # the package's manifest: who made it, when, and under what consent
 
 
 class ReferenceQualityError(AppError):
@@ -119,7 +153,7 @@ def _decode(path: Path, max_seconds: float) -> tuple[np.ndarray, int]:
         raise UnsupportedDocumentError("Use a mono or stereo WAV/FLAC/OGG at 16–48 kHz.", code="unsupported_audio")
     if info.frames / info.samplerate > max_seconds:
         raise ReferenceQualityError(
-            f"The recording is longer than {max_seconds:.0f} seconds. Trim it to under a minute.",
+            f"The recording is longer than {max_seconds:.0f} seconds. Use a shorter recording.",
             code="too_long",
         )
     return read_audio(path)
@@ -142,6 +176,51 @@ class VoiceProfileService:
 
     def reference_path(self, profile_id: str) -> Path:
         return self.root / profile_id / "reference.wav"
+
+    def takes_dir(self, profile_id: str) -> Path:
+        return self.root / profile_id / "takes"
+
+    def styles_dir(self, profile_id: str) -> Path:
+        return self.root / profile_id / "styles"
+
+    def previous_styles_dir(self, profile_id: str) -> Path:
+        return self.root / profile_id / "styles.previous"
+
+    def restore_styles(self, profile_id: str) -> VoiceProfileOut:
+        """Swap a voice's styles with the ones it had before its last rebuild (doing it again swaps back)."""
+        self.get(profile_id)
+        current, previous = self.styles_dir(profile_id), self.previous_styles_dir(profile_id)
+        if not previous.is_dir():
+            raise ConflictError("This voice has no earlier expression to go back to.", code="no_previous_styles")
+        swap = current.with_name("styles.swap")
+        shutil.rmtree(swap, ignore_errors=True)
+        if current.is_dir():
+            current.rename(swap)
+        previous.rename(current)
+        if swap.is_dir():
+            swap.rename(previous)
+        else:
+            previous.mkdir()  # it had no styles: going forward again means having none
+        self.styles_changed(profile_id)
+        return self.get(profile_id)
+
+    def styles_changed(self, profile_id: str) -> None:
+        """A voice's styles or adapter changed: free the audio made before (it can't be served again)."""
+        self._purge_audio(f"custom:{profile_id}")
+
+    def tuning_dir(self, profile_id: str) -> Path:
+        return self.root / profile_id / "tuning"
+
+    def adapter_path(self, profile_id: str) -> Path | None:
+        return kept_adapter(self.root / profile_id)
+
+    def set_adapter(self, profile_id: str, source: Path | None) -> None:
+        """Give the voice the adapter at ``source``, or none; audio made before is freed."""
+        replace_adapter(self.root / profile_id, source)
+        self._purge_audio(f"custom:{profile_id}")
+
+    def tuning_candidate(self, profile_id: str) -> TuningCandidate | None:
+        return waiting_candidate(self.tuning_dir(profile_id))
 
     def analyze_file(self, path: Path) -> RecordingCheck:
         samples, rate = _decode(path, self._settings.max_voice_reference_s)
@@ -220,6 +299,8 @@ class VoiceProfileService:
         voice_file = f"voice-{new_id()[:12]}.safetensors"
         shutil.move(voice.voice, folder / voice_file)
         shutil.move(voice.takes, folder / "takes")
+        if voice.styles is not None and voice.styles.is_dir():
+            shutil.move(voice.styles, folder / "styles")
         self._insert(
             {
                 "id": profile_id,
@@ -236,7 +317,56 @@ class VoiceProfileService:
         log.info("voice profile created", extra={"profile_id": profile_id, "source": "studio"})
         return self.get(profile_id)
 
+    def create_shared(self, voice: SharedVoice, consent: bool) -> VoiceProfileOut:
+        """Save a checked voice package as a new profile, under the importer's own consent."""
+        self._check_can_create(consent)
+        samples, rate = read_audio(voice.reference)
+        profile_id, folder, _ = self._new_folder(samples, rate)
+        voice_file = None
+        if voice.voice is not None:
+            voice_file = f"voice-{new_id()[:12]}.safetensors"
+            shutil.move(voice.voice, folder / voice_file)
+        if voice.styles is not None:
+            shutil.move(voice.styles, folder / "styles")
+        (folder / "origin.json").write_text(json.dumps(voice.origin, indent=2), encoding="utf-8")
+        quality = analyze(trim_silence(samples, rate), rate)
+        self._insert(
+            {
+                "id": profile_id,
+                "name": voice.name,
+                "duration_s": round(voice.duration_s, 1),
+                "sample_rate": rate,
+                "quality_json": quality.model_dump_json(by_alias=True),
+                "source": SHARED,
+                "kind": voice.kind if voice_file else "quick",
+                "delivery": voice.delivery,
+                "voice_file": voice_file,
+            }
+        )
+        log.info("voice profile created", extra={"profile_id": profile_id, "source": SHARED})
+        return self.get(profile_id)
+
+    def shareable_files(self, profile_id: str) -> tuple[VoiceProfileOut, str, dict[str, Path]]:
+        """What a shared copy of the voice holds (never the session takes), and its consent statement."""
+        profile = self.get(profile_id)
+        with self._db.connect() as conn:
+            row = conn.execute(
+                "SELECT consent_statement, voice_file FROM voice_profiles WHERE id = ?", (profile_id,)
+            ).fetchone()
+        files = {"reference.wav": self.reference_path(profile_id)}
+        if row["voice_file"]:
+            files["voice.safetensors"] = self.root / profile_id / row["voice_file"]
+            files |= {
+                f"styles/{name}.safetensors": path for name, path in styles_in(self.styles_dir(profile_id)).items()
+            }
+        if not all(path.is_file() for path in files.values()):
+            raise NotFoundError("This voice's files are missing, so it can't be shared.", code="voice_not_found")
+        return profile, row["consent_statement"], files
+
     def _row(self, r: sqlite3.Row) -> VoiceProfileOut:
+        has_takes = r["kind"] == "studio" and self.takes_dir(r["id"]).is_dir()
+        tuned = bool(r["voice_file"]) and self.adapter_path(r["id"]) is not None
+        stores = SHARED if r["source"] == SHARED else "tuned" if tuned else r["kind"]
         return VoiceProfileOut(
             id=r["id"],
             voice_id=f"custom:{r['id']}",
@@ -250,7 +380,13 @@ class VoiceProfileService:
             created_at=r["created_at"],
             kind=r["kind"],
             delivery=r["delivery"],
-            stores=_STORES[r["kind"]],
+            stores=_STORES[stores],
+            styles=list(styles_in(self.styles_dir(r["id"]))),
+            can_refine=has_takes,
+            has_previous_styles=self.previous_styles_dir(r["id"]).is_dir(),
+            can_tune=has_takes and bool(r["voice_file"]),
+            fine_tuned=tuned,
+            tuning=self.tuning_candidate(r["id"]) if has_takes else None,
         )
 
     def list_all(self) -> list[VoiceProfileOut]:
@@ -282,7 +418,12 @@ class VoiceProfileService:
         shutil.rmtree(self.root / profile_id, ignore_errors=True)
         with self._db.connect() as conn:
             conn.execute("DELETE FROM voice_profiles WHERE id = ?", (profile_id,))
-            conn.execute("UPDATE progress SET voice_id = NULL WHERE voice_id = ?", (f"custom:{profile_id}",))
+            voice_id = f"custom:{profile_id}"
+            conn.execute("UPDATE progress SET voice_id = NULL WHERE voice_id = ?", (voice_id,))
+            # Sentences and dialogue it read go back to the reading voice.
+            conn.execute("DELETE FROM segment_annotations WHERE kind = 'voice' AND value = ?", (voice_id,))
+            conn.execute("DELETE FROM document_characters WHERE voice_id = ?", (voice_id,))
+            conn.execute("UPDATE document_cast SET dialogue_voice_id = NULL WHERE dialogue_voice_id = ?", (voice_id,))
         purged = self._purge_audio(f"custom:{profile_id}")
         log.info("voice profile deleted", extra={"profile_id": profile_id, "purged_audio": purged})
 
@@ -297,10 +438,23 @@ class VoiceProfileService:
         conditioning = self.root / profile_id / voice_file if voice_file else None
         if conditioning is not None and not conditioning.is_file():
             raise NotFoundError("This voice's built voice file is missing.", code="voice_not_found")
+        styles = styles_in(self.styles_dir(profile_id)) if conditioning else {}
+        adapter = self.adapter_path(profile_id) if conditioning else None
         # A quick voice with the default delivery keeps its original revision, so its cached audio stays valid.
-        parts = [profile.created_at, voice_file or "", "" if profile.delivery == "natural" else profile.delivery]
+        parts = [
+            profile.created_at,
+            voice_file or "",
+            "" if profile.delivery == "natural" else profile.delivery,
+            styles_revision(styles),
+            adapter.stem if adapter else "",  # adapter-<id>: a new id each time one is kept
+        ]
         spec = VoiceSpec(
-            key=f"profile:{profile_id}", reference_path=path, conditioning_path=conditioning, delivery=profile.delivery
+            key=f"profile:{profile_id}",
+            reference_path=path,
+            conditioning_path=conditioning,
+            delivery=profile.delivery,
+            styles=tuple(styles.items()),
+            adapter_path=adapter,
         )
         return profile.engine_id, spec, "|".join(part for part in parts if part)
 
@@ -323,6 +477,8 @@ class VoiceProfileService:
 
 
 def _describe(profile: VoiceProfileOut) -> str:
+    if profile.source == SHARED:
+        return f"Shared {'studio ' if profile.kind == 'studio' else ''}voice, imported from a .ttsvoice file."
     if profile.kind == "studio":
         return f"Studio voice built from {max(profile.duration_s / 60, 1):.0f} min of recordings."
     return f"Custom voice from a {profile.duration_s:.0f}s {profile.source}."

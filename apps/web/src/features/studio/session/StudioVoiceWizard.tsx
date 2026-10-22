@@ -48,7 +48,8 @@ function stepDone(
   candidate: number | null,
   details: boolean,
 ): boolean {
-  if (step === RECORD) return Boolean(session && session.usableSpeechS >= session.requiredSpeechS);
+  // A complete session, or an early one built from the foundation passage (with a warning).
+  if (step === RECORD) return Boolean(session?.canBuild);
   if (step === BUILD) return Boolean(session?.candidates.length);
   if (step === CHOOSE) return candidate !== null;
   if (step === DETAILS) return details;

@@ -112,7 +112,7 @@ Runtime dependencies only (development tooling is not distributed). Model weight
 | defusedxml==0.7.1 | Python Software Foundation License |  |
 | dlinfo==2.0.0 | MIT |  |
 | espeakng-loader==0.2.4 | MIT wrapper bundling espeak-ng (GPL-3.0) | Ships the GPL-3.0 espeak-ng library; the Windows installer ships its licence and each release its source. |
-| fastapi==0.142.2 | MIT |  |
+| fastapi==0.142.4 | MIT |  |
 | flatbuffers==25.12.19 | Apache Software License |  |
 | h11==0.16.0 | MIT License |  |
 | httpcore==1.0.9 | BSD-3-Clause |  |

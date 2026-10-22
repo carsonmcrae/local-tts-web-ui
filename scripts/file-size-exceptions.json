@@ -1,4 +1,6 @@
 {
   "//": "Purpose: Files allowed to exceed the 500-line limit, each with a reason. Scope: Used by scripts/check-file-size.mjs. Does NOT belong: Generated files or lockfiles (always exempt).",
-  "files": {}
+  "files": {
+    "docs/architecture/decisions.md": "The decision log is one responsibility: an append-only list, one section per ADR, found by number from the code and the other documents; splitting it would only make a part two."
+  }
 }

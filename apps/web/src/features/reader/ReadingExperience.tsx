@@ -5,10 +5,11 @@
  * Scope: Shown in the reader for a document that is a bundled book with a reading preset. Asks what
  *   the preset offers this document and shows the experiences as a radio list: Standard (the reading
  *   voice throughout), Multi-voice (the narrator's suggested voice, each character in their own voice
- *   and the curated speaker lines) and, only once sound effects and music exist in this version,
- *   Immersive. Choosing one applies or removes the preset's components; the characters are listed
- *   with the voice each would get here or "not installed"; the suggested reading voice can be given
- *   to the player; the recommended music is named and nothing is turned on.
+ *   and the curated speaker lines) and, only once sound effects exist in this version, Immersive.
+ *   Choosing one applies or removes the preset's components; the characters are listed with the
+ *   voice each would get here or "not installed"; the suggested reading voice can be given to the
+ *   player; the recommended music track is named from the music library and can be chosen for this
+ *   device at the recommended level (Immersive chooses it too), and music is never turned on here.
  * Does NOT belong: The reader's own cast dialog (CastDialog), playback, or the music and effects players.
  */
 import { Sparkles } from 'lucide-react';
@@ -23,9 +24,13 @@ import type { PresetComponent, ReadingPreset, VoiceInfo } from '@/api/types';
 import { Button } from '@/components/ui/Button';
 import { Badge, Banner } from '@/components/ui/Feedback';
 import { OptionList } from '@/components/ui/Menu';
+import { TRACKS } from '@/features/music/library';
+import { useMusic } from '@/features/music/MusicProvider';
+import type { MusicSession } from '@/features/music/session';
 import { voiceLabel } from './StyleSentencesDialog';
 
 type Experience = 'standard' | 'voices' | 'immersive';
+type PresetMusic = NonNullable<ReadingPreset['music']>;
 const VOICE_PARTS: readonly PresetComponent[] = ['narrator', 'characters', 'speakers'];
 const IMMERSIVE_PARTS: readonly PresetComponent[] = ['effects', 'music'];
 
@@ -36,8 +41,48 @@ function currentExperience(preset: ReadingPreset): Experience {
   return applied.length ? 'voices' : 'standard';
 }
 
-const trackName = (trackId: string) =>
-  trackId.replace(/-/g, ' ').replace(/^./, (first) => first.toUpperCase());
+const trackOf = (music: PresetMusic) => TRACKS.find((track) => track.id === music.trackId);
+
+/** Choose the recommended track and level on this device; music stays off until the reader turns it on. */
+function acceptTrack(session: MusicSession, music: PresetMusic): void {
+  if (!trackOf(music)) return;
+  session.selectTrack(music.trackId);
+  session.setVolume(music.volume);
+}
+
+function MusicRecommendation({ music }: Readonly<{ music: PresetMusic }>) {
+  const { music: session, state } = useMusic();
+  const track = trackOf(music);
+  return (
+    <div>
+      <dt className="text-muted">Music</dt>
+      <dd>
+        <div className="flex flex-wrap items-center gap-2">
+          {!track ? (
+            <span>The recommended track isn't in this version's music library.</span>
+          ) : state.trackId === track.id ? (
+            <span>
+              {track.title} is recommended at {music.volume}%.{' '}
+              <span className="text-subtle">Chosen in the player.</span>
+            </span>
+          ) : (
+            <>
+              <span>
+                {track.title} is recommended at {music.volume}%.
+              </span>
+              <Button variant="ghost" size="sm" onClick={() => acceptTrack(session, music)}>
+                Use this track
+              </Button>
+            </>
+          )}
+        </div>
+        <p className="text-xs text-subtle">
+          {music.note ? `${music.note} ` : ''}Music stays off until you turn it on in the player.
+        </p>
+      </dd>
+    </div>
+  );
+}
 
 export function ReadingExperience({
   documentId,
@@ -51,6 +96,7 @@ export function ReadingExperience({
   onVoice: (voiceId: string) => void;
 }>) {
   const preset = useReadingPreset(documentId, Boolean(bundledWorkId));
+  const { music: session } = useMusic();
   const voices = useVoices();
   const apply = useApplyReadingPreset(documentId);
   const remove = useRemoveReadingPreset(documentId);
@@ -69,7 +115,12 @@ export function ReadingExperience({
   };
   const choose = (experience: Experience) => {
     if (busy) return;
-    const done = { onSuccess: onChanged };
+    const done = {
+      onSuccess: () => {
+        if (experience === 'immersive' && report.music) acceptTrack(session, report.music);
+        onChanged();
+      },
+    };
     if (experience === 'standard') remove.mutate(undefined, done);
     else apply.mutate(experience === 'voices' ? [...voiceParts] : offered.map((c) => c.name), done);
   };
@@ -129,15 +180,7 @@ export function ReadingExperience({
             </dd>
           </div>
         ) : null}
-        {report.musicTrackId ? (
-          <div>
-            <dt className="text-muted">Music</dt>
-            <dd>
-              {trackName(report.musicTrackId)} is recommended. Music stays off until you turn it on
-              in the player.
-            </dd>
-          </div>
-        ) : null}
+        {report.music ? <MusicRecommendation music={report.music} /> : null}
       </dl>
       {report.characters.length ? (
         <ul aria-label="Characters in this experience" className="mt-3 flex flex-wrap gap-1.5">

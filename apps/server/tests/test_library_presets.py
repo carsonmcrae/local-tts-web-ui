@@ -8,9 +8,10 @@ quote, by occurrence, and otherwise not at all. The schema refuses unknown sound
 loops without an end, repeated names, speakers that aren't characters and unknown fields, and a bad file
 is left out of the load with a log line. Over the API: a document that isn't a bundled work has no preset;
 a report says which voices are here and which components can be applied; applying voices and speakers
-writes character voices and sentence annotations the planner then uses, music and effects are refused as
-not yet available, applying again replaces rather than mixes, and removing takes out only what was
-written. A paired phone may do all of this (test_lan_security.py lists the routes).
+writes character voices and sentence annotations the planner then uses, music is only recorded as chosen
+(the track is each device's own player setting), effects are refused as not yet available, applying again
+replaces rather than mixes, and removing takes out only what was written. The known track ids are the web
+app's music library. A paired phone may do all of this (test_lan_security.py lists the routes).
 Does NOT belong: The catalog itself (test_library_catalog.py) or the planner's rules (test_sentence_styling.py).
 """
 
@@ -32,7 +33,7 @@ from ltts.documents.segmenter import segment_extraction
 from ltts.documents.structures import ExtractionLimits
 from ltts.errors import NotFoundError
 from ltts.library import catalog as catalog_module
-from ltts.library.presets import Anchor, Preset, load_presets, make_anchor, resolve, sentence_hash
+from ltts.library.presets import KNOWN_TRACKS, Anchor, Preset, load_presets, make_anchor, resolve, sentence_hash
 
 LIMITS = ExtractionLimits(10_000_000, 10_000, 10_000, 200 * 1024 * 1024, 500)
 ALICE = "alices-adventures-in-wonderland"
@@ -149,6 +150,13 @@ def test_a_bad_preset_file_is_left_out_and_logged(tmp_path: Path, caplog: pytest
     assert "preset left out" in caplog.text
 
 
+def test_the_known_tracks_are_the_web_apps_music_library() -> None:
+    """A renamed or removed track fails here, in CI, rather than in a reader's preset."""
+    library = Path(__file__).parents[2] / "web" / "src" / "features" / "music" / "library.json"
+    tracks = json.loads(library.read_text(encoding="utf-8"))["tracks"]
+    assert {track["id"] for track in tracks} == KNOWN_TRACKS
+
+
 def test_documents_that_are_not_bundled_works_have_no_preset(client: TestClient) -> None:
     doc = client.post("/api/documents/text", json={"text": "“Hello,” said Ann. Fine.", "title": "Pasted"}).json()["id"]
     assert client.get(f"/api/documents/{doc}/preset").status_code == 404
@@ -167,19 +175,28 @@ def test_the_report_applies_and_removes_voices_and_speakers(
     report = client.get(f"/api/documents/{doc}/preset").json()
     assert report["presetId"] == f"{ALICE}-immersive" and report["workId"] == ALICE and report["appliedAt"] is None
     assert [c["name"] for c in report["components"]] == ["narrator", "characters", "speakers", "effects", "music"]
-    assert [c["available"] for c in report["components"]] == [True, True, True, False, False]
+    assert [c["available"] for c in report["components"]] == [True, True, True, False, True]
     assert report["narrator"] == {"preferred": "kokoro:af_heart", "chosen": None}  # that voice isn't installed here
     assert report["speakersResolved"] == 8 and report["speakersUnresolved"] == 0 and report["effects"] == 5
-    assert report["musicTrackId"] == "gymnopedie-1"
+    assert report["music"] == {
+        "trackId": "gymnopedie-1",
+        "volume": 10,
+        "note": "Light piano for a long golden afternoon.",
+    }
     alice = next(c for c in report["characters"] if c["id"] == "alice")
     assert alice["lines"] > 100 and alice["voice"]["chosen"] is None and alice["description"]
     # With none of the preset's voices installed, applying assigns nothing, and says so rather than guessing.
     applied = client.post(f"/api/documents/{doc}/preset/apply", json={"components": ["characters"]}).json()
     assert applied["appliedAt"] and applied["appliedVersion"] == 1
     assert all(c["voiceId"] is None for c in client.get(f"/api/documents/{doc}/characters").json())
-    # Music and effects can't be applied yet.
-    refused = client.post(f"/api/documents/{doc}/preset/apply", json={"components": ["characters", "music"]})
+    # Effects can't be applied yet. Music is recorded as chosen, and nothing else: which track a device plays
+    # is the player's own setting there, so the server has nothing to write.
+    refused = client.post(f"/api/documents/{doc}/preset/apply", json={"components": ["characters", "effects"]})
     assert refused.status_code == 409 and refused.json()["error"]["code"] == "component_unavailable"
+    with_music = client.post(f"/api/documents/{doc}/preset/apply", json={"components": ["music", "characters"]}).json()
+    assert [c["applied"] for c in with_music["components"]] == [False, True, False, False, True]
+    assert services.presets._record(doc) is not None
+    assert services.presets._record(doc)[0]["music"] == {"track_id": "gymnopedie-1", "volume": 10}  # type: ignore[index]
     # When the voices are here, every character gets one, aliases included, and the curated lines their speaker.
     monkeypatch.setattr(services.presets, "_available", lambda voice_id: True)
     before = services.styling.get(doc).revision

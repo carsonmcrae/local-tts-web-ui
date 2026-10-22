@@ -8,9 +8,10 @@ section 5) with every value checked against a pattern, a range or a vocabulary; 
 against a document's sentences, hash first, then quote, never a guess; a report of what a preset would
 do for a document (which voices are available, which anchors resolve, which components need features
 that aren't here yet); applying the components the reader chose (characters' voices and speaker
-annotations go into the same tables the reader's own choices use, and exactly what was written is
-recorded in ``document_presets``) and taking them out again. Nothing here changes a document's text,
-starts playback, or turns music or effects on.
+annotations go into the same tables the reader's own choices use, music is only recorded as chosen:
+the track is a device setting the web app's player keeps, and exactly what was written is recorded in
+``document_presets``) and taking them out again. Nothing here changes a document's text, starts
+playback, or turns music or effects on.
 Does NOT belong: The catalog (``catalog.py``), HTTP (``router.py``) or the effects and music players.
 """
 
@@ -42,11 +43,12 @@ QUOTE_CHARS = 80
 Component = Literal["narrator", "characters", "speakers", "effects", "music"]
 COMPONENTS: tuple[Component, ...] = ("narrator", "characters", "speakers", "effects", "music")
 # Components whose players live on other branches: validated and reported, never applied here.
-NOT_YET: frozenset[str] = frozenset({"effects", "music"})
+NOT_YET: frozenset[str] = frozenset({"effects"})
 _PACKAGE = "ltts.library"
 # The event vocabulary is the sound-effects feature's own (``ltts.sfx.events``, versioned there); a preset
 # may only name an event that exists, in its category. The music tracks are frozen here (docs/architecture/
-# literary-library.md 5.3).
+# literary-library.md 5.3) as the web app's apps/web/src/features/music/library.json; test_library_presets.py
+# keeps the two equal.
 KNOWN_EVENTS: Mapping[str, str] = CATEGORY_OF
 KNOWN_TRACKS: frozenset[str] = frozenset({
     "contemplation", "calm-ambient", "rising-moon", "warriors-lament", "waiting", "washed-up", "currents",
@@ -275,6 +277,12 @@ class PresetComponentOut(ApiModel):
     applied: bool
 
 
+class PresetMusicOut(ApiModel):
+    track_id: str  # a track of the web app's music library; choosing it is the player's, per device
+    volume: int  # the recommended level, 0-100 %
+    note: str | None
+
+
 class ReadingPresetOut(ApiModel):
     preset_id: str
     preset_version: int
@@ -286,7 +294,7 @@ class ReadingPresetOut(ApiModel):
     speakers_resolved: int
     speakers_unresolved: int
     effects: int
-    music_track_id: str | None
+    music: PresetMusicOut | None
     edition_matches: bool  # the document is the edition and text version the preset was written for
     components: list[PresetComponentOut]
     applied_at: str | None
@@ -302,7 +310,7 @@ NOTES: dict[str, str] = {
     "characters": "Each character reads their own lines.",
     "speakers": "Lines the analysis can't attribute are given to their speaker.",
     "effects": "Sound effects arrive with a later version of TTSNative.",
-    "music": "Background music recommendations arrive with a later version of TTSNative.",
+    "music": "A recommended background track; music stays off until you turn it on in the player.",
 }
 
 
@@ -347,6 +355,13 @@ class PresetService:
         """The document's sentences and whether quotes may stand in for hashes (only for the preset's own edition)."""
         return self._sentences(document_id), self._edition_matches(document_id, preset)
 
+    @staticmethod
+    def _music(preset: Preset) -> PresetMusicOut | None:
+        if preset.music is None:
+            return None
+        track = preset.music.recommendation
+        return PresetMusicOut(track_id=track.track_id, volume=track.volume, note=track.note)
+
     def _choose(self, voice: VoiceRef) -> PresetVoiceOut:
         chosen = next((candidate for candidate in voice.candidates if self._available(candidate)), None)
         return PresetVoiceOut(preferred=voice.preferred, chosen=chosen)
@@ -390,7 +405,7 @@ class PresetService:
             speakers_resolved=resolved,
             speakers_unresolved=len(preset.speakers) - resolved,
             effects=len(preset.effects),
-            music_track_id=preset.music.recommendation.track_id if preset.music else None,
+            music=self._music(preset),
             edition_matches=same_edition,
             components=[
                 PresetComponentOut(name=name, available=name not in NOT_YET, note=NOTES[name], applied=name in written)
@@ -404,9 +419,7 @@ class PresetService:
         """Write the chosen components into the document's own tables, remembering exactly what was written."""
         wanted = [name for name in COMPONENTS if name in components]
         if any(name in NOT_YET for name in wanted):
-            raise ConflictError(
-                "Sound effects and music can't be applied in this version yet.", code="component_unavailable"
-            )
+            raise ConflictError("Sound effects can't be applied in this version yet.", code="component_unavailable")
         if any(name not in preset.components for name in wanted):
             raise NotFoundError("This preset has no such component.", code="component_not_found")
         self.remove(document_id)  # applying again starts from the preset, not from a mix
@@ -426,6 +439,10 @@ class PresetService:
             written["characters"] = assigned
         if "speakers" in wanted:
             written["speakers"] = self._apply_speakers(document_id, preset, voices)
+        if "music" in wanted and preset.music:
+            # Recorded as chosen, nothing more: the track a device plays is its own setting in the web app.
+            track = preset.music.recommendation
+            written["music"] = {"track_id": track.track_id, "volume": track.volume}
         with self._db.connect() as conn:
             conn.execute(
                 "INSERT INTO document_presets (document_id, preset_id, preset_version, components_json, applied_at) "

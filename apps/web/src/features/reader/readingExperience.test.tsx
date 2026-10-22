@@ -3,10 +3,11 @@
 /**
  * Purpose: Tests for the reading experience chooser of an included book.
  * Scope: Nothing for an ordinary document or a book without a preset; the preset's title, summary,
- *   suggested voice (given to the player on request), music recommendation and characters with the
- *   voice each gets or "not installed"; Immersive offered only once effects and music are available;
- *   choosing Multi-voice applies the voice components, choosing Standard removes them; an error is
- *   shown and the choice can be made again.
+ *   suggested voice (given to the player on request), music recommendation (named from the music
+ *   library, chosen for this device by "Use this track" or by Immersive, never turned on, and a track
+ *   this version lacks is said so) and characters with the voice each gets or "not installed";
+ *   Immersive offered only once effects are available; choosing Multi-voice applies the voice
+ *   components, choosing Standard removes them; an error is shown and the choice can be made again.
  * Does NOT belong: The server's preset logic or the reader page around it (reader.test.tsx).
  */
 import { screen, waitFor, within } from '@testing-library/react';
@@ -16,10 +17,16 @@ import type { ReadingPreset } from '@/api/types';
 import { mockApi, renderWithApp } from '@/test/render';
 import { ReadingExperience } from './ReadingExperience';
 
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => {
+  vi.unstubAllGlobals();
+  localStorage.clear();
+});
 
 const DOC = 'b'.repeat(32);
 const NOTE = 'Sound effects arrive with a later version of TTSNative.';
+const ALL = ['narrator', 'characters', 'speakers', 'effects', 'music'];
+/** The track and level saved on this device, as the player reads them. */
+const savedTrack = () => JSON.parse(localStorage.getItem('ltts.music') ?? 'null') as unknown;
 
 const report = (applied: string[] = [], available = false): ReadingPreset => ({
   presetId: 'alice-immersive',
@@ -37,7 +44,7 @@ const report = (applied: string[] = [], available = false): ReadingPreset => ({
   speakersResolved: 8,
   speakersUnresolved: 0,
   effects: 5,
-  musicTrackId: 'gymnopedie-1',
+  music: { trackId: 'gymnopedie-1', volume: 10, note: 'Light piano.' },
   editionMatches: true,
   components: [
     { name: 'narrator', available: true, note: 'A voice.', applied: applied.includes('narrator') },
@@ -49,7 +56,7 @@ const report = (applied: string[] = [], available = false): ReadingPreset => ({
     },
     { name: 'speakers', available: true, note: 'Lines.', applied: applied.includes('speakers') },
     { name: 'effects', available, note: NOTE, applied: applied.includes('effects') },
-    { name: 'music', available, note: 'Music later.', applied: applied.includes('music') },
+    { name: 'music', available: true, note: 'Music.', applied: applied.includes('music') },
   ],
   appliedAt: applied.length ? '2026-10-21T00:00:00+00:00' : null,
   appliedVersion: applied.length ? 1 : null,
@@ -109,7 +116,7 @@ describe('Reading experience', () => {
     const bare = {
       ...report([], true),
       narrator: null,
-      musicTrackId: null,
+      music: null,
       characters: [],
       editionMatches: false,
     };
@@ -118,8 +125,7 @@ describe('Reading experience', () => {
       'GET /api/documents/': bare, // and no voices answer yet
       'POST /api/documents/': () =>
         new Promise((resolve) => {
-          release = () =>
-            resolve(report(['narrator', 'characters', 'speakers', 'effects', 'music'], true));
+          release = () => resolve(report(ALL, true));
         }),
     });
     const { user, onChanged } = renderChooser();
@@ -151,7 +157,12 @@ describe('Reading experience', () => {
     expect(within(chooser).getByRole('radio', { name: /Standard/ })).toBeChecked();
     expect(within(chooser).queryByRole('radio', { name: /Immersive/ })).not.toBeInTheDocument();
     expect(within(chooser).getByText(NOTE)).toBeInTheDocument();
-    expect(within(chooser).getByText(/Gymnopedie 1 is recommended/)).toBeInTheDocument();
+    expect(
+      within(chooser).getByText('Gymnopédie No. 1 is recommended at 10%.'),
+    ).toBeInTheDocument();
+    expect(
+      within(chooser).getByText('Light piano. Music stays off until you turn it on in the player.'),
+    ).toBeInTheDocument();
     const characters = within(chooser).getByRole('list', { name: 'Characters in this experience' });
     expect(
       within(characters)
@@ -160,6 +171,13 @@ describe('Reading experience', () => {
     ).toEqual(['Alice · 179 lines · Alpha · English (US)', 'White Rabbit · not installed here']);
     await user.click(within(chooser).getByRole('button', { name: 'Use this voice' }));
     expect(onVoice).toHaveBeenCalledWith('kokoro:alpha');
+    const audio = vi.fn();
+    vi.stubGlobal('AudioContext', audio);
+    await user.click(within(chooser).getByRole('button', { name: 'Use this track' }));
+    expect(savedTrack()).toEqual({ trackId: 'gymnopedie-1', volume: 10 });
+    expect(within(chooser).getByText('Chosen in the player.')).toBeInTheDocument();
+    expect(within(chooser).queryByRole('button', { name: 'Use this track' })).toBeNull();
+    expect(audio).not.toHaveBeenCalled(); // chosen, not started
     await user.click(within(chooser).getByRole('radio', { name: /Multi-voice/ }));
     await waitFor(() => expect(onChanged).toHaveBeenCalledTimes(1));
     expect(calls.find((call) => call.method === 'POST')?.body).toBe(
@@ -173,7 +191,7 @@ describe('Reading experience', () => {
     const { calls } = mockApi({
       'GET /api/voices': [],
       'GET /api/documents/': {
-        ...report(['narrator', 'characters', 'speakers', 'effects', 'music'], true),
+        ...report(ALL, true),
         narrator: { preferred: 'kokoro:af_heart', chosen: null },
       },
       'DELETE /api/documents/': () =>
@@ -193,5 +211,44 @@ describe('Reading experience', () => {
     await user.click(within(chooser).getByRole('radio', { name: /Standard/ }));
     await waitFor(() => expect(onChanged).toHaveBeenCalledTimes(1));
     expect(calls.filter((call) => call.method === 'DELETE')).toHaveLength(2);
+  });
+
+  it('chooses the recommended track for this device with Immersive, without turning music on', async () => {
+    const audio = vi.fn();
+    vi.stubGlobal('AudioContext', audio);
+    mockApi({
+      'GET /api/voices': [],
+      'GET /api/documents/': report([], true),
+      'POST /api/documents/': report(ALL, true),
+    });
+    const { user, onChanged } = renderChooser();
+    const chooser = await region();
+    expect(within(chooser).getByRole('button', { name: 'Use this track' })).toBeVisible();
+    await user.click(within(chooser).getByRole('radio', { name: /Immersive/ }));
+    await waitFor(() => expect(onChanged).toHaveBeenCalledTimes(1));
+    expect(savedTrack()).toEqual({ trackId: 'gymnopedie-1', volume: 10 });
+    expect(within(chooser).getByText('Chosen in the player.')).toBeInTheDocument();
+    expect(audio).not.toHaveBeenCalled();
+  });
+
+  it('says when the recommended track is not in this version, and never chooses it', async () => {
+    const elevator = { trackId: 'elevator', volume: 10, note: null };
+    mockApi({
+      'GET /api/voices': [],
+      'GET /api/documents/': { ...report([], true), music: elevator },
+      'POST /api/documents/': { ...report(ALL, true), music: elevator },
+    });
+    const { user, onChanged } = renderChooser();
+    const chooser = await region();
+    expect(
+      within(chooser).getByText("The recommended track isn't in this version's music library."),
+    ).toBeInTheDocument();
+    expect(
+      within(chooser).getByText('Music stays off until you turn it on in the player.'),
+    ).toBeInTheDocument();
+    expect(within(chooser).queryByRole('button', { name: 'Use this track' })).toBeNull();
+    await user.click(within(chooser).getByRole('radio', { name: /Immersive/ }));
+    await waitFor(() => expect(onChanged).toHaveBeenCalledTimes(1));
+    expect(savedTrack()).toBeNull();
   });
 });

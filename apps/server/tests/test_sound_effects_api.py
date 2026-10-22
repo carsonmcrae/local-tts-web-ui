@@ -221,6 +221,12 @@ def test_effects_whose_sentence_changed_are_stale_and_go_with_the_document(
         conn.execute("UPDATE segments SET text = 'Different words.' WHERE document_id = ? AND idx = 2", (doc["id"],))
     listed = effects_of(client, doc["id"])["effects"]
     assert listed[0]["id"] == effect["id"] and listed[0]["stale"] is True
+    # An ambience saved before an end was required can still be adjusted; changing its sound or end needs one.
+    rain = client.post(base, json={"segmentIndex": 3, "soundId": "rain-light", "untilSegment": 4}).json()
+    with services.db.connect() as conn:
+        conn.execute("UPDATE sound_effects SET until_idx = NULL WHERE id = ?", (rain["id"],))
+    assert client.patch(f"{base}/{rain['id']}", json={"volume": 30}).json()["volume"] == 30
+    assert error(client.patch(f"{base}/{rain['id']}", json={"soundId": "rain-light"})) == "effect_span"
     assert client.delete(f"/api/documents/{doc['id']}").status_code == 204
     assert error(client.get(base)) == "document_not_found"
     with services.db.connect() as conn:

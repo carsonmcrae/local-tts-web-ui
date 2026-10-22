@@ -292,7 +292,10 @@ class SoundEffectStore:
                     fields["event"] = sound.events[0]
                 if not sound.loop:
                     fields["until_segment"] = None
-            _require_end(sound, fields.get("until_segment", row["until_idx"]))
+            if "sound_id" in fields or "until_segment" in fields:
+                # Only a change of sound or end is checked, so an older ambience saved without an end can still
+                # have its volume or position adjusted.
+                _require_end(sound, fields.get("until_segment", row["until_idx"]))
             if "until_segment" in fields:
                 _check_until(conn, document_id, row["segment_idx"], fields["until_segment"])
             if row["origin"] == "preset":  # the reader's change makes the row theirs; the experience leaves it alone

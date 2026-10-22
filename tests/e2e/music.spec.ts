@@ -4,8 +4,10 @@
  * Purpose: Background music in a real browser, under real Kokoro narration, with the bundled tracks.
  * Scope: Music stays off until it is turned on; while narrating, one track plays straight through
  *   several sentences (no restart at each one), stops when the narration pauses and carries on when
- *   it plays; after a reload it is off again with the chosen track kept; every bundled track
- *   decodes to its recorded length and loops without a jump at the seam.
+ *   it plays; after a reload it is off again with the chosen track kept, and narrating again doesn't
+ *   bring it back; every bundled track, previewed from the music library, decodes to its recorded
+ *   length and the loop the player starts has no jump at its seam (on Chromium 156, whose decoder
+ *   drops the first 24 samples, that needs the player's crossfaded seam).
  * Does NOT belong: Music rules in isolation (apps/web/src/features/music/*.test.ts*).
  */
 import type { Page } from '@playwright/test';
@@ -28,13 +30,36 @@ const LIBRARY = JSON.parse(
 declare global {
   interface Window {
     musicSources: { started: number; ended: number };
+    musicLoops: { seconds: number; seam: number }[];
   }
 }
 
-/** Count the music sources the app starts and ends (the narration doesn't use Web Audio). */
+/**
+ * Count the music sources the app starts and ends (the narration doesn't use Web Audio), and measure
+ * each loop as it starts: the jump from its last sample back to its first, against a large normal step
+ * (the 99.9th percentile) inside the loop.
+ */
 async function watchMusic(page: Page) {
   await page.addInitScript(() => {
     window.musicSources = { started: 0, ended: 0 };
+    window.musicLoops = [];
+    const measure = (source: AudioBufferSourceNode) => {
+      const buffer = source.buffer;
+      if (!source.loop || !buffer) return;
+      const first = Math.round(source.loopStart * buffer.sampleRate);
+      const last = Math.round(source.loopEnd * buffer.sampleRate);
+      let seam = 0;
+      for (let channel = 0; channel < buffer.numberOfChannels; channel += 1) {
+        const samples = buffer.getChannelData(channel);
+        const steps: number[] = [];
+        for (let i = first + 1; i < last; i += 7)
+          steps.push(Math.abs(samples[i]! - samples[i - 1]!));
+        steps.sort((a, b) => a - b);
+        const typical = steps[Math.floor(steps.length * 0.999)]!;
+        seam = Math.max(seam, Math.abs(samples[first]! - samples[last - 1]!) / typical);
+      }
+      window.musicLoops.push({ seconds: buffer.duration, seam });
+    };
     const Original = window.AudioContext;
     window.AudioContext = class extends Original {
       override createBufferSource() {
@@ -42,6 +67,7 @@ async function watchMusic(page: Page) {
         const start = source.start.bind(source);
         source.start = (...args: Parameters<AudioBufferSourceNode['start']>) => {
           window.musicSources.started += 1;
+          measure(source);
           source.addEventListener('ended', () => (window.musicSources.ended += 1));
           start(...args);
         };
@@ -52,6 +78,7 @@ async function watchMusic(page: Page) {
   return {
     started: () => page.evaluate(() => window.musicSources.started),
     playing: () => page.evaluate(() => window.musicSources.started - window.musicSources.ended),
+    loops: () => page.evaluate(() => window.musicLoops),
   };
 }
 
@@ -100,37 +127,32 @@ test.describe('background music', () => {
     const again = await musicPanel(page);
     await expect(again.getByRole('switch', { name: 'Background music' })).not.toBeChecked();
     await expect(again.getByText(LIBRARY.tracks[0]?.title ?? '')).toBeVisible();
+    // Narrating again after the reload leaves the music off.
+    await page.keyboard.press('Escape');
+    await play(page);
+    await waitForActiveSegment(page, 5);
+    expect(await music.started()).toBe(0);
   });
 
-  test('every bundled track decodes to its recorded length and loops without a jump', async ({
+  test('every bundled track decodes to its recorded length and loops without a jump where the player loops it', async ({
     page,
   }) => {
-    await page.goto('/library');
-    const results = await page.evaluate(async (tracks) => {
-      const context = new AudioContext();
-      const out: { id: string; seconds: number; recorded: number; seam: number }[] = [];
-      for (const track of tracks) {
-        const data = await (await fetch(`/music/${track.file}`)).arrayBuffer();
-        const buffer = await context.decodeAudioData(data);
-        let seam = 0;
-        for (let channel = 0; channel < buffer.numberOfChannels; channel += 1) {
-          const samples = buffer.getChannelData(channel);
-          const steps: number[] = [];
-          for (let i = 1; i < samples.length; i += 7)
-            steps.push(Math.abs(samples[i]! - samples[i - 1]!));
-          steps.sort((a, b) => a - b);
-          const typical = steps[Math.floor(steps.length * 0.999)]!;
-          // The jump from the last sample back to the first, against a large normal step.
-          seam = Math.max(seam, Math.abs(samples[0]! - samples[samples.length - 1]!) / typical);
-        }
-        out.push({ id: track.id, seconds: buffer.duration, recorded: track.durationSeconds, seam });
-      }
-      await context.close();
-      return out;
-    }, LIBRARY.tracks);
-    for (const result of results) {
-      expect(Math.abs(result.seconds - result.recorded), result.id).toBeLessThan(0.05);
-      expect(result.seam, result.id).toBeLessThan(1);
+    const music = await watchMusic(page);
+    await pasteText(page, 'A short page to open the player.', 'Music loops');
+    const panel = await musicPanel(page);
+    await panel.getByRole('button', { name: 'Browse' }).click();
+    const library = page.getByRole('dialog', { name: 'Music library' });
+    for (const [index, track] of LIBRARY.tracks.entries()) {
+      await library.getByRole('button', { name: `Preview ${track.title}` }).click();
+      await expect
+        .poll(async () => (await music.loops()).length, { timeout: 30_000 })
+        .toBe(index + 1);
+    }
+    const loops = await music.loops();
+    for (const [index, track] of LIBRARY.tracks.entries()) {
+      const loop = loops[index];
+      expect(Math.abs((loop?.seconds ?? 0) - track.durationSeconds), track.id).toBeLessThan(0.05);
+      expect(loop?.seam, track.id).toBeLessThan(1);
     }
   });
 });

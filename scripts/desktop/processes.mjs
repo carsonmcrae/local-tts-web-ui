@@ -12,6 +12,7 @@
  */
 import { execFileSync } from 'node:child_process';
 import path from 'node:path';
+import { setTimeout as sleep } from 'node:timers/promises';
 
 const POWERSHELL = path.join(
   process.env.SystemRoot ?? 'C:/Windows',
@@ -55,4 +56,17 @@ export function appProcesses() {
 /** `name pid` for each process, for a test message. */
 export function describe(/** @type {ReturnType<typeof appProcesses>} */ processes) {
   return processes.map((process) => `${process.name} ${process.pid}`).join(', ');
+}
+
+/**
+ * What of the app is still running after up to 15 s: the web view and an engine's worker take a
+ * moment longer to go than the app and its server. Empty when everything has ended.
+ */
+export async function leftoverProcesses() {
+  let leftovers = appProcesses();
+  for (let attempt = 0; attempt < 30 && leftovers.length; attempt += 1) {
+    await sleep(500);
+    leftovers = appProcesses();
+  }
+  return leftovers;
 }

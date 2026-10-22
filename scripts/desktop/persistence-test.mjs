@@ -18,7 +18,7 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { repoRoot } from '../lib/paths.mjs';
-import { appProcesses, describe, powershell } from './processes.mjs';
+import { describe, leftoverProcesses, powershell } from './processes.mjs';
 import { appPage, launchForDebugging } from './webview-debugging.mjs';
 
 const exe = path.join(process.env.LOCALAPPDATA ?? '', 'TTSNative', 'TTSNative.exe');
@@ -146,12 +146,7 @@ async function stop(/** @type {'close' | 'crash'} */ how) {
     !running('TTSNative') && !running('ttsnative-backend'),
     `the app and its server ended (${how})`,
   );
-  // WebView2 and an engine's worker (python.exe) take a moment longer to go.
-  let leftovers = appProcesses();
-  for (let attempt = 0; attempt < 30 && leftovers.length; attempt += 1) {
-    await sleep(500);
-    leftovers = appProcesses();
-  }
+  const leftovers = await leftoverProcesses();
   check(
     leftovers.length === 0,
     `nothing of TTSNative is left running (${how})${leftovers.length ? `: ${describe(leftovers)}` : ''}`,

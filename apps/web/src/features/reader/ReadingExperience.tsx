@@ -194,6 +194,9 @@ export function ReadingExperience({
               {effectsApplied
                 ? `${report.effectsPlaced} of ${report.effects} placed in the Sounds panel.`
                 : `${report.effects} for the Sounds panel.`}{' '}
+              {effectsApplied && report.effectsPlaced < report.effects
+                ? 'The others were left out, for example where a sentence already has your own effect or the sound is still experimental. '
+                : null}
               They stay off until you turn them on in the player.
             </dd>
           </div>

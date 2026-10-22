@@ -209,7 +209,9 @@ describe('Reading experience', () => {
     const { user, onChanged } = renderChooser();
     const chooser = await region();
     expect(within(chooser).getByRole('radio', { name: /Immersive/ })).toBeChecked();
-    expect(within(chooser).getByText(/4 of 5 placed in the Sounds panel/)).toBeInTheDocument();
+    expect(within(chooser).getByText(/4 of 5 placed in the Sounds panel/)).toHaveTextContent(
+      /The others were left out, for example where a sentence already has your own effect or the sound is still experimental/,
+    );
     expect(within(chooser).getAllByText(/not installed here/)).toHaveLength(2); // narrator and Rabbit
     expect(
       within(chooser).queryByRole('button', { name: 'Use this voice' }),

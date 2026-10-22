@@ -13,7 +13,7 @@ license = "MIT"
 authors = [{ name = "Carson McRae" }]
 requires-python = ">=3.12.4,<3.13"  # ipaddress misclassifies some private ranges before 3.12.4 (CVE-2024-4032)
 dependencies = [
-  "fastapi>=0.142,<1",
+  "fastapi>=0.142.4,<1",
   "starlette>=1.7,<2",  # imported directly: errors.py handles its base HTTPException
   "uvicorn>=0.54,<1",
   "pydantic>=2.13,<3",

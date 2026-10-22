@@ -1,166 +1,203 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 Carson McRae
 /**
- * Purpose: Tests for the background-music engine against a fake Web Audio context.
- * Scope: Lazy context creation, fades and crossfades, one track at a time, loops that skip codec
- *   padding and crossfade their seam (also where a decoder drops samples), pausing and resuming in
- *   place, superseded and failed loads, missing Web Audio, the decoded-track cache, idle suspension,
- *   disposal, and that faded-out nodes are released even after many on/off cycles.
+ * Purpose: Tests for how the background-music engine plays a track as chunks, against a fake Web Audio context.
+ * Scope: Lazy context creation; a track played as its chunks on one frame-exact timeline, each join
+ *   crossfaded over 10 ms of the music the next chunk carries, and the last chunk leading into the
+ *   first; a chunk's music found whatever a decoder trimmed from its start; late chunks; at most two
+ *   chunks held per track; pausing and resuming in place across chunks, and previews from the start.
  * Does NOT belong: When music plays (session.test.ts) or the controls (music.test.tsx).
  */
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { FakeAudioContext, fakeBuffer } from '@/test/audio';
+import { afterEach, beforeEach, expect, it } from 'vitest';
 import type { BufferLike } from '@/lib/audio/webAudio';
-import { loopBounds, seamlessLoop } from '@/lib/audio/webAudio';
-import type { MusicTarget } from './engine';
-import { MusicEngine } from './engine';
-
-const A: MusicTarget = { id: 'a', url: '/music/a.webm', resume: true };
-const B: MusicTarget = { id: 'b', url: '/music/b.webm', resume: true };
-const C: MusicTarget = { id: 'c', url: '/music/c.webm', resume: true };
-
-function setup(create?: () => FakeAudioContext) {
-  const contexts: FakeAudioContext[] = [];
-  const onLoading = vi.fn();
-  const onError = vi.fn();
-  const fetchTrack = vi.fn((url: string) => Promise.resolve(new TextEncoder().encode(url).buffer));
-  const engine = new MusicEngine({
-    onLoading,
-    onError,
-    fetchTrack,
-    createContext: () => {
-      const context = create?.() ?? new FakeAudioContext();
-      contexts.push(context);
-      return context;
-    },
-  });
-  const context = () => contexts.at(-1) as FakeAudioContext;
-  return { engine, contexts, context, onLoading, onError, fetchTrack };
-}
+import { FakeAudioContext } from '@/test/audio';
+import { A, B, chunk, finishChunk, flush, heard, setup, track } from '@/test/musicEngine';
 
 beforeEach(() => vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] }));
 afterEach(() => vi.useRealTimers());
 
-/** Let fetch and decode promises settle (microtasks only; timers are fake). */
-async function flush() {
-  for (let tick = 0; tick < 20; tick += 1) await Promise.resolve();
+/**
+ * Play track A and let its first two chunks end (at 20 s and 40 s) while its third is still
+ * decoding; `arrive` delivers the third at `at` seconds.
+ */
+async function stallThird() {
+  const env = setup();
+  env.engine.play(A, 1);
+  await flush();
+  let release: (buffer: BufferLike) => void = () => undefined;
+  env.context().decode = () => new Promise((resolve) => (release = resolve));
+  await finishChunk(env.context()); // the first ends at 20 s; the third is asked for
+  await finishChunk(env.context()); // the second ends at 40 s while the third still decodes
+  const arrive = async (at: number) => {
+    env.context().currentTime = at;
+    release(chunk());
+    await flush();
+  };
+  return { ...env, arrive };
 }
 
-describe('MusicEngine', () => {
-  it('creates the audio graph on first use and fades a looping track in', async () => {
-    const { engine, contexts, context, onLoading } = setup();
+describe('MusicEngine chunks', () => {
+  it('creates the audio graph on first use and fades the first chunk in', async () => {
+    const { engine, contexts, context, onLoading, fetched } = setup();
     engine.setVolume(0.1);
     expect(contexts).toHaveLength(0);
     engine.play(A, 1.5);
     expect(onLoading).toHaveBeenLastCalledWith('a');
     await flush();
     expect(onLoading).toHaveBeenLastCalledWith(null);
-    const [master, fade] = context().gains;
+    const [master, fade, join] = context().gains;
     expect(master?.gain.events[0]).toEqual({ type: 'set', value: 0.1, time: 0 });
     expect(master?.outputs.has(context().destination)).toBe(true);
-    const source = context().sources[0];
-    // The 60 s track loops 30 ms short: its last 30 ms are crossfaded into its start.
-    expect(source).toMatchObject({ loop: true, loopStart: 0 });
-    expect(source?.loopEnd).toBeCloseTo(59.97);
-    expect(source?.started).toEqual({ when: 0, offset: 0 });
-    expect(source?.outputs.has(fade as never)).toBe(true);
     expect(fade?.gain.events).toEqual([
       { type: 'set', value: 0, time: 0 },
       { type: 'ramp', value: 1, time: 1.5 },
     ]);
-  });
-
-  it('has nothing to stop before anything played', async () => {
-    const { engine, contexts } = setup();
-    engine.play(null, 1);
-    await vi.advanceTimersByTimeAsync(10_000);
-    expect(contexts).toHaveLength(0);
-  });
-
-  it('ignores a request for the track that is already playing', async () => {
-    const { engine, context, fetchTrack } = setup();
-    engine.play(A, 1);
-    await flush();
-    engine.play(A, 1);
-    await flush();
-    expect(context().sources).toHaveLength(1);
-    expect(fetchTrack).toHaveBeenCalledTimes(1);
-  });
-
-  it('ramps the volume without touching the track fades', async () => {
-    const { engine, context } = setup();
-    engine.play(A, 1);
-    await flush();
-    context().currentTime = 4;
-    engine.setVolume(0.35);
-    const master = context().gains[0];
-    expect(master?.gain.events.slice(-3)).toEqual([
-      { type: 'cancel', value: Number.NaN, time: 4 },
-      { type: 'set', value: 1, time: 4 },
-      { type: 'ramp', value: 0.35, time: 4.08 },
+    const first = context().sources[0];
+    // The music starts after the 20 ms of the last chunk it carries, and plays for its 20 s.
+    expect(first?.started).toEqual({ when: 0, offset: 0.02, duration: 20 });
+    expect(first?.loop).toBe(false);
+    expect(first?.outputs.has(join as never)).toBe(true);
+    expect(join?.outputs.has(fade as never)).toBe(true);
+    // It fades out over its last 10 ms, under the next chunk's fade-in.
+    expect(join?.gain.events).toEqual([
+      { type: 'set', value: 1, time: 19.99 },
+      { type: 'ramp', value: 0, time: 20 },
     ]);
-    expect(context().gains[1]?.gain.target).toBe(1);
+    expect(fetched()).toEqual(['/music/a/1.webm', '/music/a/2.webm']);
   });
 
-  it('crossfades between tracks and releases the old one once it is silent', async () => {
+  it('crossfades each chunk into the next over the copy of its start the previous one carries', async () => {
     const { engine, context } = setup();
     engine.play(A, 1);
     await flush();
-    context().currentTime = 10;
-    engine.play(B, 2);
-    await flush();
-    const [first, second] = context().sources;
-    const [, fadeA, fadeB] = context().gains;
-    expect(fadeA?.gain.target).toBe(0);
-    expect(first?.stoppedAt).toBe(12);
-    expect(second?.started).toEqual({ when: 10, offset: 0 });
-    expect(fadeB?.gain.events.at(-1)).toEqual({ type: 'ramp', value: 1, time: 12 });
-    expect(context().playing).toEqual([second]);
-    expect(context().connected.has(first as never)).toBe(true);
-    context().advance(2);
-    expect(context().connected.has(first as never)).toBe(false);
-    expect(context().connected.has(fadeA as never)).toBe(false);
+    const second = context().sources[1];
+    const join = context().gains[3];
+    // 10 ms early, on the last 10 ms of the 20 ms it carries before its own music.
+    expect(heard(second).from).toBeCloseTo(19.99);
+    expect(heard(second).offset).toBeCloseTo(0.01);
+    expect(heard(second).to).toBeCloseTo(40);
+    expect(join?.gain.events.map(({ type, value }) => [type, value])).toEqual([
+      ['set', 0],
+      ['ramp', 1],
+      ['set', 1],
+      ['ramp', 0],
+    ]);
+    expect(join?.gain.events.map(({ time }) => time)).toEqual([
+      expect.closeTo(19.99),
+      20,
+      expect.closeTo(39.99),
+      40,
+    ]);
   });
 
-  it('never overlaps more than two tracks, however fast they change', async () => {
-    const { engine, context } = setup();
-    for (const target of [A, B, C]) {
-      engine.play(target, 1);
-      await flush();
-    }
-    context().currentTime = 0.5;
-    engine.play(null, 1);
-    const [a, b, c] = context().sources;
-    expect(c?.stoppedAt).toBe(1.5);
-    expect([a?.stoppedAt, b?.stoppedAt]).toEqual([0.55, 0.55]);
-    expect(context().gains[1]?.gain.events.at(-1)).toEqual({ type: 'ramp', value: 0, time: 0.55 });
-  });
-
-  it('lets the first stop stand where a browser refuses a second one', async () => {
-    const { engine, context } = setup();
+  it('holds two chunks at a time and loops from the last chunk to the first', async () => {
+    const { engine, context, fetched } = setup();
     engine.play(A, 1);
     await flush();
-    context().strictStop = true;
-    engine.play(null, 2);
-    engine.play(A, 1);
-    expect(() => engine.play(null, 1)).not.toThrow();
-    expect(context().sources[0]?.stoppedAt).toBe(2);
+    expect(context().playing).toHaveLength(2);
+    await finishChunk(context());
+    expect(context().playing).toHaveLength(2);
+    expect(fetched()).toEqual(['/music/a/1.webm', '/music/a/2.webm', '/music/a/3.webm']);
+    await finishChunk(context());
+    // After the third chunk comes the first again, still decoded.
+    expect(fetched()).toHaveLength(3);
+    const again = context().sources[3];
+    expect(again?.buffer).toBe(context().sources[0]?.buffer);
+    expect(heard(again).from).toBeCloseTo(59.99);
+    expect(heard(again).offset).toBeCloseTo(0.01);
+    expect(context().playing).toHaveLength(2);
   });
 
-  it('carries on from where a paused track stopped, and starts previews at the beginning', async () => {
+  it('plays a single-chunk track round and round', async () => {
+    const { engine, context, fetched } = setup();
+    engine.play(track('one', 1), 1);
+    await flush();
+    await finishChunk(context());
+    expect(fetched()).toEqual(['/music/one/1.webm']);
+    expect(context().sources.map((source) => heard(source).from)).toEqual([
+      0,
+      expect.closeTo(19.99),
+      expect.closeTo(39.99),
+    ]);
+  });
+
+  it('finds the music in a chunk a decoder trimmed at the start (Chromium 156 drops 24 frames)', async () => {
     const { engine, context } = setup();
     engine.play(A, 1);
+    context().decode = () => Promise.resolve(chunk(0.005));
     await flush();
-    context().currentTime = 75; // 75.5 s into a 59.97 s loop: 15.53 s into the second time round
+    expect(heard(context().sources[0]).offset).toBeCloseTo(0.015);
+    expect(heard(context().sources[1]).offset).toBeCloseTo(0.005);
+  });
+
+  it('shortens the crossfade when a decoder left less than 10 ms before the music', async () => {
+    const { engine, context } = setup(() => {
+      const made = new FakeAudioContext();
+      made.decode = () => Promise.resolve(chunk(0.015));
+      return made;
+    });
+    engine.play(A, 1);
+    await flush();
+    const second = context().sources[1];
+    expect(heard(second).from).toBeCloseTo(19.995);
+    expect(heard(second).offset).toBe(0);
+    expect(heard(second).to).toBeCloseTo(40);
+  });
+
+  it('ignores frames a decoder added: the music never starts past the edge it carries', async () => {
+    const { engine, context } = setup(() => {
+      const made = new FakeAudioContext();
+      made.decode = () => Promise.resolve(chunk(-0.01));
+      return made;
+    });
+    engine.play(A, 1);
+    await flush();
+    expect(heard(context().sources[0]).offset).toBeCloseTo(0.02);
+  });
+
+  it('starts a chunk that decoded late as soon as its join fits, asking for it only once', async () => {
+    const { context, fetchTrack, arrive } = await stallThird();
+    expect(fetchTrack).toHaveBeenCalledTimes(3);
+    expect(context().playing).toHaveLength(0);
+    await arrive(43);
+    const late = context().sources[2];
+    expect(heard(late).from).toBeCloseTo(43);
+    expect(heard(late).offset).toBeCloseTo(0.01);
+    expect(heard(late).to).toBeCloseTo(63.01);
+    // Nothing else was queued, so the chunk after it (the first, still decoded) follows at once.
+    expect(context().playing).toHaveLength(2);
+    expect(fetchTrack).toHaveBeenCalledTimes(3);
+  });
+
+  it('carries on from where a paused track stopped, in the right chunk, and starts previews at the beginning', async () => {
+    const { engine, context, fetched } = setup();
+    engine.play(A, 1);
+    await flush();
+    context().currentTime = 105; // 105.5 s into a 60 s loop: 45.5 s, 5.5 s into the third chunk
     engine.play(null, 0.5);
     context().advance(1);
-    engine.play({ id: 'b', url: '/music/b.webm', resume: false }, 0.5);
+    engine.play(track('b', 3, 20, false), 0.5);
     await flush();
-    expect(context().sources[1]?.started?.offset).toBe(0);
+    expect(context().sources.at(-2)?.started?.offset).toBeCloseTo(0.02);
     engine.play(null, 0.5);
     engine.play(A, 1);
     await flush();
-    expect(context().sources[2]?.started?.offset).toBeCloseTo(15.53);
+    const resumed = context().sources.at(-2);
+    expect(fetched().at(-2)).toBe('/music/a/3.webm');
+    expect(heard(resumed).offset).toBeCloseTo(0.02 + 5.5);
+    expect(heard(resumed).to - heard(resumed).from).toBeCloseTo(14.5);
+    // Its first chunk follows when the third ends.
+    expect(fetched().at(-1)).toBe('/music/a/1.webm');
+  });
+
+  it('keeps the place after a late chunk moved the timeline', async () => {
+    const { engine, context, arrive } = await stallThird();
+    await arrive(42); // 2.01 s late: the third chunk is heard from 42.01 s, not 40 s
+    context().currentTime = 50;
+    engine.play(null, 0); // a 0.01 s fade: paused 48 s into the loop, 8 s into the third chunk
+    engine.play(A, 1);
+    await flush();
+    expect(heard(context().sources.at(-2)).offset).toBeCloseTo(0.02 + 8);
   });
 
   it('starts a track from its beginning when it was not the one paused', async () => {
@@ -171,255 +208,6 @@ describe('MusicEngine', () => {
     engine.play(null, 0.5);
     engine.play(B, 1);
     await flush();
-    expect(context().sources[1]?.started?.offset).toBe(0);
-  });
-
-  it('never starts a track that was replaced or stopped while it loaded', async () => {
-    const { engine, context, onLoading } = setup();
-    engine.play(A, 1);
-    engine.play(B, 1);
-    await flush();
-    expect(context().sources.map((source) => source.buffer !== null)).toEqual([true]);
-    expect(context().playing).toHaveLength(1);
-    engine.play(C, 1);
-    engine.play(null, 1);
-    await flush();
-    expect(context().playing).toHaveLength(0);
-    expect(onLoading).toHaveBeenLastCalledWith(null);
-  });
-
-  it('keeps the current track when asked for it again while another loads', async () => {
-    const { engine, context } = setup();
-    engine.play(A, 1);
-    await flush();
-    engine.play(B, 1);
-    engine.play(A, 1);
-    await flush();
-    expect(context().sources).toHaveLength(1);
-    expect(context().playing).toHaveLength(1);
-  });
-
-  it('reports a track that fails to download or decode, and keeps what was playing', async () => {
-    const { engine, context, fetchTrack, onError } = setup();
-    engine.play(A, 1);
-    await flush();
-    fetchTrack.mockRejectedValueOnce(new Error('404'));
-    engine.play(B, 1);
-    await flush();
-    expect(onError).toHaveBeenCalledWith('b', 'failed');
-    context().decode = () => Promise.reject(new Error('corrupt'));
-    engine.play(C, 1);
-    await flush();
-    expect(onError).toHaveBeenCalledWith('c', 'failed');
-    expect(context().playing).toHaveLength(1);
-    expect(context().sources[0]?.stoppedAt).toBeNull();
-  });
-
-  it('ignores a failure of a load that was already replaced', async () => {
-    const { engine, fetchTrack, onError } = setup();
-    fetchTrack.mockRejectedValueOnce(new Error('404'));
-    engine.play(A, 1);
-    engine.play(null, 1);
-    await flush();
-    expect(onError).not.toHaveBeenCalled();
-  });
-
-  it('reports a browser without Web Audio', () => {
-    const { engine, onError } = setup(() => {
-      throw new ReferenceError('AudioContext is not defined');
-    });
-    engine.play(A, 1);
-    expect(onError).toHaveBeenCalledWith('a', 'unavailable');
-  });
-
-  it('keeps the two most recent decoded tracks and fetches older ones again', async () => {
-    const { engine, fetchTrack } = setup();
-    for (const target of [A, B, C, B, A]) {
-      engine.play(target, 1);
-      await flush();
-    }
-    expect(fetchTrack.mock.calls.map(([url]) => url)).toEqual([
-      '/music/a.webm',
-      '/music/b.webm',
-      '/music/c.webm',
-      '/music/a.webm',
-    ]);
-  });
-
-  it('never drops the playing track from the cache', async () => {
-    const { engine, fetchTrack } = setup();
-    engine.play(A, 1);
-    await flush();
-    engine.play(B, 1);
-    engine.play(A, 1); // back to A while B loads: B is decoded but never played
-    await flush();
-    engine.play(C, 1);
-    await flush(); // C arrives while A still plays: B goes, A stays
-    engine.play(A, 1);
-    engine.play(B, 1);
-    await flush();
-    expect(fetchTrack.mock.calls.map(([url]) => url)).toEqual([
-      '/music/a.webm',
-      '/music/b.webm',
-      '/music/c.webm',
-      '/music/b.webm',
-    ]);
-  });
-
-  it('carries on when the browser refuses to suspend, resume or close the audio', async () => {
-    const { engine, context } = setup();
-    engine.play(A, 1);
-    await flush();
-    const refuse = () => Promise.reject(new DOMException('refused', 'InvalidStateError'));
-    context().suspend.mockImplementation(refuse);
-    context().resume.mockImplementation(refuse);
-    context().close.mockImplementation(refuse);
-    engine.play(null, 1);
-    await vi.advanceTimersByTimeAsync(5_000);
-    expect(context().suspend).toHaveBeenCalled();
-    context().state = 'suspended';
-    engine.play(B, 1);
-    expect(context().resume).toHaveBeenCalled();
-    engine.dispose();
-    await flush();
-    expect(context().close).toHaveBeenCalled();
-  });
-
-  it('shares one download between requests for the same track', async () => {
-    const { engine, fetchTrack } = setup();
-    engine.play(A, 1);
-    engine.play(null, 1);
-    engine.play(A, 1);
-    await flush();
-    expect(fetchTrack).toHaveBeenCalledTimes(1);
-  });
-
-  it('lets the audio device sleep when nothing plays, and wakes it for the next track', async () => {
-    const { engine, context } = setup();
-    engine.play(A, 1);
-    await flush();
-    engine.play(null, 1);
-    await vi.advanceTimersByTimeAsync(4_999);
-    expect(context().suspend).not.toHaveBeenCalled();
-    await vi.advanceTimersByTimeAsync(1);
-    expect(context().suspend).toHaveBeenCalledTimes(1);
-    engine.play(A, 1);
-    expect(context().resume).toHaveBeenCalledTimes(1);
-    await vi.advanceTimersByTimeAsync(10_000);
-    expect(context().suspend).toHaveBeenCalledTimes(1);
-  });
-
-  it('does not suspend while a track is loading', async () => {
-    const { engine, context } = setup();
-    engine.play(A, 1);
-    await flush();
-    engine.play(null, 1);
-    let release: (buffer: BufferLike) => void = () => undefined;
-    context().decode = () => new Promise((resolve) => (release = resolve));
-    engine.play(B, 1);
-    await vi.advanceTimersByTimeAsync(6_000);
-    expect(context().suspend).not.toHaveBeenCalled();
-    release(fakeBuffer(30));
-    await flush();
-    expect(context().playing).toHaveLength(1);
-  });
-
-  it('releases everything on dispose and builds a new graph when played again', async () => {
-    const { engine, contexts, context } = setup();
-    engine.play(A, 1);
-    await flush();
-    engine.play(B, 1);
-    await flush();
-    engine.dispose();
-    expect(contexts[0]?.close).toHaveBeenCalled();
-    expect(contexts[0]?.connected.size).toBe(1); // only the old master gain, closed with its context
-    engine.play(A, 1);
-    await flush();
-    expect(contexts).toHaveLength(2);
-    expect(context().playing).toHaveLength(1);
-  });
-
-  it('drops a load that finishes after dispose', async () => {
-    const { engine, contexts } = setup();
-    engine.play(A, 1);
-    engine.dispose();
-    await flush();
-    expect(contexts[0]?.sources).toHaveLength(0);
-    engine.dispose();
-  });
-
-  it('does not grow the graph over many on/off cycles', async () => {
-    const { engine, context } = setup();
-    for (let cycle = 0; cycle < 50; cycle += 1) {
-      engine.play(cycle % 2 ? B : A, 0.5);
-      await flush();
-      engine.play(null, 0.5);
-      context().advance(1);
-    }
-    expect(context().playing).toHaveLength(0);
-    expect(context().connected.size).toBe(1); // the master gain only
-  });
-});
-
-describe('loopBounds', () => {
-  it('skips digital silence a decoder left at the edges', () => {
-    expect(loopBounds(fakeBuffer(10, 25))).toEqual({ start: 0.025, end: 9.975 });
-  });
-
-  it('never trims more than 0.2 s from either edge', () => {
-    expect(loopBounds(fakeBuffer(10, 500, 1))).toEqual({ start: 0.2, end: 9.8 });
-  });
-
-  it('keeps the whole track when it is silent throughout', () => {
-    const silent = fakeBuffer(0.2, 100);
-    expect(loopBounds(silent)).toEqual({ start: 0, end: 0.2 });
-  });
-});
-
-describe('seamlessLoop', () => {
-  const RATE = 48_000;
-  /** One second of a 480 Hz tone: a whole number of periods, so it loops perfectly. */
-  const tone = () =>
-    Float32Array.from({ length: RATE }, (_, i) => Math.sin((2 * Math.PI * i) / 100));
-  const bufferOf = (samples: Float32Array): BufferLike => ({
-    duration: samples.length / RATE,
-    length: samples.length,
-    sampleRate: RATE,
-    numberOfChannels: 1,
-    getChannelData: () => samples,
-  });
-  const largestStep = (samples: Float32Array, from: number, to: number) => {
-    let largest = 0;
-    for (let i = from + 1; i < to; i += 1)
-      largest = Math.max(largest, Math.abs(Number(samples[i]) - Number(samples[i - 1])));
-    return largest;
-  };
-
-  it('joins without a jump where a decoder dropped the first samples (Chromium 156 drops 24)', () => {
-    const samples = tone().slice(24);
-    const normal = largestStep(samples, 0, samples.length);
-    // Played sample-exactly, the loop would jump from its last sample straight to its first.
-    expect(Math.abs(Number(samples[0]) - Number(samples.at(-1)))).toBeGreaterThan(10 * normal);
-    const { start, end } = seamlessLoop(bufferOf(samples));
-    expect(start).toBe(0);
-    const last = Math.round(end * RATE);
-    expect(last).toBe(samples.length - 1440);
-    expect(Math.abs(Number(samples[0]) - Number(samples[last - 1]))).toBeLessThanOrEqual(normal);
-    // Inside the 30 ms crossfade the wave stays as smooth as anywhere else in the track.
-    expect(largestStep(samples, 0, 1441)).toBeLessThan(1.2 * normal);
-  });
-
-  it('crossfades a buffer once, however often it is looped', () => {
-    const samples = tone().slice(24);
-    const buffer = bufferOf(samples);
-    const first = seamlessLoop(buffer);
-    const blended = samples.slice();
-    expect(seamlessLoop(buffer)).toBe(first);
-    expect(samples).toEqual(blended);
-  });
-
-  it('stays inside the audible edges, and blends at most a quarter of a very short loop', () => {
-    expect(seamlessLoop(fakeBuffer(10, 25))).toEqual({ start: 0.025, end: 9.945 });
-    expect(seamlessLoop(fakeBuffer(0.1))).toEqual({ start: 0, end: 0.075 });
+    expect(context().sources.at(-2)?.started?.offset).toBeCloseTo(0.02);
   });
 });

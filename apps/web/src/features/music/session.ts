@@ -37,7 +37,7 @@ export interface MusicState {
 export interface SessionDeps {
   player: PlayerSource;
   tracks: readonly MusicTrack[];
-  url: (track: MusicTrack) => string;
+  source: (track: MusicTrack) => Pick<MusicTarget, 'chunks' | 'edgeFrames'>;
   createEngine: (events: EngineEvents) => MusicEngineLike;
   choice: { read: () => MusicChoice; save: (choice: MusicChoice) => void };
 }
@@ -157,7 +157,7 @@ export class MusicSession {
     const { previewId, enabled, trackId } = this.state;
     const id = previewId ?? (enabled && narrating(this.deps.player.getState()) ? trackId : null);
     const track = id === null ? undefined : this.track(id);
-    return track ? { id: track.id, url: this.deps.url(track), resume: previewId === null } : null;
+    return track ? { id: track.id, ...this.deps.source(track), resume: previewId === null } : null;
   }
 
   private sync(fade: number): void {

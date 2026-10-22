@@ -47,7 +47,8 @@ _PACKAGE = "ltts.library"
 KNOWN_EVENTS: Mapping[str, str] = CATEGORY_OF
 KNOWN_TRACKS: frozenset[str] = frozenset({
     "contemplation", "calm-ambient", "rising-moon", "warriors-lament", "waiting", "washed-up", "currents",
-    "gymnopedie-1", "vaporware", "soft-rain", "brook",
+    "gymnopedie-1", "vaporware", "nocturne-op9-1", "moonlight-sonata-1", "pathetique-2", "soft-rain", "brook",
+    "ocean-waves", "forest-rain", "small-stream",
 })  # fmt: skip
 
 

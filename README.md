@@ -65,7 +65,7 @@ including the Windows installer, arrives in a published release with **2.1.0**
   announcement, a phone call or a radio broadcast, give each character a voice (reusable cast presets), or
   choose one voice for all dialogue while the narration keeps yours; exports sound the same. Blend built-in
   voices into new ones.
-- **Background music and an audio mixer** — eleven free tracks (ambient, fantasy, cinematic, lo-fi, focus and
+- **Background music and an audio mixer** — seventeen free tracks (ambient, fantasy, cinematic, lo-fi, focus and
   nature) play quietly under the narration when you turn them on, never by themselves; the narration and the
   music each have their own volume.
 - **Sound effects (optional, off by default)** — a Sounds tab suggests a few effects where a chapter

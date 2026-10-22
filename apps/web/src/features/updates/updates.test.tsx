@@ -195,7 +195,7 @@ describe('in the desktop app', () => {
 
   it.each([
     [{ status: 'failed', message: 'No connection.' }, INFO, 'No connection.'],
-    [{ status: 'noRelease' }, INFO, 'No update has been published yet.'],
+    [{ status: 'noRelease' }, INFO, 'No update is available right now.'],
     [{ status: 'notDue' }, { ...INFO, lastCheckedAt: 1_790_000_000 }, 'No newer version was found'],
     [{ status: 'disabled' }, { ...INFO, autoCheck: false }, 'Automatic update checks are off.'],
     [{ status: 'notDue' }, INFO, 'Not checked yet.'],

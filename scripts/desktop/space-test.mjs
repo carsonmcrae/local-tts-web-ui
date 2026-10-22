@@ -112,5 +112,6 @@ try {
   main();
 } catch (error) {
   console.error(error instanceof Error ? error.message : error);
-  process.exit(1);
+  // Not process.exit(): it can cut off output still on its way to the CI log.
+  process.exitCode = 1;
 }

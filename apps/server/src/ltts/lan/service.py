@@ -175,17 +175,23 @@ class LanService:
             if slept or not await asyncio.to_thread(self._still_here):
                 reason = "network_changed"
             elif self.trust.check == "category" and (checks := checks + 1) % CATEGORY_EVERY == 0:
-                reading = await asyncio.to_thread(self.trust.read, self.interface or "")
-                misses = 0 if reading in ("private", "domain") else misses + 1
-                if reading == "public":
-                    reason = "network_public"
-                elif misses >= CATEGORY_MISSES:
-                    reason = "network_unknown"
+                reason, misses = await self._read_category(misses)
             if reason:
                 self.turned_off, self._watch = reason, None
                 log.warning("LAN mode turned itself off: %s", reason)
                 await self._turn_off()
                 return
+
+    async def _read_category(self, misses: int) -> tuple[TurnedOff | None, int]:
+        """Read what Windows calls the network: why LAN mode must turn off (it is public, or unreadable too many
+        times running), if it must, and how many readings running were unreadable."""
+        reading = await asyncio.to_thread(self.trust.read, self.interface or "")
+        misses = 0 if reading in ("private", "domain") else misses + 1
+        if reading == "public":
+            return "network_public", misses
+        if misses >= CATEGORY_MISSES:
+            return "network_unknown", misses
+        return None, misses
 
     # -- pairing -------------------------------------------------------------
     def new_code(self) -> PairingOut:

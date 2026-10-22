@@ -28,7 +28,7 @@ from ltts.errors import AppError, ConflictError
 from ltts.secrets import SecretStore
 
 log = logging.getLogger("ltts.audiobookshelf")
-SECRET_NAME = "audiobookshelf-key"  # noqa: S105 - the name the key is stored under, not the key
+SECRET_NAME = "audiobookshelf-key"  # noqa: S105 - the name the key is stored under; not the key itself
 NAME = "audiobookshelf"
 TIMEOUT = httpx.Timeout(20.0, read=600.0, write=600.0)  # an hour-long book is a large upload
 

@@ -173,6 +173,14 @@ def _renumber_sections(segments: list[Segment], sections: list[SectionInfo]) -> 
         seg.section_index = current
 
 
+def _block_end(block: Block, *, final: bool) -> Boundary:
+    """The pause after a block: a section's last block ends the section, and a line break inside a
+    paragraph (verse) gets a shorter pause than the end of the paragraph."""
+    if final:
+        return "section"
+    return "line" if block.line_break else "paragraph"
+
+
 def segment_extraction(extraction: Extraction) -> tuple[list[Segment], list[SectionInfo]]:
     segments: list[Segment] = []
     sections: list[SectionInfo] = []
@@ -180,13 +188,9 @@ def segment_extraction(extraction: Extraction) -> tuple[list[Segment], list[Sect
     for section_index, section in enumerate(extraction.sections):
         start = len(segments)
         for block_number, block in enumerate(section.blocks):
-            final = block_number == len(section.blocks) - 1
-            # A line break inside a paragraph (verse): a shorter pause, and the next block keeps the
-            # paragraph number so the reader shows a line break rather than a new paragraph.
-            continues = block.line_break and not final
-            last: Boundary = "section" if final else "line" if continues else "paragraph"
+            last = _block_end(block, final=block_number == len(section.blocks) - 1)
             segments += _block_segments(block, section_index, paragraph_index, len(segments), last)
-            if not continues:
+            if last != "line":  # after a line break the reader shows the next block in the same paragraph
                 paragraph_index += 1
         if len(segments) > start:
             sections.append(SectionInfo(len(sections), section.title, start, len(segments) - start, section.page))

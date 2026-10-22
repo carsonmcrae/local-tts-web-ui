@@ -149,11 +149,18 @@ def _voice_ab(args: argparse.Namespace) -> int:
 
     if args.action == "score":
         print(ab_test.score(Path(args.target), Path(args.answers)).summary())
-        return 0
+    else:
+        _compare_voices(args)
+    return 0  # both always succeed; a problem raises instead
+
+
+def _compare_voices(args: argparse.Namespace) -> None:
+    """Read the sentences with both voices into a blind listening page; the engines are closed afterwards."""
     import soundfile as sf
 
     from ltts.common import utc_now
     from ltts.container import build_services
+    from ltts.voices import ab_test
 
     settings = Settings()
     services = build_services(settings)
@@ -179,7 +186,6 @@ def _voice_ab(args: argparse.Namespace) -> int:
             engine.close()
     print(f"Wrote {len(rows)} clips to {folder}.")
     print(f"Open {folder / 'listen.html'}, save your answers, then run: ltts voice-ab score {folder} answers.json")
-    return 0
 
 
 def _voice_panel(args: argparse.Namespace) -> int:

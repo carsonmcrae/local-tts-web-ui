@@ -19,12 +19,12 @@ from ltts.container import ServicesDep
 from ltts.documents.collections import CollectionIn, CollectionMembers, CollectionOut, CollectionUpdate
 from ltts.documents.folders import FolderIn, FolderOut, FolderUpdate
 from ltts.documents.schemas import DocumentSummary
-from ltts.documents.shelf import OrganizeRequest, ShelfUpdate, TagOut
+from ltts.documents.shelf import ID_PATTERN, OrganizeRequest, ShelfUpdate, TagOut
 
 router = APIRouter(prefix="/api", tags=["library"])
-DocumentId = Annotated[str, Path(pattern=r"^[0-9a-f]{32}$")]
-FolderId = Annotated[str, Path(pattern=r"^[0-9a-f]{32}$")]
-CollectionId = Annotated[str, Path(pattern=r"^[0-9a-f]{32}$")]
+DocumentId = Annotated[str, Path(pattern=ID_PATTERN)]
+FolderId = Annotated[str, Path(pattern=ID_PATTERN)]
+CollectionId = Annotated[str, Path(pattern=ID_PATTERN)]
 
 
 @router.get("/library/folders")

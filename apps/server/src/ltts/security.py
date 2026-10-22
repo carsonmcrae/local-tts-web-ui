@@ -40,6 +40,7 @@ ASGIApp = Callable[[Scope, Receive, Send], Awaitable[None]]
 Problem = tuple[int, str, str]
 
 CLIENT_HEADER = b"x-ltts-client"
+API_PREFIX = "/api/"  # the app's own API, which only its pages call
 SPEECH_API_PREFIX = "/v1/"  # speech_api/router.py: its own bearer token and network permission
 SAFE_METHODS = {"GET", "HEAD", "OPTIONS"}
 UNPAIRED_MAX_BODY = 4096  # a pairing request is a few dozen bytes
@@ -56,7 +57,7 @@ FORWARDING_HEADERS = frozenset(
      b"x-original-forwarded-for", b"x-originating-ip", b"x-proxyuser-ip", b"fastly-client-ip", b"cdn-loop"}
 )  # fmt: skip
 FORWARDING_PREFIXES = (b"x-forwarded-", b"cf-", b"tailscale-", b"x-envoy-", b"x-amzn-")
-_ORIGIN = re.compile(r"https?://(\[[0-9a-f:.]+\]|[a-z0-9.-]+)(?::[0-9]{1,5})?")
+_ORIGIN = re.compile(r"https?://(\[[0-9a-f:.]+\]|[a-z0-9.-]+)(?::\d{1,5})?", re.ASCII)
 PROXIED = (
     "TTSNative doesn't accept requests through a proxy, tunnel or port forward. On this computer, open it at "
     "http://localhost; for a phone or tablet, use LAN mode."
@@ -206,7 +207,11 @@ class SecurityMiddleware:
             return 421, "invalid_host", "Unexpected Host header."
         if headers.get(b"sec-fetch-site") == b"cross-site":
             return 403, "cross_site_blocked", "Cross-site requests are not allowed."
-        if scope["path"].startswith("/api/") and scope["method"] not in SAFE_METHODS and CLIENT_HEADER not in headers:
+        if (
+            scope["path"].startswith(API_PREFIX)
+            and scope["method"] not in SAFE_METHODS
+            and CLIENT_HEADER not in headers
+        ):
             return 403, "missing_client_header", "Requests must come from the TTSNative app."
         return None
 
@@ -242,7 +247,7 @@ class SecurityMiddleware:
         method, path = scope["method"], scope["path"]
         if path.startswith(SPEECH_API_PREFIX):
             return None  # its own token and network permission (speech_api/guard.py)
-        if path.startswith("/api/") and headers.get(b"sec-fetch-site") == b"same-site":
+        if path.startswith(API_PREFIX) and headers.get(b"sec-fetch-site") == b"same-site":
             # another port on the same address: its requests would carry the device cookie too
             return 403, "cross_site_blocked", "Requests must come from this app's own page."
         if method not in SAFE_METHODS and headers.get(b"origin", b"").decode("latin-1") != self.lan.origin():
@@ -314,7 +319,7 @@ def _with_headers(send: Send, path: str, cookie: bytes | None = None) -> Send:
             existing = list(message.get("headers", []))
             names = {name.lower() for name, _ in existing}
             extra = [(k, v) for k, v in SECURITY_HEADERS if k not in names]
-            if path.startswith(("/api/", SPEECH_API_PREFIX)):
+            if path.startswith((API_PREFIX, SPEECH_API_PREFIX)):
                 extra.append((b"cache-control", b"no-store"))
             if cookie:
                 extra.append((b"set-cookie", cookie))

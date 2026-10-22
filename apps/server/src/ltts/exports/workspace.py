@@ -25,7 +25,7 @@ import soundfile as sf
 from ltts.audio import Float32Array, read_audio
 from ltts.common import new_id
 
-_PART = re.compile("^([0-9]{6})-([0-9a-f]{16})[.]flac$")
+_PART = re.compile(r"^(\d{6})-([0-9a-f]{16})[.]flac$", re.ASCII)  # only names this module writes
 KEY_CHARS = 16  # enough of the SHA-256 cache key to tell versions of a sentence apart
 # Left by a stop part-way through writing: a part being saved, an M4B being encoded, its chapter list.
 TEMPORARY = (".*.tmp", "*.partial.*", "*.ffmeta")
@@ -109,6 +109,13 @@ class ExportWorkspace:
     def clear_parts(self) -> None:
         shutil.rmtree(self.parts_dir, ignore_errors=True)
         self.clear_temporary()
+
+    def tidy(self, *, finished: bool) -> None:
+        """Remove what a kept export no longer needs: a finished one's parts, a stopped one's unfinished files."""
+        if finished:
+            self.clear_parts()
+        else:
+            self.clear_unfinished()
 
     def remove(self) -> None:
         shutil.rmtree(self.folder, ignore_errors=True)

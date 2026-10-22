@@ -22,6 +22,7 @@ import secrets
 import sqlite3
 import threading
 import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 from typing import Literal
@@ -85,13 +86,13 @@ class _Pairing:
 class PairingCodes:
     """At most one live code at a time; a new one replaces it."""
 
-    clock: object = time.monotonic
+    clock: Callable[[], float] = time.monotonic
     _current: _Pairing | None = None
     _tries: dict[str, list[float]] = field(default_factory=dict)
     _lock: threading.Lock = field(default_factory=threading.Lock)
 
     def _now(self) -> float:
-        return float(self.clock())  # type: ignore[operator]
+        return float(self.clock())
 
     def new(self) -> PairingOut:
         code = "".join(secrets.choice(ALPHABET) for _ in range(CODE_LENGTH))

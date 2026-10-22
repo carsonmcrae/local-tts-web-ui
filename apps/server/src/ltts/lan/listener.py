@@ -108,7 +108,7 @@ def _close_now(server: uvicorn.Server) -> None:
     """Stop accepting connections and drop the open ones, rather than wait for answers to finish."""
     for listening in server.servers:
         listening.close()
-    for connection in list(server.server_state.connections):
+    for connection in server.server_state.connections.copy():  # a copy: each connection leaves the set as it closes
         transport = getattr(connection, "transport", None)
         if transport is not None:
             transport.abort()

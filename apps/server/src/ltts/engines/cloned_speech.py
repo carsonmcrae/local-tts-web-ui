@@ -31,7 +31,7 @@ _QUOTE = re.compile(
     '["\N{LEFT DOUBLE QUOTATION MARK}\N{RIGHT DOUBLE QUOTATION MARK}'
     "\N{LEFT-POINTING DOUBLE ANGLE QUOTATION MARK}\N{RIGHT-POINTING DOUBLE ANGLE QUOTATION MARK}]"
 )
-_WORD = re.compile("[a-z']+|[0-9]+")
+_WORD = re.compile(r"[a-z']+|\d+", re.ASCII)  # ASCII digits: a number the reader says in English
 _VOWELS = re.compile("[aeiouy]+")
 
 

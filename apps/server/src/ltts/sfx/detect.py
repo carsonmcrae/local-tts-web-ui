@@ -94,10 +94,10 @@ _NEGATED_AFTER = re.compile(
 )
 # Context from an earlier clause doesn't carry over ("he said nothing, and the clock ticked").
 _CLAUSE_BREAK = re.compile(
-    r";|\u2014|\u2013|,\s+(?:and|but|while|yet|so|then|only|until|till|though|although)\s+|\.\s+", re.IGNORECASE
+    r"[;\u2014\u2013]|,\s+(?:and|but|while|yet|so|then|only|until|till|though|although)\s+|\.\s+", re.IGNORECASE
 )
 # A year anywhere in a sentence: history or reportage, not a scene.
-_YEAR = re.compile(r"\b(?:1[0-9]{3}|20[0-9]{2})\b")
+_YEAR = re.compile(r"\b(?:1\d{3}|20\d{2})\b")
 # Generic statements: a bare plural subject in the present tense ("Dogs bark to communicate"), a definition
 # ("Thunder is the sound…") or a report of a recording ("footsteps can be heard").
 _NOT_A_PRESENT_VERB = (

@@ -268,6 +268,20 @@ def _completeness(coverage: float | None) -> list[QualityIssue]:
     ]
 
 
+def _pauses(pause_ratio: float | None, coverage: float | None) -> list[QualityIssue]:
+    """Advice when most of a take is silence (not when the reading was incomplete, which explains the silence)."""
+    if (pause_ratio or 0.0) > 0.5 and (coverage is None or coverage >= INCOMPLETE):
+        return [
+            _issue(
+                "pauses",
+                "warning",
+                "More than half of this take is silence. Read continuously at a natural pace; short pauses "
+                "at commas and full stops are fine.",
+            )
+        ]
+    return []
+
+
 def judge_take(
     samples: Float32Array, sample_rate: int, context: TakeContext, recorded: Float32Array | None = None
 ) -> QualityReport:
@@ -291,7 +305,6 @@ def judge_take(
         return build_report(values, [_no_speech(values, recorded_s)])
     if speech_s < MIN_TAKE_SPEECH_S:
         return build_report(values, _short(values, context))
-    pauses = (values["pause_ratio"] or 0.0) > 0.5 and (coverage is None or coverage >= INCOMPLETE)
     kinds = classify(whole, sample_rate)
     edge = cut_off(whole, sample_rate) if recorded is not None else None
     issues = [
@@ -299,17 +312,6 @@ def judge_take(
         *_noise(values, context, kinds),
         *_completeness(coverage),
         *([_issue("cut_off", "warning", _CUT_OFF[edge])] if edge else []),
-        *(
-            [
-                _issue(
-                    "pauses",
-                    "warning",
-                    "More than half of this take is silence. Read continuously at a natural pace; short pauses "
-                    "at commas and full stops are fine.",
-                )
-            ]
-            if pauses
-            else []
-        ),
+        *_pauses(values["pause_ratio"], coverage),
     ]
     return build_report(values, issues).model_copy(update={"background": list(kinds) or None})

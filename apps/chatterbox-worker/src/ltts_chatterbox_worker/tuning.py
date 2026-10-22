@@ -183,7 +183,7 @@ class Tuning:
             raise RuntimeError("Fine-tuning needs an NVIDIA graphics card (CUDA)")
         self.model = model
         seed = int(request.get("seed", 0))
-        self.rng = random.Random(seed)  # noqa: S311 (shuffling takes and prompts, not security)
+        self.rng = random.Random(seed)  # noqa: S311 - shuffles takes and prompts; not for security
         torch.manual_seed(seed)
         conds = studio.load_conditioning(request["conditioning"], "cpu")
         self.speaker = conds.t3.speaker_emb.float()
@@ -197,12 +197,12 @@ class Tuning:
             sample = self._sample(wav16, take["text"])
             if sample is None:
                 continue
-            (self.held if take.get("heldOut") else self.train).append({**sample, "take": index})
-            if not take.get("heldOut"):
+            if take.get("heldOut"):
+                self.held.append({**sample, "take": index})
+            else:
+                self.train.append({**sample, "take": index})
                 sources[index] = wav16
-            opening = self._tokens(wav16[: model.ENC_COND_LEN], model.t3.hp.speech_cond_prompt_len)
-            n = min(len(opening), len(voice_prompt))
-            if n and float((opening[:n] == voice_prompt[:n]).float().mean()) >= VOICE_PROMPT_MATCH:
+            if self._gave_prompt(wav16, voice_prompt):
                 voice_take = index
         if not self.train or not self.held:
             raise ValueError("Not enough usable takes to fine-tune")
@@ -229,6 +229,12 @@ class Tuning:
         return {"samples": len(self.train), "heldOut": len(self.held), "baseLoss": round(self.base_loss, 4)}
 
     # -- data ---------------------------------------------------------------
+    def _gave_prompt(self, wav16: np.ndarray, voice_prompt: Any) -> bool:
+        """Whether a take's opening matches the voice's own prompt well enough to be where it came from."""
+        opening = self._tokens(wav16[: self.model.ENC_COND_LEN], self.model.t3.hp.speech_cond_prompt_len)
+        n = min(len(opening), len(voice_prompt))
+        return bool(n) and float((opening[:n] == voice_prompt[:n]).float().mean()) >= VOICE_PROMPT_MATCH
+
     def _tokens(self, wav16: np.ndarray, max_len: int | None = None) -> Any:
         import torch
 

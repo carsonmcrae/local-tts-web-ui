@@ -36,7 +36,7 @@ def stop_when_stdin_closes(
                     time.sleep(POLL_S)
             else:
                 while source.read(1024):
-                    pass
+                    pass  # what arrives is discarded: only the pipe closing matters
         except (OSError, ValueError):
             pass  # a stdin that can't be read counts as closed
         signal.raise_signal(signal.SIGINT)

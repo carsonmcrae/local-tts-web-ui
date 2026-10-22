@@ -250,17 +250,7 @@ class StylingStore:
         line = self.lines(document_id).get(index) or analyse([Sentence(index, 0, "paragraph", text)])[index]
         dialogue_voice, split = self._cast(document_id)
         speaker_voice = (characters or {}).get(kinds.get("speaker") or line.speaker or "") or dialogue_voice
-        own = kinds.get("voice")
-        parts: tuple[PartPlan, ...] = ()
-        if own:
-            voice = own
-        elif line.parts and split and speaker_voice and speaker_voice != voice_id:
-            voice = voice_id
-            parts = tuple(PartPlan(part.text, speaker_voice if part.quoted else voice_id) for part in line.parts)
-        elif (line.dialogue or "speaker" in kinds) and speaker_voice:  # a curated speaker makes the line dialogue
-            voice = speaker_voice
-        else:
-            voice = voice_id
+        voice, parts = _voices(line, kinds, voice_id, speaker_voice, split=split)
         # Markers go first: "war¹" is no longer the word a pronunciation of "war" is looking for.
         pairs = [pair for kind in (*MARKERS, "speak_as") if kind in kinds for pair in json.loads(kinds[kind])]
         replacements = tuple((written, spoken) for written, spoken in pairs)
@@ -283,3 +273,17 @@ class StylingStore:
                 (document_id, index),
             ).fetchall()
         return {row["kind"]: row["value"] for row in rows}
+
+
+def _voices(
+    line: Line, kinds: dict[str, str], voice_id: str, speaker_voice: str | None, *, split: bool
+) -> tuple[str, tuple[PartPlan, ...]]:
+    """Who reads a sentence, and who reads each part when its quoted speech is voiced apart from the narration."""
+    own = kinds.get("voice")
+    if own:
+        return own, ()
+    if line.parts and split and speaker_voice and speaker_voice != voice_id:
+        return voice_id, tuple(PartPlan(part.text, speaker_voice if part.quoted else voice_id) for part in line.parts)
+    if (line.dialogue or "speaker" in kinds) and speaker_voice:  # a curated speaker makes the line dialogue
+        return speaker_voice, ()
+    return voice_id, ()

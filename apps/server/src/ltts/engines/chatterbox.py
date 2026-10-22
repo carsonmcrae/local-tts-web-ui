@@ -38,6 +38,7 @@ from ltts.engines.base import (
     Delivery,
     Engine,
     EngineInfo,
+    EngineStatus,
     InstallOption,
     SpeakerIdentity,
     TakeFeatures,
@@ -61,7 +62,7 @@ from ltts.engines.worker_client import WorkerClient
 from ltts.errors import ConflictError, EngineUnavailableError
 from ltts.hardware import detect_gpus
 from ltts.jobs import JobContext
-from ltts.modelstore.store import ModelStore, describe_damage
+from ltts.modelstore.store import Damage, ModelStore, describe_damage
 
 log = logging.getLogger("ltts.engines.chatterbox")
 ARTIFACT = "chatterbox-turbo"
@@ -154,6 +155,7 @@ class ChatterboxEngine(Engine, VoiceTuner):
         option = self._installed_option()
         device = (self._worker.loaded or {}).get("device") if self._worker and self._worker.loaded else option
         damage = self._store.damage(ARTIFACT)
+        status, message = _status(damage, ready=ready, update=update)
         return EngineInfo(
             id=self.id,
             name="Chatterbox Turbo",
@@ -162,10 +164,8 @@ class ChatterboxEngine(Engine, VoiceTuner):
             ),
             license=self._store.artifact(ARTIFACT).license,
             optional=True,
-            status="needs_repair" if damage else "ready" if ready else "not_installed",
-            status_message=(
-                describe_damage("The Chatterbox model", damage) if damage else _status_message(ready, update=update)
-            ),
+            status=status,
+            status_message=message,
             supports_cloning=True,
             controls=[],
             languages=["English"],
@@ -454,10 +454,15 @@ def _distance(ratio: float) -> float:
     return abs(math.log(max(ratio, 1e-3)))
 
 
-def _status_message(ready: bool, *, update: bool) -> str:
+def _status(damage: list[Damage], *, ready: bool, update: bool) -> tuple[EngineStatus, str]:
+    """The engine's status and the message shown with it: damaged files come first."""
+    if damage:
+        return "needs_repair", describe_damage("The Chatterbox model", damage)
     if update:
-        return "Update available"
-    return "Ready" if ready else "Not installed"
+        return "ready", "Update available"
+    if ready:
+        return "ready", "Ready"
+    return "not_installed", "Not installed"
 
 
 def _require_uv() -> str:

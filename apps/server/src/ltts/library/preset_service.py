@@ -233,15 +233,7 @@ class PresetService:
             written["narrator"] = self._choose(preset.narrator.voice).chosen
         voices = {c.id: self._choose(c.voice).chosen for c in preset.characters}
         if "characters" in wanted:
-            assigned: dict[str, str] = {}
-            for character in preset.characters:
-                voice = voices[character.id]
-                if voice is None:
-                    continue  # no candidate is available: skipped and visible in the report, never guessed
-                for name in character.names:
-                    self._casting.assign(document_id, CharacterAssignment(name=name, voice_id=voice))
-                    assigned[name] = voice
-            written["characters"] = assigned
+            written["characters"] = self._apply_characters(document_id, preset, voices)
         if "speakers" in wanted:
             written["speakers"] = self._apply_speakers(document_id, preset, voices)
         if "effects" in wanted:
@@ -257,6 +249,18 @@ class PresetService:
                 (document_id, preset.preset_id, preset.preset_version, json.dumps(written), utc_now()),
             )
         return self.report(document_id, preset)
+
+    def _apply_characters(self, document_id: str, preset: Preset, voices: dict[str, str | None]) -> dict[str, str]:
+        """Cast every name of each character to its voice; returns the voice each name was given."""
+        assigned: dict[str, str] = {}
+        for character in preset.characters:
+            voice = voices[character.id]
+            if voice is None:
+                continue  # no candidate is available: skipped and visible in the report, never guessed
+            for name in character.names:
+                self._casting.assign(document_id, CharacterAssignment(name=name, voice_id=voice))
+                assigned[name] = voice
+        return assigned
 
     def _apply_speakers(self, document_id: str, preset: Preset, voices: dict[str, str | None]) -> list[list[Any]]:
         """Speaker annotations as rows: a quoted line names its speaker, a whole sentence takes the voice."""

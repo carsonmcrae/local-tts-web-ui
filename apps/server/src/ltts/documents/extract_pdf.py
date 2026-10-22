@@ -75,16 +75,23 @@ def _furniture(pages: list[list[str]], found: list[dict[int, Furniture]], kept: 
     start = 0
     for page, lines in enumerate(pages):
         end = start + len(kept[page])
-        note: _Paragraph | None = None
-        for at, furniture in sorted(found[page].items()):
-            if furniture == "footnote_text" and note is not None and note_label(lines[at]) is None:
-                note.text = _joined(note.text, lines[at])
-                continue
-            top = furniture != "footnote_text" and is_top(at, len(lines))
-            rank = _HEADER_RANK if top else _FOOTER_RANK
-            paragraphs.append(_Paragraph(page, start if top else end, lines[at], furniture, rank))
-            note = paragraphs[-1] if furniture == "footnote_text" else None
+        paragraphs += _page_furniture(page, lines, found[page], start, end)
         start = end
+    return paragraphs
+
+
+def _page_furniture(page: int, lines: list[str], found: dict[int, Furniture], start: int, end: int) -> list[_Paragraph]:
+    """One page's furniture as paragraphs; its text runs from ``start`` to ``end`` in the line stream."""
+    paragraphs: list[_Paragraph] = []
+    note: _Paragraph | None = None
+    for at, furniture in sorted(found.items()):
+        if furniture == "footnote_text" and note is not None and note_label(lines[at]) is None:
+            note.text = _joined(note.text, lines[at])
+            continue
+        top = furniture != "footnote_text" and is_top(at, len(lines))
+        rank = _HEADER_RANK if top else _FOOTER_RANK
+        paragraphs.append(_Paragraph(page, start if top else end, lines[at], furniture, rank))
+        note = paragraphs[-1] if furniture == "footnote_text" else None
     return paragraphs
 
 

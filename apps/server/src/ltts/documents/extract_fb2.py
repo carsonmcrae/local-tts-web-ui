@@ -138,6 +138,22 @@ def _title(element: Element) -> str:
     return " — ".join(text for text in (_text(p) for p in element if _local(p.tag) == "p") if text)
 
 
+def _visit(element: Element, top_level: bool, builder: _BookBuilder) -> bool:
+    """Give one element's title or paragraph to the builder; whether its children are visited next."""
+    name = _local(element.tag)
+    if name == "title":
+        title = _title(element)
+        if title:
+            builder.heading(title)
+    elif name in _PARAGRAPHS:
+        text = _text(element)
+        if text:
+            builder.paragraph(text)
+    elif name == "section" and top_level and _child(element, "title") is None:
+        builder.boundary()
+    return name == "section" or name in _CONTAINERS
+
+
 def _walk(body: Element, builder: _BookBuilder) -> None:
     """Visit a body in document order without recursion, so deep nesting cannot exhaust the stack."""
     stack: list[Iterator[Element]] = [iter(body)]
@@ -145,21 +161,7 @@ def _walk(body: Element, builder: _BookBuilder) -> None:
         element = next(stack[-1], None)
         if element is None:
             stack.pop()
-            continue
-        name = _local(element.tag)
-        if name == "title":
-            title = _title(element)
-            if title:
-                builder.heading(title)
-        elif name == "section":
-            if len(stack) == 1 and _child(element, "title") is None:
-                builder.boundary()
-            stack.append(iter(element))
-        elif name in _PARAGRAPHS:
-            text = _text(element)
-            if text:
-                builder.paragraph(text)
-        elif name in _CONTAINERS:
+        elif _visit(element, len(stack) == 1, builder):
             stack.append(iter(element))
 
 

@@ -43,6 +43,7 @@ TIMES = [
     ("from 9:00 to 17:30, or at 9:00 or 10:00", "from 9 o'clock to 17 30, or at 9 o'clock or 10 o'clock"),
     ("between 9:05 and 14:00", "between 9 oh 5 and 14 hundred"),
     ("at 3:30pm, 4:45 PM today", "at 3 30 PM, 4 45 PM today"),
+    ("Doors open at 7:00pm and close at 11:00 PM.", "Doors open at 7 PM and close at 11 PM."),  # no "o'clock"
     ("at 5 p.m. and 9 a.m.", "at 5 PM and 9 AM."),
     # Ratios, verses, durations, addresses and code are not times.
     ("a scale of 1:25, odds of 5:1, a 16:9 screen, a 1:1 mapping", "a scale of 1:25, odds of 5:1, a 16:9 screen, a 1:1 mapping"),

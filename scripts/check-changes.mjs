@@ -5,7 +5,8 @@
  * Purpose: Make every pull request declare its release impact, and keep release notes trustworthy.
  * Scope: Always: every change file and release notes file is valid, and every release tag has its
  *   notes in docs/releases/. With `--base <commit>` (pull requests): an ordinary PR adds or edits a
- *   change file, leaves the version and CHANGELOG.md alone, and edits published notes only with a new
+ *   change file whose declared surfaces match what it changes (site/ ↔ "website", documentation ↔
+ *   "docs"), leaves the version and CHANGELOG.md alone, and edits published notes only with a new
  *   `revised` date; a release PR (one that changes the version) sets exactly the version its base's
  *   change files lead to, consumes all of them, adds that version's finished notes and dated
  *   CHANGELOG entry, and uses a version that was never tagged; an amendment PR (same version, change
@@ -17,6 +18,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import {
   CHANGES_DIR,
+  declarationProblems,
   isExpectedNext,
   nextVersion,
   parseChange,
@@ -66,6 +68,17 @@ function checkOrdinaryPr(base, diff) {
       'CHANGELOG.md is written when a release is prepared; describe this change in a change file instead',
     );
   }
+  // What this pull request's change files declare about the website and the docs must match what
+  // it changes, so the declaration can't be ticked and ignored.
+  const declared = diff
+    .filter(({ status, file }) => status !== 'D' && isChangeFile(file))
+    .map(({ file }) => parseChange(file, readFileSync(path.join(repoRoot, file), 'utf8')));
+  problems.push(
+    ...declarationProblems(
+      declared,
+      diff.map(({ file }) => file),
+    ),
+  );
   checkPublishedNotes(base, diff);
 }
 

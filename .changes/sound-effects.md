@@ -1,5 +1,10 @@
 ---
 bump: minor
+desktop: changed
+browser: changed
+phone: changed
+website: unchanged
+docs: changed
 ---
 
 ## New

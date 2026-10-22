@@ -1,5 +1,10 @@
 ---
 bump: none
+desktop: unchanged
+browser: unchanged
+phone: unchanged
+website: unchanged
+docs: changed
 ---
 
 ## Technical

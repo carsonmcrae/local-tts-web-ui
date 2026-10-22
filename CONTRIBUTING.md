@@ -58,6 +58,19 @@ change touches user-facing functionality, terminology, navigation, settings, ver
 documented behaviour, find every surface it affects and keep them consistent. That does not mean every
 change touches every surface.
 
+Every change file declares the change's impact on each surface (`desktop`, `browser`, `phone`,
+`website`, `docs`; see [.changes/README.md](.changes/README.md#surfaces)), and CI checks the
+declaration against the pull request: the three app surfaces change together unless one is
+`limited:` with a reason, site/ changes need `website:`, documentation changes need `docs: changed`.
+Before declaring, answer for every user-facing change:
+
+1. Does the Windows app need it, and is it built from the same web assets the browser gets?
+2. Does the browser on the computer need it?
+3. Does a phone need it, or an explicit, explained limitation (never a weaker LAN security rule)?
+4. Does ttsnative.com need new product information, once the version that has it is published?
+5. Do the README, wiki, guides or release notes need updating?
+6. Which surfaces need new or changed regression tests?
+
 - Review which surfaces the change affects.
 - Update the affected interfaces, website content, documentation and tests together.
 - Keep terminology, version labels, navigation and feature descriptions the same everywhere.

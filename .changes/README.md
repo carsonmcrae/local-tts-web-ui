@@ -12,6 +12,11 @@ Start one with `npm run change -- <bump>` (it names the file after your branch),
 ```md
 ---
 bump: minor
+desktop: changed
+browser: changed
+phone: limited: voices are recorded on the computer running TTSNative
+website: unchanged
+docs: changed
 ---
 
 ## New
@@ -38,6 +43,30 @@ bump: minor
 
 The next version is the current one bumped by the **strongest** bump among all pending files, so two
 pull requests can never claim the same number: `2.0.0` + a patch and a minor → `2.1.0`.
+
+## Surfaces
+
+Every change file also says how the change reaches each of TTSNative's surfaces, so nothing is built
+for one surface and silently left behind on another (CONTRIBUTING.md, "Cross-surface consistency"):
+
+| Key       | The surface                                   | Says                                        |
+| --------- | --------------------------------------------- | ------------------------------------------- |
+| `desktop` | The Windows app                               | `changed`, `unchanged` or `limited: <why>`  |
+| `browser` | The browser on the computer running TTSNative | `changed`, `unchanged` or `limited: <why>`  |
+| `phone`   | A phone's browser on the home network         | `changed`, `unchanged` or `limited: <why>`  |
+| `website` | ttsnative.com                                 | `changed`, `unchanged` or `pending-release` |
+| `docs`    | README, wiki, guides and other documentation  | `changed` or `unchanged`                    |
+
+CI holds these to account:
+
+- The Windows app, the browser and phones run the same web app and server, so they change together. A
+  surface that deliberately differs says `limited:` and why (for example, voices are only created on
+  the computer); it never just says `unchanged` while the others change.
+- `bump: none` leaves the app unchanged on every surface; any other bump reaches at least one surface.
+- New features are documented (`docs: changed`).
+- A pull request that changes `site/` says `website: changed`, or `website: pending-release` for
+  content gated on a version that isn't published yet; one that changes documentation says
+  `docs: changed`. Saying a surface changed when its files didn't is refused too.
 
 ## Sections
 

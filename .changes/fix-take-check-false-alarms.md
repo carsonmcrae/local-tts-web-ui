@@ -1,5 +1,10 @@
 ---
 bump: patch
+desktop: changed
+browser: changed
+phone: limited: voices are recorded on the computer running TTSNative
+website: unchanged
+docs: changed
 ---
 
 ## Fixed

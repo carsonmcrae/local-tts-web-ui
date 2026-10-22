@@ -47,8 +47,9 @@ a gate pass; report a gap you can't close honestly. Release readiness has its ow
 
 ## Data and secrets
 
-- Never commit or print credentials: the SonarQube tokens, the updater signing key
-  (`~/.ttsnative-release/`), GitHub tokens. Pass them through environment variables at run time.
+- Never commit or print credentials: SonarQube tokens, the updater signing key and its password,
+  GitHub tokens. Pass them through environment variables at run time, never through files in the
+  repository.
 - Recordings, voices made from them, adapters and their transcripts belong to the people who recorded
   them. Don't upload, commit or delete them without the owner's explicit say-so.
 - Never claim something was heard, tested on a device or verified when it wasn't; say what was

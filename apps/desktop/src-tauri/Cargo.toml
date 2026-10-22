@@ -31,7 +31,7 @@ tauri = { version = "=2.12.1", features = [] }
 tauri-plugin-opener = "=2.7.0"
 tauri-plugin-single-instance = "=2.5.2"
 # Without the default "zip" feature: updates are signed .exe installers, never zip archives.
-tauri-plugin-updater = { version = "=2.13.1", default-features = false, features = ["rustls-tls", "system-proxy"] }
+tauri-plugin-updater = { version = "=2.13.2", default-features = false, features = ["rustls-tls", "system-proxy"] }
 tauri-plugin-window-state = "=2.5.0"
 semver = "=1.0.28"
 serde = { version = "=1.0.229", features = ["derive"] }

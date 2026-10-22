@@ -153,9 +153,10 @@ def test_a_quotation_open_from_an_earlier_sentence_still_counts() -> None:
 def test_a_long_chapter_is_analysed_quickly() -> None:
     texts = [text for text, _ in LITERAL] + SILENT + ["He waited.", "Nothing happened for a long time."]
     chapter = [Sentence(index, index // 5, False, texts[index % len(texts)]) for index in range(1_000)]
-    started = time.perf_counter()
+    # This thread's CPU time, not the wall clock: other test workers sharing the CPUs must not count.
+    started = time.thread_time()
     found = detect(chapter, 20)
-    elapsed = time.perf_counter() - started
+    elapsed = time.thread_time() - started
     # Well under a second when run alone; coverage instrumentation slows the regexes several times over.
     assert found and elapsed < 4.0, elapsed
 

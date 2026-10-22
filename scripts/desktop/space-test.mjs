@@ -15,7 +15,7 @@ import { spawnSync } from 'node:child_process';
 import { existsSync, mkdtempSync, readdirSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { powershell } from './processes.mjs';
+import { describe, leftoverProcesses, powershell } from './processes.mjs';
 
 const system32 = path.join(process.env.SystemRoot ?? 'C:/Windows', 'System32');
 const DISKPART = path.join(system32, 'diskpart.exe');
@@ -54,7 +54,18 @@ const installedVersion = () =>
     spawnSync(REG, ['query', KEY], { encoding: 'utf8' }).stdout ?? '',
   )?.[1];
 
-function main() {
+/**
+ * A silent uninstall just before this test (the persistence test ends with one) is still finishing
+ * when uninstall.exe has returned: the NSIS uninstaller runs on from a temp copy, named for the
+ * install folder on its command line, and clears the Installed Apps entry a few seconds later. The
+ * entry is read only once nothing of the app is running, so "unchanged" compares like with like.
+ */
+async function settled() {
+  const left = await leftoverProcesses(60);
+  if (left.length) throw new Error(`FAILED: still running before the test: ${describe(left)}`);
+}
+
+async function main() {
   const installer = process.argv[2];
   if (!installer || !existsSync(installer))
     throw new Error('Usage: node scripts/desktop/space-test.mjs <TTSNative-Setup-x.y.z.exe>');
@@ -64,6 +75,7 @@ function main() {
     );
     return;
   }
+  await settled();
   // The long path: diskpart matches "select vdisk" by name, and the temp folder may come as an 8.3 short
   // name (RUNNER~1), which then never matches the disk attached under its long name.
   const work = mkdtempSync(path.join(realpathSync.native(tmpdir()), 'ttsnative-space-'));
@@ -109,7 +121,7 @@ function main() {
 }
 
 try {
-  main();
+  await main();
 } catch (error) {
   console.error(error instanceof Error ? error.message : error);
   // Not process.exit(): it can cut off output still on its way to the CI log.

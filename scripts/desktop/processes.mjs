@@ -59,12 +59,12 @@ export function describe(/** @type {ReturnType<typeof appProcesses>} */ processe
 }
 
 /**
- * What of the app is still running after up to 15 s: the web view and an engine's worker take a
+ * What of the app is still running after up to `seconds`: the web view and an engine's worker take a
  * moment longer to go than the app and its server. Empty when everything has ended.
  */
-export async function leftoverProcesses() {
+export async function leftoverProcesses(seconds = 15) {
   let leftovers = appProcesses();
-  for (let attempt = 0; attempt < 30 && leftovers.length; attempt += 1) {
+  for (let attempt = 0; attempt < seconds * 2 && leftovers.length; attempt += 1) {
     await sleep(500);
     leftovers = appProcesses();
   }

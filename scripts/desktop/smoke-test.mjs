@@ -16,7 +16,7 @@
  */
 import { execFileSync, spawn, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { APP_ROUTES } from '../lib/app-routes.mjs';
@@ -162,17 +162,23 @@ async function servesThisBuild(origin, page, documentId) {
   const dist = path.join(repoRoot, 'apps', 'web', 'dist');
   const built = readFileSync(path.join(dist, 'index.html'), 'utf8');
   check(page === built, 'the start page is the one this installer was built with');
-  const assets = readdirSync(path.join(dist, 'assets'));
+  // Every file, not only assets/: the music chunks, sound effects and icons are part of the build too.
+  const files = readdirSync(dist, { recursive: true, encoding: 'utf8' })
+    .map((file) => file.split(path.sep).join('/'))
+    .filter((file) => statSync(path.join(dist, file)).isFile());
   const differ = [];
-  for (const asset of assets) {
-    const served = await fetch(`${origin}/assets/${asset}`);
+  for (const file of files) {
+    const served = await fetch(`${origin}/${file.split('/').map(encodeURIComponent).join('/')}`);
     const bytes = Buffer.from(await served.arrayBuffer());
-    if (!served.ok || sha256(bytes) !== sha256(readFileSync(path.join(dist, 'assets', asset)))) {
-      differ.push(asset);
-    }
+    if (!served.ok || sha256(bytes) !== sha256(readFileSync(path.join(dist, file))))
+      differ.push(file);
   }
+  const music = files.filter((file) => file.startsWith('music/')).length;
   const detail = differ.length ? ` (differ: ${differ.join(', ')})` : '';
-  check(differ.length === 0, `all ${assets.length} web files are served unchanged${detail}`);
+  check(
+    differ.length === 0,
+    `all ${files.length} web files are served unchanged, ${music} of them music${detail}`,
+  );
   for (const route of ['/', ...APP_ROUTES.map((page) => page.replace(':documentId', documentId))]) {
     const response = await fetch(`${origin}${route}`);
     check(response.ok && (await response.text()) === built, `${route} opens the app`);

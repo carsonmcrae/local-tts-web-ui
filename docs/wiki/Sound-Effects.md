@@ -40,6 +40,10 @@ preview, and choose **Use** to place it at the sentence being read (or, when the
 this document, the first sentence of the chapter). An ambience such as rain plays under the next few
 sentences; a one-shot such as a knock plays once.
 
+You can also **select text** in the document and choose **Sound effect** beside it: the sound you pick
+starts at the first sentence you selected, and an ambience plays across all of them. This works on a
+phone too.
+
 Each placed effect can be turned off and on, **adjusted** (at the start or the end of its sentence,
 with a delay, its own volume, and for ambience how many sentences it lasts), **replaced** with
 another sound, or **removed**. Sentences that carry an effect are tinted in the text, and clicking

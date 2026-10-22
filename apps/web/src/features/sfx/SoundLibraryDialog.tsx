@@ -31,6 +31,8 @@ interface SoundLibraryDialogProps {
   description: string;
   busy: boolean;
   onPick: (sound: SfxSound) => void;
+  /** Why the last pick failed, for a caller with nowhere else to show it. */
+  error?: unknown;
 }
 
 /** Sounds whose name, description or keywords contain every word of `query`. */
@@ -82,6 +84,7 @@ export function SoundLibraryDialog({
   description,
   busy,
   onPick,
+  error,
 }: Readonly<SoundLibraryDialogProps>) {
   const library = useSoundLibrary(open);
   const { sfx } = useSfx();
@@ -122,6 +125,7 @@ export function SoundLibraryDialog({
     >
       {library.isPending ? <Skeleton className="h-32" /> : null}
       {library.isError ? <Banner tone="error">{describeError(library.error)}</Banner> : null}
+      {error ? <Banner tone="error">{describeError(error)}</Banner> : null}
       {library.data ? (
         <>
           <Input

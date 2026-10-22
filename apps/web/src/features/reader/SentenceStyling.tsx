@@ -1,20 +1,24 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 Carson McRae
 /**
- * Purpose: Act on what a reader selects in the text: style those sentences, or fix how a word is said.
- * Scope: Watches the text selection in the reading view and, while sentences are selected, shows a
- *   floating "Voice & effect" button beside it that opens the styling dialog for exactly those
- *   sentences (a selection that only touches a sentence's edge doesn't count), and for a word or
- *   short phrase "Fix pronunciation", which opens the pronunciation dialog for it.
- * Does NOT belong: The dialogs themselves (StyleSentencesDialog, FixPronunciationDialog) or the cast
- *   dialog.
+ * Purpose: Act on what a reader selects in the text: style those sentences, add a sound effect to
+ *   them, or fix how a word is said.
+ * Scope: Watches the text selection in the reading view and, while sentences are selected, shows
+ *   floating buttons beside it: "Voice & effect" opens the styling dialog for exactly those sentences
+ *   (a selection that only touches a sentence's edge doesn't count), "Sound effect" opens the sound
+ *   library and places the chosen sound at the first of them (a looping sound plays across all of
+ *   them), and for a word or short phrase "Fix pronunciation" opens the pronunciation dialog for it.
+ * Does NOT belong: The dialogs themselves (StyleSentencesDialog, SoundLibraryDialog,
+ *   FixPronunciationDialog), the Sounds panel's own placement, or the cast dialog.
  */
-import { AudioLines, Sparkles } from 'lucide-react';
+import { AudioLines, Sparkles, Volume2 } from 'lucide-react';
 import { type RefObject, useEffect, useState } from 'react';
-import type { SentenceStyle } from '@/api/types';
+import type { SentenceStyle, SfxSound } from '@/api/types';
 import { Button } from '@/components/ui/Button';
 import { FixPronunciationDialog } from '@/features/pronunciation/FixPronunciationDialog';
 import { selectedWord } from '@/features/pronunciation/pronunciationRules';
+import { useAddSoundEffect } from '@/features/sfx/queries';
+import { SoundLibraryDialog } from '@/features/sfx/SoundLibraryDialog';
 import { StyleSentencesDialog } from './StyleSentencesDialog';
 
 /** The sentences a selection inside ``root`` touches, in reading order. */
@@ -39,6 +43,8 @@ export function selectedSentences(root: HTMLElement): number[] {
 
 interface Selected {
   indexes: number[];
+  first: number;
+  last: number;
   text: string;
   top: number;
   left: number;
@@ -50,7 +56,8 @@ function useSelectedSentences(root: RefObject<HTMLElement | null>): Selected | n
     const update = () => {
       const container = root.current;
       const indexes = container ? selectedSentences(container) : [];
-      if (indexes.length === 0) {
+      const [first, ...more] = indexes;
+      if (first === undefined) {
         setSelected(null);
         return;
       }
@@ -60,6 +67,8 @@ function useSelectedSentences(root: RefObject<HTMLElement | null>): Selected | n
       const left = rect ? rect.left + rect.width / 2 : 0;
       setSelected({
         indexes,
+        first,
+        last: more.at(-1) ?? first,
         text: document.getSelection()?.toString() ?? '',
         top: Math.max((rect?.top ?? 0) - 48, 8),
         left: Math.min(Math.max(left, 160), window.innerWidth - 160),
@@ -71,7 +80,41 @@ function useSelectedSentences(root: RefObject<HTMLElement | null>): Selected | n
   return selected;
 }
 
-/** A button floating beside the selected sentences that opens the styling dialog for them. */
+/** The sound library for the selected sentences: a pick is placed at the first of them. */
+function SelectionSound({
+  documentId,
+  first,
+  last,
+  onClose,
+}: Readonly<{ documentId: string; first: number; last: number; onClose: () => void }>) {
+  const add = useAddSoundEffect(documentId);
+  const pick = (sound: SfxSound) =>
+    add.mutate(
+      {
+        segmentIndex: first,
+        soundId: sound.id,
+        position: 0,
+        offsetMs: 0,
+        // A looping sound plays across the whole selection; a one-off plays once.
+        untilSegment: sound.loop ? last : null,
+      },
+      { onSuccess: onClose },
+    );
+  const where = last > first ? 'the first selected sentence' : 'this sentence';
+  return (
+    <SoundLibraryDialog
+      open
+      onOpenChange={onClose}
+      title="Add a sound effect"
+      description={`It will play at the start of ${where}; you can move or remove it in the Sounds panel. Turn sound effects on in the audio mixer to hear it.`}
+      busy={add.isPending}
+      onPick={pick}
+      error={add.isError ? add.error : undefined}
+    />
+  );
+}
+
+/** Buttons floating beside the selected sentences: style them, add a sound, or fix a word. */
 export function SelectionStyler({
   documentId,
   root,
@@ -87,6 +130,7 @@ export function SelectionStyler({
 }>) {
   const selected = useSelectedSentences(root);
   const [editing, setEditing] = useState<number[] | null>(null);
+  const [sounding, setSounding] = useState<{ first: number; last: number } | null>(null);
   const [fixing, setFixing] = useState<string | null>(null);
   const word = selected ? selectedWord(selected.text) : null;
   const fix = (picked: string, index: number | undefined) => {
@@ -97,7 +141,7 @@ export function SelectionStyler({
   };
   return (
     <>
-      {selected && !editing && fixing === null ? (
+      {selected && !editing && !sounding && fixing === null ? (
         <div
           className="fixed z-40 flex -translate-x-1/2 gap-2"
           style={{ top: selected.top, left: selected.left }}
@@ -112,6 +156,14 @@ export function SelectionStyler({
           >
             Voice & effect
             {selected.indexes.length > 1 ? ` (${selected.indexes.length})` : ''}
+          </Button>
+          <Button
+            size="sm"
+            icon={<Volume2 size={14} />}
+            onMouseDown={(event) => event.preventDefault()}
+            onClick={() => setSounding({ first: selected.first, last: selected.last })}
+          >
+            Sound effect
           </Button>
           {word ? (
             <Button
@@ -134,6 +186,9 @@ export function SelectionStyler({
           onSaved={onChanged}
         />
       )}
+      {sounding ? (
+        <SelectionSound documentId={documentId} {...sounding} onClose={() => setSounding(null)} />
+      ) : null}
       {editing ? (
         <StyleSentencesDialog
           documentId={documentId}

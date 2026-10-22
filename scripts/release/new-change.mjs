@@ -32,7 +32,11 @@ try {
   mkdirSync(dir, { recursive: true });
   const base = branchSlug(git(['rev-parse', '--abbrev-ref', 'HEAD']) ?? 'change');
   let file = path.join(dir, `${base}.md`);
-  for (let index = 2; existsSync(file); index += 1) file = path.join(dir, `${base}-${index}.md`);
+  let index = 2;
+  while (existsSync(file)) {
+    file = path.join(dir, `${base}-${index}.md`);
+    index += 1;
+  }
   const user = SECTION_FOR[bump];
   const body =
     user === 'Technical'

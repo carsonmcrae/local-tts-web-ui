@@ -18,9 +18,8 @@ import { repoRoot } from '../lib/paths.mjs';
 /** @param {string} key */
 function property(key) {
   const text = readFileSync(path.join(repoRoot, 'sonar-project.properties'), 'utf8');
-  return new RegExp(String.raw`^${key.replaceAll('.', String.raw`\.`)}=(.+)$`, 'm')
-    .exec(text)?.[1]
-    ?.trim();
+  const escaped = key.replaceAll('.', String.raw`\.`);
+  return new RegExp(String.raw`^${escaped}=(.+)$`, 'm').exec(text)?.[1]?.trim();
 }
 
 /**
@@ -80,7 +79,9 @@ async function main() {
   );
 }
 
-main().catch((error) => {
+try {
+  await main();
+} catch (error) {
   printFailure(error);
   process.exit(1);
-});
+}

@@ -212,7 +212,10 @@ test('section headings accept common names', () => {
   const doc = parseNotes(
     '---\nbump: minor\n---\n## New features\n- a\n## Bug fixes\n- b\n## Improvements\n- c\n## Security\n- d\n',
   );
-  assert.deepEqual(Object.keys(doc.sections).sort(), ['fixed', 'improved', 'new', 'security']);
+  assert.deepEqual(
+    Object.keys(doc.sections).toSorted((a, b) => a.localeCompare(b)),
+    ['fixed', 'improved', 'new', 'security'],
+  );
 });
 
 test('concurrent pull requests never collide: the strongest bump decides, in any merge order', () => {
@@ -260,16 +263,19 @@ test('combined sections keep the section order, strongest changes first, without
   );
 });
 
-test('reads pending change files from a folder, ignoring the README', () => {
+test('reads pending change files from a folder in code-unit order, ignoring the README', () => {
   const root = mkdtempSync(path.join(tmpdir(), 'changes-'));
   assert.deepEqual(readChanges(root), []);
   mkdirSync(path.join(root, '.changes'));
   writeFileSync(path.join(root, '.changes', 'README.md'), '# Not a change');
   writeFileSync(path.join(root, '.changes', 'b.md'), '---\nbump: patch\n---\n## Fixed\n- B.\n');
   writeFileSync(path.join(root, '.changes', 'a.md'), '---\nbump: none\n---\n## Technical\n- A.\n');
+  writeFileSync(path.join(root, '.changes', 'C.md'), '---\nbump: minor\n---\n## New\n- C.\n');
+  // Capitals first, as sort() always had them; a locale's order would put C.md last.
   assert.deepEqual(
     readChanges(root).map((item) => [item.file, item.bump]),
     [
+      ['.changes/C.md', 'minor'],
       ['.changes/a.md', 'none'],
       ['.changes/b.md', 'patch'],
     ],

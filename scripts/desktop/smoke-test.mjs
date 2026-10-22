@@ -28,13 +28,13 @@ const local = process.env.LOCALAPPDATA ?? '';
 const installDir = path.join(local, 'TTSNative');
 const dataDir = path.join(local, 'com.ttsnative.desktop', 'data');
 const POWERSHELL = path.join(
-  process.env.SystemRoot ?? 'C:\\Windows',
+  process.env.SystemRoot ?? 'C:/Windows',
   'System32',
   'WindowsPowerShell',
   'v1.0',
   'powershell.exe',
 );
-const REG = path.join(process.env.SystemRoot ?? 'C:\\Windows', 'System32', 'reg.exe');
+const REG = path.join(process.env.SystemRoot ?? 'C:/Windows', 'System32', 'reg.exe');
 const HEADERS = { 'content-type': 'application/json', 'x-ltts-client': 'smoke-test' };
 
 /** @param {boolean} condition @param {string} message */
@@ -171,10 +171,8 @@ async function servesThisBuild(origin, page, documentId) {
       differ.push(asset);
     }
   }
-  check(
-    differ.length === 0,
-    `all ${assets.length} web files are served unchanged${differ.length ? ` (differ: ${differ.join(', ')})` : ''}`,
-  );
+  const detail = differ.length ? ` (differ: ${differ.join(', ')})` : '';
+  check(differ.length === 0, `all ${assets.length} web files are served unchanged${detail}`);
   for (const route of ['/', ...APP_ROUTES.map((page) => page.replace(':documentId', documentId))]) {
     const response = await fetch(`${origin}${route}`);
     check(response.ok && (await response.text()) === built, `${route} opens the app`);
@@ -232,10 +230,8 @@ async function main() {
   check(await waitUntilGone('ttsnative-backend', 20_000), 'the server stopped with the app');
   // Nothing else either: the web view, uv, a voice-cloning worker, anything run from the app's folders.
   const leftovers = await leftoverProcesses();
-  check(
-    leftovers.length === 0,
-    `nothing of TTSNative is left running${leftovers.length ? `: ${describe(leftovers)}` : ''}`,
-  );
+  const detail = leftovers.length ? `: ${describe(leftovers)}` : '';
+  check(leftovers.length === 0, `nothing of TTSNative is left running${detail}`);
 
   launch();
   const again = await waitForServer(120_000);

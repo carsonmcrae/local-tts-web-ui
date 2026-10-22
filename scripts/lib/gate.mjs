@@ -33,6 +33,15 @@ export const readinessDir = (/** @type {string} */ version) => `docs/readiness/$
 export const isGated = (version) => compareVersions(version, GATED_FROM) >= 0;
 
 /**
+ * A run's state as GitHub reports it: "completed/success", "in_progress", or "no run".
+ * @param {Run | undefined} run
+ */
+function runState(run) {
+  if (!run) return 'no run';
+  return run.conclusion ? `${run.status}/${run.conclusion}` : run.status;
+}
+
+/**
  * Each required workflow's newest run on the commit passed.
  * @param {Run[]} runs every workflow run on the commit
  * @returns {Verdict[]}
@@ -43,10 +52,7 @@ export function workflowVerdicts(runs) {
       .filter((run) => run.name === name)
       .sort((a, b) => b.created_at.localeCompare(a.created_at))[0];
     const ok = newest?.status === 'completed' && newest.conclusion === 'success';
-    const state = newest
-      ? `${newest.status}${newest.conclusion ? `/${newest.conclusion}` : ''}`
-      : 'no run';
-    return { item: `${name} passed on this commit`, ok, detail: state };
+    return { item: `${name} passed on this commit`, ok, detail: runState(newest) };
   });
 }
 
@@ -136,12 +142,50 @@ function checklist(text, heading) {
     (line) => line.trim().toLowerCase() === `## ${heading.toLowerCase()}`,
   );
   if (start < 0) return null;
-  const end = lines.findIndex((line, index) => index > start && line.startsWith('## '));
+  const next = lines.findIndex((line, index) => index > start && line.startsWith('## '));
+  const end = next < 0 ? lines.length : next;
   return lines
-    .slice(start + 1, end < 0 ? undefined : end)
+    .slice(start + 1, end)
     .map((line) => /^\s*- \[([ x~])\] (.+)$/i.exec(line))
     .filter((match) => match !== null)
     .map((match) => ({ mark: (match[1] ?? ' ').toLowerCase(), text: match[2] ?? '' }));
+}
+
+/**
+ * Manual checks are listed, and each is done or waived with a reason.
+ * @param {string} text @param {string} file
+ * @returns {Verdict}
+ */
+function manualChecksVerdict(text, file) {
+  const item = 'Manual checks identified and done';
+  const checks = checklist(text, 'Manual checks') ?? [];
+  if (checks.length === 0)
+    return { item, ok: false, detail: `${file} lists no "## Manual checks"` };
+  const open = checks.filter(
+    (check) => check.mark === ' ' || (check.mark === '~' && !/waived:\s*\S/i.test(check.text)),
+  );
+  if (open.length) {
+    const detail = `${open.length} of ${checks.length} open, e.g. "${open[0]?.text.slice(0, 60)}"`;
+    return { item, ok: false, detail };
+  }
+  return { item, ok: true, detail: `${checks.length} done or waived with a reason` };
+}
+
+/**
+ * There is a blockers section, and every blocker in it is resolved.
+ * @param {string} text @param {string} file
+ * @returns {Verdict}
+ */
+function blockersVerdict(text, file) {
+  const item = 'No unresolved blocker';
+  const blockers = checklist(text, 'Blockers');
+  if (blockers === null) return { item, ok: false, detail: `${file} has no "## Blockers" section` };
+  const open = blockers.filter((blocker) => blocker.mark !== 'x');
+  if (open.length) {
+    const detail = `${open.length} open, e.g. "${open[0]?.text.slice(0, 60)}"`;
+    return { item, ok: false, detail };
+  }
+  return { item, ok: true, detail: 'none open' };
 }
 
 /**
@@ -155,32 +199,5 @@ export function acceptanceVerdicts(text, version) {
   if (text === null) {
     return [{ item: 'Manual checks identified and done', ok: false, detail: `no ${file}` }];
   }
-  const checks = checklist(text, 'Manual checks');
-  const blockers = checklist(text, 'Blockers');
-  const open = (checks ?? []).filter(
-    (check) => check.mark === ' ' || (check.mark === '~' && !/waived:\s*\S/i.test(check.text)),
-  );
-  const openBlockers = (blockers ?? []).filter((blocker) => blocker.mark !== 'x');
-  return [
-    {
-      item: 'Manual checks identified and done',
-      ok: checks !== null && checks.length > 0 && open.length === 0,
-      detail:
-        checks === null || checks.length === 0
-          ? `${file} lists no "## Manual checks"`
-          : open.length
-            ? `${open.length} of ${checks.length} open, e.g. "${open[0]?.text.slice(0, 60)}"`
-            : `${checks.length} done or waived with a reason`,
-    },
-    {
-      item: 'No unresolved blocker',
-      ok: blockers !== null && openBlockers.length === 0,
-      detail:
-        blockers === null
-          ? `${file} has no "## Blockers" section`
-          : openBlockers.length
-            ? `${openBlockers.length} open, e.g. "${openBlockers[0]?.text.slice(0, 60)}"`
-            : 'none open',
-    },
-  ];
+  return [manualChecksVerdict(text, file), blockersVerdict(text, file)];
 }

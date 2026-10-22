@@ -224,8 +224,9 @@ async function main() {
     console.error(`Broken links:\n  ${problems.join('\n  ')}`);
     process.exit(1);
   }
+  const offered = installer ? `Windows installer ${installer.version}` : 'no Windows installer';
   console.log(
-    `Site built in ${path.relative(repoRoot, out) || out} for ${base} (${releases.length} releases, ${installer ? `Windows installer ${installer.version}` : 'no Windows installer'})`,
+    `Site built in ${path.relative(repoRoot, out) || out} for ${base} (${releases.length} releases, ${offered})`,
   );
 }
 

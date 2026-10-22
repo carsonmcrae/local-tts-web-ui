@@ -41,7 +41,7 @@ const running = (/** @type {string} */ name) =>
 
 /** @param {string} url @param {RequestInit} [init] @returns {Promise<any>} */
 async function api(url, init = {}) {
-  const response = await fetch(url, { ...init, headers: { ...HEADERS, ...(init.headers ?? {}) } });
+  const response = await fetch(url, { ...init, headers: { ...HEADERS, ...init.headers } });
   if (!response.ok)
     throw new Error(`FAILED: ${init.method ?? 'GET'} ${url} answered ${response.status}`);
   return response.status === 204 ? null : response.json();
@@ -117,7 +117,7 @@ async function snapshot(origin) {
     await api(`${origin}/api/library/works`)
   );
   return {
-    documents: details.sort((a, b) => a.id.localeCompare(b.id)),
+    documents: details.toSorted((a, b) => a.id.localeCompare(b.id)),
     library: {
       folders: await api(`${origin}/api/library/folders`),
       collections: await api(`${origin}/api/library/collections`),
@@ -147,10 +147,8 @@ async function stop(/** @type {'close' | 'crash'} */ how) {
     `the app and its server ended (${how})`,
   );
   const leftovers = await leftoverProcesses();
-  check(
-    leftovers.length === 0,
-    `nothing of TTSNative is left running (${how})${leftovers.length ? `: ${describe(leftovers)}` : ''}`,
-  );
+  const detail = leftovers.length ? `: ${describe(leftovers)}` : '';
+  check(leftovers.length === 0, `nothing of TTSNative is left running (${how})${detail}`);
 }
 
 async function main() {

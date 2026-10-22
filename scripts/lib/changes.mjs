@@ -14,6 +14,7 @@
  */
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
+import { compareCodeUnits } from './code-unit-order.mjs';
 import { SECTIONS, entryKey, parseNotes, technicalWording } from './notes-format.mjs';
 import { repoRoot } from './paths.mjs';
 import { BUMPS, bumpVersion, compareVersions, strongestBump } from './semver.mjs';
@@ -219,7 +220,8 @@ export function declarationProblems(declared, files) {
 }
 
 /**
- * Pending change files in a directory (the repository's by default), sorted by name.
+ * Pending change files in a directory (the repository's by default), sorted by name in code-unit
+ * order, so every machine and locale lists them the same way.
  * @param {string} [root]
  * @returns {Change[]}
  */
@@ -228,7 +230,7 @@ export function readChanges(root = repoRoot) {
   if (!existsSync(dir)) return [];
   return readdirSync(dir)
     .filter((name) => name.endsWith('.md') && name !== 'README.md')
-    .sort()
+    .toSorted(compareCodeUnits)
     .map((name) =>
       parseChange(`${CHANGES_DIR}/${name}`, readFileSync(path.join(dir, name), 'utf8')),
     );

@@ -38,7 +38,7 @@ const isAdministrator = () =>
 /** A drive letter nothing is using. */
 const freeLetter = () =>
   powershell(
-    '(([char[]](84..90) + [char[]](68..83)) | Where-Object { -not (Test-Path "$($_):\\") } | Select-Object -First 1)',
+    String.raw`(([char[]](84..90) + [char[]](68..83)) | Where-Object { -not (Test-Path "$($_):\") } | Select-Object -First 1)`,
   );
 
 /** @param {string} script diskpart commands, one per line */
@@ -97,7 +97,7 @@ async function main() {
     );
     const free = Number(powershell(`[math]::Floor((Get-PSDrive ${letter}).Free / 1MB)`));
     check(free > 0 && free < DISK_MB, `${letter}: has ${free} MB free`);
-    const target = `${letter}:\\TTSNative`;
+    const target = String.raw`${letter}:\TTSNative`;
     const result = spawnSync(installer, ['/S', `/D=${target}`], { stdio: 'inherit' });
     check(
       result.status !== 0,

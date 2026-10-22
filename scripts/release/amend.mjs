@@ -43,7 +43,8 @@ function main() {
   const sections = combineSections(changes);
   step(`Folding ${changes.length} change file${changes.length === 1 ? '' : 's'} into ${version}…`);
   for (const section of sections.filter((item) => item.user)) {
-    console.log(`  ${section.title}:\n${section.items.map((item) => `    - ${item}`).join('\n')}`);
+    const entries = section.items.map((item) => `    - ${item}`).join('\n');
+    console.log(`  ${section.title}:\n${entries}`);
   }
   if (process.argv.includes('--dry-run')) return;
   writeFileSync(notesFile, amendNotes(readFileSync(notesFile, 'utf8'), sections));

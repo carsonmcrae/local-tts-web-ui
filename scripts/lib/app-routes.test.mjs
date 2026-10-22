@@ -21,5 +21,7 @@ test('the list of pages matches the router', () => {
     .filter((route) => route !== '*')
     .map((route) => `/${route}`);
   assert.ok(routed.length > 5, "the router declares its pages with `path: '…'`");
-  assert.deepEqual([...routed].sort(), [...APP_ROUTES].sort());
+  // Compared as sets: both lists sorted the same way, in any order.
+  const byPath = (/** @type {string} */ a, /** @type {string} */ b) => a.localeCompare(b);
+  assert.deepEqual(routed.toSorted(byPath), APP_ROUTES.toSorted(byPath));
 });

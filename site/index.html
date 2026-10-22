@@ -526,8 +526,11 @@ Open a document, press Play, and follow along as each sentence is read to you.</
       <!-- /if:download -->
 
       <section id="install" class="wrap" aria-labelledby="install-title">
+        <h2 id="install-title">
+          <!-- if:download -->Run from the source code<!-- /if:download -->
+          <!-- if:no-download -->Install TTSNative<!-- /if:no-download -->
+        </h2>
         <!-- if:download -->
-        <h2 id="install-title">Run from the source code</h2>
         <p>
           For developers, and on macOS and Linux, where there's no installer yet. You need
           <strong>Node.js 22.22 or newer</strong> and <strong>Git</strong>. The first run installs
@@ -535,7 +538,6 @@ Open a document, press Play, and follow along as each sentence is read to you.</
         </p>
         <!-- /if:download -->
         <!-- if:no-download -->
-        <h2 id="install-title">Install TTSNative</h2>
         <p>
           TTSNative runs from its source code; there's no installer yet. You need
           <strong>Node.js 22.22 or newer</strong> and <strong>Git</strong>. The first run installs

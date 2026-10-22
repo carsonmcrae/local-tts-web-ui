@@ -44,7 +44,10 @@ export function escapeHtml(text) {
 export function applyConditions(html, flags) {
   return html.replace(
     / *<!-- if:([a-z0-9.-]+) -->([\s\S]*?)<!-- \/if:\1 -->\n?/g,
-    (whole, name, body) => (name in flags ? (flags[name] ? body : '') : whole),
+    (whole, name, body) => {
+      if (!(name in flags)) return whole; // undecided here: left for a later pass
+      return flags[name] ? body : '';
+    },
   );
 }
 

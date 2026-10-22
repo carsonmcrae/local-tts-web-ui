@@ -50,20 +50,27 @@
     }
   }
 
-  /** Shows the sentences in the read-along box; returns a function that highlights one of them. */
-  function showReadAlong(box, parts) {
-    box.replaceChildren(
-      ...parts.map((part) => Object.assign(document.createElement('span'), { textContent: part })),
-    );
-    box.hidden = false;
-    return (index) =>
-      [...box.children].forEach((span, at) => span.classList.toggle('current', at === index));
+  /** The read-along box: shows a passage's sentences and highlights the one being read (-1: none). */
+  function readAlongView(box) {
+    return {
+      show(parts) {
+        box.replaceChildren(
+          ...parts.map((part) =>
+            Object.assign(document.createElement('span'), { textContent: part }),
+          ),
+        );
+        box.hidden = false;
+      },
+      highlight(index) {
+        [...box.children].forEach((span, at) => span.classList.toggle('current', at === index));
+      },
+    };
   }
 
   function setupSpeech() {
     const form = $('speech');
     if (!form) return;
-    const [text, select, rate, rateValue, play, stop, status, online, readAlong] = [
+    const [text, select, rate, rateValue, play, stop, status, online, readAlongBox] = [
       'speech-text',
       'speech-voice',
       'speech-rate',
@@ -74,7 +81,7 @@
       'speech-online',
       'speech-readalong',
     ].map($);
-    let highlight = () => undefined;
+    const readAlong = readAlongView(readAlongBox);
     const synth = globalThis.speechSynthesis;
     if (!synth || typeof globalThis.SpeechSynthesisUtterance !== 'function') {
       select.innerHTML = '<option>Not available</option>';
@@ -114,10 +121,37 @@
     );
     stop.addEventListener('click', () => {
       synth.cancel();
-      highlight(-1);
+      readAlong.highlight(-1);
       stop.disabled = true;
       status.textContent = 'Stopped.';
     });
+
+    /** The utterance for sentence `index` of `count`, keeping the controls and the highlight in step. */
+    const utter = (part, index, count, voice) => {
+      const utterance = new SpeechSynthesisUtterance(part);
+      if (voice) {
+        utterance.voice = voice;
+        utterance.lang = voice.lang;
+      }
+      utterance.rate = Number(rate.value);
+      utterance.onstart = () => {
+        stop.disabled = false;
+        readAlong.highlight(index);
+        if (index === 0) status.textContent = 'Speaking…';
+      };
+      if (index === count - 1)
+        utterance.onend = () => {
+          stop.disabled = true;
+          readAlong.highlight(-1);
+          status.textContent = 'Done.';
+        };
+      utterance.onerror = (e) => {
+        stop.disabled = true;
+        if (e.error !== 'interrupted' && e.error !== 'canceled')
+          status.textContent = 'The browser couldn’t speak this text.';
+      };
+      return utterance;
+    };
     form.addEventListener('submit', (event) => {
       event.preventDefault();
       const words = text.value.trim();
@@ -130,32 +164,8 @@
       const voice = chosen();
       // One utterance per sentence: the highlight follows along, and long passages aren't cut off.
       const parts = sentences(words, voice?.lang || document.documentElement.lang || 'en');
-      highlight = showReadAlong(readAlong, parts);
-      parts.forEach((part, index) => {
-        const utterance = new SpeechSynthesisUtterance(part);
-        if (voice) {
-          utterance.voice = voice;
-          utterance.lang = voice.lang;
-        }
-        utterance.rate = Number(rate.value);
-        utterance.onstart = () => {
-          stop.disabled = false;
-          highlight(index);
-          if (index === 0) status.textContent = 'Speaking…';
-        };
-        if (index === parts.length - 1)
-          utterance.onend = () => {
-            stop.disabled = true;
-            highlight(-1);
-            status.textContent = 'Done.';
-          };
-        utterance.onerror = (e) => {
-          stop.disabled = true;
-          if (e.error !== 'interrupted' && e.error !== 'canceled')
-            status.textContent = 'The browser couldn’t speak this text.';
-        };
-        synth.speak(utterance);
-      });
+      readAlong.show(parts);
+      parts.forEach((part, index) => synth.speak(utter(part, index, parts.length, voice)));
     });
   }
 

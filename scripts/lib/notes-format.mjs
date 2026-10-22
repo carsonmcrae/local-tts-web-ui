@@ -55,9 +55,7 @@ export function parseNotes(text) {
   /** @type {NotesDocument} */
   const doc = { fields: {}, intro: '', sections: {}, problems: [] };
   let index = 0;
-  if (lines[0] !== '---') {
-    doc.problems.push('starts without front matter (a `---` line, `key: value` lines, then `---`)');
-  } else {
+  if (lines[0] === '---') {
     index = 1;
     for (; index < lines.length && lines[index] !== '---'; index += 1) {
       const match = /^([a-z][a-z-]*):\s*(.*)$/.exec(lines[index] ?? '');
@@ -67,9 +65,29 @@ export function parseNotes(text) {
     }
     if (index >= lines.length) doc.problems.push('front matter is not closed with `---`');
     index += 1;
+  } else {
+    doc.problems.push('starts without front matter (a `---` line, `key: value` lines, then `---`)');
   }
   readBody(lines.slice(index), doc);
   return doc;
+}
+
+/**
+ * The list a `## Heading` collects entries into: its section's (shared when a heading repeats), or a
+ * list that is thrown away for an unknown heading, which is reported.
+ * @param {string} title
+ * @param {NotesDocument} doc
+ * @returns {string[]}
+ */
+function openSection(title, doc) {
+  const key = /** @type {SectionKey | undefined} */ (ALIASES.get(title.trim().toLowerCase()));
+  if (key) {
+    const items = doc.sections[key] ?? [];
+    doc.sections[key] = items;
+    return items;
+  }
+  doc.problems.push(`unknown section "${title}" (use ${SECTIONS.map((s) => s.title).join(', ')})`);
+  return [];
 }
 
 /**
@@ -85,18 +103,7 @@ function readBody(lines, doc) {
     const line = raw.trimEnd();
     const heading = /^##\s+(.+)$/.exec(line);
     if (heading?.[1]) {
-      const key = /** @type {SectionKey | undefined} */ (
-        ALIASES.get(heading[1].trim().toLowerCase())
-      );
-      if (!key) {
-        doc.problems.push(
-          `unknown section "${heading[1]}" (use ${SECTIONS.map((s) => s.title).join(', ')})`,
-        );
-        items = [];
-      } else {
-        items = doc.sections[key] ?? [];
-        doc.sections[key] = items;
-      }
+      items = openSection(heading[1], doc);
     } else if (items === null) {
       intro.push(line);
     } else if (/^[-*]\s+/.test(line)) {
@@ -113,6 +120,55 @@ function readBody(lines, doc) {
 }
 
 /**
+ * Developer vocabulary, one alternative of the technical-term pattern each (some with their plural or
+ * other endings), matched as whole words in any case. Add a term where it belongs in the list.
+ */
+const TECHNICAL_TERMS = [
+  'api',
+  'apis',
+  'endpoints?',
+  'dependenc(y|ies)',
+  String.raw`refactor\w*`,
+  'lockfiles?',
+  'schemas?',
+  'migrations?',
+  'commits?',
+  'pull requests?',
+  'ci',
+  'npm',
+  'pip',
+  'pypi',
+  'uv',
+  String.raw`node\.?js`,
+  'typescript',
+  'javascript',
+  'react',
+  'vite',
+  'fastapi',
+  'pydantic',
+  'tauri',
+  'rust',
+  'cargo',
+  'sqlite',
+  'pytest',
+  'vitest',
+  'playwright',
+  'eslint',
+  'linter',
+  'json',
+  'yaml',
+  'toml',
+  'regex',
+  'stack traces?',
+  String.raw`onnx\w*`,
+  'pytorch',
+  'torch',
+  'python',
+  'workflows?',
+  'sdk',
+];
+
+/**
  * Words and patterns that belong in the technical changelog, not in notes for users.
  * @type {readonly [RegExp, string][]}
  */
@@ -123,10 +179,7 @@ const TECHNICAL = [
   [/\b(?=[0-9a-f]*\d)(?=[0-9a-f]*[a-f])[0-9a-f]{7,40}\b/, 'a commit hash'],
   [/\b(GHSA-|CVE-\d)/i, 'an advisory identifier'],
   [/\b\d+\s+(unit\s+)?tests?\b/i, 'a test count'],
-  [
-    /\b(api|apis|endpoints?|dependenc(y|ies)|refactor\w*|lockfiles?|schemas?|migrations?|commits?|pull requests?|ci|npm|pip|pypi|uv|node\.?js|typescript|javascript|react|vite|fastapi|pydantic|tauri|rust|cargo|sqlite|pytest|vitest|playwright|eslint|linter|json|yaml|toml|regex|stack traces?|onnx\w*|pytorch|torch|python|workflows?|sdk)\b/i,
-    'a technical term',
-  ],
+  [new RegExp(String.raw`\b(${TECHNICAL_TERMS.join('|')})\b`, 'i'), 'a technical term'],
 ];
 
 /**

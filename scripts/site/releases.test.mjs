@@ -102,7 +102,10 @@ test('the latest published release with an installer is advertised', async () =>
       },
     ]),
   );
-  assert.deepEqual([...published].sort(), ['2.0.0', '2.1.0']);
+  assert.deepEqual(
+    [...published].toSorted((a, b) => a.localeCompare(b)),
+    ['2.0.0', '2.1.0'],
+  );
   assert.deepEqual(installer, {
     version: '2.1.0',
     url: 'https://github.com/carsonmcrae/ttsnative/releases/download/x/TTSNative-Setup-2.1.0.exe',

@@ -27,6 +27,8 @@ EPUB = "http://www.idpf.org/2007/ops"
 OPF = "http://www.idpf.org/2007/opf"
 DC = "http://purl.org/dc/elements/1.1/"
 XML_LANG = "{http://www.w3.org/XML/1998/namespace}lang"
+XHTML_SUFFIX = ".xhtml"  # the chapter files of a package
+ROMAN_TYPE = "z3998:roman"  # epub:type of a Roman numeral
 DROPPED_STEMS = frozenset({"titlepage", "imprint", "colophon", "uncopyright", "loi", "frontispiece", "halftitlepage", "endnotes"})
 FIXED_TIME = (2026, 10, 21, 0, 0, 0)
 _ROMAN = {"I": 1, "V": 5, "X": 10, "L": 50, "C": 100, "D": 500, "M": 1000}
@@ -99,7 +101,7 @@ def read_source(path: str) -> Source:
         revision=version.split("-")[0][:7],
         modified=_meta(opf, "dcterms:modified") or "",
         transcriptions=[el.text for el in opf.iter(f"{{{DC}}}source") if el.text],
-        spine=[item for item in spine if item.endswith(".xhtml")],
+        spine=[item for item in spine if item.endswith(XHTML_SUFFIX)],
         labels=labels,
         archive=archive,
     )
@@ -131,36 +133,57 @@ def _heading_text(heading: ET.Element) -> str | None:
         text = "".join(span.itertext()).strip()
         if "se:label" in types:
             label = text
-        elif "z3998:roman" in types and roman_to_int(text):
+        elif ROMAN_TYPE in types and roman_to_int(text):
             number = roman_to_int(text)
         elif "title" in types and span is not heading:
             title = text
-    if number is None and "z3998:roman" in _types(heading):
+    if number is None and ROMAN_TYPE in _types(heading):
         number = roman_to_int("".join(heading.itertext()))
     if number is None:
         return None
     return f"{label} {number}: {title}" if title else f"{label} {number}"
 
 
+def _local_name(element: ET.Element) -> str:
+    return element.tag.rsplit("}", 1)[-1]
+
+
+def _collapsed(element: ET.Element) -> str:
+    """An element's text with every run of whitespace made one space."""
+    return " ".join("".join(element.itertext()).split())
+
+
+def _is_rewritten_heading(element: ET.Element, parents: dict[ET.Element, ET.Element]) -> bool:
+    """A heading group, or an h2 or h3 outside one (a group's own headings go with the group)."""
+    tag = _local_name(element)
+    if tag not in ("hgroup", "h2", "h3") or element not in parents:
+        return False
+    return tag == "hgroup" or parents[element].tag != f"{{{XHTML}}}hgroup"
+
+
+def _plain_heading(element: ET.Element) -> str | None:
+    """The one plain heading that replaces a numbered heading or a heading group; None to keep it."""
+    tag = _local_name(element)
+    if tag == "hgroup" or ROMAN_TYPE in _types(element):
+        text = _heading_text(element)
+        if text is not None:
+            return text
+    if tag == "hgroup":
+        return ": ".join(part for part in (_collapsed(child) for child in element) if part)
+    return None
+
+
 def _rewrite_headings(body: ET.Element, parents: dict[ET.Element, ET.Element]) -> str | None:
     """Replace numbered headings and heading groups by one plain heading; return the first heading's text."""
     first: str | None = None
-    for element in list(body.iter()):
-        tag = element.tag.rsplit("}", 1)[-1]
-        if tag not in ("hgroup", "h2", "h3") or element not in parents:
-            continue
-        if tag != "hgroup" and parents[element].tag == f"{{{XHTML}}}hgroup":
-            continue  # handled with its group
-        text = _heading_text(element) if (tag == "hgroup" or "z3998:roman" in _types(element)) else None
+    # Chosen before any is replaced, since replacing changes the tree being walked.
+    headings = [element for element in body.iter() if _is_rewritten_heading(element, parents)]
+    for element in headings:
+        text = _plain_heading(element)
         if text is None:
-            text = " ".join("".join(element.itertext()).split())
-            if tag == "hgroup":
-                parts = [" ".join("".join(child.itertext()).split()) for child in element]
-                text = ": ".join(part for part in parts if part)
-            else:
-                first = first or text
-                continue
-        level = "h2" if tag != "h3" else "h3"
+            first = first or _collapsed(element)
+            continue
+        level = "h3" if _local_name(element) == "h3" else "h2"
         replacement = ET.Element(f"{{{XHTML}}}{level}")
         replacement.text, replacement.tail = text, element.tail
         parent = parents[element]
@@ -170,34 +193,46 @@ def _rewrite_headings(body: ET.Element, parents: dict[ET.Element, ET.Element]) -
     return first
 
 
+def _keep_only(body: ET.Element, fragment: str) -> None:
+    """Leave only the element ``fragment`` names (one poem or story of a file) in the body."""
+    wanted = next((el for el in body.iter() if el.get("id") == fragment), None)
+    if wanted is None:
+        raise ValueError(f"no element with id {fragment!r}")
+    wanted.tail = None
+    del body[:]
+    body.append(wanted)
+
+
+def _is_dropped(element: ET.Element) -> bool:
+    """Images, figures, scripts and the like, and note markers: nothing a listener needs."""
+    return element.tag in _REMOVED or (element.tag == f"{{{XHTML}}}a" and "noteref" in _types(element))
+
+
+def _strip(root: ET.Element) -> None:
+    """Drop what a listener doesn't need (keeping the text around it) and turn links into plain text."""
+    parents = {child: parent for parent in root.iter() for child in parent}
+    # Chosen before any is removed, since removing changes the tree being walked.
+    dropped = [element for element in root.iter() if element in parents and _is_dropped(element)]
+    for element in dropped:
+        _remove(parents, element)
+    for anchor in root.iter(f"{{{XHTML}}}a"):
+        anchor.tag = f"{{{XHTML}}}span"  # the text stays; nothing in a shipped book points anywhere
+        for name in [name for name in anchor.attrib if name in ("href", "target", "rel")]:
+            del anchor.attrib[name]
+
+
 def rewrite_chapter(xml: bytes, fragment: str | None, label: str | None, stem: str) -> Chapter:
     """One shipped chapter from a source file (or the element ``fragment`` names inside it)."""
     root = SafeET.fromstring(xml)
     body = next(el for el in root if el.tag == f"{{{XHTML}}}body")
     if fragment:
-        wanted = next((el for el in body.iter() if el.get("id") == fragment), None)
-        if wanted is None:
-            raise ValueError(f"no element with id {fragment!r}")
-        wanted.tail = None
-        for child in list(body):
-            body.remove(child)
-        body.append(wanted)
-    parents = {child: parent for parent in root.iter() for child in parent}
-    for element in list(root.iter()):
-        if element not in parents:
-            continue
-        if element.tag in _REMOVED or (element.tag == f"{{{XHTML}}}a" and "noteref" in _types(element)):
-            _remove(parents, element)
-    for anchor in root.iter(f"{{{XHTML}}}a"):
-        anchor.tag = f"{{{XHTML}}}span"  # the text stays; nothing in a shipped book points anywhere
-        for name in [name for name in anchor.attrib if name in ("href", "target", "rel")]:
-            del anchor.attrib[name]
+        _keep_only(body, fragment)
+    _strip(root)
     heading = _rewrite_headings(body, {child: parent for parent in root.iter() for child in parent})
     title = heading or (label or stem.replace("-", " ").title())
     head = next((el for el in root if el.tag == f"{{{XHTML}}}head"), None)
     if head is not None:
-        for child in list(head):
-            head.remove(child)
+        del head[:]
         title_el = ET.SubElement(head, f"{{{XHTML}}}title")
         title_el.text = title
     out = b'<?xml version="1.0" encoding="utf-8"?>\n' + ET.tostring(root, encoding="unicode").encode("utf-8")
@@ -206,11 +241,11 @@ def rewrite_chapter(xml: bytes, fragment: str | None, label: str | None, stem: s
 
 def choose_chapters(source: Source, selection: list[str] | None) -> list[Chapter]:
     """The chapters that ship: the selection (``stem`` or ``stem#id``), or every spine item but the dropped ones."""
-    by_stem = {posixpath.basename(path)[: -len(".xhtml")]: path for path in source.spine}
+    by_stem = {posixpath.basename(path)[: -len(XHTML_SUFFIX)]: path for path in source.spine}
     chapters: list[Chapter] = []
     if selection is None:
         for path in source.spine:
-            stem = posixpath.basename(path)[: -len(".xhtml")]
+            stem = posixpath.basename(path)[: -len(XHTML_SUFFIX)]
             if stem in DROPPED_STEMS:
                 continue
             chapters.append(rewrite_chapter(source.archive.read(path), None, source.labels.get(path), stem))
@@ -305,7 +340,7 @@ def external_references(epub: bytes) -> list[str]:
     found: list[str] = []
     with zipfile.ZipFile(io.BytesIO(epub)) as book:
         for name in book.namelist():
-            if not name.endswith(".xhtml"):
+            if not name.endswith(XHTML_SUFFIX):
                 continue
             text = book.read(name).decode("utf-8")
             for url in re.findall(r"https?://[^\s\"'<>]+", text):

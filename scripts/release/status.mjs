@@ -22,10 +22,12 @@ const current = /** @type {{ version: string }} */ (
 const changes = readChanges();
 const bump = strongestBump(changes.map((change) => change.bump));
 const next = bump === 'none' ? null : nextVersion(current, changes);
+const newestTag = releaseTags()[0];
+const tagLabel = newestTag ? `v${newestTag}` : 'none found';
 const lines = [
   `## TTSNative release status`,
   '',
-  `- Version in the repository: **${current}** (newest release tag: ${releaseTags()[0] ? `v${releaseTags()[0]}` : 'none found'})`,
+  `- Version in the repository: **${current}** (newest release tag: ${tagLabel})`,
   `- Pending change files: **${changes.length}** (strongest bump: ${bump})`,
   `- Next release: **${next ?? 'nothing to release yet'}**`,
   `- This build: \`${buildVersion()}\``,

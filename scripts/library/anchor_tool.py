@@ -27,9 +27,11 @@ from ltts.documents.structures import ExtractionLimits
 from ltts.library.presets import make_anchor, sentence_hash
 
 LIMITS = ExtractionLimits(10_000_000, 10_000, 10_000, 200 * 1024 * 1024, 500)
+# One sentence: chapter id, section index, segment index, text, tagged speaker.
+Row = tuple[str, int, int, str, str | None]
 
 
-def load(work_id: str) -> tuple[list[tuple[str, int, int, str, str | None]], dict[int, str]]:
+def load(work_id: str) -> tuple[list[Row], dict[int, str]]:
     """Every sentence as (chapter id, section index, segment index, text, tagged speaker), and chapter ids."""
     root = resources.files("ltts.library")
     catalog = json.loads(root.joinpath("catalog.json").read_text("utf-8"))
@@ -42,6 +44,36 @@ def load(work_id: str) -> tuple[list[tuple[str, int, int, str, str | None]], dic
     return rows, chapters
 
 
+def print_speakers(rows: list[Row]) -> None:
+    """How many sentences the dialogue analysis gives each speaker, most first."""
+    counts: dict[str, int] = {}
+    for _, _, _, _, speaker in rows:
+        if speaker:
+            counts[speaker] = counts.get(speaker, 0) + 1
+    for name, count in sorted(counts.items(), key=lambda item: -item[1]):
+        print(f"{count:4d}  {name}")
+
+
+def print_chapter(rows: list[Row], wanted: str) -> None:
+    """One chapter's sentences: index, hash, the tagged speaker if any, and the text."""
+    for chapter, _, index, text, speaker in rows:
+        if chapter == wanted:
+            print(f"{index:5d} {sentence_hash(text)} {('[' + speaker + '] ') if speaker else ''}{text}")
+
+
+def print_anchors(rows: list[Row], wanted: str) -> None:
+    """A ready-made anchor for every sentence containing ``wanted``, counting repeats of the same text."""
+    matches = [(chapter, index, text, speaker) for chapter, _, index, text, speaker in rows if wanted in text]
+    seen: dict[str, int] = {}
+    for chapter, index, text, speaker in matches:
+        key = sentence_hash(text)
+        seen[key] = seen.get(key, 0) + 1
+        anchor = make_anchor(chapter, text, seen[key])
+        print(json.dumps({"index": index, "speaker": speaker, "anchor": anchor.model_dump()}, ensure_ascii=False))
+    if not matches:
+        print(f"no sentence contains {wanted!r}", file=sys.stderr)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Anchors for a shipped book's sentences.")
     parser.add_argument("work_id")
@@ -51,28 +83,13 @@ def main() -> None:
     args = parser.parse_args()
     rows, chapters = load(args.work_id)
     if args.speakers:
-        counts: dict[str, int] = {}
-        for _, _, _, _, speaker in rows:
-            if speaker:
-                counts[speaker] = counts.get(speaker, 0) + 1
-        for name, count in sorted(counts.items(), key=lambda item: -item[1]):
-            print(f"{count:4d}  {name}")
+        print_speakers(rows)
         return
     if args.chapter:
-        for chapter, _, index, text, speaker in rows:
-            if chapter == args.chapter:
-                print(f"{index:5d} {sentence_hash(text)} {('[' + speaker + '] ') if speaker else ''}{text}")
+        print_chapter(rows, args.chapter)
         return
     for wanted in args.find:
-        matches = [(chapter, index, text, speaker) for chapter, _, index, text, speaker in rows if wanted in text]
-        seen: dict[str, int] = {}
-        for chapter, index, text, speaker in matches:
-            key = sentence_hash(text)
-            seen[key] = seen.get(key, 0) + 1
-            anchor = make_anchor(chapter, text, seen[key])
-            print(json.dumps({"index": index, "speaker": speaker, "anchor": anchor.model_dump()}, ensure_ascii=False))
-        if not matches:
-            print(f"no sentence contains {wanted!r}", file=sys.stderr)
+        print_anchors(rows, wanted)
     print(f"{len(rows)} sentences in {len(chapters)} chapters", file=sys.stderr)
 
 

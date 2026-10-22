@@ -46,6 +46,13 @@ npm run dev
   behaviour change and a review from a code owner.
 - **Dependencies.** Ask before adding one. Prefer the standard library or an existing dependency; check
   its licence (no AGPL/GPL in app code), maintenance and install scripts. Releases must be ≥ 14 days old.
+- **Adding a language or package manager.** The project's ecosystems are npm, Python through uv, Rust
+  through Cargo and GitHub Actions, and each has Dependabot updates, an audit and a code scanner.
+  `scripts/check-ecosystems.mjs` (part of `npm run lint:repo`) fails on anything else: PHP, Ruby, Go,
+  the JVM, .NET, a second JavaScript or Python package manager, a container image and so on. Adding one
+  needs an architecture decision (`docs/architecture/decisions.md`) and, in the same pull request, its
+  Dependabot entry, an audit in `npm run security`, CodeQL or SonarQube coverage and an update to
+  `scripts/lib/ecosystems.mjs`, so nothing arrives before its security tooling does.
 - **No dead code, no TODOs** in merged code — open an issue instead.
 - **Accessibility.** Keyboard reachable, visible focus, labelled controls, WCAG 2.2 AA contrast. The e2e
   suite runs axe.

@@ -42,7 +42,9 @@ the interface. Never weaken LAN authentication to make a phone behave like the c
 blocks (jscpd), 100 % line and branch coverage for the web app and the server, the script tests and
 the build. Also run `npm run test:e2e` for interface or playback changes and `npm run test:inference`
 for engine changes. Don't exclude files, lower thresholds, delete behaviour or add hollow tests to make
-a gate pass; report a gap you can't close honestly. Release readiness has its own gate
+a gate pass; report a gap you can't close honestly. A new language, runtime or package manager fails
+`npm run lint:repo` until its security tooling comes with it (CONTRIBUTING.md, "Adding a language or
+package manager"). Release readiness has its own gate
 ([docs/guides/release-process.md](docs/guides/release-process.md)).
 
 ## Data and secrets

@@ -13,15 +13,21 @@
 
   function setupCopyButtons() {
     for (const button of document.querySelectorAll('[data-copy]')) {
+      // The visible word changes with the state; the accessible name keeps saying what it copies.
+      const what = button.dataset.copyLabel ?? 'the text';
+      const show = (state) => {
+        button.textContent = state;
+        button.setAttribute('aria-label', `${state} ${what}`);
+      };
       button.addEventListener('click', async () => {
         const text = $(button.dataset.copy)?.textContent ?? '';
         try {
           await navigator.clipboard.writeText(text);
-          button.textContent = 'Copied';
+          show('Copied');
         } catch {
-          button.textContent = 'Select and copy';
+          show('Select and copy');
         }
-        setTimeout(() => (button.textContent = 'Copy'), 2000);
+        setTimeout(() => show('Copy'), 2000);
       });
     }
   }

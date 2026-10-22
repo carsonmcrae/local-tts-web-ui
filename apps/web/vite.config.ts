@@ -7,17 +7,19 @@
  *   (docs/releases/) built into the app, the licence banner on every bundle and the
  *   third-party licence files (bundled packages, and the fonts' OFL texts), the loopback-only dev
  *   server that proxies /api to the local Python server (port from LTTS_API_PORT, set by
- *   scripts/dev.mjs), and unit-test setup.
+ *   scripts/dev.mjs), and unit-test setup, with one worker per free CPU (scripts/lib/test-workers.mjs).
  * Does NOT belong: Orchestration of the API process (scripts/dev.mjs).
  */
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import { readFileSync } from 'node:fs';
+import { availableParallelism } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import type { Plugin } from 'vite';
 import { defineConfig } from 'vitest/config';
 import { buildVersion } from '../../scripts/lib/build-version.mjs';
 import { readReleases } from '../../scripts/lib/releases.mjs';
+import { idleCpus, testWorkers } from '../../scripts/lib/test-workers.mjs';
 
 const apiPort = process.env.LTTS_API_PORT ?? '8765';
 const BANNER = '/*! TTSNative | Copyright (c) 2026 Carson McRae | MIT License */';
@@ -29,6 +31,10 @@ const version = process.env.VITEST ? packageVersion : buildVersion();
 const releases = readReleases()
   .releases.filter((release) => !release.draft)
   .map(({ draft: _draft, revised: _revised, ...release }) => release);
+// A test run starts no more CPU-bound workers than there are free CPUs; builds skip the sampling.
+const maxWorkers = process.env.VITEST
+  ? testWorkers(availableParallelism(), await idleCpus())
+  : undefined;
 
 /** The fonts are imported from CSS, which Vite's licence file doesn't cover: ship their OFL texts too. */
 function fontLicenses(): Plugin {
@@ -79,6 +85,7 @@ export default defineConfig({
     setupFiles: ['./src/test/setup.ts'],
     css: false,
     restoreMocks: true,
+    ...(maxWorkers === undefined ? {} : { maxWorkers }),
     coverage: {
       provider: 'v8',
       reporter: ['text-summary', 'lcov'],

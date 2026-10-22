@@ -10,7 +10,8 @@
  *   (releases.mjs; with `--releases github` only published releases and a verified installer,
  *   otherwise no installer is advertised); writes sitemap.xml and robots.txt; and fails if a local
  *   link (relative or through the base URL) or in-page anchor points nowhere.
- *   Usage: `node scripts/site/build-site.mjs --out _site --base-url https://example.com [--releases github]`.
+ *   Usage: `node scripts/site/build-site.mjs --out _site --base-url https://example.com [--releases github]
+ *   [--expect-installer X.Y.Z]` (the last fails the build unless that version's installer is advertised).
  * Does NOT belong: The page content (site/) or deployment (.github/workflows/pages.yml).
  */
 import {
@@ -82,6 +83,36 @@ export function brokenLinks(html, out, base = '') {
   });
 }
 
+/**
+ * After a release, the Pages run is told which installer it must find (`--expect-installer`), so a
+ * site that would not advertise the new version fails visibly instead of quietly keeping the old
+ * download.
+ * @param {import('./releases.mjs').Installer | null} installer
+ */
+function installerAsExpected(installer) {
+  if (!process.argv.includes('--expect-installer')) return true;
+  const expected = option('--expect-installer');
+  if (installer?.version === expected) return true;
+  console.error(
+    `expected the Windows installer ${expected} to be published; found ${installer ? installer.version : 'none'}`,
+  );
+  return false;
+}
+
+/**
+ * The download page is noindex until an installer exists, so it joins the sitemap only then.
+ * @param {{ version: string }[]} releases
+ * @param {import('./releases.mjs').Installer | null} installer
+ */
+function sitemapUrls(releases, installer) {
+  return [
+    '/',
+    '/releases.html',
+    ...(installer ? ['/download/'] : []),
+    ...releases.map((release) => `/${releasePath(release.version)}`),
+  ];
+}
+
 /** Published release notes (drafts never) and the installer to advertise, if any. */
 async function releaseInfo() {
   const finished = readReleases().releases.filter((release) => !release.draft);
@@ -128,6 +159,10 @@ async function main() {
   }
 
   const { releases, installer, known, github } = await releaseInfo();
+  if (!installerAsExpected(installer)) {
+    process.exitCode = 1;
+    return;
+  }
   const latest = releases[0] ?? null;
   const released = releasedFlags(
     known,
@@ -158,15 +193,12 @@ async function main() {
   const problems = pages
     .filter(({ page }) => page !== '404.html')
     .flatMap(({ page, html }) => brokenLinks(html, out, base).map((ref) => `${page}: ${ref}`));
-  const urls = [
-    '/',
-    '/releases.html',
-    '/download/',
-    ...releases.map((release) => `/${releasePath(release.version)}`),
-  ];
   writeFileSync(
     path.join(out, 'sitemap.xml'),
-    `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls
+    `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${sitemapUrls(
+      releases,
+      installer,
+    )
       .map((url) => `  <url><loc>${base}${url}</loc></url>`)
       .join('\n')}\n</urlset>\n`,
   );

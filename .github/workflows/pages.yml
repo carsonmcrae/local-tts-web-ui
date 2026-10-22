@@ -22,6 +22,11 @@ on:
         '.github/workflows/pages.yml',
       ]
   workflow_dispatch:
+    inputs:
+      expect_installer:
+        description: 'Fail unless this version has a published Windows installer (set by the release workflow)'
+        required: false
+        default: ''
 
 permissions:
   contents: read
@@ -45,8 +50,10 @@ jobs:
         env:
           BASE_URL: ${{ steps.pages.outputs.base_url }}
           GITHUB_TOKEN: ${{ github.token }}
+          EXPECT_INSTALLER: ${{ inputs.expect_installer }}
         run: |
-          node scripts/site/build-site.mjs --out _site --base-url "$BASE_URL" --releases github
+          node scripts/site/build-site.mjs --out _site --base-url "$BASE_URL" --releases github \
+            ${EXPECT_INSTALLER:+--expect-installer "$EXPECT_INSTALLER"}
           ls -la _site _site/media
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:

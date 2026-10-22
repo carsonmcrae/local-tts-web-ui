@@ -211,4 +211,4 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
-        run: gh workflow run pages.yml --ref main
+        run: gh workflow run pages.yml --ref main -f expect_installer="${TAG#v}"

@@ -27,6 +27,7 @@ import { Button } from '@/components/ui/Button';
 import { Badge, Banner } from '@/components/ui/Feedback';
 import { OptionList } from '@/components/ui/Menu';
 import { TRACKS } from '@/features/music/library';
+import { pluralize } from '@/lib/format';
 import { useMusic } from '@/features/music/MusicProvider';
 import type { MusicSession } from '@/features/music/session';
 import { voiceLabel } from './StyleSentencesDialog';
@@ -208,7 +209,7 @@ export function ReadingExperience({
             <li key={character.id}>
               <Badge>
                 {character.name}
-                {character.lines ? ` · ${character.lines} lines` : ''} ·{' '}
+                {character.lines ? ` · ${pluralize(character.lines, 'line')}` : ''} ·{' '}
                 {label(character.voice.chosen)}
               </Badge>
             </li>

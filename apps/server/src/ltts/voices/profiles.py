@@ -35,6 +35,7 @@ from ltts.common import ApiModel, new_id, utc_now
 from ltts.config import Settings
 from ltts.db import Database
 from ltts.engines.base import Delivery, VoiceInfo, VoiceSpec
+from ltts.engines.credits import CLONED
 from ltts.errors import AppError, ConflictError, NotFoundError, UnsupportedDocumentError
 from ltts.voices.adapters import TuningCandidate, kept_adapter, replace_adapter, waiting_candidate
 from ltts.voices.cleanup import Cleanup, RecordingCheck, apply_cleanup, suggest_cleanup
@@ -471,10 +472,8 @@ class VoiceProfileService:
                 category="custom",
                 description=_describe(p),
                 available=ready,
-                attribution=(
-                    "Synthetic speech from Chatterbox Turbo (MIT, Resemble AI), conditioned on a recording made with "
-                    "the speaker's consent; it is not that recording. Every clip carries an inaudible watermark."
-                ),
+                credit=CLONED.short,
+                attribution=CLONED.full,
             )
             for p in self.list_all()
         ]

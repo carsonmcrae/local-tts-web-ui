@@ -135,6 +135,7 @@ export const voice = (overrides: Partial<VoiceInfo> = {}): VoiceInfo => ({
   qualityGrade: 'A',
   description: '',
   available: true,
+  credit: '',
   attribution: '',
   ...overrides,
 });

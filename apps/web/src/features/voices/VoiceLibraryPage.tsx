@@ -5,7 +5,7 @@
  * Scope: Search and filters (language, gender, built-in/custom), a shared comparison passage so
  *   every preview says the same thing, voice cards with previews, and setting the reading voice
  *   (applied to the player immediately and saved as the default); blending built-in voices into a
- *   new one (BlendVoices).
+ *   new one (BlendVoices); the full credits of every voice source, once (VoiceCredits).
  * Does NOT belong: Creating custom voices (Voice Studio).
  */
 import { AudioLines, Mic, Search } from 'lucide-react';
@@ -25,6 +25,7 @@ import { useReadingVoice } from '@/features/player/useReadingVoice';
 import { BlendVoices } from './BlendVoices';
 import { useVoicePreview } from './useVoicePreview';
 import { VoiceCard } from './VoiceCard';
+import { VoiceCredits } from './VoiceCredits';
 
 export interface VoiceFilters {
   query: string;
@@ -222,6 +223,7 @@ export default function VoiceLibraryPage() {
           ))}
         </ul>
       </VoiceResults>
+      <VoiceCredits voices={all} />
     </div>
   );
 }

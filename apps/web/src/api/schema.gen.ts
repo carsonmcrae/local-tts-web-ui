@@ -3900,6 +3900,11 @@ export type components = {
        */
       category: 'built-in' | 'custom';
       /**
+       * Credit
+       * @default
+       */
+      credit: string;
+      /**
        * Description
        * @default
        */

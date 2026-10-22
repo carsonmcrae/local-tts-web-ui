@@ -56,6 +56,7 @@ from ltts.engines.chatterbox_env import (
     write_marker,
 )
 from ltts.engines.cloned_speech import acceptable, plausibility, polish, sentence_style
+from ltts.engines.credits import CHATTERBOX
 from ltts.engines.worker_client import WorkerClient
 from ltts.errors import ConflictError, EngineUnavailableError
 from ltts.hardware import detect_gpus
@@ -191,10 +192,8 @@ class ChatterboxEngine(Engine, VoiceTuner):
                 category="built-in",
                 description="The model's built-in reference voice.",
                 available=self.is_ready(),
-                attribution=(
-                    "Synthetic voice built into Chatterbox Turbo (MIT, Resemble AI); its origin is not documented. "
-                    "Every clip carries Resemble's inaudible Perth watermark."
-                ),
+                credit=CHATTERBOX.short,
+                attribution=CHATTERBOX.full,
             )
         ]
 

@@ -82,7 +82,9 @@ class VoiceInfo(ApiModel):
     description: str = ""
     available: bool = True
     # Where the voice comes from and under what licence, said plainly: every voice is synthetic speech from a
-    # model, never a recording of a person, and the library shows this with the voice.
+    # model, never a recording of a person. ``credit`` is one line for the voice's card; ``attribution`` is the
+    # full wording, which the library shows once for every voice that shares it (``engines/credits.py``).
+    credit: str = ""
     attribution: str = ""
 
 

@@ -7,19 +7,24 @@
  *   saved preferences), voice card details, and loading/empty/error states.
  * Does NOT belong: Creating custom voices (features/studio tests).
  */
-import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { json, kokoro, mockApi, preferences, renderWithApp, voice } from '@/test/render';
+import { creditGroups, VoiceCredits } from './VoiceCredits';
 import VoiceLibraryPage from './VoiceLibraryPage';
 
 afterEach(() => vi.unstubAllGlobals());
 
+const KOKORO_LINE = 'Synthetic voice · Kokoro-82M, Apache-2.0';
+const KOKORO_FULL =
+  'Synthetic voice from the Kokoro-82M model by hexgrad (Apache-2.0). Not a recording of a person.';
+
 const voices = [
-  voice({ description: 'Warm and clear.', attribution: 'Synthetic voice from the Kokoro-82M model (Apache-2.0).' }),
-  voice({ id: 'kokoro:bm_george', name: 'George', language: 'English (UK)', gender: 'male' }),
+  voice({ description: 'Warm and clear.', credit: KOKORO_LINE, attribution: KOKORO_FULL }),
+  voice({ id: 'kokoro:bm_george', name: 'George', language: 'English (UK)', gender: 'male', credit: KOKORO_LINE, attribution: KOKORO_FULL }),
   voice({ id: 'piper:x', name: 'Xavier', engineId: 'piper', language: 'French', gender: 'male', qualityGrade: null }),
-  voice({ id: 'custom:me', name: 'Me', category: 'custom', engineId: 'chatterbox', language: 'English', gender: 'unspecified' }),
+  voice({ id: 'custom:me', name: 'Me', category: 'custom', engineId: 'chatterbox', language: 'English', gender: 'unspecified', credit: 'Synthetic clone · Test, MIT' }),
 ]; // prettier-ignore
 
 const audio = () => new Response(new Blob(['wav']), { headers: { 'X-Audio-Url': '/api/audio/k' } });
@@ -74,11 +79,51 @@ describe('Voice library filters', () => {
       'French',
     ]);
     expect(screen.getByText('Warm and clear.')).toBeInTheDocument();
-    expect(
-      screen.getByText('Synthetic voice from the Kokoro-82M model (Apache-2.0).'),
-    ).toBeInTheDocument();
     expect(screen.getByText('French · male · piper')).toBeInTheDocument();
     expect(screen.getByText('English · Chatterbox')).toBeInTheDocument();
+  });
+});
+
+describe('Voice credits', () => {
+  it('shows a one-line credit on each card and the full wording once', async () => {
+    api();
+    await renderVoices();
+    const heart = screen.getByRole('heading', { level: 3, name: /^Heart/ }).closest('li');
+    expect(heart).not.toBeNull();
+    expect(
+      within(heart as HTMLElement).getByText(KOKORO_LINE, { exact: false }),
+    ).toBeInTheDocument();
+    expect(within(heart as HTMLElement).queryByText(KOKORO_FULL)).toBeNull(); // the long text isn't on the card
+    const credits = screen.getByRole('region', { name: 'Voice credits' });
+    expect(within(credits).getAllByText(KOKORO_FULL)).toHaveLength(1); // two voices share it, shown once
+    expect(within(credits).getByText('· 2 voices')).toBeInTheDocument();
+    expect(within(credits).getByText(/THIRD-PARTY-NOTICES\.txt/)).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Credits for Xavier' })).toBeNull(); // no credit, no link
+    expect(screen.getByText('Synthetic clone · Test, MIT')).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Credits for Me' })).toBeNull(); // nothing fuller to link to
+  });
+
+  it('takes the credits link on a card to the credits and moves focus there', async () => {
+    api();
+    const scrolled = vi.fn();
+    Element.prototype.scrollIntoView = scrolled;
+    const { user } = await renderVoices();
+    await user.click(screen.getByRole('link', { name: 'Credits for George' }));
+    expect(scrolled).toHaveBeenCalledWith({ block: 'start' });
+    expect(screen.getByRole('heading', { level: 2, name: 'Voice credits' })).toHaveFocus();
+    expect(window.location.hash).toBe(''); // the page's address doesn't change
+  });
+
+  it('names a single voice instead of counting it, and shows nothing without attributions', () => {
+    const one = [
+      voice({ name: 'Solo', credit: 'Synthetic voice · Test, MIT', attribution: 'Full text.' }),
+    ];
+    const { unmount } = render(<VoiceCredits voices={one} />);
+    expect(screen.getByText('· Solo')).toBeInTheDocument();
+    unmount();
+    const { container } = render(<VoiceCredits voices={[voice()]} />);
+    expect(container).toBeEmptyDOMElement();
+    expect(creditGroups([voice({ attribution: 'Only full.' })])[0]?.credit).toBe('Only full.');
   });
 });
 

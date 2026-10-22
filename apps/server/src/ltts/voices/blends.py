@@ -25,6 +25,7 @@ from pydantic import Field, field_validator
 from ltts.common import ApiModel, new_id, utc_now
 from ltts.db import Database
 from ltts.engines.base import VoiceInfo, VoiceSpec
+from ltts.engines.credits import BLEND
 from ltts.errors import ConflictError, NotFoundError
 
 log = logging.getLogger("ltts.voices.blends")
@@ -138,7 +139,8 @@ class BlendStore:
                     category="custom",
                     description=f"A blend of {mix}.",
                     available=ready and base is not None,
-                    attribution="Synthetic voice: a weighted mix of Kokoro-82M voices (Apache-2.0, hexgrad).",
+                    credit=BLEND.short,
+                    attribution=BLEND.full,
                 )
             )
         return voices

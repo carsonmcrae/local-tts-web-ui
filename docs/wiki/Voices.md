@@ -18,20 +18,21 @@ Narrow the list with the search box (name or language) and the **Language**, **G
 
 ## Every voice is synthetic
 
-No voice in TTSNative is a recording of a person. Each card says where its voice comes from and under
-what licence:
+No voice in TTSNative is a recording of a person. Each card has a one-line credit naming the model
+behind the voice and its licence, and a **Credits** link to **Voice credits** at the end of the Voices
+page, which gives the full wording for each source of voices once:
 
-- **Kokoro voices** are produced by the Kokoro-82M model (Apache-2.0, by hexgrad), run with
-  kokoro-onnx (MIT). Its authors say it was trained on permissively licensed and public-domain audio,
-  including synthetic speech from other systems and the CC BY corpora credited in the licence notices,
-  and name no speaker for any voice.
-- **Chatterbox default** is the voice built into Chatterbox Turbo (MIT, Resemble AI); its origin is
-  not documented. Every Chatterbox clip carries an inaudible watermark.
-- **Your voices** are synthetic speech from Chatterbox Turbo conditioned on the recording you made
-  with the speaker's consent; they are not that recording, and their clips are watermarked too.
-- **Blends** are weighted mixes of Kokoro voices.
+| Card credit                                       | Full wording, in Voice credits                                                                                                                                                                                                                                                                                                                                                                                  |
+| ------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Synthetic voice · Kokoro-82M, Apache-2.0          | The Kokoro-82M model by hexgrad (Apache-2.0), which builds on StyleTTS 2 by yl4579, run with kokoro-onnx (MIT). Its authors say it was trained on permissively licensed and public-domain audio, including Koniwa by tnc (CC BY 3.0) and SIWIS (CC BY 4.0), and on synthetic speech from other text-to-speech systems; no speaker is named for any voice. TTSNative is not affiliated with the model's authors. |
+| Synthetic voice · Chatterbox Turbo, MIT           | The voice built into Chatterbox Turbo by Resemble AI (MIT); its origin is not documented. Every clip carries Resemble AI's Perth watermark, designed to be inaudible.                                                                                                                                                                                                                                           |
+| Consented synthetic clone · Chatterbox Turbo, MIT | **Your voices**: synthetic speech from Chatterbox Turbo conditioned on a recording made with the speaker's consent; it is not that recording. Its clips are watermarked too.                                                                                                                                                                                                                                    |
+| Synthetic blend · Kokoro-82M, Apache-2.0          | **Blends**: a weighted mix of built-in Kokoro voices, with the Kokoro credit above.                                                                                                                                                                                                                                                                                                                             |
 
-The exact models and files, with their checksums, are listed in
+Each engine's licence is also shown in **Settings → Engines & models**. The Windows app keeps the licence
+texts and notices of everything it ships, the voice model's included, in `THIRD-PARTY-NOTICES.txt` and
+the `licenses` folder of `%LOCALAPPDATA%\TTSNative\runtime`. The exact models and files, with their
+checksums, are listed in
 [docs/security/model-provenance.md](https://github.com/carsonmcrae/ttsnative/blob/main/docs/security/model-provenance.md).
 
 ## Languages

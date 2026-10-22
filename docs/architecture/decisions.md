@@ -364,7 +364,8 @@ when a choice changes the stack, a trust boundary, data storage or the setup exp
     public-domain recordings (or licences that allow redistribution, editing and commercial use) are
     included. Tracks are served by the local server, so music needs no internet.
   - **Gentle changes.** Turning music on or off, pausing and switching tracks fade or crossfade;
-    loops are sample-accurate (`AudioBufferSourceNode.loop`). One track plays at a time, and an old
+    loops repeat with `AudioBufferSourceNode.loop`, their seam crossfaded over 30 ms once decoded
+    (a decoder may drop samples at the start). One track plays at a time, and an old
     one is stopped and disconnected once its fade ends.
 - **Alternatives:**
   - **Mixing on the server into each sentence.** Rejected: it changes every sentence's audio and cache

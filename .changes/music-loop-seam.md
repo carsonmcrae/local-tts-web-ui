@@ -4,7 +4,7 @@ desktop: changed
 browser: changed
 phone: changed
 website: unchanged
-docs: unchanged
+docs: changed
 ---
 
 ## Fixed

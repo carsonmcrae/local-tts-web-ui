@@ -6,20 +6,20 @@ is left. The decision itself is
 
 ## Pieces
 
-| File (apps/web/src)                         | Role                                                                                      |
-| ------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| `features/music/engine.ts`                  | Web Audio player: decode, fade, crossfade, sample-accurate loop, pause in place, cleanup. |
-| `features/music/session.ts`                 | When music plays: follows the narration player; owns on/off, track, volume, preview.      |
-| `features/music/preferences.ts`             | Track and volume per device (`ltts.music`); "on" is never stored.                         |
-| `features/music/library.ts`, `library.json` | The catalogue: file, length, category, source, licence and its evidence, edits, SHA-256.  |
-| `features/music/MusicProvider.tsx`          | One session per app, mounted inside the narration `PlayerProvider`.                       |
-| `features/music/MusicChannel.tsx`           | The mixer's music channel: switch, volume, track, **Browse**.                             |
-| `features/music/MusicLibrary.tsx`           | The library dialog: categories, preview, choice, credits link.                            |
-| `features/mixer/MixerMenu.tsx`              | The **Audio mixer** button and panel in the player bar.                                   |
-| `features/mixer/VolumeControl.tsx`          | One channel's name, percentage, optional switch and 0–100 % slider.                       |
-| `features/mixer/narration.ts`               | Narration level per device (`ltts.narrationVolume`, 100 % by default).                    |
-| `lib/deviceSettings.ts`                     | Reading and saving settings kept on this device; whole-percent volumes.                   |
-| `features/player/controller.ts`             | Narration: `setVolume` (and `state.volume`); a sentence's natural end is not a pause.     |
+| File (apps/web/src)                         | Role                                                                                             |
+| ------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `features/music/engine.ts`                  | Web Audio player: decode, fade, crossfade, loop with a crossfaded seam, pause in place, cleanup. |
+| `features/music/session.ts`                 | When music plays: follows the narration player; owns on/off, track, volume, preview.             |
+| `features/music/preferences.ts`             | Track and volume per device (`ltts.music`); "on" is never stored.                                |
+| `features/music/library.ts`, `library.json` | The catalogue: file, length, category, source, licence and its evidence, edits, SHA-256.         |
+| `features/music/MusicProvider.tsx`          | One session per app, mounted inside the narration `PlayerProvider`.                              |
+| `features/music/MusicChannel.tsx`           | The mixer's music channel: switch, volume, track, **Browse**.                                    |
+| `features/music/MusicLibrary.tsx`           | The library dialog: categories, preview, choice, credits link.                                   |
+| `features/mixer/MixerMenu.tsx`              | The **Audio mixer** button and panel in the player bar.                                          |
+| `features/mixer/VolumeControl.tsx`          | One channel's name, percentage, optional switch and 0–100 % slider.                              |
+| `features/mixer/narration.ts`               | Narration level per device (`ltts.narrationVolume`, 100 % by default).                           |
+| `lib/deviceSettings.ts`                     | Reading and saving settings kept on this device; whole-percent volumes.                          |
+| `features/player/controller.ts`             | Narration: `setVolume` (and `state.volume`); a sentence's natural end is not a pause.            |
 
 Audio files and `CREDITS.md` live in `apps/web/public/music` and ship with every build (web, desktop).
 `npm run music:build` rebuilds them from the original downloads (kept outside Git in
@@ -95,8 +95,14 @@ Effects plug in as a third channel without changing the other two:
   art or tags from the originals.
 - Each loop's end is crossfaded into its start when the file is made (equal-power for ambient
   material; a one-beat linear blend at a bar-aligned cut, found by cross-correlation, for the lo-fi
-  tracks). Decoded in Chrome, every seam's jump is smaller than the track's
-  99.9th-percentile sample-to-sample step, and decoded lengths are exact (no codec padding).
+  tracks). Decoded by FFmpeg, Chrome 152 or Firefox 157, every seam's jump is smaller than the
+  track's 99.9th-percentile sample-to-sample step, and decoded lengths are exact (no codec padding).
+- Chromium 156 decodes these files 24 samples (0.5 ms) short at the start, which turned the seam into
+  a jump on 7 of the 11 tracks (up to 3.85 times that step). The player therefore blends each loop's
+  last 30 ms into its first once the track is decoded (`seamlessLoop` in `lib/audio/webAudio.ts`)
+  and ends the loop 30 ms earlier, so the join is continuous whatever the decoder does at the edges;
+  every track then measures under 0.25 in Chromium 156 and Firefox 157. The e2e test measures the
+  loop the player actually starts for every track.
 - Loudness: -28 LUFS integrated per track, true peak ≤ -10 dBTP before encoding (≤ -8.4 after). Kokoro
   narration measures about -25.5 LUFS, so the default 10 % puts music about 22 dB under the voice and
   100 % about 2.5 dB under it.

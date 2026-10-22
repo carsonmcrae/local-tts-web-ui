@@ -20,6 +20,7 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { APP_ROUTES } from '../lib/app-routes.mjs';
+import { appProcesses, describe } from './processes.mjs';
 import { repoRoot } from '../lib/paths.mjs';
 
 const [installer = '', version = ''] = process.argv.slice(2);
@@ -229,6 +230,16 @@ async function main() {
   powershell('Get-Process -Name TTSNative | ForEach-Object { [void]$_.CloseMainWindow() }');
   check(await waitUntilGone('TTSNative', 30_000), 'closing the window quits the app');
   check(await waitUntilGone('ttsnative-backend', 20_000), 'the server stopped with the app');
+  // Nothing else either: the web view, uv, a voice-cloning worker, anything run from the app's folders.
+  let leftovers = appProcesses();
+  for (let attempt = 0; attempt < 30 && leftovers.length; attempt += 1) {
+    await sleep(500);
+    leftovers = appProcesses();
+  }
+  check(
+    leftovers.length === 0,
+    `nothing of TTSNative is left running${leftovers.length ? `: ${describe(leftovers)}` : ''}`,
+  );
 
   launch();
   const again = await waitForServer(120_000);

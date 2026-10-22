@@ -3,7 +3,8 @@
 /**
  * Purpose: Accessible modal dialogs and confirmation prompts.
  * Scope: Radix Dialog with focus trapping, Escape/overlay dismissal, a consistent header/footer
- *   layout, responsive sizing (bottom sheet on phones), and `ConfirmDialog` for destructive actions.
+ *   layout, responsive sizing (bottom sheet on phones), `ConfirmDialog` for destructive actions, and
+ *   `closeOnly`, the `onOpenChange` of a dialog that has no trigger and so can only ever close.
  * Does NOT belong: Dialog-specific business logic.
  */
 import { X } from 'lucide-react';
@@ -23,6 +24,16 @@ interface DialogProps {
 }
 
 const WIDTHS = { sm: 'sm:max-w-md', md: 'sm:max-w-lg', lg: 'sm:max-w-2xl' };
+
+/**
+ * The `onOpenChange` of a dialog without a trigger (its parent's state opens it): Radix only ever
+ * asks such a dialog to close, so a true here is ignored rather than re-opening it.
+ */
+export function closeOnly(close: () => void): (open: boolean) => void {
+  return (open) => {
+    if (!open) close();
+  };
+}
 
 export function Dialog({
   open,

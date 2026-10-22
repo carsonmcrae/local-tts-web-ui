@@ -27,7 +27,7 @@ import type {
   VoiceSound,
 } from '@/api/types';
 import { Button } from '@/components/ui/Button';
-import { Dialog } from '@/components/ui/Dialog';
+import { closeOnly, Dialog } from '@/components/ui/Dialog';
 import { Banner } from '@/components/ui/Feedback';
 import { Field, Select } from '@/components/ui/Field';
 import { EFFECT_LABELS, PAUSE_LABELS, SOUND_LABELS, STYLE_LABELS } from './stylingLabels';
@@ -162,7 +162,7 @@ export function StyleSentencesDialog({
   return (
     <Dialog
       open
-      onOpenChange={(open) => (open ? undefined : onClose())}
+      onOpenChange={closeOnly(onClose)}
       title="Voice and effect"
       description={`How ${count} should sound. A voice or effect covers whole sentences; to voice only the quoted words, give the character a voice in Voices & effects.`}
       footer={

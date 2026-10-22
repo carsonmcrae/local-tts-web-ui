@@ -46,7 +46,7 @@ function Destination({
       </Banner>
     );
   }
-  const library = libraries.find((item) => item.id === libraryId);
+  const folders = libraries.filter((item) => item.id === libraryId).flatMap((item) => item.folders);
   return (
     <div className="flex flex-col gap-3">
       <StatusRegion className="text-sm font-medium text-success">
@@ -78,7 +78,7 @@ function Destination({
               value={folderId}
               onChange={(event) => onChange(libraryId, event.target.value)}
             >
-              {(library?.folders ?? []).map((folder) => (
+              {folders.map((folder) => (
                 <option key={folder.id} value={folder.id}>
                   {folder.path}
                 </option>

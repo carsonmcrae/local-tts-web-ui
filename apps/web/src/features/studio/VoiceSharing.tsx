@@ -20,7 +20,7 @@ import {
 } from '@/api/studioQueries';
 import type { VoiceProfile } from '@/api/types';
 import { Button } from '@/components/ui/Button';
-import { Dialog } from '@/components/ui/Dialog';
+import { closeOnly, Dialog } from '@/components/ui/Dialog';
 import { Banner } from '@/components/ui/Feedback';
 import { Checkbox, Field, Input } from '@/components/ui/Field';
 import { VoiceFilePreview } from './VoiceFilePreview';
@@ -41,7 +41,7 @@ export function ShareVoiceButton({ profile }: Readonly<{ profile: VoiceProfile }
       </Button>
       <Dialog
         open={open}
-        onOpenChange={(next) => (next ? setOpen(true) : close())}
+        onOpenChange={closeOnly(close)}
         title={`Share “${profile.name}”`}
         description="Save the voice as a .ttsvoice file that another TTSNative can import."
         footer={
@@ -117,9 +117,8 @@ export function ImportVoiceButton() {
       preview.mutate(chosen);
     }
   };
-  const submit = () => {
-    if (file) importer.mutate({ file, name: name.trim() }, { onSuccess: close });
-  };
+  const submit = (chosen: File) =>
+    importer.mutate({ file: chosen, name: name.trim() }, { onSuccess: close });
   return (
     <>
       <Button icon={<Upload size={15} />} onClick={() => setOpen(true)}>
@@ -127,7 +126,7 @@ export function ImportVoiceButton() {
       </Button>
       <Dialog
         open={open}
-        onOpenChange={(next) => (next ? setOpen(true) : close())}
+        onOpenChange={closeOnly(close)}
         title="Import a voice"
         description="Add a voice someone shared with you as a .ttsvoice file."
         footer={
@@ -140,7 +139,7 @@ export function ImportVoiceButton() {
               icon={<Upload size={14} />}
               disabled={!file || !consent || !preview.isSuccess}
               loading={importer.isPending}
-              onClick={submit}
+              onClick={file ? () => submit(file) : undefined} // disabled without a file
             >
               Import voice
             </Button>

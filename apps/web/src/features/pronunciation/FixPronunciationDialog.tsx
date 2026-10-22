@@ -20,7 +20,7 @@ import {
 } from '@/api/readingQueries';
 import type { Pronunciation } from '@/api/types';
 import { Button } from '@/components/ui/Button';
-import { Dialog } from '@/components/ui/Dialog';
+import { closeOnly, Dialog } from '@/components/ui/Dialog';
 import { Banner, Skeleton } from '@/components/ui/Feedback';
 import { OptionList } from '@/components/ui/Menu';
 import { usePlayer } from '@/features/player/PlayerProvider';
@@ -155,7 +155,7 @@ export function FixPronunciationDialog(props: Readonly<FixProps>) {
     <Dialog
       open
       size="sm"
-      onOpenChange={(open) => (open ? undefined : close())}
+      onOpenChange={closeOnly(close)}
       title="Fix pronunciation"
       description={`How the voice should say “${props.word}”. The text stays as written.`}
     >

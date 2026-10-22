@@ -14,7 +14,7 @@ import { describeError } from '@/api/client';
 import { useBlends, useCreateBlend, useDeleteBlend, type VoiceBlend } from '@/api/blendQueries';
 import type { VoiceInfo } from '@/api/types';
 import { Button, IconButton } from '@/components/ui/Button';
-import { ConfirmDialog, Dialog } from '@/components/ui/Dialog';
+import { closeOnly, ConfirmDialog, Dialog } from '@/components/ui/Dialog';
 import { Banner } from '@/components/ui/Feedback';
 import { Field, Input, Select } from '@/components/ui/Field';
 import { useToast } from '@/components/ui/Toast';
@@ -103,13 +103,9 @@ function BlendDialog({
 }>) {
   const create = useCreateBlend();
   const toast = useToast();
-  const first = choices[0]?.id ?? '';
-  const second = choices[1]?.id ?? first;
+  const part = (voice: VoiceInfo): Part => ({ voiceId: voice.id, weight: 5 });
   const [name, setName] = useState('');
-  const [parts, setParts] = useState<Part[]>([
-    { voiceId: first, weight: 5 },
-    { voiceId: second, weight: 5 },
-  ]);
+  const [parts, setParts] = useState<Part[]>(choices.slice(0, 2).map(part)); // always two here
   const repeated = new Set(parts.map((part) => part.voiceId)).size !== parts.length;
   const close = () => {
     onOpenChange(false);
@@ -135,7 +131,7 @@ function BlendDialog({
   return (
     <Dialog
       open={open}
-      onOpenChange={(next) => (next ? onOpenChange(true) : close())}
+      onOpenChange={closeOnly(close)}
       title="Blend voices"
       description="Mix two to four built-in voices into a new one."
       size="lg"
@@ -186,7 +182,7 @@ function BlendDialog({
             <Button
               size="sm"
               icon={<Plus size={14} />}
-              onClick={() => setParts([...parts, { voiceId: first, weight: 5 }])}
+              onClick={() => setParts([...parts, ...choices.slice(0, 1).map(part)])}
             >
               Add a voice
             </Button>

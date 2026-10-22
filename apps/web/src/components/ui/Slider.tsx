@@ -3,7 +3,8 @@
 /**
  * Purpose: Accessible range slider (playback position, speed, pace).
  * Scope: Radix Slider with keyboard support, a visible focus ring on the thumb, an aria-valuetext
- *   formatter for screen readers and large touch targets.
+ *   formatter for screen readers and large touch targets (the whole track responds, 44 px tall on
+ *   touch screens).
  * Does NOT belong: The values' meaning (callers format them).
  */
 import { Slider as RadixSlider } from 'radix-ui';
@@ -37,7 +38,7 @@ export function Slider({
   return (
     <RadixSlider.Root
       className={cn(
-        'relative flex h-6 w-full touch-none items-center select-none data-[disabled]:opacity-50',
+        'relative flex h-6 w-full touch-none items-center select-none data-[disabled]:opacity-50 pointer-coarse:h-11',
         className,
       )}
       value={[value]}

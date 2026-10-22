@@ -4,7 +4,8 @@
  * Purpose: The persistent audio player docked at the bottom of every screen.
  * Scope: Wires player state to the transport, position, voice, speed, bookmark, audio-mixer,
  *   sleep-timer and export controls; persists voice/speed choices as preferences; enables keyboard shortcuts;
- *   collapses to a compact layout on phones and announces errors to assistive technology.
+ *   collapses to a compact two-row layout below 1024 px (phones, and tablets beside the sidebar) and
+ *   announces errors to assistive technology.
  * Does NOT belong: Playback logic (controller.ts) or presentational pieces (PlayerParts.tsx).
  */
 import { Bookmark, BookmarkCheck, Download, Keyboard } from 'lucide-react';
@@ -114,23 +115,23 @@ export function PlayerBar() {
       {status === 'error' ? (
         <ErrorStrip error={state.error} onRetry={() => void controller.play()} />
       ) : null}
-      <div className="mx-auto flex max-w-6xl flex-col gap-1.5 px-3 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] sm:px-5 md:py-2.5">
-        <div className="flex items-center gap-2 md:gap-4">
+      <div className="mx-auto flex max-w-6xl flex-col gap-1.5 px-3 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] sm:px-5 lg:py-2.5">
+        <div className="flex items-center gap-2 lg:gap-4">
           <Link
             to={`/read/${document.id}`}
-            className="min-w-0 flex-1 rounded-[var(--radius-sm)] md:w-56 md:flex-none lg:w-64"
+            className="min-w-0 flex-1 rounded-[var(--radius-sm)] lg:max-w-64"
             aria-label={`Open ${document.title}`}
           >
             <p className="truncate text-sm font-medium">{document.title}</p>
             <p className="truncate text-xs text-muted">{section?.title ?? <>&nbsp;</>}</p>
           </Link>
           <Transport controller={controller} busy={busy} playing={status === 'playing' || busy} />
-          {/* The audio mixer sits where there is room: beside the transport on phones (the position row is
-              full there), and at the end of the position row on wider screens. */}
-          <div className="flex md:hidden">
+          {/* The audio mixer sits where there is room: beside the transport in the compact layout (the
+              position row is full there), and at the end of the position row from 1024 px. */}
+          <div className="flex lg:hidden">
             <MixerMenu />
           </div>
-          <div className="hidden items-center gap-0.5 md:flex md:w-56 md:justify-end lg:w-64">
+          <div className="hidden items-center gap-0.5 lg:flex lg:w-64 lg:justify-end">
             {voicePicker(false)}
             <SpeedMenu rate={rate} onChange={changeRate} />
             {bookmarkButton('md')}
@@ -148,7 +149,7 @@ export function PlayerBar() {
             />
           </div>
         </div>
-        <div className="flex items-center gap-3 text-xs text-muted tabular-nums">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted tabular-nums">
           <PositionSlider
             position={position}
             count={count}
@@ -160,7 +161,7 @@ export function PlayerBar() {
               void controller.seek(value);
             }}
           />
-          <div className="flex items-center md:hidden">
+          <div className="ml-auto flex items-center lg:hidden">
             {voicePicker(true)}
             {bookmarkButton('sm')}
             {sleepMenu}
@@ -179,7 +180,7 @@ export function PlayerBar() {
               onClick={() => setExportOpen(true)}
             />
           </div>
-          <div className="-ml-1 hidden md:flex">
+          <div className="-ml-1 hidden lg:flex">
             <MixerMenu />
           </div>
         </div>

@@ -66,7 +66,7 @@ export function Transport({
   playing,
 }: Readonly<{ controller: PlaybackController; busy: boolean; playing: boolean }>) {
   return (
-    <div className="flex items-center gap-0.5 md:flex-1 md:justify-center md:gap-1">
+    <div className="flex items-center gap-0.5 md:gap-1 lg:flex-1 lg:justify-center">
       <IconButton
         label="Previous section"
         icon={<SkipBack size={18} />}
@@ -148,8 +148,9 @@ export function PositionSlider({
   onCommit,
 }: Readonly<PositionProps>) {
   const elapsed = fraction * totalSeconds;
+  // At least 15rem wide: on a narrow phone the row wraps instead of squeezing the slider.
   return (
-    <>
+    <div className="flex min-w-0 grow basis-60 items-center gap-3">
       <span className="w-12 text-right" aria-hidden="true">
         {formatClock(elapsed)}
       </span>
@@ -165,7 +166,7 @@ export function PositionSlider({
       <span className="w-12" aria-hidden="true">
         -{formatClock(Math.max(totalSeconds - elapsed, 0))}
       </span>
-    </>
+    </div>
   );
 }
 

@@ -12,7 +12,7 @@
  *   or the update test.
  */
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readdirSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { powershell } from './processes.mjs';
@@ -64,7 +64,9 @@ function main() {
     );
     return;
   }
-  const work = mkdtempSync(path.join(tmpdir(), 'ttsnative-space-'));
+  // The long path: diskpart matches "select vdisk" by name, and the temp folder may come as an 8.3 short
+  // name (RUNNER~1), which then never matches the disk attached under its long name.
+  const work = mkdtempSync(path.join(realpathSync.native(tmpdir()), 'ttsnative-space-'));
   const disk = path.join(work, 'small.vhdx');
   const letter = freeLetter();
   check(/^[D-Z]$/.test(letter), `drive letter ${letter}: is free`);
@@ -96,12 +98,13 @@ function main() {
       `the Installed Apps entry is unchanged (${before ?? 'none'})`,
     );
   } finally {
+    // Cleaning up never hides the test's own result: a failure here is reported, not thrown.
     try {
       diskpart(`select vdisk file="${disk}"\ndetach vdisk`, work);
+      rmSync(work, { recursive: true, force: true });
     } catch (error) {
-      console.error(error instanceof Error ? error.message : error);
+      console.error(`Cleanup: ${error instanceof Error ? error.message : String(error)}`);
     }
-    rmSync(work, { recursive: true, force: true });
   }
 }
 

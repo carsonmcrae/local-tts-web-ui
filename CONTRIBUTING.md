@@ -50,6 +50,26 @@ npm run dev
 - **Accessibility.** Keyboard reachable, visible focus, labelled controls, WCAG 2.2 AA contrast. The e2e
   suite runs axe.
 
+## Cross-surface consistency
+
+TTSNative has several user-facing surfaces: the Windows app, the browser UI (desktop and phone
+widths, including over the LAN), the website, the documentation and the release information. When a
+change touches user-facing functionality, terminology, navigation, settings, version information or
+documented behaviour, find every surface it affects and keep them consistent. That does not mean every
+change touches every surface.
+
+- Review which surfaces the change affects.
+- Update the affected interfaces, website content, documentation and tests together.
+- Keep terminology, version labels, navigation and feature descriptions the same everywhere.
+- Keep desktop and phone layouts working where they are affected.
+- Never advertise on the website what the corresponding released app does not have.
+- When a feature is deliberately available only on some platforms, say so clearly.
+- If a surface update is deliberately deferred, say so in the pull request, with the reason.
+- Check the affected surfaces before calling the change complete.
+
+Backend-only changes, internal refactors and test improvements need no unrelated website or interface
+changes.
+
 ## Pull requests
 
 `main` only accepts pull requests that pass CI, and outside contributions need a code owner's approval

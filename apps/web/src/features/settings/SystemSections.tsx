@@ -179,6 +179,8 @@ export function diagnosticsReport(info: SystemInfo, webVersion: string): string 
 export function AboutSection() {
   const system = useSystem();
   const toast = useToast();
+  // The report, when the browser wouldn't copy it.
+  const [uncopied, setUncopied] = useState<string | null>(null);
   const version = typeof __APP_VERSION__ === 'string' ? __APP_VERSION__ : 'dev';
   const info = system.data;
   return (
@@ -218,22 +220,39 @@ export function AboutSection() {
         <Button
           className="mt-4"
           icon={<ClipboardCopy size={15} />}
-          onClick={() =>
-            void navigator.clipboard
-              ?.writeText(diagnosticsReport(info, version))
-              .then(() =>
+          onClick={() => {
+            const report = diagnosticsReport(info, version);
+            // A phone on the home network uses plain HTTP, where browsers offer no clipboard: the
+            // report is then shown below to copy by hand instead of the button doing nothing.
+            void Promise.resolve()
+              .then(() => navigator.clipboard.writeText(report))
+              .then(() => {
+                setUncopied(null);
                 toast.notify(
                   'success',
                   'Diagnostics copied',
                   'Contains no documents or personal data.',
-                ),
-              )
-              .catch(() => toast.notify('error', 'Copy failed'))
-          }
+                );
+              })
+              .catch(() => {
+                setUncopied(report);
+                toast.notify('error', 'Copy failed', 'Select the details below and copy them.');
+              });
+          }}
         >
           Copy diagnostics
         </Button>
       ) : null}
+      {uncopied === null ? null : (
+        <textarea
+          readOnly
+          aria-label="Diagnostics"
+          value={uncopied}
+          rows={8}
+          onFocus={(event) => event.currentTarget.select()}
+          className="mt-3 w-full rounded-[var(--radius-md)] border border-line bg-surface-2 p-2 font-mono text-xs"
+        />
+      )}
       <AboutUpdates version={version} />
       <p className="mt-4 text-[13px] text-muted">
         Source code, credits and how to attribute this project:{' '}

@@ -209,9 +209,38 @@ describe('System sections', () => {
     await user.click(copy);
     expect(await screen.findByText('Diagnostics copied')).toBeInTheDocument();
     expect(await navigator.clipboard.readText()).toContain('GPUs: NVIDIA RTX 4070');
+    expect(screen.queryByRole('textbox', { name: 'Diagnostics' })).not.toBeInTheDocument();
     vi.spyOn(navigator.clipboard, 'writeText').mockRejectedValueOnce(new Error('denied'));
     await user.click(copy);
     expect(await screen.findByRole('alert')).toHaveTextContent('Copy failed');
+    // The details stay reachable: shown to select and copy by hand.
+    const shown = await screen.findByRole('textbox', { name: 'Diagnostics' });
+    expect(shown).toHaveValue(await navigator.clipboard.readText());
+    await user.click(copy);
+    await waitFor(() =>
+      expect(screen.queryByRole('textbox', { name: 'Diagnostics' })).not.toBeInTheDocument(),
+    );
+  });
+
+  it('shows the diagnostics to copy by hand where the browser has no clipboard (a phone)', async () => {
+    api();
+    const { user } = renderSettings();
+    const copy = await screen.findByRole('button', { name: 'Copy diagnostics' });
+    const clipboard = Object.getOwnPropertyDescriptor(Navigator.prototype, 'clipboard');
+    Object.defineProperty(navigator, 'clipboard', { configurable: true, value: undefined });
+    try {
+      await user.click(copy);
+      expect(await screen.findByRole('alert')).toHaveTextContent('Copy failed');
+      const shown = await screen.findByRole('textbox', { name: 'Diagnostics' });
+      expect((shown as HTMLTextAreaElement).value).toContain('GPUs:');
+      shown.focus();
+      expect((shown as HTMLTextAreaElement).selectionEnd).toBe(
+        (shown as HTMLTextAreaElement).value.length,
+      );
+    } finally {
+      Reflect.deleteProperty(navigator, 'clipboard');
+      if (clipboard) Object.defineProperty(Navigator.prototype, 'clipboard', clipboard);
+    }
   });
 
   it('names the update check in the privacy summary of the desktop app', async () => {

@@ -223,6 +223,12 @@
     text-underline-offset: 0.28em;
   }
 
+  /* A sentence with a sound effect carries a faint tint (and "Sound effect: …" for screen readers). */
+  .reader-seg[data-effect='true'] {
+    background-color: color-mix(in srgb, var(--accent) 12%, transparent);
+    border-radius: 0.2em;
+  }
+
   /* A sentence with its own voice or effect is tinted along its foot (and described for screen readers). */
   .reader-seg[data-styled='true'] {
     background-image: linear-gradient(

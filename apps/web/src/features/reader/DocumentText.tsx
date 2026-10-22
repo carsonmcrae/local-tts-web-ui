@@ -4,9 +4,9 @@
  * Purpose: Render one section's text for reading along, with the spoken sentence highlighted.
  * Scope: Groups segments into headings and paragraphs in the reader's chosen size, spacing and
  *   typeface, highlights the active segment (sentence-level timing is exact because each segment is
- *   its own audio clip), marks bookmarked sentences and sentences with their own voice or effect
- *   (each with an accessible description) and shows skipped ones muted and labelled "skipped" (in
- *   their accessible name too), starts
+ *   its own audio clip), marks bookmarked sentences, sentences with their own voice or effect and
+ *   sentences that carry a sound effect (each with an accessible description) and shows skipped
+ *   ones muted and labelled "skipped" (in their accessible name too), starts
  *   playback from any clicked or keyboard-activated sentence (the text is a single tab stop; arrow
  *   keys move between sentences, Enter or Space plays), and keeps the active sentence in view
  *   without fighting a user who scrolls away.
@@ -45,7 +45,9 @@ interface SentenceProps {
   segment: SegmentOut;
   active: boolean;
   bookmarked: boolean;
-  /** The ids of the hidden texts describing it: "Bookmarked", and its voice or effect. */
+  /** "Sound effect: …" when a sound effect is placed on this sentence. */
+  effect: string | undefined;
+  /** The ids of the hidden texts describing it: "Bookmarked", its voice or effect, and its sound effect. */
   describedBy: string | undefined;
   /** How the sentence is styled ("Read by Sam · Telephone call"), when it is. */
   styled: string | undefined;
@@ -60,6 +62,7 @@ function Sentence({
   segment,
   active,
   bookmarked,
+  effect,
   describedBy,
   styled,
   skipped,
@@ -89,6 +92,7 @@ function Sentence({
       data-index={segment.index}
       data-active={active}
       data-bookmarked={bookmarked}
+      data-effect={effect !== undefined}
       data-styled={styled !== undefined}
       data-skipped={skipped}
       title={skipped ? [styled, 'Skipped when reading aloud'].filter(Boolean).join(' · ') : styled}
@@ -122,6 +126,8 @@ interface DocumentTextProps {
   styled?: ReadonlyMap<number, string>;
   /** Sentences left out when reading aloud. */
   skipped?: ReadonlySet<number>;
+  /** Descriptions of the sentences that carry a sound effect, by segment index. */
+  effects?: ReadonlyMap<number, string> | undefined;
   autoScroll: boolean;
   onSelect: (index: number) => void;
 }
@@ -132,6 +138,7 @@ export function DocumentText({
   bookmarked,
   styled,
   skipped,
+  effects,
   autoScroll,
   onSelect,
 }: Readonly<DocumentTextProps>) {
@@ -139,6 +146,7 @@ export function DocumentText({
   const [readingText] = useReadingText();
   const bookmarkLabel = useId();
   const styleLabel = useId();
+  const effectLabel = useId();
   const container = useRef<HTMLDivElement>(null);
   const lastUserScroll = useRef(0);
 
@@ -191,9 +199,11 @@ export function DocumentText({
       {blocks.map((block) => {
         const content = block.segments.map((segment, position) => {
           const style = styled?.get(segment.index);
+          const effect = effects?.get(segment.index);
           const described = [
             bookmarked.has(segment.index) ? bookmarkLabel : '',
             style ? `${styleLabel}-${segment.index}` : '',
+            effect ? `${effectLabel}-${segment.index}` : '',
           ].filter(Boolean);
           return (
             <span key={segment.index}>
@@ -202,10 +212,16 @@ export function DocumentText({
                   {style}
                 </span>
               ) : null}
+              {effect ? (
+                <span id={`${effectLabel}-${segment.index}`} hidden>
+                  {effect}
+                </span>
+              ) : null}
               <Sentence
                 segment={segment}
                 active={segment.index === activeIndex}
                 bookmarked={bookmarked.has(segment.index)}
+                effect={effect}
                 describedBy={described.length ? described.join(' ') : undefined}
                 styled={style}
                 skipped={skipped?.has(segment.index) ?? false}

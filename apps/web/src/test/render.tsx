@@ -4,8 +4,9 @@
  * Purpose: Test harness for rendering screens with the app's real providers.
  * Scope: A route-table API mock for `fetch` (matched by method and path prefix), sample API objects,
  *   routes for reading a document (details, section text, segment audio), `renderWithApp` that
- *   mounts the component inside QueryClient, Toast and Player providers and a memory router, and
- *   `PlayerSpy` for tests that need to drive the shared player directly.
+ *   mounts the component inside QueryClient, Toast, Player and sound-effects providers and a memory
+ *   router, a small sound library, and `PlayerSpy` for tests that need to drive the shared player
+ *   directly.
  * Does NOT belong: Assertions or per-test data beyond shared fixtures.
  */
 import type { QueryClient } from '@tanstack/react-query';
@@ -16,11 +17,19 @@ import type { ReactNode } from 'react';
 import { useEffect } from 'react';
 import { createMemoryRouter, RouterProvider } from 'react-router';
 import { expect, vi } from 'vitest';
-import type { DocumentDetail, EngineInfo, Preferences, VoiceInfo, VoiceProfile } from '@/api/types';
+import type {
+  DocumentDetail,
+  EngineInfo,
+  Preferences,
+  SfxLibrary,
+  VoiceInfo,
+  VoiceProfile,
+} from '@/api/types';
 import { createQueryClient } from '@/app/App';
 import { ToastProvider } from '@/components/ui/Toast';
 import type { MediaLike } from '@/features/player/controller';
 import { PlayerProvider, usePlayer } from '@/features/player/PlayerProvider';
+import { SfxProvider } from '@/features/sfx/SfxProvider';
 
 type Handler = (url: URL, init: RequestInit) => unknown;
 
@@ -89,7 +98,9 @@ export function renderWithApp(
     <ToastProvider>
       <QueryClientProviderShim client={queryClient}>
         <PlayerProvider media={media}>
-          <RouterProvider router={router} />
+          <SfxProvider>
+            <RouterProvider router={router} />
+          </SfxProvider>
         </PlayerProvider>
       </QueryClientProviderShim>
     </ToastProvider>,
@@ -211,11 +222,39 @@ function sectionText(doc: DocumentDetail, sectionIndex: number) {
   };
 }
 
-/** Routes for reading `doc`: its details, bookmarks (none), each section's text and audio for every segment. */
+const sound = (id: string, name: string, category: SfxLibrary['sounds'][number]['category'], loop: boolean, seconds: number) => ({
+  id, name, category, description: `${name}, synthesised.`, keywords: [id.split('-')[0] ?? id], file: `${id}.mp3`,
+  durationSeconds: seconds, bytes: 1000, sha256: 'a'.repeat(64), gain: 0.6, loop, events: [id],
+  licence: { name: 'MIT', url: 'https://example.invalid/LICENSE' }, attribution: null, source: 'test',
+}); // prettier-ignore
+
+/** A small bundled library: two one-shots and an ambience. */
+export const soundLibrary: SfxLibrary = {
+  version: 1,
+  sounds: [
+    sound('thud', 'A heavy thud', 'impacts', false, 1.2),
+    sound('door-knock', 'A knock at the door', 'doors', false, 1.8),
+    sound('rain-light', 'Light rain', 'weather', true, 8),
+  ],
+  events: [
+    { id: 'thud', label: 'A heavy thud', category: 'impacts', loop: false },
+    { id: 'door-knock', label: 'A knock at the door', category: 'doors', loop: false },
+    { id: 'rain-light', label: 'Light rain', category: 'weather', loop: true },
+  ],
+  categories: [
+    { id: 'weather', label: 'Weather' },
+    { id: 'doors', label: 'Doors and buildings' },
+    { id: 'impacts', label: 'Impacts and action' },
+  ],
+};
+
+/** Routes for reading `doc`: its details, bookmarks and sound effects (none, with the library), each section's text and audio for every segment. */
 export function readerRoutes(doc: DocumentDetail = documentDetail()) {
   return {
     [`GET /api/documents/${doc.id}`]: doc,
     [`GET /api/documents/${doc.id}/bookmarks`]: [],
+    [`GET /api/documents/${doc.id}/sound-effects`]: { effects: [], analyses: [] },
+    'GET /api/sound-effects/library': soundLibrary,
     [`GET /api/documents/${doc.id}/sections/`]: (url: URL) =>
       sectionText(doc, Number(url.pathname.split('/').pop())),
     [`GET /api/documents/${doc.id}/segments`]: () =>

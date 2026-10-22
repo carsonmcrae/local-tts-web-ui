@@ -4,10 +4,11 @@
  * Purpose: The reading view for one document.
  * Scope: Loads the document into the player at the saved position (without auto-playing), follows
  *   the spoken section while playing, offers the contents and bookmarks panel (sidebar on desktop,
- *   dialog on phones), search, the "adjust this section" correction and the document's voices and
- *   effects (per sentence from a text selection, and a dialogue voice), jumps to any sentence from
- *   them, hands the player the sentences to skip, and composes the header, warnings (the cleanup's
- *   notice as its review note), section text and section pager.
+ *   dialog on phones), search, the "adjust this section" correction, the document's voices and
+ *   effects (per sentence from a text selection, and a dialogue voice) and the Sounds panel, jumps
+ *   to any sentence from them, hands the player the sentences to skip, marks the sentences that
+ *   carry a sound effect, and composes the header, warnings (the cleanup's notice as its review
+ *   note), section text and section pager.
  * Does NOT belong: Player controls (PlayerBar) or text rendering details (DocumentText).
  */
 import { ListTree, PenLine } from 'lucide-react';
@@ -25,6 +26,7 @@ import { usePageTitle } from '@/components/ui/Layout';
 import { DefaultVoicesBanner } from '@/features/engines/EngineSetup';
 import type { PlayerDocument } from '@/features/player/controller';
 import { usePlayer } from '@/features/player/PlayerProvider';
+import { useEffectLabels } from '@/features/sfx/useEffectLabels';
 import { AdjustSectionDialog } from './AdjustSectionDialog';
 import { CastButton } from './CastDialog';
 import { DocumentNotices } from './CleanupNote';
@@ -62,6 +64,7 @@ function Reader({ doc }: Readonly<{ doc: DocumentDetail }>) {
   const { controller, state } = usePlayer();
   const preferences = usePreferences();
   const isLoaded = state.document?.id === doc.id;
+  const activeIndex = isLoaded ? state.segmentIndex : null;
   const speaking = isLoaded ? (controller.sectionAt(state.segmentIndex)?.index ?? null) : null;
   const [viewed, setViewed] = useState(() => sectionOf(doc, doc.progress?.segmentIndex ?? 0));
   const [followed, setFollowed] = useState(speaking);
@@ -90,6 +93,7 @@ function Reader({ doc }: Readonly<{ doc: DocumentDetail }>) {
       voices.data?.find((voice) => voice.id === id)?.name ?? 'another voice';
     return new Map([...styleByIndex].map(([index, style]) => [index, describeStyle(style, name)]));
   }, [styleByIndex, voices.data]);
+  const effectLabels = useEffectLabels(doc.id);
 
   // Follow the narration into the next section (adjusting state during render, not in an effect).
   // Moving to the next sentence sets its index together with `loading`, so following only while
@@ -136,6 +140,9 @@ function Reader({ doc }: Readonly<{ doc: DocumentDetail }>) {
         <SectionNav sections={doc.sections} viewed={viewed} speaking={speaking} onSelect={jump} />
       }
       onBookmark={(bookmark) => jumpTo(bookmark.segmentIndex, bookmark.sectionIndex)}
+      viewedSection={viewed}
+      activeIndex={activeIndex}
+      onJump={jumpTo}
     />
   );
   const multiSection = doc.sections.length > 1;
@@ -179,7 +186,7 @@ function Reader({ doc }: Readonly<{ doc: DocumentDetail }>) {
             <CastButton
               documentId={doc.id}
               styling={styling.data}
-              activeIndex={isLoaded ? state.segmentIndex : null}
+              activeIndex={activeIndex}
               voiceId={state.voiceId}
               onChanged={stylingChanged}
             />
@@ -199,10 +206,11 @@ function Reader({ doc }: Readonly<{ doc: DocumentDetail }>) {
           <SectionBody
             documentId={doc.id}
             sectionIndex={viewed}
-            activeIndex={isLoaded ? state.segmentIndex : null}
+            activeIndex={activeIndex}
             bookmarked={bookmarked}
             styled={styled}
             skipped={skipped}
+            effects={effectLabels}
             autoScroll={preferences.data?.autoScroll ?? true}
             onSelect={playFrom}
           />

@@ -60,27 +60,44 @@ matching `v*` are protected.
 These need the repository owner; none of them is in the repository.
 
 1. **Updater signing key.** A key pair was generated for this project on the maintainer's computer
-   (`C:\Users\wcars\.ttsnative-release\updater.key` with its password in `updater.key.password`); its
-   public key is already in `apps/desktop/src-tauri/tauri.conf.json`. Store both files in your password
-   manager, then in **Settings → Environments** create an environment named `release` and add two
-   environment secrets: `TAURI_SIGNING_PRIVATE_KEY` (the contents of `updater.key`) and
-   `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`. Delete the local copies afterwards if you like.
-   _If you'd rather create your own key_, run `npx tauri signer generate -w <path>` and replace
-   `plugins.updater.pubkey` before the first release; after that, the key can never change without
-   breaking updates for installed copies. **Losing the private key means existing installations can't
-   update themselves any more.**
-2. **Approval.** In the `release` environment, add yourself as a required reviewer and limit it to tags
-   matching `v*`. Each release build then waits for your approval before the signing key is used.
+   (`C:\Users\wcars\.ttsnative-release\updater.key`, one line of base64 as Tauri writes it, with its
+   password in `updater.key.password`); its public key is already in
+   `apps/desktop/src-tauri/tauri.conf.json`, and the key id in both matches. Do not regenerate or rotate
+   it without a reason (step 3 says when). _If you'd rather create your own key_, run
+   `npx tauri signer generate -w <path>` and replace `plugins.updater.pubkey` before the first release;
+   after that, the key can never change without breaking updates for installed copies.
+2. **The `release` environment, step by step** (GitHub → the repository → Settings → Environments):
+   1. **New environment**, name `release` (exactly; the workflow names it).
+   2. **Deployment protection rules → Required reviewers:** tick it and add yourself. Leave **Prevent
+      self-review** unticked, otherwise the only reviewer could never approve their own release. One
+      approval is enough; up to six reviewers may be listed. Leave the wait timer at 0.
+   3. **Deployment branches and tags → Selected branches and tags → Add deployment branch or tag rule →
+      Tag → `v*`.** Only version tags can use the environment, so a branch build can never reach the key.
+   4. **Environment secrets → Add secret:** `TAURI_SIGNING_PRIVATE_KEY` with the whole contents of
+      `updater.key` (paste from the file; never from a terminal that echoes it), then
+      `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` with the password. Secrets are write-only afterwards.
+   5. Check the result: the environment page shows "Required reviewers: 1" and the tag rule. The
+      release workflow verifies this itself and **fails closed** before anything is built: it stops if
+      the environment is missing or has no required reviewer, if either secret is empty, if the test
+      hooks would be compiled in, and if the installer's signature does not verify against the key in the
+      app. A failed release leaves nothing published (the GitHub Release is created as a draft last).
 3. **Back the key up and know how to recover.** Every update an installed copy accepts must carry a
    signature from this key; the public half is compiled into the app.
    - Keep the key file and its password as two entries in your password manager, and a second copy
      somewhere offline (an encrypted drive). GitHub's environment secret is write-only and is not a
      backup. Keep the password apart from the key.
-   - Check a backup before trusting it: sign any file with it and verify the signature against the key in
-     the app. With the key file and its password in `TAURI_SIGNING_PRIVATE_KEY` and
-     `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` (set them in a shell, never on a command line or in a script
-     that is committed): `npx tauri signer sign <any file>` writes `<any file>.sig`, and
-     `node scripts/release/verify-update-signature.mjs <any file>` must print that it matches.
+   - Check a backup before trusting it, without the key ever appearing on screen or in a history file.
+     In a fresh PowerShell window, from the repository:
+     ```powershell
+     $env:TAURI_SIGNING_PRIVATE_KEY = (Get-Content -Raw C:\Users\wcars\.ttsnative-release\updater.key).Trim()
+     $env:TAURI_SIGNING_PRIVATE_KEY_PASSWORD = (Get-Content -Raw C:\Users\wcars\.ttsnative-release\updater.key.password).Trim()
+     Set-Content -Path "$env:TEMP\sign-check.txt" -Value "sign check"
+     npx tauri signer sign "$env:TEMP\sign-check.txt"
+     node scripts/release/verify-update-signature.mjs "$env:TEMP\sign-check.txt"
+     Remove-Item Env:TAURI_SIGNING_PRIVATE_KEY, Env:TAURI_SIGNING_PRIVATE_KEY_PASSWORD
+     ```
+     The signer prints only the signature; the verify script must say the signature matches the key in
+     the app. Close that window afterwards (the variables live only in it).
    - **If the key is lost:** generate a new pair, replace `plugins.updater.pubkey`, and ship the next
      version. Installed copies refuse updates signed with the new key (they show that the update couldn't
      be verified), so that release's notes and the website must tell people to download the installer

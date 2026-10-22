@@ -28,10 +28,14 @@ import path from 'node:path';
 import { buildVersion } from '../lib/build-version.mjs';
 import { BootstrapError, ok, printFailure, step, warn } from '../lib/log.mjs';
 import { repoRoot } from '../lib/paths.mjs';
+import { checkTestHooks } from './check-test-hooks.mjs';
 
 const desktopDir = path.join(repoRoot, 'apps', 'desktop');
-const nsisDir = path.join(desktopDir, 'src-tauri', 'target', 'release', 'bundle', 'nsis');
+const releaseDir = path.join(desktopDir, 'src-tauri', 'target', 'release');
+const nsisDir = path.join(releaseDir, 'bundle', 'nsis');
 const outDir = path.join(repoRoot, 'dist', 'desktop');
+/** The automated installer tests need the `test-hooks` feature; a release version can never have it. */
+const testHooks = process.env.TTSNATIVE_TEST_HOOKS === '1';
 
 /**
  * @param {string[]} args arguments for this Node.js
@@ -47,17 +51,13 @@ function node(args, { cwd = repoRoot, env = {} } = {}) {
   if (result.status !== 0) throw new BootstrapError(`${args.slice(0, 3).join(' ')} failed.`);
 }
 
-function main() {
-  if (process.platform !== 'win32')
-    throw new BootstrapError('The Windows app is built on Windows.');
-  const npmCli = process.env.npm_execpath;
-  if (!npmCli) throw new BootstrapError('Run this through npm: `npm run desktop:build`.');
-  const version = buildVersion();
-  const env = { TTSNATIVE_BUILD_VERSION: version };
-  step(`Building TTSNative ${version} for Windows…`);
-  node([npmCli, 'run', 'build', '--workspace', '@ltts/web'], { env });
-  node([path.join(repoRoot, 'scripts', 'desktop', 'build-runtime.mjs')], { env });
-  node([path.join(repoRoot, 'scripts', 'desktop', 'notices.mjs'), version], { env });
+/**
+ * `tauri build`: the updater signature when the key is present, Authenticode when a sign command is
+ * configured, the test hooks only for a test build, and a check of the binary either way.
+ * @param {string} version
+ * @param {NodeJS.ProcessEnv} env
+ */
+function tauriBuild(version, env) {
   const signed = Boolean(process.env.TAURI_SIGNING_PRIVATE_KEY);
   if (!signed) warn('TAURI_SIGNING_PRIVATE_KEY is not set: building without an updater signature.');
   rmSync(nsisDir, { recursive: true, force: true });
@@ -80,6 +80,7 @@ function main() {
       'nsis',
       '--config',
       JSON.stringify(override),
+      ...(testHooks ? ['--features', 'test-hooks'] : []),
       // Test builds only (update-test.mjs): another update key and a local update address.
       ...(process.env.TTSNATIVE_TAURI_CONFIG
         ? ['--config', process.env.TTSNATIVE_TAURI_CONFIG]
@@ -87,6 +88,34 @@ function main() {
     ],
     { cwd: desktopDir, env },
   );
+  // Fail closed: the binary must contain the hooks exactly when this is a test build.
+  const problem = checkTestHooks(
+    path.join(releaseDir, 'TTSNative.exe'),
+    testHooks ? 'present' : 'absent',
+  );
+  if (problem) throw new BootstrapError(problem);
+  ok(`TTSNative.exe: test hooks ${testHooks ? 'present (test build)' : 'absent'}`);
+}
+
+function main() {
+  if (process.platform !== 'win32')
+    throw new BootstrapError('The Windows app is built on Windows.');
+  const npmCli = process.env.npm_execpath;
+  if (!npmCli) throw new BootstrapError('Run this through npm: `npm run desktop:build`.');
+  const version = buildVersion();
+  if (testHooks && /^\d+\.\d+\.\d+$/.test(version)) {
+    throw new BootstrapError(
+      `TTSNATIVE_TEST_HOOKS=1 would build the test hooks into release version ${version}; unset it.`,
+    );
+  }
+  const env = { TTSNATIVE_BUILD_VERSION: version };
+  step(
+    `Building TTSNative ${version} for Windows${testHooks ? ' (test build, with test hooks)' : ''}…`,
+  );
+  node([npmCli, 'run', 'build', '--workspace', '@ltts/web'], { env });
+  node([path.join(repoRoot, 'scripts', 'desktop', 'build-runtime.mjs')], { env });
+  node([path.join(repoRoot, 'scripts', 'desktop', 'notices.mjs'), version], { env });
+  tauriBuild(version, env);
   const built = readdirSync(nsisDir).find((name) => name.endsWith('-setup.exe'));
   if (!built) throw new BootstrapError(`No installer was produced in ${nsisDir}.`);
   mkdirSync(outDir, { recursive: true });

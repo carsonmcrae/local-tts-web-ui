@@ -23,24 +23,50 @@ release, and the latest results. Design: [desktop-and-releases.md](../architectu
 | UI: update notice, install progress and failures, remind later, automatic checks, release history one version at a time (Older / Newer, marks), What's new (mocked app)  | `apps/web/src/features/updates`        |
 | Version, change-file and release-notes rules; concurrent branches never collide                                                                                          | `npm run test:scripts`                 |
 
+## What the automated checks prove, and what still needs a person
+
+| Area                                                        | Proved by CI on a clean `windows-2025` runner                                             | Still needs a person on Windows 11                                        |
+| ----------------------------------------------------------- | ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| Fresh install, first launch, bundled voice, export          | Silent install, Installed Apps entry, server up, Kokoro ready, speech, MP3 export         | The interactive installer and SmartScreen prompt; listening to the audio  |
+| Close ends every background process                         | Closing the window quits the app and its server                                           | Task Manager check for leftovers after several open/close cycles          |
+| Reopen keeps everything                                     | Documents, positions, bookmarks, pronunciations, preferences, exports, window storage     | The same after a day of real use                                          |
+| Uninstall keeps data / deletes it only when confirmed twice | Silent uninstall keeps the data folder                                                    | The interactive uninstall with the delete box and its second confirmation |
+| Update                                                      | Notice, refusal of a bad signature and a broken download, verified install, document kept | The first real update (needs two published releases)                      |
+| Voice cloning, Studio Voice                                 | Nothing (multi-gigabyte download)                                                         | Install, record a studio voice, read with it                              |
+
 ## By hand, before a major or minor release
 
 On a Windows 11 machine (or VM) **without** developer tools, using the installer from the release
-candidate's Desktop workflow artifact:
+candidate's Desktop workflow artifact, in this order:
 
-1. Download the installer in a browser and run it (note the SmartScreen prompt while unsigned).
-2. Install with **Create desktop shortcut** ticked; start from the Start menu and from the shortcut.
-3. Open a PDF, an EPUB and a Word document; choose a voice; listen past a few sentences.
-4. Export an MP3 and a chapter ZIP; play them.
-5. Resize, minimise, maximise, close and reopen; the window comes back where it was, the document resumes.
-6. Record a quick custom voice (needs voice cloning from Settings, several GB) and read with it.
-7. Settings → About: version (also at the bottom of the sidebar, which leads here); Release history
-   one version at a time: the list of versions with the installed one marked, Older and Newer, each
-   version's date and notes; What's new; Check for updates; Open data/log folder.
-8. Turn the network off: reading still works; Check for updates explains it couldn't connect.
-9. Install the next build over it: data kept; What's new opens once.
-10. Uninstall without and then (after reinstalling) with **Delete the application data**; check the
-    second confirmation and which folders remain.
+1. **Fresh install:** download the installer in a browser and run it (SmartScreen warns while unsigned:
+   More info → Run anyway). Install with **Create desktop shortcut** ticked. Installed Apps lists
+   TTSNative with its version and publisher.
+2. **First launch:** start from the Start menu and from the shortcut; the start screen gives way to the
+   library within about ten seconds; no console window appears; Settings → About shows the version
+   without a "development build" badge.
+3. **Bundled voice:** open a PDF, an EPUB and a Word document; pick a Kokoro voice; listen past a few
+   sentences; export an MP3 and play it.
+4. **Voice cloning (optional):** Settings → Engines → install voice cloning (several GB); wait for Ready.
+5. **Studio Voice:** record a short guided session (or import a recording), create the voice, read a
+   paragraph with it, change its delivery, and (with an NVIDIA card) try Fine-tune → compare → Keep.
+6. **Settings → About:** the version (also at the bottom of the sidebar, which leads here); Release
+   history one version at a time: the list of versions with the installed one marked, Older and Newer,
+   each version's date and notes; What's new; Check for updates; Open data/log folder; Third-party
+   notices opens the notices file. Then turn the network off: reading still works and Check for updates
+   explains that it couldn't connect.
+7. **Close:** close the window; in Task Manager neither TTSNative nor ttsnative-backend remains, and no
+   msedgewebview2 process belongs to TTSNative after a few seconds. Repeat three times.
+8. **Reopen and persistence:** everything from steps 3–5 is still there: documents and their positions,
+   bookmarks, the custom voice, preferences, exports. Also end the app from Task Manager once (a crash)
+   and check again.
+9. **Uninstall, keep data:** Installed Apps → Uninstall, leave the delete box unticked; the app and
+   shortcuts go, `%LOCALAPPDATA%\com.ttsnative.desktop` stays. Reinstall: everything is back.
+10. **Uninstall, delete data:** uninstall with **Delete the application data** ticked; confirm the
+    second question; `%LOCALAPPDATA%\com.ttsnative.desktop` is gone.
+11. **Update:** once a newer release exists, install the older one, open it, and accept the update
+    notice: the new version opens with the data kept and What's new shown once. Until then, this step
+    is covered by the automated update test with a throwaway key.
 
 ## Latest results
 

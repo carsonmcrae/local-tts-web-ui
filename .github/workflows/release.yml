@@ -34,6 +34,8 @@ env:
   LTTS_NO_OPEN: '1'
   UV_LINK_MODE: copy
   TAG: ${{ inputs.tag || github.ref_name }}
+  # A release build never has the test hooks (build.mjs refuses and checks the binary).
+  TTSNATIVE_TEST_HOOKS: ''
 
 defaults:
   run:
@@ -64,6 +66,15 @@ jobs:
           pending=$(find .changes -name '*.md' ! -name README.md | wc -l)
           [ "$pending" -eq 0 ] || { echo "::error::$pending change files were not consumed by release:prepare"; exit 1; }
           node scripts/release-notes.mjs "$TAG" > "$RUNNER_TEMP/release-notes.md"
+      - name: The release environment exists and waits for a reviewer
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Fail closed: without the environment the signing job would run unprotected and unsigned.
+          rules=$(gh api "repos/$GITHUB_REPOSITORY/environments/release" --jq '[.protection_rules[]?.type] | join(",")') \
+            || { echo "::error::The 'release' environment is missing or unreadable (Settings → Environments); see docs/guides/release-process.md"; exit 1; }
+          echo "$rules" | grep -q required_reviewers \
+            || { echo "::error::The 'release' environment has no required reviewer, so a release build would start without a person approving it"; exit 1; }
       - name: Bootstrap (verified uv download, Python 3.12, locked deps)
         run: node scripts/setup.mjs
       - run: npm run check
@@ -116,7 +127,9 @@ jobs:
           AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
           AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
         run: |
-          [ -n "$TAURI_SIGNING_PRIVATE_KEY" ] || { echo "::error::The TAURI_SIGNING_PRIVATE_KEY secret is missing"; exit 1; }
+          [ -n "$TAURI_SIGNING_PRIVATE_KEY" ] || { echo "::error::The TAURI_SIGNING_PRIVATE_KEY secret is missing from the release environment"; exit 1; }
+          [ -n "$TAURI_SIGNING_PRIVATE_KEY_PASSWORD" ] || { echo "::error::The TAURI_SIGNING_PRIVATE_KEY_PASSWORD secret is missing from the release environment"; exit 1; }
+          [ -z "$TTSNATIVE_TEST_HOOKS" ] || { echo "::error::TTSNATIVE_TEST_HOOKS is set; a release build must not contain the test hooks"; exit 1; }
           npm run desktop:build
           version=$(cat dist/desktop/version.txt)
           [ "v$version" = "$TAG" ] || { echo "::error::built $version, expected $TAG"; exit 1; }

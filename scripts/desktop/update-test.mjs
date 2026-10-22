@@ -24,7 +24,6 @@ import {
   endApp,
   isRunning,
   launchForDebugging,
-  removeDebugOverride,
   serverOrigin,
 } from './webview-debugging.mjs';
 
@@ -209,7 +208,6 @@ async function main() {
   } finally {
     server.close();
     await endApp();
-    removeDebugOverride();
   }
 }
 

@@ -136,8 +136,21 @@ def test_changes_from_the_network_need_the_apps_own_origin_and_host(client: Test
     missing = TestClient(client.app, base_url=ORIGIN, client=("192.168.1.50", 1), headers={"X-LTTS-Client": "web"})
     missing.cookies.update(device.cookies)
     assert missing.post("/api/documents/text", json={"text": "x"}).json()["error"]["code"] == "origin_mismatch"
+    # The computer's own address serves this computer only: another device is refused outright there.
+    stranger = TestClient(
+        client.app, base_url="http://localhost:8765", client=("192.168.1.50", 1), headers={"X-LTTS-Client": "web"}
+    )
+    assert stranger.get("/api/documents").json()["error"]["code"] == "not_local"
     rebound = TestClient(client.app, base_url="http://evil.example:8765", client=("192.168.1.50", 1))
     assert rebound.get("/api/documents").status_code == 421
+
+
+def test_a_devices_name_keeps_only_visible_characters(client: TestClient, lan: Services) -> None:
+    device = phone(client)
+    code = lan.lan.codes.new().code
+    name = "Kitchen" + chr(0x202E) + " tablet" + chr(7)  # a direction override and a control character
+    assert device.post("/api/lan/pair", json={"code": code, "name": name}).status_code == 201
+    assert [d["name"] for d in client.get("/api/lan").json()["devices"]] == ["Kitchen tablet"]
 
 
 def test_removing_a_device_or_turning_lan_mode_off_takes_effect_at_once(client: TestClient, lan: Services) -> None:

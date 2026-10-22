@@ -48,9 +48,16 @@ class Chapter:
     end: float
 
 
+# Windows treats these as devices whatever the extension (CON.mp3 is the console), so they get a suffix.
+_RESERVED_NAMES = frozenset(
+    {"CON", "PRN", "AUX", "NUL", *(f"COM{n}" for n in range(1, 10)), *(f"LPT{n}" for n in range(1, 10))}
+)
+
+
 def safe_filename(title: str, fallback: str = "audio") -> str:
     cleaned = re.sub(r"[^\w\- ]+", "", title, flags=re.UNICODE).strip()
-    return re.sub(r"\s+", " ", cleaned)[:80] or fallback
+    name = re.sub(r"\s+", " ", cleaned)[:80] or fallback
+    return f"{name}_" if name.upper() in _RESERVED_NAMES else name
 
 
 def srt_time(seconds: float) -> str:

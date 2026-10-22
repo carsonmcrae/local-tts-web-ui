@@ -63,6 +63,9 @@ local filesystem, and the integrity of installed model files and Python/npm depe
 
 ## Residual risks
 
+- **Native audio decoding runs in the server process.** Studio recordings and a shared voice file's
+  `reference.wav` are decoded by libsndfile without the document parsers' sandbox. Only this computer's user
+  can reach those routes (LAN devices are refused), and the files are ones they chose.
 - **Only Linux has a per-process memory limit** in the sandbox (`RLIMIT_AS`). Windows has no
   equivalent, and macOS reserves more virtual address space at start-up than any useful cap allows.
   The timeout, archive and text limits still apply everywhere.

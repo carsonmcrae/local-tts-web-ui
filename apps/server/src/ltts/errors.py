@@ -96,8 +96,25 @@ class ForbiddenError(AppError):
     code = "forbidden"
 
 
+BODY_TOO_LARGE = "body_too_large"  # request-state key: the security middleware cut the body off at this many bytes
+
+
 def _body(code: str, message: str, details: dict[str, Any] | None = None) -> dict[str, Any]:
     return {"error": {"code": code, "message": message, "details": details or {}}}
+
+
+def _cut_off(request: Request) -> int:
+    """How many bytes the security middleware allowed before it stopped reading this body, or 0."""
+    return int(request.scope.get("state", {}).get(BODY_TOO_LARGE) or 0)
+
+
+def _too_large(cut_at: int) -> JSONResponse:
+    """A 413 that says so, rather than "something went wrong" or "couldn't parse the body"."""
+    limit = cut_at // (1024 * 1024)
+    return JSONResponse(
+        _body("payload_too_large", f"The request is larger than the {limit} MB limit.", {"limitBytes": cut_at}),
+        status_code=413,
+    )
 
 
 def install_error_handlers(app: FastAPI) -> None:
@@ -116,7 +133,9 @@ def install_error_handlers(app: FastAPI) -> None:
         )
 
     @app.exception_handler(StarletteHTTPException)
-    async def _http(_: Request, exc: StarletteHTTPException) -> JSONResponse:
+    async def _http(request: Request, exc: StarletteHTTPException) -> JSONResponse:
+        if cut_at := _cut_off(request):  # FastAPI reports a body it couldn't read as a plain 400
+            return _too_large(cut_at)
         message = exc.detail if isinstance(exc.detail, str) else "Request failed."
         return JSONResponse(_body("http_error", message), status_code=exc.status_code)
 

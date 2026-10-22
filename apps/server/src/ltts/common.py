@@ -14,6 +14,7 @@ import asyncio
 import hashlib
 import shutil
 import sys
+import unicodedata
 import uuid
 from datetime import UTC, datetime
 from pathlib import Path
@@ -26,6 +27,9 @@ from pydantic.alias_generators import to_camel
 from ltts.errors import InsufficientStorageError, PayloadTooLargeError
 
 MB = 1024 * 1024
+# The largest bodies any route accepts; the security middleware allows them on those routes only.
+MAX_RECORDING_IMPORT_BYTES = 600 * MB  # a studio recording: 30 minutes of 48 kHz, 24-bit stereo WAV fits
+MAX_VOICE_PACKAGE_BYTES = 40 * MB  # a .ttsvoice file
 # CREATE_NO_WINDOW: helper processes (uv, the voice-cloning worker, nvidia-smi) never open a console
 # window, which matters when the server itself runs windowless inside the desktop app.
 NO_CONSOLE_WINDOW = 0x08000000 if sys.platform == "win32" else 0
@@ -43,6 +47,11 @@ def new_id() -> str:
 
 def utc_now() -> str:
     return datetime.now(UTC).isoformat(timespec="seconds")
+
+
+def plain_text(text: str) -> str:
+    """Text without control or invisible formatting characters (such as ones that reverse its direction)."""
+    return "".join(char for char in text if unicodedata.category(char) not in ("Cc", "Cf", "Co", "Cs")).strip()
 
 
 def ensure_free_space(directory: Path, needed_bytes: int, reserve_mb: int) -> None:

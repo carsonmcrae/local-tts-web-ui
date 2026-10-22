@@ -31,7 +31,7 @@ from ltts.container import Services
 from ltts.documents.details import MAX_COVER_BYTES
 from ltts.errors import UnsupportedDocumentError
 from ltts.exports import m4b
-from ltts.exports.assemble import Chapter
+from ltts.exports.assemble import Chapter, safe_filename
 
 BACKSLASH = chr(92)
 TEXT = "\n\n".join(
@@ -265,3 +265,9 @@ def test_details_and_cover_endpoints(client: TestClient, services: Services, tmp
 
 def payload(response: Any) -> Any:
     return response.json()
+
+
+def test_file_names_avoid_windows_device_names() -> None:
+    assert safe_filename("NUL") == "NUL_" and safe_filename("con") == "con_" and safe_filename("LPT1") == "LPT1_"
+    assert safe_filename("Console") == "Console" and safe_filename("COM1 log") == "COM1 log"
+    assert safe_filename("") == "audio"  # nothing usable: the fallback, which is never a device

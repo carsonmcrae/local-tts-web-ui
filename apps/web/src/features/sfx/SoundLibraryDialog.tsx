@@ -2,8 +2,8 @@
 // Copyright (c) 2026 Carson McRae
 /**
  * Purpose: The sound library: browse by category, search by keyword, preview, and pick a sound.
- * Scope: A dialog (a bottom sheet on phones) listing the bundled sounds with their length and
- *   whether they loop, category chips and a search box, a preview button per sound (one at a time,
+ * Scope: A dialog (a bottom sheet on phones) listing the bundled sounds with their length, whether
+ *   they loop and whether they are experimental (with the reason), category chips and a search box, a preview button per sound (one at a time,
  *   stopped when the dialog closes), a "Use" button that hands the sound to the caller (to add an
  *   effect or replace one), loading and error states, and a link to the credits beside the files.
  * Does NOT belong: Placing the effect (SoundPanel) or playing audio (session.ts).
@@ -65,10 +65,13 @@ function SoundRow({
         <p className="flex flex-wrap items-center gap-1.5 text-sm font-medium">
           {sound.name}
           {sound.loop ? <Badge>Loops</Badge> : null}
+          {sound.experimental ? <Badge tone="warning">Experimental</Badge> : null}
         </p>
         <p className="truncate text-xs text-muted">
           {sound.description} · {formatClock(sound.durationSeconds)}
         </p>
+        {/* Why a sound is experimental: it isn't suggested automatically until someone has listened. */}
+        {sound.experimental ? <p className="text-xs text-muted">{sound.qualityNote}</p> : null}
       </div>
       <Button size="sm" disabled={busy} onClick={onPick}>
         Use

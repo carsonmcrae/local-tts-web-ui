@@ -80,6 +80,9 @@ function useSelectedSentences(root: RefObject<HTMLElement | null>): Selected | n
   return selected;
 }
 
+/** How many sentences after its own an effect may last (the server's `sfx.store.MAX_SPAN`). */
+const MAX_SPAN = 60;
+
 /** The sound library for the selected sentences: a pick is placed at the first of them. */
 function SelectionSound({
   documentId,
@@ -95,8 +98,9 @@ function SelectionSound({
         soundId: sound.id,
         position: 0,
         offsetMs: 0,
-        // A looping sound plays across the whole selection; a one-off plays once.
-        untilSegment: sound.loop ? last : null,
+        // A looping sound plays across the selection, up to the longest span the server keeps; a
+        // one-off plays once.
+        untilSegment: sound.loop ? Math.min(last, first + MAX_SPAN) : null,
       },
       { onSuccess: onClose },
     );

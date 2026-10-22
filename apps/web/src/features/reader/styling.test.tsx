@@ -14,7 +14,7 @@
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { mockReaderApi, renderWithApp } from '@/test/render';
+import { mockReaderApi, renderWithApp, soundLibrary } from '@/test/render';
 import {
   openStyledReader,
   refused,
@@ -187,6 +187,22 @@ describe('A sound effect for the selection', () => {
       offsetMs: 0,
       untilSegment: null,
     });
+  });
+
+  it('marks a sound that is experimental, and says why', async () => {
+    const experimental = {
+      ...soundLibrary,
+      sounds: soundLibrary.sounds.map((sound) =>
+        sound.id === 'thud'
+          ? { ...sound, experimental: true, qualityNote: 'Synthesised; nobody has listened yet.' }
+          : sound,
+      ),
+    };
+    const { said } = await pickSound('Sentence 2.', 'Light rain', {
+      'GET /api/sound-effects/library': experimental,
+    });
+    expect(said).toMatch(/A heavy thudExperimental.*Synthesised; nobody has listened yet\./);
+    expect(said).not.toMatch(/Light rainLoopsExperimental/);
   });
 
   it('lets a looping sound play across the whole selection', async () => {

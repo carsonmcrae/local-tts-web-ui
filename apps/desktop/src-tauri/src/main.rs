@@ -153,7 +153,7 @@ fn browser_args(args: impl Iterator<Item = String>) -> String {
 /// `--remote-debugging-port=N` on the command line opens that port on 127.0.0.1. The switch text exists
 /// only in this build, which is how build.mjs and the release workflow prove a release has no hooks.
 #[cfg(all(windows, feature = "test-hooks"))]
-fn debug_switch(args: impl Iterator<Item = String>) -> Option<String> {
+fn debug_switch(mut args: impl Iterator<Item = String>) -> Option<String> {
     let port = args.find_map(|arg| {
         arg.strip_prefix("--remote-debugging-port=")
             .and_then(|value| value.parse::<u16>().ok())

@@ -3,7 +3,8 @@
 """Purpose: Tests for the studio take verdict, take playback and building a session early.
 
 Scope: Syllable estimates from text and audio; one root-cause message for a take without speech
-(silence, a take stopped at once, a voice too quiet to hear, an early stop); full takes with
+(silence, a take stopped at once, a voice too quiet to hear, an early stop) or a whole reading too
+quiet to measure (not mistaken for a missing one); full takes with
 completeness, noise compared with the speaker's other takes (advice, never blocking) and pauses;
 calibration from earlier takes; playing a take back; and the early build from the foundation passage.
 Does NOT belong: Clip and microphone-check rules (test_voices_exports_jobs.py) or the build itself.
@@ -69,6 +70,19 @@ def test_a_short_take_names_the_quiet_voice_or_the_early_stop() -> None:
     assert codes(short) == ["too_short"]
     assert "this passage takes about 8 s" in short.issues[0].message  # 40 syllables at 5 a second
     assert "only" in short.issues[0].message and not short.ok
+
+
+def test_a_quiet_reading_is_too_quiet_not_missing() -> None:
+    # A whole reading from a distant or low-gain microphone: faint, but far above its own background.
+    for level in (0.0095, 0.003):  # its loudest moment just above, then below, the "no sound at all" line
+        faint = speech_like(10, level=level, noise=0.00003)
+        report = judge_take(faint, SAMPLE_RATE, TakeContext(40), recorded=faint)
+        assert codes(report) == ["too_quiet"] and not report.ok
+    part = speech_like(4, level=0.014, noise=0.00003)
+    gappy = np.concatenate([part, silence(6.0), part])
+    assert codes(judge_take(gappy, SAMPLE_RATE, TakeContext(40))) == ["too_quiet"]  # not its pauses as well
+    room = (0.003 * np.random.default_rng(5).standard_normal(8 * SAMPLE_RATE)).astype(np.float32)
+    assert codes(judge_take(room, SAMPLE_RATE, TakeContext(40), recorded=room)) == ["no_speech"]  # background only
 
 
 def test_a_full_take_reports_completeness_noise_and_pauses_as_advice() -> None:

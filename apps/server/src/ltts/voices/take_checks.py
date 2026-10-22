@@ -8,7 +8,8 @@ own pace and voice from earlier takes) and compares its background with the spea
 Then picks the issues that explain the take: one message for a take with no speech (instead of
 every measurement that follows from it), the quiet voice or the early stop for a short take, and for
 a full take its level, noise, completeness and pauses. Noise and an incomplete reading are advice
-and never block a take. The whole recording (before trimming) also shows a take that stopped, or
+and never block a take. The whole recording (before trimming) shows a voice too quiet to measure
+(found against its own background, so it isn't mistaken for no speech), a take that stopped, or
 started, mid-word, and what the background is (``background.py``), named in the advice about it.
 Does NOT belong: The measurements themselves (``quality.py``) or storing takes (``sessions.py``).
 """
@@ -42,6 +43,10 @@ INCOMPLETE = 0.65  # below this share of the passage, the take most likely stopp
 LOUDER_NOISE_DB = 6.0  # a background this much louder than the speaker's other takes is worth a retake
 CALIBRATION_TAKES = 3
 CUT_OFF_DB = 15.0  # a recording whose first or last 60 ms is this close to its speech level was cut mid-word
+TOO_QUIET_DBFS = -40.0  # a voice quieter than this is too quiet to use (the too_quiet level rule)
+BACKGROUND_PERCENTILE = 10  # a recording's quietest tenth of frames is its background
+VOICE_ABOVE_BACKGROUND_DB = 15.0  # frames this far above the background are voice, however quiet the recording
+EDGE_ABOVE_BACKGROUND_DB = 6.0  # a cut-off edge also stands out from the background: steady noise isn't a word
 # What each kind of background usually is, worded to be named in a sentence.
 HEARD: dict[Kind, str] = {
     "hum": "a steady hum (mains electricity, a charger or a device nearby)",
@@ -150,16 +155,31 @@ def _no_speech(values: dict[str, float | None], recorded_s: float | None) -> Qua
     )
 
 
+def _too_quiet() -> QualityIssue:
+    return _issue(
+        "too_quiet",
+        "error",
+        "We could barely hear you. Move closer to the microphone or raise its input level, then try again.",
+    )
+
+
+def _quiet_reading(recorded: Float32Array, sample_rate: int) -> bool:
+    """A whole reading too quiet to use: enough voice above the recording's own background, but faint.
+
+    The speech threshold is a fixed level, so a distant or low-gain microphone can leave a full reading
+    below it. Measured against the background instead, the reading is still there, just too quiet.
+    """
+    levels = frame_rms_db(recorded, sample_rate)  # 30 ms frames
+    voice = levels[levels > float(np.percentile(levels, BACKGROUND_PERCENTILE)) + VOICE_ABOVE_BACKGROUND_DB]
+    if voice.size * 0.03 < MIN_TAKE_SPEECH_S:
+        return False
+    return float(10 * np.log10(np.mean(10 ** (voice / 10)))) < TOO_QUIET_DBFS
+
+
 def _short(values: dict[str, float | None], context: TakeContext) -> list[QualityIssue]:
     """A take with a little speech: a voice too quiet to be heard, or a reading that stopped early."""
-    if (values["rms_dbfs"] or -120.0) < -40:
-        return [
-            _issue(
-                "too_quiet",
-                "error",
-                "We could barely hear you. Move closer to the microphone or raise its input level, then try again.",
-            )
-        ]
+    if (values["rms_dbfs"] or -120.0) < TOO_QUIET_DBFS:
+        return [_too_quiet()]
     pace = context.pace or DEFAULT_PACE
     needed = (
         f" (this passage takes about {context.syllables_expected / pace:.0f} s)" if context.syllables_expected else ""
@@ -220,7 +240,8 @@ def cut_off(recorded: Float32Array, sample_rate: int) -> str | None:
     levels = frame_rms_db(recorded, sample_rate)  # 30 ms frames
     if levels.size < 20:
         return None
-    loud = levels > float(np.percentile(levels, 95)) - CUT_OFF_DB
+    speech, background = np.percentile(levels, [95, BACKGROUND_PERCENTILE])
+    loud = (levels > float(speech) - CUT_OFF_DB) & (levels > float(background) + EDGE_ABOVE_BACKGROUND_DB)
     if loud[-2:].all():
         return "end"
     return "start" if loud[:2].all() else None
@@ -262,6 +283,10 @@ def judge_take(
         "syllables_heard": heard,
         "syllables_expected": context.syllables_expected,
     }
+    short_or_quiet = speech_s < MIN_TAKE_SPEECH_S or (values["rms_dbfs"] or -120.0) < TOO_QUIET_DBFS
+    if short_or_quiet and _quiet_reading(whole, sample_rate):
+        # Every other measurement of a faint reading (speech, completeness, pauses) would mislead.
+        return build_report(values, [_too_quiet()])
     if speech_s < NO_SPEECH_S:
         return build_report(values, [_no_speech(values, recorded_s)])
     if speech_s < MIN_TAKE_SPEECH_S:

@@ -195,7 +195,8 @@ dismissed suggestions never return.
 
 - **Blocking a PR:** none on this side. The owner's listening verdict decides whether the synthesised
   sounds ship as they are or the organic ones are replaced first.
-- **To do at the next rebase:** none known; the literary library's presets module can now import
-  `CATEGORY_OF` instead of keeping its copy (a one-line change on its side).
+- **To do at the next rebase:** none known. The literary library's presets module now imports
+  `CATEGORY_OF` instead of keeping a copy, its migration registry test lists 17 and upgrades from 16,
+  and the music and effects tests open the mixer through one helper.
 - **Ready for a pull request?** Yes, as an opt-in feature that is off by default and plays nothing
   until a reader accepts a suggestion; the branch is local until the owner authorises a push.

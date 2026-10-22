@@ -13,7 +13,7 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PlayerBar } from '@/features/player/PlayerBar';
 import ReaderPage from '@/features/reader/ReaderPage';
-import { stubAudioContexts } from '@/test/audio';
+import { openMixer, stubAudioContexts } from '@/test/audio';
 import { documentDetail, json, mockReaderApi, renderWithApp } from '@/test/render';
 import type * as LibraryModule from './library';
 import type { MusicTrack } from './library';
@@ -77,11 +77,7 @@ async function openReader() {
   });
   const player = await screen.findByRole('region', { name: 'Audio player' });
   const press = (name: string) => user.click(within(player).getByRole('button', { name }));
-  const openMusic = async () => {
-    const [button] = within(player).getAllByRole('button', { name: /^Audio mixer/ });
-    await user.click(button as HTMLElement);
-    return screen.findByRole('dialog', { name: 'Audio mixer' });
-  };
+  const openMusic = () => openMixer(user, player);
   /** Opens the music panel and flips the switch; returns the panel. */
   const toggleMusic = async () => {
     const panel = await openMusic();

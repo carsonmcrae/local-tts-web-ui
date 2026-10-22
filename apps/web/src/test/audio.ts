@@ -8,6 +8,8 @@
  *   the subset of AudioContext that lib/audio/webAudio.ts and the two engines use.
  * Does NOT belong: Assertions, or the engine's own logic.
  */
+import { screen, within } from '@testing-library/react';
+import type { UserEvent } from '@testing-library/user-event';
 import { afterEach, beforeEach, vi } from 'vitest';
 import type { CompressorLike, SfxContextLike } from '@/features/sfx/engine';
 import type { BufferLike, GainLike, NodeLike, ParamLike, SourceLike } from '@/lib/audio/webAudio';
@@ -182,4 +184,11 @@ export function stubAudioContexts(): FakeAudioContext[] {
     vi.unstubAllGlobals();
   });
   return contexts;
+}
+
+/** Opens the audio mixer from the player bar (either layout's button) and returns its panel. */
+export async function openMixer(user: UserEvent, player: HTMLElement): Promise<HTMLElement> {
+  const [button] = within(player).getAllByRole('button', { name: /^Audio mixer/ });
+  await user.click(button as HTMLElement);
+  return screen.findByRole('dialog', { name: 'Audio mixer' });
 }

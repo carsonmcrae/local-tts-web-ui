@@ -15,7 +15,7 @@ import type { SfxEffect } from '@/api/types';
 import { json, soundLibrary } from '@/test/render';
 import { BASE, openSounds, rain, soundsApi, startNarration, thud } from '@/test/sfx';
 import type { FakeAudioContext } from '@/test/audio';
-import { stubAudioContexts } from '@/test/audio';
+import { openMixer, stubAudioContexts } from '@/test/audio';
 
 const contexts = stubAudioContexts();
 
@@ -260,17 +260,12 @@ describe('Sounds panel', () => {
     soundsApi([thud({ segmentIndex: 0 }), rain()]);
     const { user, panel, media, press } = await openSounds();
     const player = screen.getByRole('region', { name: 'Audio player' });
-    const openMixer = async () => {
-      const [button] = within(player).getAllByRole('button', { name: /^Audio mixer/ });
-      await user.click(button as HTMLElement);
-      return screen.findByRole('dialog', { name: 'Audio mixer' });
-    };
-    let mixer = await openMixer();
+    let mixer = await openMixer(user, player);
     expect(within(mixer).getByText(/the next narration starts without them/)).toBeInTheDocument();
     await user.keyboard('{Escape}');
     await startNarration(user, panel, media);
     await waitFor(() => expect(contexts[0]?.playing).toHaveLength(1));
-    mixer = await openMixer();
+    mixer = await openMixer(user, player);
     expect(within(mixer).getByRole('switch', { name: 'Sound effects' })).toBeChecked();
     expect(within(mixer).getByText('Playing beside the narration.')).toBeInTheDocument();
     expect(
@@ -291,7 +286,7 @@ describe('Sounds panel', () => {
     await user.keyboard('{Escape}');
     (contexts[0] as FakeAudioContext).decode = () => new Promise(() => undefined);
     await press('Preview Light rain'); // placed in chapter two, so not decoded yet
-    mixer = await openMixer();
+    mixer = await openMixer(user, player);
     expect(within(mixer).getByText('Loading a sound…')).toBeInTheDocument();
     await user.click(within(mixer).getByRole('switch', { name: 'Sound effects' }));
     expect(within(panel).getByRole('switch', { name: 'Sound effects' })).not.toBeChecked();
@@ -308,9 +303,7 @@ describe('Sounds panel', () => {
     );
     expect(within(panel).getByRole('switch', { name: 'Sound effects' })).not.toBeChecked();
     const player = screen.getByRole('region', { name: 'Audio player' });
-    const [button] = within(player).getAllByRole('button', { name: /^Audio mixer/ });
-    await user.click(button as HTMLElement);
-    const mixer = await screen.findByRole('dialog', { name: 'Audio mixer' });
+    const mixer = await openMixer(user, player);
     expect(within(mixer).getByRole('alert')).toHaveTextContent('aren’t available in this browser');
   });
 

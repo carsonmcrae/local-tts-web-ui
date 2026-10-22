@@ -1,10 +1,10 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2026 Carson McRae
 """Purpose: Tests for the migration registry and for upgrading databases people already have.
-Scope: The registry has exactly the agreed entries (1–13 from main, 14–16 from the literary library; the
-sound-effects work takes 17 next, see docs/architecture/literary-library.md section 2) and each of 14–16
-creates the tables it owns and no others. A database left at version 1 (v2.0.0), 5 (the first desktop
-build) or 13 (main) upgrades to the current version with every document, segment, reading position,
+Scope: The registry has exactly the agreed entries (1–13 from main, 14–16 from the literary library, 17
+from sound effects; see docs/architecture/literary-library.md section 2) and each of 14–17 creates the
+tables it owns and no others. A database left at version 1 (v2.0.0), 5 (the first desktop build), 13
+(the voices and LAN release) or 16 (the literary library) upgrades to the current version with every document, segment, reading position,
 bookmark, pronunciation, voice profile and preference unchanged, the app then lists those documents with
 default shelf facets, and migrating again changes nothing. A fresh database reaches the same version
 with a sound schema.
@@ -27,12 +27,14 @@ from ltts.config import Settings
 from ltts.container import build_services
 from ltts.db import MIGRATIONS, Database
 
-CURRENT = 16
+CURRENT = 17
 OWNED = {
     14: {"folders", "document_shelf", "document_genres", "document_tags", "collections", "collection_documents"},
     15: {"bundled_documents", "hidden_works"},
     16: {"document_presets"},
+    17: {"sound_effects", "sound_analyses"},
 }
+ADDED = set().union(*OWNED.values())
 DOC = "d" * 32
 NOW = "2026-10-01T00:00:00+00:00"
 
@@ -42,7 +44,7 @@ def tables_created(script: str) -> set[str]:
 
 
 def test_the_registry_has_the_agreed_entries() -> None:
-    assert len(MIGRATIONS) == CURRENT  # the sound-effects migration becomes 17 when that branch merges
+    assert len(MIGRATIONS) == CURRENT
     for number, tables in OWNED.items():
         assert tables_created(MIGRATIONS[number - 1]) == tables
         earlier = {table for script in MIGRATIONS[: number - 1] for table in tables_created(script)}
@@ -112,7 +114,7 @@ def _rows(path: Path) -> dict[str, list[tuple[object, ...]]]:
         return rows
 
 
-@pytest.mark.parametrize("version", [1, 5, 13])
+@pytest.mark.parametrize("version", [1, 5, 13, 16])
 def test_a_database_people_already_have_upgrades_with_its_rows_intact(
     version: int, settings: Settings, engines: dict[str, FakeEngine]
 ) -> None:
@@ -130,7 +132,7 @@ def test_a_database_people_already_have_upgrades_with_its_rows_intact(
     for table, rows in before.items():
         # Every row is still there with every value it had; later migrations only append columns with defaults.
         assert [row[: len(rows[0])] if rows else row for row in after[table]] == rows, table
-    for table in OWNED[14] | OWNED[15] | OWNED[16]:
+    for table in ADDED:
         assert after[table] == []  # nothing is organised or bundled on a person's behalf
 
     # The app opens the upgraded database and shows the same document with default facets.
@@ -163,4 +165,4 @@ def test_a_fresh_database_is_at_the_current_version(tmp_path: Path) -> None:
         assert conn.execute("PRAGMA user_version").fetchone()[0] == CURRENT
         assert conn.execute("PRAGMA integrity_check").fetchone()[0] == "ok"
         tables = {r[0] for r in conn.execute("SELECT name FROM sqlite_master WHERE type = 'table'")}
-    assert OWNED[14] | OWNED[15] | OWNED[16] <= tables
+    assert tables >= ADDED

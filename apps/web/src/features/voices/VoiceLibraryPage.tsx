@@ -54,7 +54,10 @@ function VoiceResults({
 }: Readonly<{ voices: ReturnType<typeof useVoices>; shown: number; children: ReactNode }>) {
   if (voices.isPending) {
     return (
-      <StatusRegion label="Loading voices" className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+      <StatusRegion
+        label="Loading voices"
+        className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3"
+      >
         {[0, 1, 2, 3, 4, 5].map((key) => (
           <Skeleton key={key} className="h-40" />
         ))}
@@ -206,7 +209,8 @@ export default function VoiceLibraryPage() {
           Showing {shown.length} of {all.length} voices. Grades are the upstream model's own quality
           ratings (A is best).
         </p>
-        <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        {/* grid-cols-1, not the implicit auto column, so a card's no-wrap line can't widen it past a 320 px screen */}
+        <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {shown.map((voice) => (
             <VoiceCard
               key={voice.id}

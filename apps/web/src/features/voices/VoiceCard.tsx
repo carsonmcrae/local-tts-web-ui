@@ -90,7 +90,9 @@ export function VoiceCard({
       className={cn(
         'flex flex-col gap-3 rounded-[var(--radius-lg)] border bg-surface p-4 shadow-soft',
         isDefault ? 'border-accent' : 'border-line',
-        !voice.available && 'opacity-70',
+        // Unavailable shows as a dashed border and the "Engine not installed" badge, never by dimming,
+        // which would take the card's text below 4.5:1 contrast.
+        !voice.available && 'border-dashed',
       )}
     >
       <div className="flex items-start gap-3">

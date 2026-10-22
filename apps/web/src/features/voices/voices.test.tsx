@@ -82,6 +82,15 @@ describe('Voice library filters', () => {
     expect(screen.getByText('French · male · piper')).toBeInTheDocument();
     expect(screen.getByText('English · Chatterbox')).toBeInTheDocument();
   });
+
+  it('says in words that a voice is unavailable instead of dimming its card', async () => {
+    api({ 'GET /api/voices': [voices[0], { ...voices[1], available: false }] });
+    await renderVoices();
+    const george = screen.getByRole('heading', { level: 3, name: /^George/ }).closest('li');
+    expect(within(george as HTMLElement).getByText('Engine not installed')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Preview George' })).toBeDisabled();
+    expect(george?.className).not.toMatch(/opacity-/); // dimming took its text below 4.5:1 contrast
+  });
 });
 
 describe('Voice credits', () => {

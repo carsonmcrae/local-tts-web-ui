@@ -3,12 +3,13 @@
 // Copyright (c) 2026 Carson McRae
 /**
  * Purpose: Prove the Windows app keeps everything a person did across a close, a crash and a reopen.
- * Scope: Uploads PDF, Word and EPUB files, saves a reading position and voice, a bookmark with a note, a
- *   pronunciation rule, preferences, an MP3 export and the window's display settings; closes normally,
- *   reopens and compares; ends it abruptly (crash or power cut), reopens and compares again. Reads the
+ * Scope: Uploads PDF, Word and EPUB files; saves a reading position and voice, a bookmark with a note, a
+ *   pronunciation rule, preferences, an MP3 export and the window's display settings; files a document in
+ *   a folder and a collection with its type, genres and tags; opens an included book offline, applies its
+ *   reading preset, chooses a character's voice over it, and hides another book. Closes normally, reopens
+ *   and compares everything; ends it abruptly (crash or power cut), reopens and compares again. Reads the
  *   window's storage through WebView2's debugging port. Usage: `node scripts/desktop/persistence-test.mjs`
- *   against the installed app (test documents stay), or `--install <installer>` on a disposable machine
- *   (CI) to install first and uninstall afterwards.
+ *   against the installed app (test documents stay), or `--install <installer>` on a disposable machine.
  * Does NOT belong: The installer checks or updating (smoke-test.mjs, update-test.mjs).
  */
 import { execFileSync, spawnSync } from 'node:child_process';
@@ -73,24 +74,65 @@ async function windowStorage(origin, /** @type {Record<string, string> | null} *
   return values;
 }
 
+/** Which of an included book's reading preset components are applied. @param {string} origin @param {string} id */
+async function presetState(origin, id) {
+  const report =
+    /** @type {{ appliedAt: string | null, components: { name: string, applied: boolean }[] }} */ (
+      await api(`${origin}/api/documents/${id}/preset`)
+    );
+  return {
+    appliedAt: report.appliedAt,
+    applied: report.components.filter((c) => c.applied).map((c) => c.name),
+  };
+}
+
+/** The folder or collection of that name, created the first time (test documents stay between runs). */
+async function named(/** @type {string} */ url, /** @type {string} */ name) {
+  const existing = /** @type {{ id: string, name: string }[]} */ (await api(url));
+  return (
+    existing.find((item) => item.name === name) ??
+    /** @type {{ id: string }} */ (
+      await api(url, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ name }),
+      })
+    )
+  );
+}
+
 /** Everything a person did, as the app reports it. @param {string} origin */
 async function snapshot(origin) {
-  const documents = /** @type {{ id: string, title: string, progress: unknown }[]} */ (
-    await api(`${origin}/api/documents`)
-  );
+  const documents =
+    /** @type {{ id: string, title: string, progress: unknown, shelf: unknown, bundledWorkId?: string | null }[]} */ (
+      await api(`${origin}/api/documents`)
+    );
   const details = await Promise.all(
     documents.map(async (doc) => ({
       id: doc.id,
       title: doc.title,
       progress: doc.progress,
+      shelf: doc.shelf,
+      bundledWorkId: doc.bundledWorkId ?? null,
       bookmarks: await api(`${origin}/api/documents/${doc.id}/bookmarks`),
+      characters: await api(`${origin}/api/documents/${doc.id}/characters`),
+      preset: doc.bundledWorkId ? await presetState(origin, doc.id) : null,
     })),
   );
   const jobs = /** @type {{ id: string, kind: string, status: string }[]} */ (
     await api(`${origin}/api/jobs`)
   );
+  const works = /** @type {{ workId: string, documentId: string | null, hidden: boolean }[]} */ (
+    await api(`${origin}/api/library/works`)
+  );
   return {
     documents: details.sort((a, b) => a.id.localeCompare(b.id)),
+    library: {
+      folders: await api(`${origin}/api/library/folders`),
+      collections: await api(`${origin}/api/library/collections`),
+      tags: await api(`${origin}/api/library/tags`),
+      works: works.map(({ workId, documentId, hidden }) => ({ workId, documentId, hidden })),
+    },
     pronunciations: await api(`${origin}/api/pronunciations`),
     preferences: await api(`${origin}/api/preferences`),
     exports: jobs
@@ -153,6 +195,44 @@ async function main() {
     method: 'PUT',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ ...preferences, playbackRate: 1.25, exportFormat: 'wav' }),
+  });
+  // The library's organisation: a folder, a collection, and the PDF's own facets.
+  const folder = await named(`${origin}/api/library/folders`, 'Persistence shelf');
+  const collection = await named(`${origin}/api/library/collections`, 'Kept across restarts');
+  await api(`${origin}/api/documents/${pdf.id}/shelf`, {
+    method: 'PUT',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({
+      folderId: folder.id,
+      favorite: true,
+      documentType: 'report',
+      genres: ['history'],
+      tags: ['persisted'],
+    }),
+  });
+  await api(`${origin}/api/library/collections/${collection.id}/documents`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ add: [pdf.id, docx.id] }),
+  });
+  // An included book, opened from the catalog without any network, its preset applied, and the
+  // person's own choice of voice for one character over the preset's; another book hidden.
+  const carol = await api(`${origin}/api/library/works/a-christmas-carol/open`, { method: 'POST' });
+  check(carol.bundledWorkId === 'a-christmas-carol', 'an included book opened from the catalog');
+  await api(`${origin}/api/documents/${carol.id}/preset/apply`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ components: ['characters', 'speakers'] }),
+  });
+  await api(`${origin}/api/documents/${carol.id}/characters`, {
+    method: 'PUT',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ name: 'Scrooge', voiceId: 'kokoro:af_bella' }),
+  });
+  await api(`${origin}/api/library/works/the-time-machine/hidden`, {
+    method: 'PUT',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ hidden: true }),
   });
   const job = await api(`${origin}/api/exports`, {
     method: 'POST',

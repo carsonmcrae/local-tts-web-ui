@@ -5,8 +5,9 @@
  * Purpose: Prove the whole update path works between two real builds, including its failures.
  * Scope: Makes a throwaway update key, builds version A and a newer version B that trust it and look
  *   for updates on a local server, installs A, and drives its window through WebView2's debugging
- *   port: the update notice appears with B's notes; an update whose signature doesn't match and one
- *   whose download breaks off are refused with an explanation and A keeps running; then a good update
+ *   port: the update notice appears with B's notes; an update whose signature doesn't match (A's own
+ *   signature, then B signed with a second throwaway key) and one whose download breaks off are
+ *   refused with an explanation and A keeps running; then a good update
  *   downloads, verifies, installs B and reopens it, with the user's document still there. Finally B is
  *   uninstalled. CI only (it installs software for the current user); never uses the release key.
  *   Usage: no arguments does it all. CI builds A and B at the same time: `--make-key <dir>`, then
@@ -58,11 +59,13 @@ function node(args, env = {}) {
   if (result.status !== 0) throw new Error(`FAILED: ${args.join(' ')}`);
 }
 
+const TAURI_CLI = path.join(repoRoot, 'node_modules', '@tauri-apps', 'cli', 'tauri.js');
+
 /** Writes a new throwaway update key (update.key and update.key.pub) into `dir`. */
 function makeKey(/** @type {string} */ dir) {
   mkdirSync(dir, { recursive: true });
   node([
-    path.join(repoRoot, 'node_modules', '@tauri-apps', 'cli', 'tauri.js'),
+    TAURI_CLI,
     'signer',
     'generate',
     '--ci',
@@ -71,6 +74,19 @@ function makeKey(/** @type {string} */ dir) {
     '-p',
     KEY_PASSWORD,
   ]);
+}
+
+/**
+ * B's bytes signed by a key the app has never seen: a copy of `installer` in a folder of its own,
+ * signed with a second throwaway key made there. Returns that signature (the app must refuse it).
+ */
+function signWithAnotherKey(/** @type {string} */ installer) {
+  const dir = mkdtempSync(path.join(tmpdir(), 'ttsnative-other-key-'));
+  makeKey(dir);
+  const copy = path.join(dir, path.basename(installer));
+  copyFileSync(installer, copy);
+  node([TAURI_CLI, 'signer', 'sign', '-k', path.join(dir, 'update.key'), '-p', KEY_PASSWORD, copy]);
+  return readFileSync(`${copy}.sig`, 'utf8');
 }
 
 function readKey(/** @type {string} */ dir) {
@@ -112,14 +128,18 @@ function build(
   return target;
 }
 
-/** Serves latest.json and the new installer; `mode` decides what a check finds. */
-function updateServer(/** @type {string} */ installer, /** @type {string} */ wrongSignature) {
+/**
+ * Serves latest.json and the new installer; `mode` decides what a check finds: a signature that is
+ * not B's (`wrongSignatures` by mode), a download that breaks off, or the good update.
+ * @param {string} installer
+ * @param {Record<string, string>} wrongSignatures
+ */
+function updateServer(installer, wrongSignatures) {
   const bytes = readFileSync(installer);
   const state = { mode: 'bad-signature' };
   const server = createServer((request, response) => {
     if (request.url === '/latest.json') {
-      const signature =
-        state.mode === 'bad-signature' ? wrongSignature : readFileSync(`${installer}.sig`, 'utf8');
+      const signature = wrongSignatures[state.mode] ?? readFileSync(`${installer}.sig`, 'utf8');
       const file = state.mode === 'broken-download' ? 'broken.exe' : 'update.exe';
       response.setHeader('content-type', 'application/json');
       response.end(
@@ -150,9 +170,31 @@ const installedVersion = () =>
     execFileSync(REG, ['query', KEY], { encoding: 'utf8' }),
   )?.[1];
 
-/** Installs A, refuses a wrong signature (A's own) and a broken download, then updates to B. */
+/**
+ * Tries the update again in the dialog and expects it refused, with A still installed and running.
+ * @param {import('@playwright/test').Page} page
+ * @param {import('@playwright/test').Locator} dialog
+ * @param {string} what
+ */
+async function retryRefused(page, dialog, what) {
+  await dialog.getByRole('button', { name: 'Try again' }).click();
+  await page.waitForTimeout(3000);
+  await dialog
+    .getByRole('alert')
+    .getByText(/couldn.t be downloaded and verified/)
+    .waitFor({ timeout: 120_000 });
+  check(isRunning() && installedVersion() === OLD, `${what} is refused; the app keeps running`);
+}
+
+/**
+ * Installs A, refuses a wrong signature (A's own, then one from a key the app doesn't know) and a
+ * broken download, then updates to B.
+ */
 async function verify(/** @type {string} */ older, /** @type {string} */ newer) {
-  const server = updateServer(newer, readFileSync(`${older}.sig`, 'utf8'));
+  const server = updateServer(newer, {
+    'bad-signature': readFileSync(`${older}.sig`, 'utf8'),
+    'other-key': signWithAnotherKey(newer),
+  });
   try {
     check(spawnSync(older, ['/S'], { stdio: 'inherit' }).status === 0, `installed ${OLD}`);
     const origin = await launchForDebugging(path.join(installDir, 'TTSNative.exe'), DEBUG_PORT);
@@ -186,17 +228,10 @@ async function verify(/** @type {string} */ older, /** @type {string} */ newer) 
       isRunning() && installedVersion() === OLD,
       'an update with a wrong signature is refused; the app keeps running',
     );
+    server.state.mode = 'other-key';
+    await retryRefused(page, dialog, 'an update signed with a different key');
     server.state.mode = 'broken-download';
-    await dialog.getByRole('button', { name: 'Try again' }).click();
-    await page.waitForTimeout(3000);
-    await dialog
-      .getByRole('alert')
-      .getByText(/couldn.t be downloaded and verified/)
-      .waitFor({ timeout: 120_000 });
-    check(
-      isRunning() && installedVersion() === OLD,
-      'an interrupted download is refused; the app keeps running',
-    );
+    await retryRefused(page, dialog, 'an interrupted download');
     server.state.mode = 'good';
     await dialog
       .getByRole('button', { name: 'Try again' })

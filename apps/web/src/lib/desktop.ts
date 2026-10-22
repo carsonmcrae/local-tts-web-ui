@@ -28,7 +28,7 @@ export interface FoundUpdate {
 
 export type CheckResult =
   | { status: 'available' | 'snoozed'; update: FoundUpdate }
-  | { status: 'upToDate' | 'disabled' | 'notDue' }
+  | { status: 'upToDate' | 'noRelease' | 'disabled' | 'notDue' }
   | { status: 'failed'; message: string };
 
 export type InstallEvent =

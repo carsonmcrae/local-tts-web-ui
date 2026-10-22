@@ -26,9 +26,19 @@ pub enum CheckResult {
     Available { update: FoundUpdate },
     Snoozed { update: FoundUpdate },
     UpToDate,
+    /// GitHub answered, but no release carries an update manifest yet (before the first release that
+    /// ships one): not a connection problem, and nothing to remember.
+    NoRelease,
     Disabled,
     NotDue,
     Failed { message: String },
+}
+
+/// What the release address said.
+enum Fetched {
+    Update(FoundUpdate),
+    UpToDate,
+    NoRelease,
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -56,16 +66,22 @@ pub async fn update_check(app: AppHandle, manual: bool) -> CheckResult {
         }
     }
     match fetch(&app).await {
-        Ok(found) => {
-            let remembered_update = found.clone();
+        Ok(Fetched::NoRelease) => CheckResult::NoRelease,
+        Ok(fetched) => {
+            let found = match &fetched {
+                Fetched::Update(update) => Some(update.clone()),
+                _ => None,
+            };
             state.prefs.update(|prefs| {
                 prefs.last_check = Some(now);
-                prefs.last_found = remembered_update;
+                prefs.last_found = found;
             });
-            match found {
-                Some(update) if !manual && saved.is_snoozed(&update.version, now) => CheckResult::Snoozed { update },
-                Some(update) => CheckResult::Available { update },
-                None => CheckResult::UpToDate,
+            match fetched {
+                Fetched::Update(update) if !manual && saved.is_snoozed(&update.version, now) => {
+                    CheckResult::Snoozed { update }
+                }
+                Fetched::Update(update) => CheckResult::Available { update },
+                _ => CheckResult::UpToDate,
             }
         }
         Err(message) => CheckResult::Failed { message },
@@ -121,15 +137,21 @@ pub async fn update_install(app: AppHandle, on_event: Channel<InstallEvent>) -> 
     Ok(())
 }
 
-async fn fetch(app: &AppHandle) -> Result<Option<FoundUpdate>, String> {
+async fn fetch(app: &AppHandle) -> Result<Fetched, String> {
     let updater = app.updater().map_err(|error| error.to_string())?;
     match updater.check().await {
-        Ok(Some(update)) => Ok(Some(FoundUpdate {
+        Ok(Some(update)) => Ok(Fetched::Update(FoundUpdate {
             version: update.version.clone(),
             date: update.date.map(|date| date.date().to_string()),
             notes: update.body.clone(),
         })),
-        Ok(None) => Ok(None),
+        Ok(None) => Ok(Fetched::UpToDate),
+        // The address answered without a release manifest (a 404 until the first release ships one);
+        // a connection failure is reported as such by the updater and lands below.
+        Err(tauri_plugin_updater::Error::ReleaseNotFound) => {
+            crate::backend::note(&app.state::<AppState>().paths, "no published update manifest yet");
+            Ok(Fetched::NoRelease)
+        }
         Err(error) => Err(explain(app, UNREACHABLE, &error)),
     }
 }

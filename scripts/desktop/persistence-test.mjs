@@ -7,27 +7,22 @@
  *   pronunciation rule, preferences, an MP3 export and the window's display settings; files a document in
  *   a folder and a collection with its type, genres and tags; opens an included book offline, applies its
  *   reading preset, chooses a character's voice over it, and hides another book. Closes normally, reopens
- *   and compares everything; ends it abruptly (crash or power cut), reopens and compares again. Reads the
- *   window's storage through WebView2's debugging port. Usage: `node scripts/desktop/persistence-test.mjs`
+ *   and compares everything; ends it abruptly (crash or power cut), reopens and compares again. After
+ *   each close or crash, no process of the app (server, WebView2, an engine's worker) may be left. Reads
+ *   the window's storage through WebView2's debugging port. Usage: `node scripts/desktop/persistence-test.mjs`
  *   against the installed app (test documents stay), or `--install <installer>` on a disposable machine.
  * Does NOT belong: The installer checks or updating (smoke-test.mjs, update-test.mjs).
  */
-import { execFileSync, spawnSync } from 'node:child_process';
+import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { repoRoot } from '../lib/paths.mjs';
+import { appProcesses, describe, powershell } from './processes.mjs';
 import { appPage, launchForDebugging } from './webview-debugging.mjs';
 
 const exe = path.join(process.env.LOCALAPPDATA ?? '', 'TTSNative', 'TTSNative.exe');
 const DEBUG_PORT = 9334;
-const POWERSHELL = path.join(
-  process.env.SystemRoot ?? 'C:/Windows',
-  'System32',
-  'WindowsPowerShell',
-  'v1.0',
-  'powershell.exe',
-);
 const HEADERS = { 'x-ltts-client': 'persistence-test' };
 const STORAGE = {
   'ltts.theme': 'dark',
@@ -41,11 +36,6 @@ function check(condition, message) {
   console.log(`✓ ${message}`);
 }
 
-/** @param {string} script */
-const powershell = (script) =>
-  execFileSync(POWERSHELL, ['-NoProfile', '-NonInteractive', '-Command', script], {
-    encoding: 'utf8',
-  }).trim();
 const running = (/** @type {string} */ name) =>
   Number(powershell(`@(Get-Process -Name '${name}' -ErrorAction SilentlyContinue).Count`));
 
@@ -155,6 +145,16 @@ async function stop(/** @type {'close' | 'crash'} */ how) {
   check(
     !running('TTSNative') && !running('ttsnative-backend'),
     `the app and its server ended (${how})`,
+  );
+  // WebView2 and an engine's worker (python.exe) take a moment longer to go.
+  let leftovers = appProcesses();
+  for (let attempt = 0; attempt < 30 && leftovers.length; attempt += 1) {
+    await sleep(500);
+    leftovers = appProcesses();
+  }
+  check(
+    leftovers.length === 0,
+    `nothing of TTSNative is left running (${how})${leftovers.length ? `: ${describe(leftovers)}` : ''}`,
   );
 }
 

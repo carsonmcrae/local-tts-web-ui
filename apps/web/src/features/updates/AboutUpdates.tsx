@@ -32,6 +32,7 @@ function status(updates: Updates): string {
   const { result, checking, info } = updates;
   if (checking) return 'Checking for updates…';
   if (result?.status === 'failed') return result.message;
+  if (result?.status === 'noRelease') return 'No update has been published yet.';
   if (updates.available) return `TTSNative ${updates.available.version} is available.`;
   if (result?.status === 'upToDate') return 'TTSNative is up to date.';
   if (info?.lastCheckedAt) {

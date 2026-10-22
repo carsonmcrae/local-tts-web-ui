@@ -34,7 +34,8 @@ export function PageHeader({ title, description, actions, eyebrow }: Readonly<Pa
           <p className="mt-1.5 max-w-2xl text-sm leading-relaxed text-muted">{description}</p>
         ) : null}
       </div>
-      {actions ? <div className="flex flex-wrap gap-2">{actions}</div> : null}
+      {/* Kept at their natural width beside the title, so a long description wraps instead of the buttons. */}
+      {actions ? <div className="flex shrink-0 flex-wrap gap-2">{actions}</div> : null}
     </header>
   );
 }

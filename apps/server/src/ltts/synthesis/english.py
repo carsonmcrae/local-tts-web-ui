@@ -2,26 +2,25 @@
 # Copyright (c) 2026 Carson McRae
 """Purpose: How English voices read money, clock times, phone numbers, years, chapter numerals and abbreviations.
 
-Scope: A conservative rewrite of the spoken text of English voices only, applied after the pronunciation
-dictionary and the engine-neutral speech rewrite (``documents/normalize.speech_text``), so every engine is asked
-to say the same words. A rule fires only where the written form has one clear reading and the engine's own reading
-is wrong (espeak-ng reads "$5" as "dollar five", "Chapter IV" as "Chapter roman four" and "Lt." as letters):
-
-- money with a currency sign in front ("£1,284.50" is "1,284 pounds 50"), never after a letter ("US$5") or
-  before a range or more decimals ("$5-10", "$12.345");
-- clock times after a cue word or before AM/PM ("at 4:45", "4:45 p.m."), never ratios, verses or addresses;
-- phone and account numbers, digit by digit, when they start with + or 0, follow the US 555-123-4567 pattern,
-  or follow a word such as "call", "account" or "ISBN" (lists of numbers and dates are left alone);
-- years after a cue word when the next word shows a year ("in 1998 the", not "in 1500 copies"), decades
-  ("the 1980s") and citations ("(Smith, 1998)");
-- roman numerals after Chapter, Part, Book, Act, Scene, Volume, Canto and War;
-- abbreviations whose neighbours settle their meaning ("Dr. Nguyen" is a doctor, "Elm Dr." a drive).
-
-A sentence that looks like code or a formula (braces, "=", "<", ">", "|", "->", shell variables, function
-calls, paths) is left entirely to the engine. Every rule is one regular expression with bounded repetition,
-applied once from left to right, so no input can make it slow, and applying the rewrite twice changes nothing.
+Scope: A conservative rewrite of the spoken text of English voices only, after the pronunciation dictionary and
+``documents/normalize.speech_text``, so every engine says the same words. A rule fires only where the written form
+has one clear reading and the engine's own reading is wrong (espeak-ng says "dollar five" for "$5"); a sentence that
+looks like code or a formula is left alone. Rules are bounded regular expressions, applied once; applying the
+rewrite twice changes nothing.
 Does NOT belong: Typography and URLs for every language (``documents/normalize.py``), the user's own
 pronunciations (``pronunciation/``), or engine phonemisation.
+
+What each rule reads, and what it deliberately leaves alone:
+
+- money with a sign in front ("£1,284.50" is "1,284 pounds 50"), never "US$5", "$5-10", "$12.345" or "¥500";
+- clock times after a cue word or before AM/PM ("at 4:45"), never ratios, verses, scores or addresses;
+- phone and account numbers, digit by digit, after +, a leading 0, in the US 555-123-4567 pattern or after a word
+  such as "call", "account" or "ISBN", never lists of numbers or dates;
+- years after a cue word when the next word shows a year ("in 1998 the", not "in 1500 copies"), decades ("the
+  1980s") and citations ("(Smith, 1998)", "Smith (1998)");
+- roman numerals after Chapter, Part, Book, Act, Scene, Volume, Canto and War, never lettered parts ("Part C");
+- abbreviations whose neighbours settle their meaning ("Dr. Nguyen" is a doctor, "Elm Dr." a drive; "no." as a word
+  stays a word). Known limit: a bare "$1" in otherwise plain prose ("echo $1 and $2") is read as money.
 """
 
 from __future__ import annotations

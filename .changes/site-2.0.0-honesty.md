@@ -23,4 +23,6 @@ docs: unchanged
   Pages dispatch (`pages.yml` input `expect_installer`). The head every page shares (social image,
   theme colours, icons, stylesheets) lives once in `site/partials/head.html`; `fillHead` inserts it
   where a page says `<!-- head:shared -->`, with icon and stylesheet links relative to the page's
-  folder, and the link check resolves relative links from that folder.
+  folder, and the link check resolves relative links from that folder. The website spec takes the newest finished notes
+  file as the latest version instead of a version written into the test, and its type-check reads
+  the module it imports for that.

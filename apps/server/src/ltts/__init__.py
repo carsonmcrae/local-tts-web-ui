@@ -7,4 +7,4 @@ Scope: Exposes ``__version__`` (kept in sync with pyproject.toml and the web app
 Does NOT belong: Any runtime behaviour.
 """
 
-__version__ = "2.0.0"
+__version__ = "2.1.0"

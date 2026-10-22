@@ -6,7 +6,7 @@
 
 [project]
 name = "ltts"
-version = "2.0.0"
+version = "2.1.0"
 description = "Local-first text-to-speech reader: document extraction, Kokoro synthesis and voice studio API."
 readme = "README.md"
 license = "MIT"

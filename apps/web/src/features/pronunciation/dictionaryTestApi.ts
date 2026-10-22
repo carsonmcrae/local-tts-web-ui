@@ -44,7 +44,7 @@ export function dictionaryRoutes(state: { rules: Pronunciation[] }) {
     },
     'PUT /api/pronunciations/': (url: URL, init: RequestInit) => {
       const body = JSON.parse(String(init.body)) as Pronunciation;
-      const id = url.pathname.split('/').pop() ?? '';
+      const id = url.pathname.split('/').pop();
       state.rules = state.rules.map((r) =>
         r.id === id ? { ...r, ...body, documentTitle: body.documentId ? 'Wardens' : null } : r,
       );

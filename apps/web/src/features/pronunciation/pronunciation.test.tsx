@@ -4,8 +4,9 @@
  * Purpose: Tests for Settings → Pronunciation.
  * Scope: Adding a word (and its exact-case option), hearing the word as written and the respelling
  *   in the reading voice before and after saving, changing and cancelling a change, each rule's
- *   scope, moving one document's rule to all documents, removing, the empty state, and errors from
- *   saving, loading and previews; picking the word out of a selection.
+ *   scope (naming a document whose title is unknown as best it can), moving one document's rule to
+ *   all documents, removing, the empty state, and errors from saving, loading and previews; picking
+ *   the word out of a selection.
  * Does NOT belong: Applying the rules to speech (server tests) or the reader's dialog
  *   (fixPronunciation.test.tsx).
  */
@@ -119,6 +120,17 @@ describe('Pronunciation dictionary', () => {
       matchCase: false,
       documentId: null,
     });
+  });
+
+  it('names the document of a rule as best it can when its title is unknown', async () => {
+    pronunciationApi([{ ...rule('Nguyen', 'Win', { documentId: WARDENS }), documentTitle: null }]);
+    const user = userEvent.setup();
+    renderWithApp(<PronunciationSection />);
+    const list = await within(await section()).findByRole('list', { name: 'Pronunciations' });
+    expect(within(list).getByRole('listitem')).toHaveTextContent('Only in “one document”');
+    await user.click(within(list).getByRole('button', { name: 'Change Nguyen' }));
+    const scope = screen.getByLabelText('Use it in');
+    expect(within(scope).getByRole('option', { name: 'Only “This document”' })).toBeInTheDocument();
   });
 
   it('explains words that cannot be saved, a list that cannot load and a preview that fails', async () => {

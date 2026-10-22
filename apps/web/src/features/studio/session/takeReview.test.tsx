@@ -2,20 +2,25 @@
 // Copyright (c) 2026 Carson McRae
 /**
  * Purpose: Tests for reviewing a studio take and seeing how far the session has come.
- * Scope: The most important issue first with the rest under "Also noticed"; comparing a take with the
- *   one it replaced and keeping the previous take; the three voice tiers; the speaking styles the takes
- *   can teach with one optional pointer; and microphone problems shown as a message with a hint.
+ * Scope: The most important issue first with the rest under "Also noticed" (nothing at all for a take
+ *   without issues); comparing a take with the one it replaced (which may have needed another take)
+ *   and keeping the previous take, or being refused; the three voice tiers; the speaking styles the
+ *   takes can teach (even ones the app has no name for, or none) with one optional pointer; and
+ *   microphone problems shown as a message with a hint.
  * Does NOT belong: The full wizard (session.test.tsx) or the passage strip (recorder.test.tsx).
  */
-import { within } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import type { SessionTake } from '@/api/types';
+import { json } from '@/test/render';
 import { quality, resumeStudioSession, studioApi, studioSession, take } from '@/test/studio';
 import {
   MicrophoneError,
   describeMicrophoneError,
   explainMicrophoneError,
 } from '@/lib/audio/recorder';
+import { IssueList } from '../IssueList';
+import { SpeechProgress } from './SessionProgress';
 
 const foundationTake = (overrides: Partial<SessionTake> = {}): SessionTake => ({
   ...take(49, 'foundation', 50),
@@ -28,6 +33,7 @@ describe('Reviewing a take', () => {
       { code: 'noisy', severity: 'warning' as const, message: 'Some background noise is audible.' },
       { code: 'clipping', severity: 'error' as const, message: 'The audio is distorted (clipping).' },
       { code: 'cut_off', severity: 'warning' as const, message: 'The take ends mid-word.' },
+      { code: 'short', severity: 'error' as const, message: 'The take is too short.' },
     ];
     studioApi(studioSession({ takes: [foundationTake({ quality: quality(50, issues) })], requiredSpeechS: 300 }));
     const { dialog } = await resumeStudioSession();
@@ -35,9 +41,28 @@ describe('Reviewing a take', () => {
     expect(alert).toHaveTextContent('The audio is distorted (clipping).');
     const notes = within(dialog).getByText('Also noticed').parentElement as HTMLElement;
     expect(within(notes).getAllByRole('listitem').map((item) => item.textContent)).toEqual([
+      'Problem: The take is too short.', // a second problem is marked as one for screen readers
       'Some background noise is audible.',
       'The take ends mid-word.',
     ]);
+  }); // prettier-ignore
+
+  it('shows nothing for a take without issues', () => {
+    const { container } = render(<IssueList issues={[]} />);
+    expect(container).toBeEmptyDOMElement();
+  });
+
+  it('says when the previous take needed another, and explains a refused swap', async () => {
+    const short = [{ code: 'short', severity: 'error' as const, message: 'Too short.' }];
+    const previous = { durationS: 3, quality: quality(3, short), createdAt: '2026-10-20T09:00:00+00:00' };
+    studioApi(studioSession({ takes: [foundationTake({ previous })], requiredSpeechS: 300 }), {
+      'POST /api/voice-sessions/': () => json({ error: { code: 'gone', message: 'That take is gone.' } }, 410),
+    });
+    const { user, dialog } = await resumeStudioSession();
+    await user.click(await within(dialog).findByRole('button', { name: 'Previous passage' }));
+    expect(await within(dialog).findByText(/is kept \(it needed another take\)/)).toBeInTheDocument();
+    await user.click(within(dialog).getByRole('button', { name: 'Keep the previous take' }));
+    expect(await within(dialog).findByRole('alert')).toHaveTextContent('That take is gone.');
   }); // prettier-ignore
 
   it('compares a take with the one it replaced and can keep the previous one', async () => {
@@ -116,6 +141,17 @@ describe('Session progress', () => {
     const { dialog } = await resumeStudioSession();
     await within(dialog).findByRole('list', { name: 'Your voice so far' });
     expect(within(dialog).queryByRole('list', { name: 'Speaking styles' })).not.toBeInTheDocument();
+  });
+
+  it('shows a style it has no name for, and copes with a session that lists none', () => {
+    const takes = [foundationTake()];
+    const whisper = [{ style: 'whisper', takes: 1, needed: 3 }];
+    const { rerender } = render(
+      <SpeechProgress session={studioSession({ takes, styles: whisper })} />,
+    );
+    expect(screen.getByRole('list', { name: 'Speaking styles' })).toHaveTextContent('whisper 1/3, needs more'); // prettier-ignore
+    rerender(<SpeechProgress session={studioSession({ takes, styles: [] })} />);
+    expect(screen.getByRole('progressbar', { name: 'What your voice uses' })).toHaveAttribute('value', '0'); // prettier-ignore
   });
 });
 

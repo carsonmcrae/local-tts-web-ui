@@ -4,14 +4,15 @@
  * Purpose: Tests for the audiobook details in the export dialog.
  * Scope: The disclosure starts closed and loads the details only when opened; author, narrator and
  *   description are saved when a field loses focus and, if still unsaved, before the export
- *   starts (never twice for the same values); a cover is checked, uploaded, previewed and removed.
+ *   starts (never twice for the same values); a cover is checked, uploaded, previewed and removed;
+ *   details that cannot load or be saved and a cover the server refuses are explained in place.
  * Does NOT belong: The export choices and job states (export.test.tsx).
  */
-import { screen, waitFor } from '@testing-library/react';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { AudiobookDetails, JobOut } from '@/api/types';
-import { documentDetail, mockApi, preferences, renderWithApp } from '@/test/render';
+import { documentDetail, json, mockApi, preferences, renderWithApp } from '@/test/render';
 import { ExportDialog } from './ExportDialog';
 
 afterEach(() => vi.unstubAllGlobals());
@@ -22,7 +23,7 @@ const queued: JobOut = {
   payload: {}, result: null, errorCode: null, createdAt: '', updatedAt: '',
 }; // prettier-ignore
 
-function setup() {
+function setup(overrides: Record<string, unknown> = {}) {
   let details: AudiobookDetails = { author: 'Ann Writer', narrator: null, description: null, hasCover: false }; // prettier-ignore
   const api = mockApi({
     'GET /api/preferences': preferences,
@@ -36,6 +37,7 @@ function setup() {
       details = { ...details, hasCover: false };
       return new Response(null, { status: 204 });
     },
+    ...overrides,
   });
   renderWithApp(
     <ExportDialog
@@ -109,5 +111,35 @@ describe('Audiobook details', () => {
     expect(calls.some((call) => call.method === 'DELETE' && call.path.endsWith('/cover'))).toBe(
       true,
     );
+  });
+
+  it('explains details that cannot load or be saved, and a cover the server refuses', async () => {
+    const refused = (message: string) => () => json({ error: { code: 'refused', message } }, 423);
+    const { calls, user } = setup({
+      [`GET /api/documents/${id}/details`]: refused('The details are unreadable.'),
+      [`PUT /api/documents/${id}/details`]: refused('The details are locked.'),
+      [`PUT /api/documents/${id}/cover`]: refused('Not an image after all.'),
+    });
+    await user.click(await screen.findByRole('button', { name: /Audiobook details/ }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('The details are unreadable.');
+    await user.type(screen.getByLabelText('Author'), 'Ann');
+    await user.tab();
+    const alerts = () => screen.getAllByRole('alert').map((alert) => alert.textContent);
+    await waitFor(() => expect(alerts()).toHaveLength(2));
+    expect(alerts()).toContain("Couldn't save the details. The details are locked.");
+    // Starting the export tries the unsaved details again first, and stops at the same refusal.
+    await user.click(screen.getByRole('button', { name: 'Start export' }));
+    await waitFor(() => expect(alerts()).toHaveLength(3));
+    expect(calls.some((call) => call.path === '/api/exports')).toBe(false);
+
+    const input = screen.getByLabelText('Choose a cover image');
+    const opened = vi.fn();
+    input.addEventListener('click', opened);
+    await user.click(screen.getByRole('button', { name: 'Choose cover' }));
+    expect(opened).toHaveBeenCalledOnce(); // the file chooser
+    fireEvent.change(input, { target: { files: [] } }); // the chooser was cancelled
+    expect(calls.some((call) => call.path.endsWith('/cover'))).toBe(false);
+    await user.upload(input, new File(['png'], 'cover.png', { type: 'image/png' }));
+    expect(await screen.findByText('Not an image after all.')).toBeInTheDocument();
   });
 });

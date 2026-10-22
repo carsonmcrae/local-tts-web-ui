@@ -3,9 +3,10 @@
 /**
  * Purpose: Tests for the optional Audiobookshelf connection in Settings.
  * Scope: Testing the connection (which saves the address and key first), choosing a library and a
- *   folder, saving without ever showing the key, keeping a saved key when the field is left empty,
- *   checking the address and key before sending them, a failed test, and forgetting everything
- *   after a confirmation. Also that the section is in the settings index.
+ *   folder (none, for a library without one), saving without ever showing the key, keeping a saved
+ *   key when the field is left empty, checking the address and key before sending them, a failed
+ *   test, a key that sees no libraries, a refused save, and forgetting everything after a
+ *   confirmation. Also that the section is in the settings index.
  * Does NOT belong: Sending an export (features/exports/exports.test.tsx).
  */
 import { screen, waitFor, within } from '@testing-library/react';
@@ -22,11 +23,13 @@ const KEY = 'secret-key-0123456789';
 const libraries: ShelfLibrary[] = [
   { id: 'books', name: 'Audiobooks', folders: [{ id: 'f1', path: '/audiobooks' }] },
   { id: 'talks', name: 'Talks', folders: [{ id: 'f2', path: '/talks' }, { id: 'f3', path: '/talks/new' }] }, // prettier-ignore
+  { id: 'empty', name: 'Empty shelf', folders: [] },
 ];
 
 function setup(
   initial: ShelfSettings = { configured: false, hasKey: false },
   test: unknown = libraries,
+  overrides: Record<string, unknown> = {},
 ) {
   let settings = initial;
   const api = mockApi({
@@ -41,6 +44,7 @@ function setup(
       settings = { configured: false, hasKey: false };
       return new Response(null, { status: 204 });
     },
+    ...overrides,
   });
   renderWithApp(<AudiobookshelfSection />);
   const saves = () =>
@@ -71,6 +75,9 @@ describe('Audiobookshelf settings', () => {
     expect(within(section).getByLabelText('Folder')).toHaveValue('f1');
     await user.selectOptions(within(section).getByLabelText('Library'), 'talks');
     expect(within(section).getByLabelText('Folder')).toHaveValue('f2');
+    await user.selectOptions(within(section).getByLabelText('Library'), 'empty');
+    expect(within(section).getByLabelText('Folder')).toBeEmptyDOMElement(); // nothing to choose
+    await user.selectOptions(within(section).getByLabelText('Library'), 'talks');
     await user.selectOptions(within(section).getByLabelText('Folder'), '/talks/new');
     await user.click(within(section).getByRole('button', { name: 'Save' }));
     expect(await screen.findByText('Audiobookshelf saved')).toBeInTheDocument();
@@ -110,6 +117,28 @@ describe('Audiobookshelf settings', () => {
     expect(saves()).toEqual([]);
     expect(within(section).queryByLabelText('Library')).not.toBeInTheDocument();
   });
+
+  it('asks for a key, rejects a short one, warns of a key without libraries and explains a refused save', async () => {
+    const { calls, user } = setup({ configured: false, hasKey: false }, [], {
+      'PUT /api/integrations/audiobookshelf': () =>
+        json({ error: { code: 'refused', message: 'The settings are locked.' } }, 423),
+    });
+    const section = await screen.findByRole('region', { name: 'Audiobookshelf' });
+    await user.type(await within(section).findByLabelText('Server address'), 'http://shelf.local');
+    const test = within(section).getByRole('button', { name: 'Test connection' });
+    await user.click(test);
+    expect(within(section).getByRole('alert')).toHaveTextContent('Enter the API key.');
+    await user.type(within(section).getByLabelText('API key'), 'short');
+    await user.click(test);
+    expect(within(section).getByRole('alert')).toHaveTextContent('That API key looks too short.');
+    expect(calls.some((call) => call.method === 'POST')).toBe(false);
+    await user.type(within(section).getByLabelText('API key'), '-but-long-enough');
+    await user.click(test);
+    expect(await within(section).findByText('Connected, but no libraries')).toBeInTheDocument();
+    expect(within(section).queryByLabelText('Library')).not.toBeInTheDocument();
+    await user.click(within(section).getByRole('button', { name: 'Save' }));
+    expect(await within(section).findByRole('alert')).toHaveTextContent('The settings are locked.');
+  }); // prettier-ignore
 
   it('forgets the address and key after a confirmation', async () => {
     const { calls, user } = setup({ configured: true, url: 'http://shelf.local', hasKey: true });

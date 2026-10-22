@@ -4,26 +4,29 @@
  * Purpose: Tests for fixing a word's pronunciation from the reader.
  * Scope: Selecting a word offers "Fix pronunciation" (a long selection doesn't); the dialog starts in
  *   "Say it as", compares the word and the respelling in the reading voice, saves for this document
- *   by default, returns focus to the sentence and leaves the text as written; a word already saved
- *   starts from its pronunciation and, saved for all documents, folds this document's own into it;
- *   Escape closes without saving.
+ *   by default, returns focus to the sentence (or nowhere, when nothing had it) and leaves the text
+ *   as written; a word already saved starts from its pronunciation (matched by its exact case when
+ *   the rule says so), this document's own rule stays its own, and, saved for all documents, folds
+ *   this document's own into it; a word with no rule yet can be saved for all documents; Escape
+ *   closes without saving; a refused save and an unreadable dictionary are explained.
  * Does NOT belong: Settings → Pronunciation (pronunciation.test.tsx) or sentence styling
  *   (reader/styling.test.tsx).
  */
-import { act, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { Pronunciation } from '@/api/types';
 import ReaderPage from '@/features/reader/ReaderPage';
-import { documentDetail, mockReaderApi, renderWithApp } from '@/test/render';
+import { documentDetail, json, mockReaderApi, renderWithApp } from '@/test/render';
 import { dictionaryRoutes, rule, sent } from './dictionaryTestApi';
 
 afterEach(() => vi.unstubAllGlobals());
 
 const doc = documentDetail({ segmentCount: 2, sections: [] });
 const TEXTS = ['Dr. Nguyen ate gnocchi.', 'Then all of them shared a big bowl of warm quinoa.'];
+const refused = (message: string) => () => json({ error: { code: 'refused', message } }, 423);
 
-function openReader(rules: Pronunciation[] = []) {
+function openReader(rules: Pronunciation[] = [], extra: Record<string, unknown> = {}) {
   const state = { rules };
   const api = mockReaderApi(doc, {
     [`GET /api/documents/${doc.id}/sections/`]: {
@@ -44,6 +47,7 @@ function openReader(rules: Pronunciation[] = []) {
       revision: 'r1',
     },
     ...dictionaryRoutes(state),
+    ...extra,
   });
   renderWithApp(<ReaderPage />, { path: '/read/:documentId', route: `/read/${doc.id}` });
   return { ...api, state };
@@ -137,5 +141,57 @@ describe('Fix pronunciation from the reader', () => {
     expect(
       calls.filter((c) => c.method !== 'GET' && c.path.startsWith('/api/pronunciations')),
     ).toEqual([]);
+  });
+
+  it('matches a saved rule by its exact case and keeps this document’s own rule its own', async () => {
+    const own = rule('Nguyen', 'Win', { documentId: doc.id, matchCase: true });
+    const { calls, state } = openReader([own]);
+    const user = userEvent.setup();
+    const dialog = await fix(TEXTS[0]!, 'Nguyen');
+    const sayAs = within(dialog).getByLabelText('Say it as');
+    expect(sayAs).toHaveValue('Win');
+    await user.clear(sayAs);
+    await user.type(sayAs, 'Nwin');
+    await user.click(within(dialog).getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    expect(sent(calls, 'PUT', `/api/pronunciations/${own.id}`)).toEqual([
+      { word: 'Nguyen', sayAs: 'Nwin', matchCase: true, documentId: doc.id },
+    ]);
+    expect(state.rules).toEqual([{ ...own, sayAs: 'Nwin' }]);
+  });
+
+  it('saves a word for all documents when none is saved yet, even when nothing had focus', async () => {
+    const { calls } = openReader();
+    const user = userEvent.setup();
+    await select(TEXTS[1]!, 'quinoa');
+    // Nothing has focus when the dialog opens: it has nowhere to hand focus back to, and copes.
+    const button = await screen.findByRole('button', { name: 'Fix pronunciation' });
+    const focus = vi.spyOn(document, 'activeElement', 'get').mockReturnValue(null);
+    fireEvent.click(button);
+    focus.mockRestore();
+    const dialog = await screen.findByRole('dialog', { name: 'Fix pronunciation' });
+    await user.type(within(dialog).getByLabelText('Say it as'), 'KEEN-wah');
+    await user.click(within(dialog).getByRole('radio', { name: 'All documents' }));
+    await user.click(within(dialog).getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    expect(sent(calls, 'POST', '/api/pronunciations')).toEqual([
+      { word: 'quinoa', sayAs: 'KEEN-wah', matchCase: false, documentId: null },
+    ]);
+  });
+
+  it('explains a save the server refuses', async () => {
+    openReader([], { 'POST /api/pronunciations': refused('The dictionary is locked.') });
+    const user = userEvent.setup();
+    const dialog = await fix(TEXTS[0]!, 'Nguyen');
+    await user.type(within(dialog).getByLabelText('Say it as'), 'Win');
+    await user.click(within(dialog).getByRole('button', { name: 'Save' }));
+    expect(await within(dialog).findByRole('alert')).toHaveTextContent('The dictionary is locked.');
+    expect(dialog).toBeInTheDocument(); // still open, for another try
+  });
+
+  it('says when the saved pronunciations cannot be read', async () => {
+    openReader([], { 'GET /api/pronunciations': refused('The dictionary is unreadable.') });
+    const dialog = await fix(TEXTS[0]!, 'Nguyen');
+    expect(await within(dialog).findByRole('alert')).toHaveTextContent('The dictionary is unreadable.'); // prettier-ignore
   });
 });

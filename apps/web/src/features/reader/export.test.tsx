@@ -4,12 +4,12 @@
  * Purpose: Tests for exporting a document as audio, an M4B audiobook or a read-along EPUB.
  * Scope: Format, file layout and range choices (and the request they produce), the hints and the
  *   options shown for each format, pausing, resuming and cancelling (after a confirmation that says
- *   saved work is discarded), starting only once on a double click, and the errors shown when
- *   starting or resuming fails or when M4B needs ffmpeg.
+ *   saved work is discarded), starting only once on a double click (however quick), the link to the
+ *   Exports page, and the errors shown when starting or resuming fails or when M4B needs ffmpeg.
  * Does NOT belong: The happy-path download flow (src/test/flows.test.tsx), the audiobook details
  *   (exportDetails.test.tsx), the Exports page (features/exports) or export assembly (server).
  */
-import { screen, waitFor, within } from '@testing-library/react';
+import { act, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { JobOut } from '@/api/types';
@@ -108,6 +108,10 @@ describe('ExportDialog', () => {
     const [, footerClose] = screen.getAllByRole('button', { name: 'Close' }); // the X, then the footer
     await user.click(footerClose as HTMLElement);
     expect(onOpenChange).toHaveBeenCalledWith(false);
+    // Following the link closes the dialog too, and leaves the reader for the Exports page.
+    await user.click(screen.getByRole('link', { name: 'the Exports page' }));
+    expect(onOpenChange).toHaveBeenCalledTimes(2);
+    expect(await screen.findByText('Elsewhere')).toBeInTheDocument();
   });
 
   it('exports a range of sections in either order', async () => {
@@ -164,6 +168,12 @@ describe('ExportDialog', () => {
     });
     const { user } = renderDialog();
     const startButton = await screen.findByRole('button', { name: 'Start export' });
+    // Two clicks before React has marked the button busy: the guard, not the disabled state, stops
+    // the second one. Then a double click on the busy button.
+    act(() => {
+      startButton.click();
+      startButton.click();
+    });
     await user.dblClick(startButton);
     expect(startButton).toBeDisabled();
     release(json(job({ status: 'queued' })));

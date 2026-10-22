@@ -4,9 +4,10 @@
  * Purpose: Tests for managing custom voices in Voice Studio and the less common wizard paths.
  * Scope: Reference playback, renaming (cancel), using a profile for reading, deleting the reading
  *   voice (falls back to the default voice), engine-not-ready states, wizard navigation and reset,
- *   creation and preview failures, and the profile list error state.
- * Does NOT belong: The main creation flow (src/test/flows.test.tsx) or capture details
- *   (capture.test.tsx).
+ *   creation and preview failures, the profile list error state, and the naming step fetching the
+ *   consent statement on its own.
+ * Does NOT belong: The main creation flow (src/test/flows.test.tsx), capture details
+ *   (capture.test.tsx) or a paired phone (studioOnPhone.test.tsx).
  */
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import type { UserEvent } from '@testing-library/user-event';
@@ -28,6 +29,7 @@ import {
   nameAndConsent,
   pressDone,
 } from '@/test/render';
+import { DetailsStep } from './ReviewSteps';
 import VoiceStudioPage from './VoiceStudioPage';
 
 vi.mock('@/lib/audio/wav', async (importOriginal) => {
@@ -206,5 +208,18 @@ describe('Create voice wizard', () => {
     expect(await within(dialog).findByRole('alert')).toHaveTextContent('The model ran out of memory.'); // prettier-ignore
     await user.click(within(dialog).getByRole('button', { name: 'Use for reading' }));
     expect(await within(dialog).findByRole('button', { name: 'Used for reading' })).toBeDisabled();
+  });
+
+  it('fetches the consent statement for the naming step when nothing has yet', async () => {
+    let release: (statement: unknown) => void = () => undefined;
+    mockApi({
+      'GET /api/voice-profiles/consent': () => new Promise((resolve) => (release = resolve)),
+    });
+    renderWithApp(<DetailsStep name="" onName={vi.fn()} consent={false} onConsent={vi.fn()} />);
+    expect(screen.queryByRole('checkbox')).not.toBeInTheDocument(); // still on its way
+    release({ statement: 'I have permission to use this voice.' });
+    expect(
+      await screen.findByLabelText('I have permission to use this voice.'),
+    ).toBeInTheDocument();
   });
 });

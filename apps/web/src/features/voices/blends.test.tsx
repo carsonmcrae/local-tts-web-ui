@@ -2,16 +2,17 @@
 // Copyright (c) 2026 Carson McRae
 /**
  * Purpose: Tests for blending built-in voices into a new one.
- * Scope: The dialog's voices, shares shown as percentages, adding and removing parts, refusing the
- *   same voice twice, saving the blend, listing and deleting blends, and hiding the feature until two
- *   built-in Kokoro voices are installed.
+ * Scope: The dialog's voices, shares shown as percentages (and moved), adding and removing parts (four
+ *   at most), refusing the same voice twice, saving the blend or explaining a refusal, closing with
+ *   Escape, listing and deleting blends, and hiding the feature until two built-in Kokoro voices are
+ *   installed.
  * Does NOT belong: Browsing and previewing voices (voices.test.tsx).
  */
-import { screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { VoiceBlend } from '@/api/blendQueries';
-import { kokoro, mockApi, preferences, renderWithApp, voice } from '@/test/render';
+import { json, kokoro, mockApi, preferences, renderWithApp, voice } from '@/test/render';
 import VoiceLibraryPage from './VoiceLibraryPage';
 
 afterEach(() => vi.unstubAllGlobals());
@@ -30,7 +31,11 @@ const saved: VoiceBlend = {
   createdAt: '2026-10-21T10:00:00+00:00',
 };
 
-function api(voices = [heart, george, cloned], blends: VoiceBlend[] = []) {
+function api(
+  voices = [heart, george, cloned],
+  blends: VoiceBlend[] = [],
+  overrides: Record<string, unknown> = {},
+) {
   return mockApi({
     'GET /api/engines': [kokoro()],
     'GET /api/preferences': preferences,
@@ -38,6 +43,7 @@ function api(voices = [heart, george, cloned], blends: VoiceBlend[] = []) {
     'GET /api/voice-profiles/blends': blends,
     'POST /api/voice-profiles/blends': saved,
     'DELETE /api/voice-profiles/blends/': () => new Response(null, { status: 204 }),
+    ...overrides,
   });
 }
 
@@ -79,6 +85,33 @@ describe('Voice blends', () => {
       ],
     });
     expect(await screen.findByText('Warm mix is ready')).toBeInTheDocument();
+  });
+
+  it('moves the shares, stops at four voices, closes with Escape and explains a refusal', async () => {
+    api(undefined, [], {
+      'POST /api/voice-profiles/blends': () =>
+        json({ error: { code: 'refused', message: 'Too many blends already.' } }, 409),
+    });
+    const user = userEvent.setup();
+    renderWithApp(<VoiceLibraryPage />);
+    await user.click(await screen.findByRole('button', { name: 'Blend voices' }));
+    let dialog = await screen.findByRole('dialog', { name: 'Blend voices' });
+    const [share] = within(dialog).getAllByLabelText('Share of the mix: 50%');
+    fireEvent.change(share!, { target: { value: '10' } });
+    expect(within(dialog).getByLabelText('Share of the mix: 67%')).toHaveAttribute('aria-valuetext', '67 percent'); // prettier-ignore
+    expect(within(dialog).getByLabelText('Share of the mix: 33%')).toBeInTheDocument();
+    await user.click(within(dialog).getByRole('button', { name: 'Add a voice' }));
+    await user.click(within(dialog).getByRole('button', { name: 'Add a voice' }));
+    expect(within(dialog).getByLabelText('Voice 4')).toBeInTheDocument();
+    expect(within(dialog).queryByRole('button', { name: 'Add a voice' })).not.toBeInTheDocument();
+    await user.keyboard('{Escape}');
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+
+    await user.click(screen.getByRole('button', { name: 'Blend voices' }));
+    dialog = await screen.findByRole('dialog', { name: 'Blend voices' });
+    await user.type(within(dialog).getByLabelText('Name'), 'Loud mix');
+    await user.click(within(dialog).getByRole('button', { name: 'Make this blend' }));
+    expect(await within(dialog).findByRole('alert')).toHaveTextContent('Too many blends already.');
   });
 
   it('lists blends and deletes one after confirmation', async () => {

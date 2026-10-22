@@ -5,8 +5,10 @@
  * Scope: Skipped sentences stay in the text, muted and labelled (in their accessible name too), and
  *   are never played; the styling dialog skips a sentence and reads a skipped one again; the cleanup
  *   note takes the place of its import warning, lists what is skipped by reason, shows a sentence
- *   in the text, and undoes and applies the cleanup again; nothing shows when nothing was found. The
- *   listening estimate is what the server counts, and is counted again after an undo, apply or skip.
+ *   in the text, lists at most a hundred sentences for a reason, and undoes and applies the cleanup
+ *   again (busy while the server works, explaining a refusal); nothing shows when nothing was found.
+ *   The listening estimate is what the server counts, and is counted again after an undo, apply or
+ *   skip.
  * Does NOT belong: Voices and effects (styling.test.tsx) or the player itself (controller.test.ts).
  */
 import { QueryClientProvider } from '@tanstack/react-query';
@@ -19,7 +21,7 @@ import { useCleanupAction } from '@/api/cleanupQueries';
 import { keys } from '@/api/queries';
 import { useStyleSentences } from '@/api/stylingQueries';
 import { createQueryClient } from '@/app/App';
-import { documentDetail, mockApi, mockReaderApi, renderWithApp } from '@/test/render';
+import { documentDetail, json, mockApi, mockReaderApi, renderWithApp } from '@/test/render';
 import ReaderPage from './ReaderPage';
 
 afterEach(() => vi.unstubAllGlobals());
@@ -203,6 +205,29 @@ describe('Skipped sentences and the cleanup', () => {
     expect(screen.queryByText(/Skipped when reading aloud/)).not.toBeInTheDocument();
     expect(screen.queryByText('Review')).not.toBeInTheDocument();
     expect(skippedState('Sentence 1.')).toBe('false');
+  });
+
+  it('lists at most a hundred sentences for a reason, and explains a refused change', async () => {
+    const pageNumbers: CleanupItem[] = Array.from({ length: 101 }, (_, index) => ({
+      index, sectionIndex: 0, reason: 'page_number', text: `Page ${(index + 1).toString()}`, applied: true,
+    })); // prettier-ignore
+    // A citation whose markers the server didn't list counts for nothing.
+    const unseen: CleanupItem = { index: 101, sectionIndex: 0, reason: 'citation', text: 'See.', applied: true }; // prettier-ignore
+    let release: (answer: unknown) => void = () => undefined;
+    mockReaderApi(doc, {
+      [`GET /api/documents/${doc.id}/cleanup`]: { notice: null, items: [...pageNumbers, unseen] },
+      [`POST /api/documents/${doc.id}/cleanup/undo`]: () =>
+        new Promise((resolve) => (release = resolve)),
+    });
+    renderWithApp(<ReaderPage />, { path: '/read/:documentId', route: `/read/${doc.id}` });
+    await userEvent.click(await screen.findByText('Skipped when reading aloud: 101 page numbers.'));
+    expect(screen.getByText('And 1 more.')).toBeInTheDocument();
+    expect(screen.getByText('Citation markers')).toHaveTextContent('Citation markers (0)');
+    const undo = screen.getByRole('button', { name: 'Read them all again' });
+    await userEvent.click(undo);
+    await waitFor(() => expect(undo).toHaveAttribute('aria-busy', 'true'));
+    release(json({ error: { code: 'refused', message: 'The cleanup is locked.' } }, 423));
+    expect(await screen.findByRole('alert')).toHaveTextContent('The cleanup is locked.');
   });
 });
 

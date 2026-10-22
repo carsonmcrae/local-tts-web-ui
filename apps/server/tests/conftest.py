@@ -16,7 +16,9 @@ from __future__ import annotations
 import io
 import logging
 import re
-import time
+import sys
+import threading
+import traceback
 from collections.abc import Iterator, Sequence
 from pathlib import Path
 from typing import Any
@@ -40,7 +42,7 @@ from ltts.engines.base import (
     VoiceInfo,
     VoiceSpec,
 )
-from ltts.jobs import JobContext
+from ltts.jobs import ACTIVE, JobContext
 
 SAMPLE_RATE = 24_000
 
@@ -240,14 +242,33 @@ def wav_bytes(samples: np.ndarray, rate: int = SAMPLE_RATE) -> bytes:
     return buffer.getvalue()
 
 
-def wait_job(client: TestClient, job_id: str) -> dict[str, Any]:
-    """Poll a background job until it leaves the queued/running states (10 s at most)."""
-    for _ in range(200):
-        job: dict[str, Any] = client.get(f"/api/jobs/{job_id}").json()
-        if job["status"] not in ("queued", "running"):
-            return job
-        time.sleep(0.05)
-    raise AssertionError("job did not finish")
+def wait_job(client: TestClient, job_id: str, stall_s: float = 10.0) -> dict[str, Any]:
+    """Wait until a background job leaves the queued/running states, then return it as the API shows it.
+
+    The job manager wakes the wait whenever the job is written (its status or progress), so nothing is
+    polled; the wait fails only when the job stops changing for ``stall_s`` seconds (stuck), never just
+    because a busy machine (other test workers, coverage) makes it slow.
+    """
+    jobs = client.app.state.services.jobs  # type: ignore[attr-defined]
+    seen = jobs.changes(job_id)  # counted before the job is read, so no write in between is missed
+    while jobs.get(job_id).status in ACTIVE:
+        now = jobs.wait_for_change(job_id, seen, stall_s)
+        if now == seen:
+            job = client.get(f"/api/jobs/{job_id}").json()
+            stuck = f"{job['status']} at {job['progress']:.0%}, {job['message']!r}"
+            raise AssertionError(f"job stopped changing for {stall_s:.0f} s: {stuck}{thread_stacks()}")
+        seen = now
+    finished: dict[str, Any] = client.get(f"/api/jobs/{job_id}").json()
+    return finished
+
+
+def thread_stacks() -> str:
+    """Where every thread of this process is, for a failure that has to tell a stuck job from a slow one."""
+    names = {thread.ident: thread.name for thread in threading.enumerate()}
+    return "".join(
+        f"\n--- {names.get(ident, ident)}\n{''.join(traceback.format_stack(frame, limit=6))}"
+        for ident, frame in sys._current_frames().items()
+    )
 
 
 def saved_studio_voice(client: TestClient, numbers: Sequence[int]) -> dict[str, Any]:

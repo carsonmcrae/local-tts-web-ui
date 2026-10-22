@@ -8,7 +8,8 @@ when the server stopped as ``interrupted`` so the UI can offer a resume. Kinds o
 limited resource share a ``Lane``: a few run at once, a few more wait their turn in order (as
 ``queued``, saying how many are ahead) and any beyond that are refused, whoever asks. A job can be
 paused (it stops at its next check, like a cancel, but is recorded as ``paused``) and a stopped job
-can be restarted under the same id, so its progress and history carry on.
+can be restarted under the same id, so its progress and history carry on. Every write to a job is
+counted, so a caller can wait for a job to change instead of polling it.
 Does NOT belong: What a job does — callers pass the work function (and any cleanup for a cancel).
 """
 
@@ -156,6 +157,8 @@ class JobManager:
         self._lanes: dict[str, Lane] = {}  # kind -> its lane
         self._lines: dict[str, list[str]] = {}  # lane name -> its jobs in the order they were let in
         self._on_cancel: dict[str, Callable[[str], None]] = {}
+        self._changed = threading.Condition()  # notified after every write to a job
+        self._changes: dict[str, int] = {}  # job id -> how many writes it has had
         for lane in lanes:
             self.limit(lane)
 
@@ -200,6 +203,21 @@ class JobManager:
         }
         with self._db.connect() as conn:
             conn.execute(_UPDATE_SQL, params)
+        with self._changed:
+            self._changes[job_id] = self._changes.get(job_id, 0) + 1
+            self._changed.notify_all()
+
+    def changes(self, job_id: str) -> int:
+        """How many times the job has been written since this manager started (read it before the job)."""
+        with self._changed:
+            return self._changes.get(job_id, 0)
+
+    def wait_for_change(self, job_id: str, seen: int, timeout: float) -> int:
+        """Wait until the job is written again after ``seen`` writes, or ``timeout`` seconds pass; returns
+        the count then (still ``seen`` when nothing happened). Follows a job without polling the database."""
+        with self._changed:
+            self._changed.wait_for(lambda: self._changes.get(job_id, 0) != seen, timeout)
+            return self._changes.get(job_id, 0)
 
     def find_active(self, kind: str, key: str) -> JobOut | None:
         for job in self.list_recent(kind=kind):

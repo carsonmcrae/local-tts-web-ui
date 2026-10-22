@@ -14,6 +14,36 @@ body:
       description: Steps to reproduce, what you expected, and what happened instead.
     validations:
       required: true
+  - type: dropdown
+    id: where
+    attributes:
+      label: Where did it happen?
+      description: Pick every place you saw it.
+      multiple: true
+      options:
+        - The Windows app
+        - A browser on the computer running TTSNative
+        - A phone or tablet on the home network (LAN mode)
+        - The website (ttsnative.com)
+    validations:
+      required: true
+  - type: dropdown
+    id: install
+    attributes:
+      label: How is TTSNative installed?
+      options:
+        - Windows installer
+        - From source (git clone, npm run dev or npm run start)
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: App version
+      description: Shown in Settings → About (and at the bottom of the sidebar).
+      placeholder: e.g. 2.1.0, or 2.1.0-dev.120+main.1cef065
+    validations:
+      required: true
   - type: textarea
     id: diagnostics
     attributes:
@@ -22,18 +52,30 @@ body:
       render: text
     validations:
       required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: |
+        Optional, but they help with start-up, update and engine problems. They contain no document text.
+        Windows app: Settings → About → "Open log folder" (or the start-up screen's "Open log folder"), which is
+        %LOCALAPPDATA%\com.ttsnative.desktop\logs. Attach server.log and desktop.log, or paste the end of server.log.
+        From source: the output of the terminal running `npm run dev` or `npm run start`.
+        Drop the files here, or paste text between lines of three backticks.
   - type: dropdown
     id: area
     attributes:
       label: Area
       options:
         [
-          Setup / npm run dev,
+          Install / setup / updates,
           Library & uploads,
           Reader & playback,
+          Music & sound effects,
           Voices,
           Voice Studio,
           Export,
+          Phones & tablets (LAN mode),
           Settings,
           Other,
         ]
@@ -42,5 +84,5 @@ body:
   - type: input
     id: browser
     attributes:
-      label: Browser and OS
-      placeholder: e.g. Firefox 130 on Ubuntu 24.04
+      label: Browser, device and OS
+      placeholder: e.g. Firefox 130 on Ubuntu 24.04; Safari on an iPhone 15 with iOS 18; Windows 11 24H2

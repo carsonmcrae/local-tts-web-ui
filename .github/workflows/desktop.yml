@@ -84,7 +84,8 @@ jobs:
         run: |
           locked=$([ -f Cargo.lock ] && echo --locked || true)
           cargo build --release $locked
-          node ../../../scripts/desktop/check-test-hooks.mjs target/release/TTSNative.exe absent
+          # A plain cargo build keeps the crate's name; only `tauri build` renames it to TTSNative.exe.
+          node ../../../scripts/desktop/check-test-hooks.mjs target/release/ttsnative-desktop.exe absent
       - name: Keep the lockfile and any formatting fix
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

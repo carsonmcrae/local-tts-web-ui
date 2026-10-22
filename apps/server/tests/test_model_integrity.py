@@ -204,6 +204,7 @@ def test_chatterbox_reports_damage_and_repairs_only_the_weights(
 
 
 # -- CLI -----------------------------------------------------------------------------------------
+@pytest.mark.usefixtures("root_logging")  # `models` runs the real logging setup
 def test_the_cli_names_damaged_files_and_downloads_them_again(
     capsys: pytest.CaptureFixture[str], tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

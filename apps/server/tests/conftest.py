@@ -5,7 +5,8 @@
 Scope: Isolated settings (temporary data dir), a deterministic ``FakeEngine`` (sine tones whose
 length follows the text, so API/caching/export logic is testable without models; as a cloning engine
 it also fakes studio-voice measuring, building, auditioning and fine-tuning), the wired service
-container, a TestClient that sends the app's required client header, and shared helpers for
+container, a TestClient that sends the app's required client header, logging state put back after a
+test that runs the app's real logging setup, and shared helpers for
 speech-like recordings, WAV encoding, waiting for background jobs and saving a studio voice.
 Does NOT belong: Real-inference fixtures (see test_inference_*.py, marked ``inference``).
 """
@@ -13,6 +14,7 @@ Does NOT belong: Real-inference fixtures (see test_inference_*.py, marked ``infe
 from __future__ import annotations
 
 import io
+import logging
 import re
 import time
 from collections.abc import Iterator, Sequence
@@ -202,6 +204,22 @@ def client(settings: Settings, services: Services) -> Iterator[TestClient]:
     app = create_app(settings, services=services)
     with TestClient(app, headers={"X-LTTS-Client": "web"}) as test_client:
         yield test_client
+
+
+@pytest.fixture
+def root_logging() -> Iterator[logging.Logger]:
+    """For a test that runs the app's real logging setup: afterwards the root handlers and level and every
+    logger's level are put back, so later tests in the same worker log the way pytest set them up."""
+    root = logging.getLogger()
+    handlers, level = root.handlers[:], root.level
+    loggers = logging.root.manager.loggerDict
+    levels = {name: logger.level for name, logger in loggers.items() if isinstance(logger, logging.Logger)}
+    yield root
+    root.handlers[:] = handlers
+    root.setLevel(level)
+    for name, logger in list(loggers.items()):
+        if isinstance(logger, logging.Logger):
+            logger.setLevel(levels.get(name, logging.NOTSET))
 
 
 def speech_like(

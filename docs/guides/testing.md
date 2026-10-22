@@ -15,6 +15,9 @@
 - `apps/server/tests/` — pytest. `builders.py` generates PDFs, DOCX, EPUBs and hostile archives in code;
   `conftest.py` provides `FakeEngine` (deterministic tones) so API, cache, export and job logic run without
   models. `test_inference.py` is marked `inference` and skips when models are missing.
+  The suite runs in parallel (pytest-xdist, one worker per CPU, at most eight), so every test must stand
+  alone; add `-n 0` to run serially, e.g. when stepping through one test in a debugger. The inference tests
+  always run serially.
 - `apps/web/src/**/*.test.ts(x)` and `apps/web/src/test/` — Vitest + Testing Library. `render.tsx` mounts
   screens with the real providers and a route-table `fetch` mock.
 - `tests/e2e/` — Playwright. `scripts/e2e-server.mjs` serves the production build from a throwaway data

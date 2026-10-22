@@ -27,7 +27,7 @@ from ltts.container import Services, build_services
 from ltts.engines.base import VoiceSpec
 from ltts.engines.registry import ResolvedVoice
 from ltts.speech_api.guard import RateLimiter, Usage, bearer, is_local, server_port
-from ltts.speech_api.store import SpeechApiConfig
+from ltts.speech_api.store import SpeechApiConfig, SpeechApiStore
 from speech_api_support import auth, custom_voice, error_code, program, speak, switch_on
 
 NOT_FOUND = {"error": {"code": "http_error", "message": "Not Found", "details": {}}}
@@ -289,10 +289,8 @@ def test_the_port_is_the_servers_own_not_the_pages(client: TestClient) -> None:
     assert server_port({"server": ("ltts.sock", None)}) is None and server_port({}) is None
 
 
-def test_settings_remember_the_port_programs_last_used(
-    client: TestClient, services: Services, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    store = services.speech_api.store
+def port_writes(store: SpeechApiStore, monkeypatch: pytest.MonkeyPatch) -> list[int | None]:
+    """The port each of the store's settings writes records, in order."""
     writes: list[int | None] = []
     write = store._write
 
@@ -301,6 +299,14 @@ def test_settings_remember_the_port_programs_last_used(
         return write(config)
 
     monkeypatch.setattr(store, "_write", counted)
+    return writes
+
+
+def test_settings_remember_the_port_programs_last_used(
+    client: TestClient, services: Services, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    store = services.speech_api.store
+    writes = port_writes(store, monkeypatch)
     token = switch_on(client)
     assert client.get("/api/speech-api").json()["lastUsedPort"] is None  # no program has used it yet
     assert program(client, port=8765).get("/v1/models").status_code == 401  # a refused request isn't use
@@ -323,3 +329,13 @@ def test_settings_remember_the_port_programs_last_used(
     assert program(client, port=8767).get("/v1/models", headers=auth(token)).status_code == 404
     assert store.config().last_port == 8766  # nothing is recorded while the API is off
     assert client.put("/api/speech-api", json={"enabled": True}).json()["lastUsedPort"] == 8766
+
+
+def test_programs_racing_to_a_new_port_record_it_once(services: Services, monkeypatch: pytest.MonkeyPatch) -> None:
+    # Both requests read the old port before either recorded the new one, so both ask the store to record
+    # it; the store checks again under its lock and writes once. (Reached otherwise only by thread timing.)
+    store = services.speech_api.store
+    writes = port_writes(store, monkeypatch)
+    store.used_on(8765)
+    store.used_on(8765)
+    assert writes == [8765] and store.config().last_port == 8765

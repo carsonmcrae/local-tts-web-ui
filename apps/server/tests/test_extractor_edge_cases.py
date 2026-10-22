@@ -163,6 +163,7 @@ def test_meaningful_image_alt_text_is_read() -> None:
         ("plain.epub", make_zip({"mimetype": "application/zip", "readme.txt": "hello"})),
         ("broken.docx", b"PK\x03\x04 this is not really a zip archive"),
     ],
+    ids=["plain.epub", "broken.docx"],  # the zip's bytes carry its build time, so they can't name the case
 )
 def test_zip_containers_that_are_neither_epub_nor_docx_are_rejected(tmp_path: Path, name: str, data: bytes) -> None:
     with pytest.raises(UnsupportedDocumentError) as error:

@@ -50,6 +50,20 @@ def page(body: str, head: str = "<title>A Page</title>") -> str:
         ("other.fb2.zip", make_zip({"readme.txt": "no book here"}), None),
         ("book.pdf", page("<p>HTML in disguise</p>").encode(), None),
     ],
+    # Named by file: the zips' bytes carry their build time, so parallel workers would name them differently.
+    ids=[
+        "a.html",
+        "b.htm",
+        "c.fb2",
+        "d.FB2.ZIP",
+        "e.mobi",
+        "f.azw3",
+        "plain.html",
+        "fake.fb2",
+        "fake.mobi",
+        "other.fb2.zip",
+        "book.pdf",
+    ],
 )
 def test_detects_new_types_by_content(tmp_path: Path, name: str, data: bytes, expected: DocumentType | None) -> None:
     path = write(tmp_path, name, data)

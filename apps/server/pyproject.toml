@@ -51,6 +51,8 @@ dev = [
   "types-defusedxml",
   # Starlette's TestClient prefers httpx2 and deprecates running on httpx (the app itself keeps httpx).
   "httpx2>=2.13,<3",
+  # Runs the tests on several CPUs at once (four on CI runners); the suite takes less than half as long.
+  "pytest-xdist>=3.8,<4",
 ]
 
 [build-system]
@@ -108,7 +110,8 @@ ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-ra --strict-markers -m 'not inference'"
+# Parallel by default, at most eight workers; worksteal evens out the few multi-second tests. `-n 0` runs serially.
+addopts = "-ra --strict-markers -m 'not inference' -n logical --maxprocesses=8 --dist worksteal"
 markers = [
   "inference: runs real model inference (needs installed model files; run with `npm run test:inference`)",
 ]

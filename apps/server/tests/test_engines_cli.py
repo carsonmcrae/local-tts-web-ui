@@ -69,6 +69,9 @@ def test_worker_idle_unload(tmp_path: Path) -> None:
     while client.running and time.monotonic() < deadline:
         time.sleep(0.02)
     assert not client.running
+    # The watcher holds the lock until the process has shut down, then must hand it back.
+    assert client._lock.acquire(timeout=10)
+    client._lock.release()
 
 
 def test_kokoro_not_installed(tmp_path: Path) -> None:
@@ -128,6 +131,7 @@ def test_chatterbox_install_requires_uv(settings: Settings, monkeypatch: pytest.
     assert invalid.value.code == "invalid_option"
 
 
+@pytest.mark.usefixtures("root_logging")  # `models` runs the real logging setup
 def test_cli_openapi_doctor_and_models(
     capsys: pytest.CaptureFixture[str], tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

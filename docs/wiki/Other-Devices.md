@@ -90,12 +90,13 @@ Sensitive things stay on the computer. A paired device can't:
 - record, play back, import, export or manage voices and their recordings;
 - install engines, clear caches, or cancel the computer's own jobs;
 - import web pages (the computer would fetch them);
-- delete documents or exports;
+- delete documents or exports, or remove a saved cast;
 - cancel an export, which throws away what it has made so far (pausing it is fine);
 - send an export to Audiobookshelf, which uses the computer's Audiobookshelf account.
 
 The phone shows **Do this on the computer running TTSNative.** if you try. Starting a lot of exports
-or uploads in a few minutes from one device is also refused for a while.
+or uploads, or asking for a lot of voice previews, in a few minutes from one device is also refused
+for a while, and the phone says so.
 
 ## What works over LAN mode
 

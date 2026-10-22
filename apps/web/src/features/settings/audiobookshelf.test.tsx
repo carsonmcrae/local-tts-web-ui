@@ -88,6 +88,7 @@ describe('Audiobookshelf settings', () => {
     expect(document.body).not.toHaveTextContent(KEY);
     expect(section).toHaveTextContent('Uploads go only to this server');
     expect(section).toHaveTextContent('The API key is stored on this computer');
+    expect(section).toHaveTextContent('on macOS and Linux in a file only your user account can read, not encrypted'); // prettier-ignore
   });
 
   it('keeps a saved key, checks the address first and explains a failed test', async () => {

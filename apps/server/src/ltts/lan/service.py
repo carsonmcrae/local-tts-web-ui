@@ -33,7 +33,7 @@ from ltts.lan import network
 from ltts.lan.devices import DEVICE_TTL, DeviceOut, DeviceStore, PairingCodes, PairingOut, Recognised
 from ltts.lan.listener import LanListener
 from ltts.lan.network import NetworkAddress
-from ltts.lan.policy import WorkBudget
+from ltts.lan.policy import BRIEF_PER_WINDOW, WorkBudget
 from ltts.lan.trust import Category, Check, NetworkTrust
 
 COOKIE = "ltts_device"
@@ -64,7 +64,8 @@ class LanService:
     def __init__(self, db: Database):
         self.devices = DeviceStore(db)
         self.codes = PairingCodes()
-        self.budget = WorkBudget()
+        self.budget = WorkBudget()  # exports and uploads
+        self.previews = WorkBudget(BRIEF_PER_WINDOW)  # voice previews and sentence takes
         self._app: Any = None
         self.listener = LanListener(lambda: self._app)
         self.interface: str | None = None

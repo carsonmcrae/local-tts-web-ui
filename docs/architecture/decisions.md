@@ -240,7 +240,7 @@ when a choice changes the stack, a trust boundary, data storage or the setup exp
     chosen automatically (exports, the speech API and reading fall back to local voices).
   - **Per-provider, explicit consent** naming what is sent (the sentences being read) and where, given
     before the first request and revocable; the key is stored like the Audiobookshelf key (encrypted
-    on Windows) and never shown again.
+    on Windows, an owner-only file elsewhere) and never shown again.
   - **Per-document opt-in.** A document is read by a cloud voice only after the reader picks one for
     it; studio voices and voice recordings are never uploaded.
   - **Visible while it happens:** a "Sending text to <provider>" indicator, like the speech API's.

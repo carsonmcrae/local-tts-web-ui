@@ -29,7 +29,7 @@ from ltts.errors import ConflictError, NotFoundError
 from ltts.lan import listener as listener_module
 from ltts.lan.devices import ALPHABET, MAX_DEVICES, TOKEN_PREFIX, PairingCodes, PairingFailedError, Recognised
 from ltts.lan.listener import LanListener
-from ltts.lan.policy import open_to_unpaired, refused_remotely
+from ltts.lan.policy import brief, costly, open_to_unpaired, refused_remotely
 
 
 @pytest.fixture
@@ -83,7 +83,7 @@ def test_policy_keeps_this_computers_own_operations_off_the_network() -> None:
                          ("POST", "/api/voice-profiles/blends"), ("PATCH", "/api/voice-profiles/" + "a" * 32),
                          ("DELETE", "/api/exports/" + "a" * 32), ("POST", "/api/exports/" + "a" * 32 + "/cancel"),
                          ("POST", "/api/exports/" + "a" * 32 + "/audiobookshelf"), ("DELETE", "/api/exports/x/"),
-                         ("POST", "/api/pronunciation-preview"),
+                         ("POST", "/api/pronunciation-preview"), ("DELETE", "/api/cast-presets/" + "a" * 32),
                          ("GET", "/api/something-new"), ("POST", "/"), ("GET", "/api")]:  # fmt: skip
         assert refused_remotely(method, path), (method, path)
     for method, path in [("GET", "/api/documents"), ("POST", "/api/documents/text"), ("GET", "/api/voices"),
@@ -95,6 +95,10 @@ def test_policy_keeps_this_computers_own_operations_off_the_network() -> None:
                          ("PATCH", "/api/documents/" + "a" * 32 + "/sections/0"),
                          ("POST", "/api/documents/" + "a" * 32 + "/cleanup/apply")]:  # fmt: skip
         assert not refused_remotely(method, path), (method, path)
+    takes = "/api/documents/" + "a" * 32 + "/segments/3/takes"
+    assert brief("POST", "/api/voices/kokoro:af_heart/preview") and brief("POST", takes)
+    assert not brief("GET", "/api/voices/kokoro:af_heart/preview") and not costly("POST", takes)
+    assert costly("POST", "/api/exports") and not brief("POST", "/api/exports")
 
 
 def test_a_device_must_pair_before_it_can_use_the_api(client: TestClient, lan: Services) -> None:
@@ -123,7 +127,8 @@ def test_a_paired_device_can_read_but_not_run_this_computer(client: TestClient, 
                  lambda: device.delete(f"/api/documents/{added.json()['id']}"),
                  lambda: device.post("/api/voice-sessions"), lambda: device.delete(f"/api/exports/{'a' * 32}"),
                  lambda: device.post(f"/api/exports/{'a' * 32}/cancel"),
-                 lambda: device.post(f"/api/exports/{'a' * 32}/audiobookshelf")):  # fmt: skip
+                 lambda: device.post(f"/api/exports/{'a' * 32}/audiobookshelf"),
+                 lambda: device.delete(f"/api/cast-presets/{'a' * 32}")):  # fmt: skip
         response = call()
         assert response.status_code == 403 and response.json()["error"]["code"] == "not_allowed_remotely"
     assert client.get(f"/api/documents/{added.json()['id']}").status_code == 200  # still there

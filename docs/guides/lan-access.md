@@ -62,13 +62,15 @@ Sensitive operations stay on the computer. A paired device may not (`403 not_all
 - install engines, cancel the computer's jobs or clear caches;
 - import web pages (the server would fetch them);
 - delete documents;
+- remove a saved cast (the voices someone assigned to a book's characters);
 - delete exports (their files took minutes or hours to make);
 - cancel an export (that throws away the sentences it saved; pausing it is allowed);
 - send an export to Audiobookshelf (that uses this computer's Audiobookshelf account and sends the
   files to another server).
 
 Starting or resuming more than 20 exports or uploads in 10 minutes from one device is refused
-(`429 lan_busy`). `GET /api/system` doesn't tell a device where the data folder is.
+(`429 lan_busy`), and so are more than 60 voice previews or alternative takes of a sentence in 10
+minutes (the message says which). `GET /api/system` doesn't tell a device where the data folder is.
 
 An unpaired device gets only:
 

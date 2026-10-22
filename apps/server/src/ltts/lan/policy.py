@@ -9,8 +9,9 @@ edit documents, organise the library (folders, collections, tags), style sentenc
 effects, and start, pause, resume and download exports. Sensitive operations
 stay on this computer: LAN, speech API and integration settings, voices and their recordings,
 engines, this computer's jobs, the system, importing web pages, and anything that throws work away
-or uses this computer's accounts (deleting documents or exports, cancelling an export, sending one to
-Audiobookshelf). Starting costly work (exports, uploads) is limited per device.
+or uses this computer's accounts (deleting documents, exports or saved casts, cancelling an export,
+sending one to Audiobookshelf). Starting costly work (exports, uploads) and short synthesis (voice
+previews, another take of a sentence) are each limited per device.
 Does NOT belong: Checking tokens or hosts (``security.py``) or pairing (``devices.py``).
 """
 
@@ -31,7 +32,7 @@ _ALLOWED: tuple[tuple[frozenset[str], str], ...] = (
     (_READ, "/api/system"),  # versions and storage sizes; the data folder's path is hidden
     (_ANY, "/api/documents"),  # except what _ON_THE_COMPUTER keeps here
     (_ANY, "/api/library"),  # folders, collections, tags and organising; nothing here deletes a document
-    (_ANY, "/api/cast-presets"),
+    (_ANY, "/api/cast-presets"),  # except removing one (_ON_THE_COMPUTER)
     (_READ, "/api/audio"),
     (_ANY, "/api/voices"),  # the voice list and previews
     (_READ, "/api/engines"),
@@ -49,6 +50,7 @@ _ON_THE_COMPUTER: tuple[tuple[str, re.Pattern[str]], ...] = (
     ("DELETE", re.compile(r"^/api/exports/[^/]+/?$")),  # an export's files: minutes or hours of synthesis
     ("POST", re.compile(r"^/api/exports/[^/]+/cancel/?$")),  # throws away the sentences it has saved
     ("POST", re.compile(r"^/api/exports/[^/]+/audiobookshelf/?$")),  # this computer's account, another server
+    ("DELETE", re.compile(r"^/api/cast-presets/[^/]+/?$")),  # a saved cast: the person's work assigning voices
 )
 _ID = r"[0-9a-f]{32}"
 # Starting work that costs minutes of synthesis or stores files.
@@ -57,6 +59,9 @@ _COSTLY = re.compile(
 )
 COSTLY_PER_WINDOW = 20
 COSTLY_WINDOW_S = 600.0
+# Seconds of synthesis each, asked for freely in moderation: a voice's preview, or another take of one sentence.
+_BRIEF = re.compile(rf"^/api/(voices/[^/]+/preview|documents/{_ID}/segments/[0-9]+/takes)/?$")
+BRIEF_PER_WINDOW = 60
 
 
 def _under(path: str, prefix: str) -> bool:
@@ -89,10 +94,16 @@ def costly(method: str, path: str) -> bool:
     return method in ("POST", "PUT") and bool(_COSTLY.match(path))
 
 
-class WorkBudget:
-    """At most ``COSTLY_PER_WINDOW`` costly requests per device in any ``COSTLY_WINDOW_S`` seconds."""
+def brief(method: str, path: str) -> bool:
+    """A voice preview or another take of a sentence: seconds of synthesis each, limited per device."""
+    return method == "POST" and bool(_BRIEF.match(path))
 
-    def __init__(self, clock: Callable[[], float] = time.monotonic):
+
+class WorkBudget:
+    """At most ``limit`` requests per device in any ``COSTLY_WINDOW_S`` seconds (``COSTLY_PER_WINDOW`` by default)."""
+
+    def __init__(self, limit: int = COSTLY_PER_WINDOW, clock: Callable[[], float] = time.monotonic):
+        self._limit = limit
         self._clock = clock
         self._used: dict[str, list[float]] = {}
         self._lock = threading.Lock()
@@ -102,7 +113,7 @@ class WorkBudget:
             now = self._clock()
             self._used = {key: kept for key, used in self._used.items() if (kept := self._recent(used, now))}
             recent = self._used.get(device_id, [])
-            if len(recent) >= COSTLY_PER_WINDOW:
+            if len(recent) >= self._limit:
                 return False
             self._used[device_id] = [*recent, now]
             return True

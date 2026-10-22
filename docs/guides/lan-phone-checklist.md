@@ -114,6 +114,9 @@ and tablets are managed on the computer):
      works over LAN mode (plain HTTP)**.
 6. Try to record a voice, and change the speech API or Audiobookshelf settings.
 7. Import a web page by its address.
+8. Open a book's **Voices & effects** and look at a saved cast.
+   - Expected: **Use here** is offered, there is no remove control, and the dialog says saved casts
+     are removed on the computer.
 
 ## 5. Removing a device
 

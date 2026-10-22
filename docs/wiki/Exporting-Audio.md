@@ -100,7 +100,8 @@ If you run an [Audiobookshelf](https://www.audiobookshelf.org/) server, set it u
 Audiobookshelf**: its address, an API key, then **Test connection** (nothing is saved until you press
 **Save**) and choose the library and folder. A finished single-file M4B, MP3 or WAV export then shows
 **Send to Audiobookshelf**, which uploads it with its title, author and cover to that folder. The key is
-stored on this computer (encrypted on Windows) and is never shown again; **Forget** removes it. Files go
+stored on this computer and is never shown again (encrypted for your Windows account; on macOS and Linux
+in a file only your user account can read, not encrypted); **Forget** removes it. Files go
 only to the server you set.
 
 ## File names

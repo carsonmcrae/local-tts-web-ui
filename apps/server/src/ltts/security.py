@@ -28,7 +28,7 @@ from ltts.common import MAX_RECORDING_IMPORT_BYTES, MAX_VOICE_PACKAGE_BYTES
 from ltts.config import LOOPBACK_HOSTS, Settings
 from ltts.errors import BODY_TOO_LARGE
 from ltts.lan.devices import Recognised
-from ltts.lan.policy import LOCAL_ONLY, costly, open_to_unpaired, refused_remotely
+from ltts.lan.policy import LOCAL_ONLY, brief, costly, open_to_unpaired, refused_remotely
 from ltts.lan.service import COOKIE, LanService
 from ltts.speech_api.guard import is_local
 
@@ -71,6 +71,7 @@ UNPAIRED = {
     "address_changed": "This device's network address changed, so it needs to pair again with a new code.",
 }
 BUSY = "This device has started a lot of work recently. Wait a few minutes, then try again."
+PREVIEWS_BUSY = "This device has asked for a lot of previews recently. Wait a few minutes, then try again."
 CSP = (
     "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; "
     "media-src 'self' blob: data:; connect-src 'self'; font-src 'self'; worker-src 'self' blob:; object-src 'none'; "
@@ -262,6 +263,8 @@ class SecurityMiddleware:
             return 403, "not_allowed_remotely", LOCAL_ONLY
         if costly(method, path) and not self.lan.budget.allow(seen.device.id):
             return 429, "lan_busy", BUSY
+        if brief(method, path) and not self.lan.previews.allow(seen.device.id):
+            return 429, "lan_busy", PREVIEWS_BUSY
         return None
 
     def _check_token(self, headers: dict[bytes, bytes], scope: Scope) -> Problem | None:

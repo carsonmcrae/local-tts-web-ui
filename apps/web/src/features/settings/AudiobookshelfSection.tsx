@@ -255,7 +255,8 @@ function ShelfForm({ saved }: Readonly<{ saved: ShelfSettings | undefined }>) {
       <p className="flex gap-2 text-[13px] leading-relaxed text-muted">
         <Lock size={14} className="mt-0.5 shrink-0 text-success" aria-hidden="true" />
         Uploads go only to this server, and only when you choose Send to Audiobookshelf. The API key
-        is stored on this computer, encrypted on Windows, and is never shown again.
+        is stored on this computer and is never shown again: encrypted for your Windows account, or
+        on macOS and Linux in a file only your user account can read, not encrypted.
       </p>
       <ConfirmDialog
         open={confirm}

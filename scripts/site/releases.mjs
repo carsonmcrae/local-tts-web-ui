@@ -80,7 +80,7 @@ export function keepUnreleased(html) {
   return html.replace(/<!-- if:(released-[0-9.]+) -->([\s\S]*?)<!-- \/if:\1 -->/g, '$2');
 }
 
-export const HEAD_MARK = '<!-- head:shared -->';
+const HEAD_MARK = '<!-- head:shared -->';
 
 /**
  * Puts the head every page shares (site/partials/head.html: social image, card type, theme colours,

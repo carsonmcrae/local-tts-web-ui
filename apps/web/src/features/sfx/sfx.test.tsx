@@ -293,6 +293,35 @@ describe('Sounds panel', () => {
     expect(within(mixer).getByText(/the next narration starts without them/)).toBeInTheDocument();
   });
 
+  it('plays beside background music under the narration, stops both on pause and lets both go on leaving', async () => {
+    soundsApi([thud({ segmentIndex: 0 })], {
+      'GET /music/': () => new Response(new Uint8Array([1, 2, 3])),
+    });
+    const { user, panel, media, unmount } = await openSounds();
+    const player = screen.getByRole('region', { name: 'Audio player' });
+    const mixer = await openMixer(user, player);
+    await user.click(within(mixer).getByRole('switch', { name: 'Background music' }));
+    await user.keyboard('{Escape}');
+    await startNarration(user, panel, media);
+    await waitFor(() => expect(contexts).toHaveLength(2)); // one context each, music and effects
+    await waitFor(() => expect(contexts.every((context) => context.playing.length > 0)).toBe(true));
+    // Their master levels are the defaults (music 10 %, effects 40 %) and no gain anywhere is above 1.
+    const masters = contexts.map((context) => context.gains[0]?.gain.target).sort();
+    expect(masters).toEqual([0.1, 0.4]);
+    const everyGain = contexts.flatMap((context) => context.gains.map((gain) => gain.gain.target));
+    expect(everyGain.every((gain) => gain <= 1)).toBe(true);
+    await user.click(within(player).getByRole('button', { name: 'Pause' }));
+    await waitFor(() =>
+      expect(contexts.every((context) => context.playing.length === 0)).toBe(true),
+    );
+    unmount();
+    expect(contexts.map((context) => context.close.mock.calls.length)).toEqual([1, 1]);
+    expect(contexts.every((context) => context.playing.length === 0)).toBe(true);
+    // The effects graph releases every node it made; the music engine closes its context instead.
+    const effects = contexts.find((context) => context.compressors.length > 0);
+    expect(effects?.connected.size).toBe(0);
+  });
+
   it('says when a sound cannot play, and when this browser has no Web Audio', async () => {
     vi.stubGlobal('AudioContext', undefined);
     soundsApi([thud({ segmentIndex: 0 })]);

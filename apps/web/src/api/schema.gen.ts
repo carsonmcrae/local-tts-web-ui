@@ -3637,6 +3637,11 @@ export type components = {
       durationSeconds: number;
       /** Events */
       events: string[];
+      /**
+       * Experimental
+       * @default false
+       */
+      experimental: boolean;
       /** File */
       file: string;
       /** Gain */
@@ -3650,6 +3655,8 @@ export type components = {
       loop: boolean;
       /** Name */
       name: string;
+      /** Qualitynote */
+      qualityNote?: string | null;
       /** Sha256 */
       sha256: string;
       /** Source */

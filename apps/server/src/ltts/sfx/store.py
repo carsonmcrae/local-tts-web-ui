@@ -287,7 +287,11 @@ class SoundEffectStore:
             rows = rows[:MAX_ANALYSED]
             first, last = rows[0]["idx"], rows[-1]["idx"]
             sentences = [Sentence(r["idx"], r["paragraph_idx"], r["kind"] == "heading", r["text"]) for r in rows]
-            found = validate(detect(sentences, limits.loop_sentences), first, last)
+            found = [
+                p
+                for p in validate(detect(sentences, limits.loop_sentences), first, last)
+                if catalogue.suggestable(p.event)
+            ]
             existing = [
                 Placed(r["segment_idx"], r["event"], r["until_idx"], r["status"] == "dismissed")
                 for r in conn.execute(

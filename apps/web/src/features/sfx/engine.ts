@@ -69,7 +69,8 @@ interface Voice {
 
 export const MAX_ONE_SHOTS = 2;
 export const KEEP_DECODED = 12;
-export const MAX_GAIN = 1.5;
+/** An effect never plays above its mastered level, which matches the narration's; volume only lowers it. */
+export const MAX_GAIN = 1;
 const VOLUME_RAMP_SECONDS = 0.05;
 const IDLE_SUSPEND_MS = 5_000;
 /** -80 dBFS: a synthesised sound's edges are quieter than this, codec noise included. */

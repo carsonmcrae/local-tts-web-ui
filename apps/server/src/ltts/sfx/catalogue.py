@@ -49,6 +49,9 @@ class SoundOut(ApiModel):
     sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
     gain: float = Field(ge=0.05, le=1.5)  # recommended level, as a multiplier of the effects volume
     loop: bool
+    # Not credible enough to be suggested; kept for manual use until a listener promotes it (the note says why).
+    experimental: bool = False
+    quality_note: str | None = Field(default=None, max_length=200)
     events: list[str] = Field(min_length=1, max_length=10)
     licence: Licence
     attribution: str | None = Field(default=None, max_length=200)
@@ -114,5 +117,11 @@ def sound(sound_id: str) -> SoundOut | None:
 
 
 def default_sound(event_id: str) -> SoundOut:
-    """The first bundled sound that serves ``event_id`` (the library check guarantees one)."""
-    return next(item for item in library().sounds if event_id in item.events)
+    """The first bundled sound that serves ``event_id``, a credible one before an experimental one."""
+    serving = [item for item in library().sounds if event_id in item.events]
+    return next((item for item in serving if not item.experimental), serving[0])
+
+
+def suggestable(event_id: str) -> bool:
+    """Whether a credible sound serves ``event_id``: only then may the detector suggest it."""
+    return any(event_id in item.events and not item.experimental for item in library().sounds)

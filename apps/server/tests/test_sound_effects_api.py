@@ -23,6 +23,7 @@ from fastapi.testclient import TestClient
 
 from builders import make_epub, make_pdf
 from ltts.container import Services
+from ltts.sfx import catalogue
 from ltts.sfx import store as store_module
 from ltts.sfx.detect import DETECTOR_VERSION
 from ltts.sfx.events import EVENT_IDS
@@ -281,6 +282,19 @@ def test_changes_need_the_app_header_like_every_other_route(settings: Any, servi
         doc_id = "a" * 32
         assert bare.get("/api/sound-effects/library").status_code == 200
         assert bare.post(f"/api/documents/{doc_id}/sound-effects", json={}).status_code == 403
+
+
+def test_experimental_sounds_are_never_suggested_but_can_be_added_by_hand(client: TestClient) -> None:
+    library = client.get("/api/sound-effects/library").json()
+    experimental = {sound["id"]: sound["qualityNote"] for sound in library["sounds"] if sound["experimental"]}
+    assert "dog-bark" in experimental and all(experimental.values())  # each one says why
+    assert catalogue.default_sound("dog-bark").experimental and not catalogue.suggestable("dog-bark")
+    assert not catalogue.default_sound("door-creak").experimental and catalogue.suggestable("door-creak")
+    doc = document(client, "A dog barked twice from the yard. The old door creaked open.")
+    events = {effect["event"] for effect in analyse(client, doc["id"], 0, "immersive")["effects"]}
+    assert "door-creak" in events and "dog-bark" not in events
+    added = client.post(f"/api/documents/{doc['id']}/sound-effects", json={"segmentIndex": 0, "soundId": "dog-bark"})
+    assert added.status_code == 201 and added.json()["soundId"] == "dog-bark"
 
 
 def test_the_sentence_hash_ignores_whitespace_and_matches_the_shared_form() -> None:

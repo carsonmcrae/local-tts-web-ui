@@ -18,6 +18,8 @@
       "sha256": "e8277674f3bdf5797e1001c4159d02c15540a4c9a5ff8ef681cde5ae5abff0f4",
       "gain": 0.45,
       "loop": true,
+      "experimental": false,
+      "qualityNote": null,
       "events": [
         "rain-light"
       ],
@@ -45,6 +47,8 @@
       "sha256": "8f0755b37dd1049cd8816f9ef7ca1df5bf5ce294806fd056611f755739d69de4",
       "gain": 0.45,
       "loop": true,
+      "experimental": false,
+      "qualityNote": null,
       "events": [
         "rain-heavy"
       ],
@@ -72,6 +76,8 @@
       "sha256": "b10eab64d4e3f44cd81601e969045295d763a38f0c872f95bfb447e6fc8efd06",
       "gain": 0.8,
       "loop": false,
+      "experimental": false,
+      "qualityNote": null,
       "events": [
         "thunder-distant"
       ],
@@ -99,6 +105,8 @@
       "sha256": "91bc7c5c1626da5178339a712f70443a1e9c27d8f30743146dca10271f5b7385",
       "gain": 0.7,
       "loop": false,
+      "experimental": false,
+      "qualityNote": null,
       "events": [
         "thunder-close"
       ],
@@ -126,6 +134,8 @@
       "sha256": "2266539251b0b682118c8caa289eb623d03225b5b0feb39f27872bb7627dd6dd",
       "gain": 0.6,
       "loop": false,
+      "experimental": false,
+      "qualityNote": null,
       "events": [
         "wind-gust"
       ],
@@ -154,6 +164,8 @@
       "sha256": "4f56613ebec8ba35c944218b3d7fba47c729d3352ab580e39eb28579a0d3b7f3",
       "gain": 0.4,
       "loop": true,
+      "experimental": false,
+      "qualityNote": null,
       "events": [
         "wind-howl"
       ],
@@ -182,6 +194,8 @@
       "sha256": "93ddbb83721ad5ef20fdea3bc113cd68b56945facffd895fce3e1e5b074d12e3",
       "gain": 0.4,
       "loop": true,
+      "experimental": false,
+      "qualityNote": null,
       "events": [
         "stream"
       ],
@@ -211,6 +225,8 @@
       "sha256": "3ac5db7070bcb7e26cc6eb4f525167d31e79eddc5eb6fb9fbb562b82b2ba0d5a",
       "gain": 0.4,
       "loop": true,
+      "experimental": false,
+      "qualityNote": null,
       "events": [
         "waves"
       ],
@@ -239,6 +255,8 @@
       "sha256": "7909d71001d6c5c2595678636dffda1f9a08b72ba5b89fcc1f70484830750283",
       "gain": 0.4,
       "loop": true,
+      "experimental": false,
+      "qualityNote": null,
       "events": [
         "fire-crackle"
       ],
@@ -266,6 +284,8 @@
       "sha256": "5e1bdbee01ca31ada524e7b070532b13cc713409ae42a3c32704222ef585a4b3",
       "gain": 0.3,
       "loop": true,
+      "experimental": false,
+      "qualityNote": null,
       "events": [
         "crickets"
       ],
@@ -294,6 +314,8 @@
       "sha256": "24bcf0824fd09dae1f894ccd16c6b2a9aec7afd95bb9ea3bb03c0ca77d475171",
       "gain": 0.45,
       "loop": false,
+      "experimental": true,
+      "qualityNote": "Chirped sine phrases; real birdsong is richer and less regular.",
       "events": [
         "birdsong"
       ],
@@ -321,6 +343,8 @@
       "sha256": "5758de93f0d23f3d70702f457ff21869fbdf51c0cc3c8481c30eb6aaf2b16fe5",
       "gain": 0.6,
       "loop": false,
+      "experimental": true,
+      "qualityNote": "Two tones with vibrato; a real hoot has breath and resonance this lacks.",
       "events": [
         "owl"
       ],
@@ -348,6 +372,8 @@
       "sha256": "9726150309edd1ee00ee59ab50c6f5d704235178432a6521ee2a32e09fc81eb8",
       "gain": 0.55,
       "loop": false,
+      "experimental": true,
+      "qualityNote": "A sliding tone over noise; a real howl's timbre is not synthesised.",
       "events": [
         "wolf-howl"
       ],
@@ -374,6 +400,8 @@
       "sha256": "6a22ad3ba237a8ce6b3da93ca43478c6fba84d874740c9a6246ecd37cccd308d",
       "gain": 0.6,
       "loop": false,
+      "experimental": true,
+      "qualityNote": "A filtered burst stands in for a bark; a real dog's formants and texture are not synthesised.",
       "events": [
         "dog-bark"
       ],
@@ -402,6 +430,8 @@
       "sha256": "c8f678ee15e65ad19539932f5b77cfc6ffe035d2a746c15fddbe26b9dfde296b",
       "gain": 0.6,
       "loop": false,
+      "experimental": true,
+      "qualityNote": "Clicks on a rhythm; real hooves on ground have a body this lacks.",
       "events": [
         "horse-hooves"
       ],
@@ -430,6 +460,8 @@
       "sha256": "61456de2964d43a93bc21828363e1085fefbe4d3556a869e904c91e7b42f6510",
       "gain": 0.65,
       "loop": false,
+      "experimental": false,
+      "qualityNote": null,
       "events": [
         "door-creak"
       ],
@@ -457,6 +489,8 @@
       "sha256": "2e45527e2beb9fbc4d365f22d4bd91edd976b0280bdec6abb822f7560ab87b40",
       "gain": 0.6,
       "loop": false,
+      "experimental": false,
+      "qualityNote": null,
       "events": [
         "door-close"
       ],
@@ -483,6 +517,8 @@
       "sha256": "1e0274d858ce5b2ed815bb6ff0d8413667e9382d3c30545f579f01f25ecb6f38",
       "gain": 0.7,
       "loop": false,
+      "experimental": false,
+      "qualityNote": null,
       "events": [
         "door-slam"
       ],
@@ -509,6 +545,8 @@
       "sha256": "5c8128c5633cd268ff1bfad9a307fa71d7af55dd636d3cb75f5ef18e6af4b013",
       "gain": 0.7,
       "loop": false,
+      "experimental": false,
+      "qualityNote": null,
       "events": [
         "door-knock"
       ],
@@ -537,6 +575,8 @@
       "sha256": "03f7b2de610c17f46abbebf0e74ec50aa1b6544999ae3a2b429d09e418580f3c",
       "gain": 0.6,
       "loop": false,
+      "experimental": false,
+      "qualityNote": null,
       "events": [
         "footsteps-wood"
       ],
@@ -565,6 +605,8 @@
       "sha256": "30362862792654b2709b9c2968688dcebbfdc77c5ac742eff8325d897c078c1d",
       "gain": 0.6,
       "loop": false,
+      "experimental": false,
+      "qualityNote": null,
       "events": [
         "footsteps-stone"
       ],
@@ -593,6 +635,8 @@
       "sha256": "d09c32c52413ef592fb43dfefd54df170ec899a67e60553628330c7a2bd4f5a3",
       "gain": 0.6,
       "loop": false,
+      "experimental": false,
+      "qualityNote": null,
       "events": [
         "footsteps-gravel"
       ],
@@ -620,6 +664,8 @@
       "sha256": "1a9b7b2711f1b1d6678bfce798535316b1f39f8b4cbe7d2586eee910fccdd601",
       "gain": 0.6,
       "loop": false,
+      "experimental": false,
+      "qualityNote": null,
       "events": [
         "footsteps-run"
       ],
@@ -648,6 +694,8 @@
       "sha256": "0cfedd0b7d5339c03716b8848615d2b227eff1ac6a65817399544a8ebde8239c",
       "gain": 0.35,
       "loop": true,
+      "experimental": false,
+      "qualityNote": null,
       "events": [
         "clock-tick"
       ],
@@ -675,6 +723,8 @@
       "sha256": "3edae076311ca81efb6d94343280a1fefb7b2fb8335dd5d8f540cc077c7b0411",
       "gain": 0.55,
       "loop": false,
+      "experimental": false,
+      "qualityNote": null,
       "events": [
         "clock-chime"
       ],
@@ -702,6 +752,8 @@
       "sha256": "1c841db80ada53bc324fcfcb5f58f653d9ab3a7d92d32c1c6e13966a78ff6fd9",
       "gain": 0.6,
       "loop": false,
+      "experimental": false,
+      "qualityNote": null,
       "events": [
         "bell-toll"
       ],
@@ -730,6 +782,8 @@
       "sha256": "582223c4451093a49bc7efbdfcd4c2923429e2a0f1559dfba8489d1daf5e88fc",
       "gain": 0.65,
       "loop": false,
+      "experimental": true,
+      "qualityNote": "Ringing metallic partials; real steel on steel is brighter and more complex.",
       "events": [
         "sword-clash"
       ],
@@ -758,6 +812,8 @@
       "sha256": "472b7db252e1907ce76f614ee90cb11d71f20d2d48827c805f26bed7f2c861ac",
       "gain": 0.65,
       "loop": false,
+      "experimental": true,
+      "qualityNote": "A noise burst with ringing partials; real glass has sharper, denser shards.",
       "events": [
         "glass-break"
       ],
@@ -786,6 +842,8 @@
       "sha256": "390cfc2874c8e58fc3ddfa2cd3799cd6ed5db34395b68f44bae957fa31f88170",
       "gain": 0.7,
       "loop": false,
+      "experimental": false,
+      "qualityNote": null,
       "events": [
         "thud"
       ],
@@ -814,6 +872,8 @@
       "sha256": "d0434dfef9831122ec954ffdf7702c0ff0648836c2a133131d8620d488d474f6",
       "gain": 0.6,
       "loop": false,
+      "experimental": false,
+      "qualityNote": null,
       "events": [
         "gunshot"
       ],
@@ -841,6 +901,8 @@
       "sha256": "7ab2b00a356316e472d559ba561a0382199453f5e316f3753f36126ba9ca76ac",
       "gain": 0.6,
       "loop": false,
+      "experimental": false,
+      "qualityNote": null,
       "events": [
         "explosion"
       ],
@@ -869,6 +931,8 @@
       "sha256": "b2c38397a1d8db74d1e5dbc6a842706bd2ffca7a8d913af3433c06068c7d6983",
       "gain": 0.55,
       "loop": false,
+      "experimental": false,
+      "qualityNote": null,
       "events": [
         "car-pass"
       ],
@@ -896,6 +960,8 @@
       "sha256": "9be7f4ec02af433d912353d65f210c6bff038ab5d803d7ce56973cfea1bad8dc",
       "gain": 0.5,
       "loop": false,
+      "experimental": false,
+      "qualityNote": null,
       "events": [
         "train-pass"
       ],
@@ -925,6 +991,8 @@
       "sha256": "cdf47afa8a4d8bfddaebd02e61a5cedae96387f342e67f5a9ec7b151d13b3f47",
       "gain": 0.35,
       "loop": true,
+      "experimental": true,
+      "qualityNote": "Modulated noise with no voices in it, so it reads as a wash rather than people.",
       "events": [
         "crowd-murmur"
       ],
@@ -953,6 +1021,8 @@
       "sha256": "6f3a1fb2c469e97f31ae67ccd29a12d03c5e841a2938cbfcda42f87daf8f73f9",
       "gain": 0.35,
       "loop": true,
+      "experimental": false,
+      "qualityNote": null,
       "events": [
         "city-distant"
       ],
@@ -981,6 +1051,8 @@
       "sha256": "9362c0f0281692954e2b67160e53954645a0e7e06c2a51dfa704428564ef8a0f",
       "gain": 0.35,
       "loop": true,
+      "experimental": false,
+      "qualityNote": null,
       "events": [
         "machine-hum"
       ],

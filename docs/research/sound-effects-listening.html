@@ -23,6 +23,9 @@
       the repository so the players find <code>apps/web/public/sfx/</code>. The master level starts at the app's
       default (40 %); each sound is also scaled by its own gain as the app does. To judge a sound under speech, pick
       a narration recording (for example an MP3 exported from TTSNative) as the bed: it loops while you audition.
+      Sounds marked <mark>Experimental</mark> are never suggested automatically; they can still be added by hand.
+      To promote one you judge credible, remove its line from <code>EXPERIMENTAL</code> in
+      <code>scripts/media/sfx_recipes.py</code> and rebuild the library.
     </p>
     <div class="bar">
       <label>Master level <input type="range" id="master" min="0" max="100" value="40" /> <span id="masterValue">40 %</span></label>
@@ -133,8 +136,8 @@
         <td><textarea class="note" rows="3" placeholder="Sounds like…? Distracting? Under speech?"></textarea></td>
       </tr>
       <tr data-id="birdsong">
-        <td><strong>Birdsong</strong><br /><code>birdsong</code><br /><small>birdsong</small></td>
-        <td>Two birds trading short phrases.<br /><small>birds, song, morning, garden, dawn</small></td>
+        <td><strong>Birdsong</strong> <mark>Experimental</mark><br /><code>birdsong</code><br /><small>birdsong</small></td>
+        <td>Two birds trading short phrases.<br /><small>birds, song, morning, garden, dawn</small><br /><em>Chirped sine phrases; real birdsong is richer and less regular.</em></td>
         <td>6.5 s<br />one-shot</td>
         <td>-21 dBFS<br />peak -7<br />3659 Hz</td>
         <td><audio controls preload="none" data-gain="0.45" src="../../apps/web/public/sfx/birdsong.mp3"></audio>
@@ -148,8 +151,8 @@
       <thead><tr><th>Sound</th><th>Meant to be</th><th>Length</th><th>Measured</th><th>Listen</th><th>Your notes</th></tr></thead>
       <tbody>
       <tr data-id="owl">
-        <td><strong>An owl&#x27;s hoot</strong><br /><code>owl</code><br /><small>owl</small></td>
-        <td>Two soft hoots.<br /><small>owl, night, hoot, forest</small></td>
+        <td><strong>An owl&#x27;s hoot</strong> <mark>Experimental</mark><br /><code>owl</code><br /><small>owl</small></td>
+        <td>Two soft hoots.<br /><small>owl, night, hoot, forest</small><br /><em>Two tones with vibrato; a real hoot has breath and resonance this lacks.</em></td>
         <td>3.2 s<br />one-shot</td>
         <td>-21 dBFS<br />peak -14<br />540 Hz</td>
         <td><audio controls preload="none" data-gain="0.60" src="../../apps/web/public/sfx/owl.mp3"></audio>
@@ -157,8 +160,8 @@
         <td><textarea class="note" rows="3" placeholder="Sounds like…? Distracting? Under speech?"></textarea></td>
       </tr>
       <tr data-id="wolf-howl">
-        <td><strong>A wolf&#x27;s howl</strong><br /><code>wolf-howl</code><br /><small>wolf-howl</small></td>
-        <td>A single long howl.<br /><small>wolf, howl, night, wild</small></td>
+        <td><strong>A wolf&#x27;s howl</strong> <mark>Experimental</mark><br /><code>wolf-howl</code><br /><small>wolf-howl</small></td>
+        <td>A single long howl.<br /><small>wolf, howl, night, wild</small><br /><em>A sliding tone over noise; a real howl&#x27;s timbre is not synthesised.</em></td>
         <td>5.0 s<br />one-shot</td>
         <td>-20 dBFS<br />peak -14<br />1025 Hz</td>
         <td><audio controls preload="none" data-gain="0.55" src="../../apps/web/public/sfx/wolf-howl.mp3"></audio>
@@ -166,8 +169,8 @@
         <td><textarea class="note" rows="3" placeholder="Sounds like…? Distracting? Under speech?"></textarea></td>
       </tr>
       <tr data-id="dog-bark">
-        <td><strong>A dog barking</strong><br /><code>dog-bark</code><br /><small>dog-bark</small></td>
-        <td>Three barks.<br /><small>dog, bark, hound</small></td>
+        <td><strong>A dog barking</strong> <mark>Experimental</mark><br /><code>dog-bark</code><br /><small>dog-bark</small></td>
+        <td>Three barks.<br /><small>dog, bark, hound</small><br /><em>A filtered burst stands in for a bark; a real dog&#x27;s formants and texture are not synthesised.</em></td>
         <td>2.6 s<br />one-shot</td>
         <td>-22 dBFS<br />peak -6<br />1539 Hz</td>
         <td><audio controls preload="none" data-gain="0.60" src="../../apps/web/public/sfx/dog-bark.mp3"></audio>
@@ -175,8 +178,8 @@
         <td><textarea class="note" rows="3" placeholder="Sounds like…? Distracting? Under speech?"></textarea></td>
       </tr>
       <tr data-id="horse-hooves">
-        <td><strong>Horse&#x27;s hooves</strong><br /><code>horse-hooves</code><br /><small>horse-hooves</small></td>
-        <td>A horse galloping past.<br /><small>horse, hooves, gallop, rider, carriage</small></td>
+        <td><strong>Horse&#x27;s hooves</strong> <mark>Experimental</mark><br /><code>horse-hooves</code><br /><small>horse-hooves</small></td>
+        <td>A horse galloping past.<br /><small>horse, hooves, gallop, rider, carriage</small><br /><em>Clicks on a rhythm; real hooves on ground have a body this lacks.</em></td>
         <td>5.5 s<br />one-shot</td>
         <td>-27 dBFS<br />peak -6<br />2202 Hz</td>
         <td><audio controls preload="none" data-gain="0.60" src="../../apps/web/public/sfx/horse-hooves.mp3"></audio>
@@ -307,8 +310,8 @@
         <td><textarea class="note" rows="3" placeholder="Sounds like…? Distracting? Under speech?"></textarea></td>
       </tr>
       <tr data-id="sword-clash">
-        <td><strong>Clashing swords</strong><br /><code>sword-clash</code><br /><small>sword-clash</small></td>
-        <td>Two strikes of steel on steel.<br /><small>sword, steel, battle, duel, clash</small></td>
+        <td><strong>Clashing swords</strong> <mark>Experimental</mark><br /><code>sword-clash</code><br /><small>sword-clash</small></td>
+        <td>Two strikes of steel on steel.<br /><small>sword, steel, battle, duel, clash</small><br /><em>Ringing metallic partials; real steel on steel is brighter and more complex.</em></td>
         <td>2.0 s<br />one-shot</td>
         <td>-21 dBFS<br />peak -6<br />5271 Hz</td>
         <td><audio controls preload="none" data-gain="0.65" src="../../apps/web/public/sfx/sword-clash.mp3"></audio>
@@ -322,8 +325,8 @@
       <thead><tr><th>Sound</th><th>Meant to be</th><th>Length</th><th>Measured</th><th>Listen</th><th>Your notes</th></tr></thead>
       <tbody>
       <tr data-id="glass-break">
-        <td><strong>Breaking glass</strong><br /><code>glass-break</code><br /><small>glass-break</small></td>
-        <td>Glass shattering and scattering.<br /><small>glass, shatter, break, window, bottle</small></td>
+        <td><strong>Breaking glass</strong> <mark>Experimental</mark><br /><code>glass-break</code><br /><small>glass-break</small></td>
+        <td>Glass shattering and scattering.<br /><small>glass, shatter, break, window, bottle</small><br /><em>A noise burst with ringing partials; real glass has sharper, denser shards.</em></td>
         <td>2.2 s<br />one-shot</td>
         <td>-20 dBFS<br />peak -7<br />6867 Hz</td>
         <td><audio controls preload="none" data-gain="0.65" src="../../apps/web/public/sfx/glass-break.mp3"></audio>
@@ -388,8 +391,8 @@
       <thead><tr><th>Sound</th><th>Meant to be</th><th>Length</th><th>Measured</th><th>Listen</th><th>Your notes</th></tr></thead>
       <tbody>
       <tr data-id="crowd-murmur">
-        <td><strong>A murmuring crowd</strong><br /><code>crowd-murmur</code><br /><small>crowd-murmur</small></td>
-        <td>Many voices talking, none of them clear.<br /><small>crowd, voices, tavern, market, room, people</small></td>
+        <td><strong>A murmuring crowd</strong> <mark>Experimental</mark><br /><code>crowd-murmur</code><br /><small>crowd-murmur</small></td>
+        <td>Many voices talking, none of them clear.<br /><small>crowd, voices, tavern, market, room, people</small><br /><em>Modulated noise with no voices in it, so it reads as a wash rather than people.</em></td>
         <td>9.5 s<br />loop</td>
         <td>-20 dBFS<br />peak -8<br />1725 Hz</td>
         <td><audio controls preload="none" data-gain="0.35" src="../../apps/web/public/sfx/crowd-murmur.mp3"></audio>

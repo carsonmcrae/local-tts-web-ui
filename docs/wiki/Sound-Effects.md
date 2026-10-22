@@ -64,6 +64,13 @@ fantasy, impacts, vehicles, atmosphere and machines. Every one was synthesised f
 repository, so there are no recordings and nothing to license beyond the project's MIT licence;
 `apps/web/public/sfx/CREDITS.md` lists them. Importing your own sounds is not supported yet.
 
+Eight of them are marked **Experimental** in the library: the dog, owl, wolf, horse, birdsong,
+crowd, breaking glass and clashing swords, whose real sources the synthesis cannot yet make
+convincing. They are never suggested automatically, and a reading experience never places them;
+you can still add one by hand if it suits your book. Sounds never play louder than the narration:
+by default they sit well under it, and even at the loudest settings an effect only reaches the
+narration's own level.
+
 ## Where your arrangement lives
 
 Effects, your choices about suggestions and the analysis record are stored with the document in

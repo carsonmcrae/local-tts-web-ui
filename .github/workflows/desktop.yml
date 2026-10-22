@@ -130,6 +130,10 @@ jobs:
         run: |
           version=$(cat dist/desktop/version.txt)
           node scripts/desktop/persistence-test.mjs --install "dist/desktop/TTSNative-Setup-$version.exe"
+      - name: Refuses a silent install into a drive without room, before writing anything
+        run: |
+          version=$(cat dist/desktop/version.txt)
+          node scripts/desktop/space-test.mjs "dist/desktop/TTSNative-Setup-$version.exe"
       - name: Keep the app's logs
         if: failure()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

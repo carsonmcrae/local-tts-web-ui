@@ -131,6 +131,7 @@ def test_chatterbox_install_requires_uv(settings: Settings, monkeypatch: pytest.
     assert invalid.value.code == "invalid_option"
 
 
+@pytest.mark.usefixtures("root_logging")  # `models` runs the real logging setup
 def test_cli_openapi_doctor_and_models(
     capsys: pytest.CaptureFixture[str], tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

@@ -16,7 +16,6 @@ import importlib
 import logging
 import sys
 import threading
-from collections.abc import Iterator
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
@@ -124,15 +123,6 @@ def test_models_ensure_installs_only_when_missing(
     assert installed == ["kokoro-v1.0"] and "installed and verified" in capsys.readouterr().out
     assert cli.main(["models", "ensure", "kokoro"]) == 0
     assert installed == ["kokoro-v1.0"] and "is installed" in capsys.readouterr().out
-
-
-@pytest.fixture
-def root_logging() -> Iterator[logging.Logger]:
-    root = logging.getLogger()
-    handlers, level = root.handlers[:], root.level
-    yield root
-    root.handlers[:] = handlers
-    root.setLevel(level)
 
 
 def test_asgi_target_builds_the_app_from_the_environment(

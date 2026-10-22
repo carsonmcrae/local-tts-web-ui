@@ -6,7 +6,8 @@ Scope: Every response format with its content type (decoded back), long input sp
 and joined, cached sentences reused, the pronunciation dictionary applied and private-use characters
 removed, strict validation (types, ranges, formats, voice and model names, JSON only, input and body
 limits, extra fields ignored), clear errors for unknown voices and models, one synthesis at a time,
-the time limit, a client that disconnects, and logs that never hold the token or the text.
+the time limit, a client that disconnects, and logs that never hold the token or the text (checked at
+debug and normal levels on what the log handler writes, with proof that the check catches a leak).
 Does NOT belong: Access, tokens and settings (test_speech_api.py).
 """
 
@@ -15,7 +16,9 @@ from __future__ import annotations
 import asyncio
 import io
 import logging
+import sys
 import threading
+from collections.abc import Sequence
 
 import httpx
 import numpy as np
@@ -25,6 +28,9 @@ from fastapi.testclient import TestClient
 
 from conftest import FakeEngine
 from ltts.config import Settings
+from ltts.logging_setup import KeyValueFormatter
+from ltts.speech_api import router as speech_router
+from ltts.speech_api.guard import bearer
 from ltts.speech_api.schemas import SpeechRequest
 from ltts.speech_api.service import encode_clips
 from ltts.synthesis.service import ClientGoneError
@@ -196,13 +202,79 @@ def test_clips_are_joined_at_one_rate() -> None:
     assert sf.info(io.BytesIO(wav.body)).samplerate == 22_050
 
 
-def test_logs_never_hold_the_token_or_the_text(client: TestClient, caplog: pytest.LogCaptureFixture) -> None:
-    caplog.set_level(logging.DEBUG)
+def emitted(records: Sequence[logging.LogRecord]) -> str:
+    """What the server's log handler writes for these records (``KeyValueFormatter``): the message, every
+    extra field, any traceback, plus any stack. A record's own bookkeeping (its clock, thread and process
+    numbers, source file) is not request data, and its digits can spell any short number by chance."""
+    formatter = KeyValueFormatter()
+    return "\n".join(f"{formatter.format(record)} {record.stack_info or ''}" for record in records)
+
+
+def assert_kept_out(records: Sequence[logging.LogRecord], *secrets: str) -> None:
+    logged = emitted(records)
+    for secret in secrets:
+        assert secret not in logged, f"{secret!r} reached the log"
+
+
+# DEBUG captures every logger (more than the app's development mode, which quiets HTTP libraries); INFO is production.
+@pytest.mark.parametrize("level", [logging.DEBUG, logging.INFO], ids=["debug", "info"])
+def test_logs_never_hold_the_token_or_the_text(
+    client: TestClient, caplog: pytest.LogCaptureFixture, level: int
+) -> None:
+    caplog.set_level(level)
     token = switch_on(client)
     secret = "My bank PIN is 4321."
     assert speak(program(client), token, input=secret).status_code == 200
     assert speak(program(client), token + "x", input=secret).status_code == 401
     assert speak(program(client), token, input=secret, speed="fast").status_code == 422
-    logged = " ".join(f"{record.getMessage()} {record.__dict__}" for record in caplog.records)
-    assert "speech api request served" in logged and "'chars': 20" in logged
-    assert token not in logged and "4321" not in logged and "PIN" not in logged
+    logged = emitted(caplog.records)
+    assert "speech api request served" in logged and "chars=20" in logged
+    assert_kept_out(caplog.records, token, "4321", "PIN")
+
+
+def leaked_record(where: str, secret: str) -> logging.LogRecord:
+    record = logging.makeLogRecord({"name": "ltts.speech_api", "msg": "speech api request served"})
+    match where:
+        case "message":
+            record.msg = f"speech api request served for {secret}"
+        case "argument":
+            record.msg, record.args = "speech api request served for %s", (secret,)
+        case "extra field":
+            record.__dict__["authorization"] = f"Bearer {secret}"
+        case "traceback":
+            try:
+                raise ValueError(secret)
+            except ValueError:
+                record.exc_info = sys.exc_info()
+        case _:
+            record.stack_info = f"Stack (most recent call last): token = {secret!r}"
+    return record
+
+
+@pytest.mark.parametrize("where", ["message", "argument", "extra field", "traceback", "stack"])
+def test_the_log_check_fails_when_a_secret_is_logged(where: str) -> None:
+    with pytest.raises(AssertionError, match="reached the log"):
+        assert_kept_out([leaked_record(where, "ttsn_a-leaked-token")], "ttsn_a-leaked-token")
+
+
+def test_the_log_check_catches_a_token_the_server_logs(
+    client: TestClient, caplog: pytest.LogCaptureFixture, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    caplog.set_level(logging.INFO)
+
+    def careless_bearer(header: str | None) -> str | None:
+        logging.getLogger("ltts.speech_api").info("checking a token", extra={"authorization": header})
+        return bearer(header)
+
+    monkeypatch.setattr(speech_router, "bearer", careless_bearer)
+    token = switch_on(client)
+    assert speak(program(client), token, input="Hello.").status_code == 200
+    with pytest.raises(AssertionError, match="reached the log"):
+        assert_kept_out(caplog.records, token)
+
+
+def test_the_log_check_ignores_a_records_clock_and_thread_numbers() -> None:
+    # The flaky failure this replaced: '4321' inside relativeCreated=51137.11643218994.
+    record = logging.makeLogRecord({"name": "asyncio", "msg": "Using proactor: %s", "args": ("IocpProactor",)})
+    record.relativeCreated, record.msecs, record.thread, record.process = 51137.11643218994, 432.1, 4321, 14321
+    assert_kept_out([record], "4321")

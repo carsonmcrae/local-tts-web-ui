@@ -9,15 +9,17 @@
  *   whose download breaks off are refused with an explanation and A keeps running; then a good update
  *   downloads, verifies, installs B and reopens it, with the user's document still there. Finally B is
  *   uninstalled. CI only (it installs software for the current user); never uses the release key.
- *   Usage: `node scripts/desktop/update-test.mjs`.
+ *   Usage: no arguments does it all. CI builds A and B at the same time: `--make-key <dir>`, then
+ *   `--build old|new --key <dir> --out <dir>` for each, then `--test <dir>` on what the builds left.
  * Does NOT belong: The installer smoke test (smoke-test.mjs) or release builds (build.mjs).
  */
 import { execFileSync, spawnSync } from 'node:child_process';
-import { copyFileSync, mkdtempSync, readFileSync } from 'node:fs';
+import { copyFileSync, mkdirSync, mkdtempSync, readFileSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
+import { parseArgs } from 'node:util';
 import { repoRoot } from '../lib/paths.mjs';
 import {
   appPage,
@@ -35,7 +37,7 @@ const NOTES =
   'An update made by the update test.\n\n## Fixed\n\n- The update test can see these notes.';
 const local = process.env.LOCALAPPDATA ?? '';
 const installDir = path.join(local, 'TTSNative');
-const work = mkdtempSync(path.join(tmpdir(), 'ttsnative-update-'));
+const KEY_PASSWORD = 'update-test-only';
 const system32 = path.join(process.env.SystemRoot ?? 'C:/Windows', 'System32');
 const REG = path.join(system32, 'reg.exe');
 const KEY = String.raw`HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\TTSNative`;
@@ -56,28 +58,36 @@ function node(args, env = {}) {
   if (result.status !== 0) throw new Error(`FAILED: ${args.join(' ')}`);
 }
 
-function updateKey() {
-  const password = 'update-test-only';
-  const file = path.join(work, 'update.key');
+/** Writes a new throwaway update key (update.key and update.key.pub) into `dir`. */
+function makeKey(/** @type {string} */ dir) {
+  mkdirSync(dir, { recursive: true });
   node([
     path.join(repoRoot, 'node_modules', '@tauri-apps', 'cli', 'tauri.js'),
     'signer',
     'generate',
     '--ci',
     '-w',
-    file,
+    path.join(dir, 'update.key'),
     '-p',
-    password,
+    KEY_PASSWORD,
   ]);
+}
+
+function readKey(/** @type {string} */ dir) {
+  const file = path.join(dir, 'update.key');
   return {
-    password,
+    password: KEY_PASSWORD,
     privateKey: readFileSync(file, 'utf8'),
     publicKey: readFileSync(`${file}.pub`, 'utf8').trim(),
   };
 }
 
-/** @param {string} version @param {ReturnType<typeof updateKey>} key */
-function build(version, key) {
+/** Builds `version` trusting `key`; its installer and signature land in `out` as `<version>.exe(.sig)`. */
+function build(
+  /** @type {string} */ version,
+  /** @type {ReturnType<typeof readKey>} */ key,
+  /** @type {string} */ out,
+) {
   const config = {
     plugins: {
       updater: {
@@ -95,7 +105,8 @@ function build(version, key) {
     TAURI_SIGNING_PRIVATE_KEY_PASSWORD: key.password,
   });
   const built = path.join(repoRoot, 'dist', 'desktop', `TTSNative-Setup-${version}.exe`);
-  const target = path.join(work, `${version}.exe`);
+  const target = path.join(out, `${version}.exe`);
+  mkdirSync(out, { recursive: true });
   copyFileSync(built, target);
   copyFileSync(`${built}.sig`, `${target}.sig`);
   return target;
@@ -139,10 +150,8 @@ const installedVersion = () =>
     execFileSync(REG, ['query', KEY], { encoding: 'utf8' }),
   )?.[1];
 
-async function main() {
-  const key = updateKey();
-  const older = build(OLD, key);
-  const newer = build(NEW, key);
+/** Installs A, refuses a wrong signature (A's own) and a broken download, then updates to B. */
+async function verify(/** @type {string} */ older, /** @type {string} */ newer) {
   const server = updateServer(newer, readFileSync(`${older}.sig`, 'utf8'));
   try {
     check(spawnSync(older, ['/S'], { stdio: 'inherit' }).status === 0, `installed ${OLD}`);
@@ -211,10 +220,47 @@ async function main() {
   }
 }
 
-try {
-  await main();
+/** Runs the update test on two installers, then uninstalls what it installed. */
+async function test(/** @type {string} */ older, /** @type {string} */ newer) {
+  await verify(older, newer);
   await sleep(3000);
   spawnSync(path.join(installDir, 'uninstall.exe'), ['/S'], { stdio: 'inherit' });
+}
+
+async function main() {
+  const { values } = parseArgs({
+    options: {
+      'make-key': { type: 'string' },
+      build: { type: 'string' },
+      key: { type: 'string' },
+      out: { type: 'string' },
+      test: { type: 'string' },
+    },
+  });
+  const versions = new Map([
+    ['old', OLD],
+    ['new', NEW],
+  ]);
+  if (values['make-key']) {
+    makeKey(values['make-key']);
+  } else if (values.build) {
+    const version = versions.get(values.build);
+    if (!version || !values.key || !values.out) {
+      throw new Error('Usage: --build old|new --key <key dir> --out <installer dir>');
+    }
+    build(version, readKey(values.key), values.out);
+  } else if (values.test) {
+    await test(path.join(values.test, `${OLD}.exe`), path.join(values.test, `${NEW}.exe`));
+  } else {
+    const work = mkdtempSync(path.join(tmpdir(), 'ttsnative-update-'));
+    makeKey(work);
+    const key = readKey(work);
+    await test(build(OLD, key, work), build(NEW, key, work));
+  }
+}
+
+try {
+  await main();
 } catch (error) {
   console.error(error instanceof Error ? error.message : error);
   process.exit(1);

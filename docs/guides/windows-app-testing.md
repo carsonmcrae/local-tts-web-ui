@@ -20,7 +20,7 @@ release, and the latest results. Design: [desktop-and-releases.md](../architectu
 | Release only: the update signature matches the key in the app, then the same smoke test on the signed build                                                              | `release.yml`                          |
 | Release only: every GPL/LGPL source archive matches its pinned size and SHA-256; the release refuses to publish without it                                               | `release.yml`                          |
 | The source manifest covers the versions of espeakng-loader, phonemizer, soundfile and lxml in `uv.lock`                                                                  | `npm run test:scripts`                 |
-| UI: update notice, install progress and failures, remind later, automatic checks, release history, What's new (mocked app)                                               | `apps/web/src/features/updates`        |
+| UI: update notice, install progress and failures, remind later, automatic checks, release history one version at a time (Older / Newer, marks), What's new (mocked app)  | `apps/web/src/features/updates`        |
 | Version, change-file and release-notes rules; concurrent branches never collide                                                                                          | `npm run test:scripts`                 |
 
 ## What the automated checks prove, and what still needs a person
@@ -50,18 +50,23 @@ candidate's Desktop workflow artifact, in this order:
 4. **Voice cloning (optional):** Settings → Engines → install voice cloning (several GB); wait for Ready.
 5. **Studio Voice:** record a short guided session (or import a recording), create the voice, read a
    paragraph with it, change its delivery, and (with an NVIDIA card) try Fine-tune → compare → Keep.
-6. **Close:** close the window; in Task Manager neither TTSNative nor ttsnative-backend remains, and no
+6. **Settings → About:** the version (also at the bottom of the sidebar, which leads here); Release
+   history one version at a time: the list of versions with the installed one marked, Older and Newer,
+   each version's date and notes; What's new; Check for updates; Open data/log folder; Third-party
+   notices opens the notices file. Then turn the network off: reading still works and Check for updates
+   explains that it couldn't connect.
+7. **Close:** close the window; in Task Manager neither TTSNative nor ttsnative-backend remains, and no
    msedgewebview2 process belongs to TTSNative after a few seconds. Repeat three times.
-7. **Reopen and persistence:** everything from steps 3–5 is still there: documents and their positions,
+8. **Reopen and persistence:** everything from steps 3–5 is still there: documents and their positions,
    bookmarks, the custom voice, preferences, exports. Also end the app from Task Manager once (a crash)
    and check again.
-8. **Uninstall, keep data:** Installed Apps → Uninstall, leave the delete box unticked; the app and
+9. **Uninstall, keep data:** Installed Apps → Uninstall, leave the delete box unticked; the app and
    shortcuts go, `%LOCALAPPDATA%\com.ttsnative.desktop` stays. Reinstall: everything is back.
-9. **Uninstall, delete data:** uninstall with **Delete the application data** ticked; confirm the second
-   question; `%LOCALAPPDATA%\com.ttsnative.desktop` is gone.
-10. **Update:** once a newer release exists, install the older one, open it, and accept the update
-    notice: the new version opens with the data kept and What's new shown once. Until then, step 10 is
-    covered by the automated update test with a throwaway key.
+10. **Uninstall, delete data:** uninstall with **Delete the application data** ticked; confirm the
+    second question; `%LOCALAPPDATA%\com.ttsnative.desktop` is gone.
+11. **Update:** once a newer release exists, install the older one, open it, and accept the update
+    notice: the new version opens with the data kept and What's new shown once. Until then, this step
+    is covered by the automated update test with a throwaway key.
 
 ## Latest results
 

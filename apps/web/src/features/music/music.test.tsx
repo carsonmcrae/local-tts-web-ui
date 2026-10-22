@@ -13,7 +13,7 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PlayerBar } from '@/features/player/PlayerBar';
 import ReaderPage from '@/features/reader/ReaderPage';
-import { FakeAudioContext } from '@/test/audio';
+import { openMixer, stubAudioContexts } from '@/test/audio';
 import { documentDetail, json, mockReaderApi, renderWithApp } from '@/test/render';
 import type * as LibraryModule from './library';
 import type { MusicTrack } from './library';
@@ -36,7 +36,7 @@ const track = (id: string, title: string, category: MusicTrack['category']): Mus
   attribution: null,
 });
 
-let contexts: FakeAudioContext[] = [];
+const contexts = stubAudioContexts();
 
 beforeEach(() => {
   tracks.splice(
@@ -46,20 +46,9 @@ beforeEach(() => {
     track('forest', 'Forest Rain', 'nature'),
     track('study', 'Quiet Study', 'focus'),
   );
-  contexts = [];
-  vi.stubGlobal(
-    'AudioContext',
-    class extends FakeAudioContext {
-      constructor() {
-        super();
-        contexts.push(this);
-      }
-    },
-  );
 });
 
 afterEach(() => {
-  vi.unstubAllGlobals();
   localStorage.clear();
 });
 
@@ -88,15 +77,11 @@ async function openReader() {
   });
   const player = await screen.findByRole('region', { name: 'Audio player' });
   const press = (name: string) => user.click(within(player).getByRole('button', { name }));
-  const openMusic = async () => {
-    const [button] = within(player).getAllByRole('button', { name: /^Audio mixer/ });
-    await user.click(button as HTMLElement);
-    return screen.findByRole('dialog', { name: 'Audio mixer' });
-  };
+  const openMusic = () => openMixer(user, player);
   /** Opens the music panel and flips the switch; returns the panel. */
   const toggleMusic = async () => {
     const panel = await openMusic();
-    await user.click(within(panel).getByRole('switch'));
+    await user.click(within(panel).getByRole('switch', { name: 'Background music' }));
     return panel;
   };
   const openLibrary = async () => {
@@ -191,7 +176,7 @@ describe('Background music in the audio mixer', () => {
     await user.keyboard('{Escape}');
     await waitForPlaying(0);
     const panel = await openMusic();
-    expect(within(panel).getByRole('switch')).not.toBeChecked();
+    expect(within(panel).getByRole('switch', { name: 'Background music' })).not.toBeChecked();
     expect(within(panel).getByText('Quiet Study')).toBeInTheDocument();
   });
 
@@ -203,7 +188,7 @@ describe('Background music in the audio mixer', () => {
     expect(await within(panel).findByRole('alert')).toHaveTextContent(
       'Couldn’t play “Harbour Lights”. The narration carries on.',
     );
-    expect(within(panel).getByRole('switch')).not.toBeChecked();
+    expect(within(panel).getByRole('switch', { name: 'Background music' })).not.toBeChecked();
     expect(within(player).getByRole('button', { name: 'Pause' })).toBeInTheDocument();
   });
 
@@ -244,7 +229,7 @@ describe('Background music in the audio mixer', () => {
     await first.toggleMusic();
     first.unmount();
     const panel = await (await openReader()).openMusic();
-    expect(within(panel).getByRole('switch')).not.toBeChecked();
+    expect(within(panel).getByRole('switch', { name: 'Background music' })).not.toBeChecked();
     expect(within(panel).getByText('Forest Rain')).toBeInTheDocument();
     expect(within(panel).getByRole('slider', { name: 'Music volume' })).toHaveAttribute(
       'aria-valuenow',
@@ -257,7 +242,7 @@ describe('Background music in the audio mixer', () => {
     music();
     const panel = await (await openReader()).openMusic();
     expect(within(panel).getByRole('slider', { name: 'Narration volume' })).toBeInTheDocument();
-    expect(within(panel).queryByRole('switch')).toBeNull();
+    expect(within(panel).queryByRole('switch', { name: 'Background music' })).toBeNull();
   });
 
   it('must be used inside the player', () => {

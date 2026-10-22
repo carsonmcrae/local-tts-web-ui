@@ -4,6 +4,7 @@
 *.webp binary
 *.gif binary
 *.wav binary
+*.mp3 binary
 *.pdf binary
 *.docx binary
 *.epub binary

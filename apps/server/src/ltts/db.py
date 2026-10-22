@@ -303,6 +303,39 @@ MIGRATIONS: tuple[str, ...] = (
         applied_at TEXT NOT NULL
     );
     """,
+    # 17: sound effects beside the narration (ADR-22): an arrangement per document and its analyses
+    """
+    CREATE TABLE IF NOT EXISTS sound_effects (
+        id TEXT PRIMARY KEY,
+        document_id TEXT NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+        segment_idx INTEGER NOT NULL,
+        position REAL NOT NULL,
+        offset_ms INTEGER NOT NULL DEFAULT 0,
+        until_idx INTEGER,
+        event TEXT NOT NULL,
+        sound_id TEXT NOT NULL,
+        volume INTEGER NOT NULL,
+        origin TEXT NOT NULL,
+        status TEXT NOT NULL,
+        enabled INTEGER NOT NULL DEFAULT 1,
+        confidence REAL,
+        text_hash TEXT NOT NULL,
+        detector TEXT,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS sound_effects_by_document ON sound_effects(document_id, segment_idx);
+    CREATE TABLE IF NOT EXISTS sound_analyses (
+        document_id TEXT NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+        section_idx INTEGER NOT NULL,
+        detector TEXT NOT NULL,
+        intensity TEXT NOT NULL,
+        sentences INTEGER NOT NULL,
+        suggested INTEGER NOT NULL,
+        analysed_at TEXT NOT NULL,
+        PRIMARY KEY (document_id, section_idx)
+    );
+    """,
 )
 
 

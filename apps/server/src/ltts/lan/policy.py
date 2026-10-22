@@ -5,8 +5,8 @@
 Scope: A device that isn't paired may only load the app itself and pair (or ask whether it is
 paired). A paired device may use only what is listed here (anything new stays on this computer until
 it is added): read, listen, control playback, change reading preferences and pronunciations, add and
-edit documents, organise the library (folders, collections, tags), style sentences, and start, pause,
-resume and download exports. Sensitive operations
+edit documents, organise the library (folders, collections, tags), style sentences, place sound
+effects, and start, pause, resume and download exports. Sensitive operations
 stay on this computer: LAN, speech API and integration settings, voices and their recordings,
 engines, this computer's jobs, the system, importing web pages, and anything that throws work away
 or uses this computer's accounts (deleting documents or exports, cancelling an export, sending one to
@@ -39,6 +39,7 @@ _ALLOWED: tuple[tuple[frozenset[str], str], ...] = (
     (_ANY, "/api/exports"),  # except what _ON_THE_COMPUTER keeps here
     (_ANY, "/api/preferences"),
     (_ANY, "/api/pronunciations"),
+    (_READ, "/api/sound-effects"),  # the bundled sound library (effects themselves live under documents)
 )
 _EXACT_READS = {"/api/voice-profiles", "/api/voice-profiles/blends", "/api/voice-profiles/consent"}
 # Sensitive operations under an allowed prefix, which a paired device must still do on the computer.

@@ -2,10 +2,10 @@
 // Copyright (c) 2026 Carson McRae
 /**
  * Purpose: Root component: providers and routes.
- * Scope: QueryClient defaults, toast and player providers, the route table (lazy-loaded pages; the
- *   LAN pairing page sits outside the app shell) and the not-found page. Applies the saved theme.
- *   Sends a phone or tablet that isn't paired (LAN mode) to /pair, remembering where it was. A page
- *   that fails shows PageError inside the shell.
+ * Scope: QueryClient defaults, toast, player and sound-effects providers, the route table
+ *   (lazy-loaded pages; the LAN pairing page sits outside the app shell) and the not-found page.
+ *   Applies the saved theme. Sends a phone or tablet that isn't paired (LAN mode) to /pair,
+ *   remembering where it was. A page that fails shows PageError inside the shell.
  * Does NOT belong: Page implementations.
  */
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -20,6 +20,7 @@ import { EmptyState, StatusRegion } from '@/components/ui/Feedback';
 import { Spinner } from '@/components/ui/Spinner';
 import { ToastProvider } from '@/components/ui/Toast';
 import { PlayerProvider } from '@/features/player/PlayerProvider';
+import { SfxProvider } from '@/features/sfx/SfxProvider';
 import { useTheme } from '@/lib/theme';
 import { AppShell } from './AppShell';
 import { PageError } from './PageError';
@@ -180,7 +181,9 @@ function Providers({ client, children }: Readonly<{ client: QueryClient; childre
   return (
     <QueryClientProvider client={client}>
       <ToastProvider>
-        <PlayerProvider>{children}</PlayerProvider>
+        <PlayerProvider>
+          <SfxProvider>{children}</SfxProvider>
+        </PlayerProvider>
       </ToastProvider>
     </QueryClientProvider>
   );

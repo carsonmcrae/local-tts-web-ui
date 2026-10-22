@@ -3,8 +3,8 @@
 /**
  * Purpose: Presentational building blocks of the reading view.
  * Scope: `ReaderHeader` (back link, title, document facts, search, contents and play buttons),
- *   `SectionBody` (loads one section; loading/error/text states, bookmarked, styled and skipped
- *   sentences marked) and `SectionPager`.
+ *   `SectionBody` (loads one section; loading/error/text states, bookmarked, styled, skipped
+ *   sentences and sentences with a sound effect marked) and `SectionPager`.
  * Does NOT belong: Player coordination (ReaderPage) or sentence rendering (DocumentText).
  */
 import { ArrowLeft, ChevronLeft, ChevronRight, ListTree, Pause, Play, Search } from 'lucide-react';
@@ -104,6 +104,8 @@ interface BodyProps {
   bookmarked: ReadonlySet<number>;
   styled: ReadonlyMap<number, string>;
   skipped: ReadonlySet<number>;
+  /** Descriptions of the sentences that carry a sound effect, by segment index. */
+  effects?: ReadonlyMap<number, string> | undefined;
   autoScroll: boolean;
   onSelect: (index: number) => void;
 }
@@ -115,6 +117,7 @@ export function SectionBody({
   bookmarked,
   styled,
   skipped,
+  effects,
   autoScroll,
   onSelect,
 }: Readonly<BodyProps>) {
@@ -142,6 +145,7 @@ export function SectionBody({
       bookmarked={bookmarked}
       styled={styled}
       skipped={skipped}
+      effects={effects}
       autoScroll={autoScroll}
       onSelect={onSelect}
     />

@@ -16,11 +16,12 @@ import {
   useState,
   useSyncExternalStore,
 } from 'react';
-import type { ContextLike } from './engine';
+import type { ContextLike } from '@/lib/audio/webAudio';
 import { MusicEngine } from './engine';
 import { TRACKS, trackUrl } from './library';
 import { readMusicChoice, saveMusicChoice } from './preferences';
-import type { MusicState, PlayerSource } from './session';
+import type { PlayerSource } from '@/features/player/follow';
+import type { MusicState } from './session';
 import { MusicSession } from './session';
 
 interface MusicContextValue {

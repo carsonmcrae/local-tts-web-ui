@@ -31,12 +31,12 @@ All new tables are additive and deleted with their document by foreign key. Migr
 positional (`PRAGMA user_version` counts entries), so a database that ran one branch's entry 14 would
 skip the other's once the lists are merged. Numbers are therefore agreed before a branch merges:
 
-| Numbers | Owner                                         | State on 2026-10-21                                                          |
-| ------- | --------------------------------------------- | ---------------------------------------------------------------------------- |
-| 1–13    | `main`                                        | shipped (1 in v2.0.0; 2–13 on main through PRs #37 and #38)                  |
-| 14–16   | `feat/literary-library` (this document)       | this pull request                                                            |
-| 17      | `feat/sound-effects` (ADR-22)                 | agreed with that workstream; renumbered from 14 when it merges after this PR |
-| none    | `feat/background-music`, `feat/voice-library` | no migrations                                                                |
+| Numbers | Owner                                         | State on 2026-10-21                                                                       |
+| ------- | --------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| 1–13    | `main`                                        | shipped (1 in v2.0.0; 2–13 on main through PRs #37 and #38)                               |
+| 14–16   | `feat/literary-library` (this document)       | this pull request                                                                         |
+| 17      | `feat/sound-effects` (ADR-22)                 | landed as 17 (feat/sound-effects rebased onto this PR); its presets import the vocabulary |
+| none    | `feat/background-music`, `feat/voice-library` | no migrations                                                                             |
 
 `apps/server/tests/test_db_migrations.py` pins the registry length, the tables each of 14–16 creates,
 and upgrades from databases at versions 1, 5 and 13 with their rows intact; the next owner updates the

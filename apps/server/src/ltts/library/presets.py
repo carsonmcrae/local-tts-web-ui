@@ -19,7 +19,7 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from importlib import resources
 from importlib.resources.abc import Traversable
 from typing import Any, Literal
@@ -31,6 +31,7 @@ from ltts.db import Database
 from ltts.documents.casting import NAME_LIMIT, CastingStore, CharacterAssignment
 from ltts.documents.styling import VOICE_ID_PATTERN, StylingStore
 from ltts.errors import ConflictError, NotFoundError
+from ltts.sfx.events import CATEGORY_OF
 
 log = logging.getLogger("ltts.library")
 SCHEMA = "ttsnative.immersive-preset/1"
@@ -43,19 +44,10 @@ COMPONENTS: tuple[Component, ...] = ("narrator", "characters", "speakers", "effe
 # Components whose players live on other branches: validated and reported, never applied here.
 NOT_YET: frozenset[str] = frozenset({"effects", "music"})
 _PACKAGE = "ltts.library"
-# The shared vocabularies, frozen on 2026-10-21 with the sound-effects and background-music workstreams
-# (docs/architecture/literary-library.md 5.1 and 5.3). A preset may only name these.
-KNOWN_EVENTS: dict[str, str] = {
-    "rain-light": "weather", "rain-heavy": "weather", "thunder-distant": "weather", "thunder-close": "weather",
-    "wind-gust": "weather", "wind-howl": "weather", "stream": "nature", "waves": "nature", "fire-crackle": "nature",
-    "crickets": "nature", "birdsong": "nature", "owl": "animals", "wolf-howl": "animals", "dog-bark": "animals",
-    "horse-hooves": "animals", "door-creak": "doors", "door-close": "doors", "door-slam": "doors",
-    "door-knock": "doors", "footsteps-wood": "footsteps", "footsteps-stone": "footsteps",
-    "footsteps-gravel": "footsteps", "footsteps-run": "footsteps", "clock-tick": "household",
-    "clock-chime": "household", "bell-toll": "fantasy", "sword-clash": "fantasy", "glass-break": "impacts",
-    "thud": "impacts", "gunshot": "impacts", "explosion": "impacts", "car-pass": "vehicles",
-    "train-pass": "vehicles", "crowd-murmur": "ambience", "city-distant": "ambience", "machine-hum": "mechanical",
-}  # fmt: skip
+# The event vocabulary is the sound-effects feature's own (``ltts.sfx.events``, versioned there); a preset
+# may only name an event that exists, in its category. The music tracks are frozen here (docs/architecture/
+# literary-library.md 5.3).
+KNOWN_EVENTS: Mapping[str, str] = CATEGORY_OF
 KNOWN_TRACKS: frozenset[str] = frozenset({
     "contemplation", "calm-ambient", "rising-moon", "warriors-lament", "waiting", "washed-up", "currents",
     "gymnopedie-1", "vaporware", "soft-rain", "brook",

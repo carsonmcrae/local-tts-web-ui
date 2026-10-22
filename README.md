@@ -60,6 +60,10 @@ TTSNative is free and open source (MIT). It was called **Local TTS** until versi
 - **Background music and an audio mixer** — eleven free tracks (ambient, fantasy, cinematic, lo-fi, focus and
   nature) play quietly under the narration when you turn them on, never by themselves; the narration and the
   music each have their own volume.
+- **Sound effects (optional, off by default)** — a Sounds tab suggests a few effects where a chapter
+  describes a sound, for you to preview, accept or dismiss, or add your own from a bundled library;
+  they play beside the narration with their own volume. Found with word rules on your computer, not a
+  language model.
 - **Pronunciation dictionary** — teach every voice how to say character names and unusual words; only the
   sentences that contain a changed word are regenerated.
 - **Starts instantly, even for whole books** — sentences are generated just ahead of you and cached, so

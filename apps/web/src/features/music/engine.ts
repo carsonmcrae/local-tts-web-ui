@@ -11,51 +11,8 @@
  * Does NOT belong: When music plays (session.ts), the narration (it never passes through here) or UI.
  */
 
-export interface ParamLike {
-  value: number;
-  setValueAtTime(value: number, time: number): unknown;
-  linearRampToValueAtTime(value: number, time: number): unknown;
-  cancelScheduledValues(time: number): unknown;
-}
-
-export interface NodeLike {
-  connect(destination: NodeLike): unknown;
-  disconnect(): void;
-}
-
-export interface GainLike extends NodeLike {
-  readonly gain: ParamLike;
-}
-
-export interface BufferLike {
-  readonly duration: number;
-  readonly length: number;
-  readonly sampleRate: number;
-  readonly numberOfChannels: number;
-  getChannelData(channel: number): Float32Array;
-}
-
-export interface SourceLike extends NodeLike {
-  buffer: BufferLike | null;
-  loop: boolean;
-  loopStart: number;
-  loopEnd: number;
-  start(when: number, offset: number): void;
-  stop(when: number): void;
-  addEventListener(type: 'ended', listener: () => void): void;
-}
-
-export interface ContextLike {
-  readonly currentTime: number;
-  readonly state: string;
-  readonly destination: NodeLike;
-  createGain(): GainLike;
-  createBufferSource(): SourceLike;
-  decodeAudioData(data: ArrayBuffer): Promise<BufferLike>;
-  resume(): Promise<void>;
-  suspend(): Promise<void>;
-  close(): Promise<void>;
-}
+import type { BufferLike, ContextLike, GainLike, SourceLike } from '@/lib/audio/webAudio';
+import { createMaster, loadOnce, loopBounds, ramp, setMasterVolume } from '@/lib/audio/webAudio';
 
 /** What should be heard: a track, and whether it carries on from where it was paused. */
 export interface MusicTarget {
@@ -92,32 +49,6 @@ const VOLUME_RAMP_SECONDS = 0.08;
 /** How quickly a track still fading out finishes when another fade begins. */
 const HURRY_SECONDS = 0.05;
 const IDLE_SUSPEND_MS = 5_000;
-/** Codec padding is at most a few tens of milliseconds; never trim more than this. */
-const EDGE_SCAN_SECONDS = 0.2;
-const SILENT = 1e-5; // -100 dBFS: quiet music is louder than this; decoder padding is not
-
-function ramp(param: ParamLike, now: number, to: number, seconds: number): void {
-  param.cancelScheduledValues(now);
-  param.setValueAtTime(param.value, now);
-  param.linearRampToValueAtTime(to, now + Math.max(seconds, 0.01));
-}
-
-/** Where the loop runs: the whole track minus digital silence that a decoder left at either edge. */
-export function loopBounds(buffer: BufferLike): { start: number; end: number } {
-  const channels = Array.from({ length: buffer.numberOfChannels }, (_, c) =>
-    buffer.getChannelData(c),
-  );
-  const audible = (at: number) => channels.some((data) => Math.abs(Number(data[at])) > SILENT);
-  const limit = Math.min(Math.floor(buffer.sampleRate * EDGE_SCAN_SECONDS), buffer.length >> 1);
-  let first = 0;
-  while (first < limit && !audible(first)) first += 1;
-  let last = buffer.length;
-  while (buffer.length - last < limit && !audible(last - 1)) last -= 1;
-  // A track that is silent throughout keeps its full length rather than an empty loop.
-  if (last <= first) return { start: 0, end: buffer.duration };
-  return { start: first / buffer.sampleRate, end: last / buffer.sampleRate };
-}
-
 export class MusicEngine {
   private context: ContextLike | null = null;
   private master: GainLike | null = null;
@@ -136,8 +67,7 @@ export class MusicEngine {
   /** Music volume as a gain from 0 to 1; applied with a short ramp so dragging never crackles. */
   setVolume(volume: number): void {
     this.volume = volume;
-    if (this.context && this.master)
-      ramp(this.master.gain, this.context.currentTime, volume, VOLUME_RAMP_SECONDS);
+    setMasterVolume(this.context, this.master, volume, VOLUME_RAMP_SECONDS);
   }
 
   /** Make `target` the only track heard (null: none), fading or crossfading over `fade` seconds. */
@@ -201,9 +131,7 @@ export class MusicEngine {
     if (this.context) return this.context;
     try {
       const context = this.deps.createContext();
-      const master = context.createGain();
-      master.gain.setValueAtTime(this.volume, context.currentTime);
-      master.connect(context.destination);
+      const master = createMaster(context, this.volume);
       this.context = context;
       this.master = master;
       return context;
@@ -214,19 +142,15 @@ export class MusicEngine {
   }
 
   private load(context: ContextLike, target: MusicTarget): Promise<BufferLike> {
-    let promise = this.loading.get(target.id);
-    if (!promise) {
-      promise = this.deps
-        .fetchTrack(target.url)
-        .then((data) => context.decodeAudioData(data))
-        .then((buffer) => {
-          if (this.context === context) this.keep(target.id, buffer);
-          return buffer;
-        })
-        .finally(() => this.loading.delete(target.id));
-      this.loading.set(target.id, promise);
-    }
-    return promise;
+    return loadOnce(
+      this.loading,
+      target.id,
+      () => this.deps.fetchTrack(target.url),
+      context,
+      (buffer) => {
+        if (this.context === context) this.keep(target.id, buffer);
+      },
+    );
   }
 
   /** Keep the most recently used decoded tracks only: a minute of stereo audio is about 23 MB. */

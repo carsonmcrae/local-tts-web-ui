@@ -3,8 +3,8 @@
 /**
  * Purpose: The audio mixer in the player: one button that opens every sound level in one place.
  * Scope: Narration volume (saved on this device; disabled with an explanation where the device sets
- *   it), the background-music channel (on/off for this narration, volume, track, library) and room
- *   for further channels such as sound effects. The button is highlighted while music is on.
+ *   it), the background-music channel (on/off for this narration, volume, track, library) and the
+ *   sound-effects channel (on/off, volume). The button says and shows what is on.
  * Does NOT belong: Applying levels (PlaybackController.setVolume, the music session) or the library
  *   dialog's contents (MusicLibrary).
  */
@@ -16,15 +16,28 @@ import { MusicChannel } from '@/features/music/MusicChannel';
 import { MusicLibrary } from '@/features/music/MusicLibrary';
 import { useMusic } from '@/features/music/MusicProvider';
 import { usePlayer } from '@/features/player/PlayerProvider';
+import { SfxChannel } from '@/features/sfx/SfxChannel';
+import { useSfx } from '@/features/sfx/SfxProvider';
 import { cn } from '@/lib/cn';
 import { narrationVolumeAdjustable, saveNarrationVolume } from './narration';
 import { VolumeControl } from './VolumeControl';
 
 const DEVICE_SETS_LEVEL = 'This device sets the narration level with its own volume buttons.';
 
+/** The button's name says what is on, so a screen reader hears it without opening the mixer. */
+function mixerLabel(musicTitle: string | undefined, effectsOn: boolean): string {
+  const on = [
+    musicTitle ? `Background music on: ${musicTitle}` : '',
+    effectsOn ? 'Sound effects on' : '',
+  ];
+  const named = on.filter(Boolean);
+  return named.length ? `Audio mixer. ${named.join('. ')}` : 'Audio mixer';
+}
+
 export function MixerMenu() {
   const { controller, state: player } = usePlayer();
   const music = useMusic().state;
+  const effects = useSfx().state;
   const [open, setOpen] = useState(false);
   const [libraryOpen, setLibraryOpen] = useState(false);
   const [adjustable] = useState(narrationVolumeAdjustable);
@@ -40,13 +53,11 @@ export function MixerMenu() {
         trigger={
           <button
             type="button"
-            aria-label={
-              playing ? `Audio mixer. Background music on: ${playing.title}` : 'Audio mixer'
-            }
+            aria-label={mixerLabel(playing?.title, effects.enabled)}
             title="Audio mixer"
             className={cn(
               'flex h-9 items-center rounded-[var(--radius-md)] px-2 hover:bg-surface-2 hover:text-text',
-              playing ? 'text-accent-text' : 'text-muted',
+              playing || effects.enabled ? 'text-accent-text' : 'text-muted',
             )}
           >
             <SlidersHorizontal size={17} />
@@ -71,7 +82,7 @@ export function MixerMenu() {
               setLibraryOpen(true);
             }}
           />
-          {/* Further channels (sound effects) go here: a VolumeControl with its own switch, as above. */}
+          <SfxChannel />
         </div>
       </Popover>
       <MusicLibrary open={libraryOpen} onOpenChange={setLibraryOpen} />

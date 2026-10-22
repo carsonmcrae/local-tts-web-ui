@@ -38,6 +38,7 @@ from ltts.library.presets import PresetService, load_presets
 from ltts.modelstore.store import ModelStore
 from ltts.pronunciation.store import PronunciationStore
 from ltts.secrets import SecretStore
+from ltts.sfx.store import SoundEffectStore
 from ltts.speech_api.service import SpeechApi
 from ltts.speech_api.store import SpeechApiStore
 from ltts.synthesis.cache import AudioCache
@@ -90,6 +91,7 @@ class Services:
     presets: PresetService
     audiobookshelf: Audiobookshelf
     speech_api: SpeechApi
+    sfx: SoundEffectStore
 
 
 def build_services(
@@ -174,6 +176,7 @@ def build_services(
         ),
         audiobookshelf=Audiobookshelf(db, SecretStore(settings.path("secrets"))),
         speech_api=SpeechApi(settings, speech_store, synthesis, registry),
+        sfx=SoundEffectStore(db),
     )
 
 

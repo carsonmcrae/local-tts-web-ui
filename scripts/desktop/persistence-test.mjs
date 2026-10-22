@@ -117,6 +117,7 @@ async function snapshot(origin) {
       bookmarks: await api(`${origin}/api/documents/${doc.id}/bookmarks`),
       characters: await api(`${origin}/api/documents/${doc.id}/characters`),
       preset: doc.bundledWorkId ? await presetState(origin, doc.id) : null,
+      soundEffects: await api(`${origin}/api/documents/${doc.id}/sound-effects`),
     })),
   );
   const jobs = /** @type {{ id: string, kind: string, status: string }[]} */ (
@@ -184,6 +185,11 @@ async function main() {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ segmentIndex: 1, note: 'Remember this part.' }),
+  });
+  await api(`${origin}/api/documents/${pdf.id}/sound-effects`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ segmentIndex: 1, soundId: 'door-creak', position: 0, offsetMs: 0 }),
   });
   await api(`${origin}/api/pronunciations`, {
     method: 'POST',
@@ -256,7 +262,7 @@ async function main() {
     const after = await snapshot(origin);
     check(
       JSON.stringify(after) === JSON.stringify(before),
-      `after a ${how}: documents, reading positions, bookmarks and notes, pronunciations, preferences and exports are all still there`,
+      `after a ${how}: documents, reading positions, bookmarks and notes, sound effects, pronunciations, preferences and exports are all still there`,
     );
     const again = (await (await fetch(`${origin}/api/exports/${job.id}/download`)).arrayBuffer())
       .byteLength;

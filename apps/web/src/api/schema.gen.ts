@@ -458,6 +458,76 @@ export type paths = {
     patch?: never;
     trace?: never;
   };
+  '/api/documents/{document_id}/sound-effects': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List Effects */
+    get: operations['list_effects_api_documents__document_id__sound_effects_get'];
+    put?: never;
+    /** Add Effect */
+    post: operations['add_effect_api_documents__document_id__sound_effects_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/documents/{document_id}/sound-effects/{effect_id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /** Delete Effect */
+    delete: operations['delete_effect_api_documents__document_id__sound_effects__effect_id__delete'];
+    options?: never;
+    head?: never;
+    /** Update Effect */
+    patch: operations['update_effect_api_documents__document_id__sound_effects__effect_id__patch'];
+    trace?: never;
+  };
+  '/api/documents/{document_id}/sound-effects/analyse': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Analyse Section */
+    post: operations['analyse_section_api_documents__document_id__sound_effects_analyse_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/documents/{document_id}/sound-effects/review': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Review Effects */
+    post: operations['review_effects_api_documents__document_id__sound_effects_review_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/documents/{document_id}/styles': {
     parameters: {
       query?: never;
@@ -1288,6 +1358,23 @@ export type paths = {
     patch?: never;
     trace?: never;
   };
+  '/api/sound-effects/library': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get Library */
+    get: operations['get_library_api_sound_effects_library_get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/speech-api': {
     parameters: {
       query?: never;
@@ -1972,6 +2059,32 @@ export type components = {
       /** Url */
       url?: string | null;
     };
+    /** AnalysisIn */
+    AnalysisIn: {
+      /**
+       * Intensity
+       * @default balanced
+       * @enum {string}
+       */
+      intensity: 'minimal' | 'balanced' | 'immersive';
+      /** Sectionindex */
+      sectionIndex: number;
+    };
+    /** AnalysisOut */
+    AnalysisOut: {
+      /** Analyses */
+      analyses: components['schemas']['SectionAnalysis'][];
+      /** Effects */
+      effects: components['schemas']['EffectOut'][];
+      /** Sectionindex */
+      sectionIndex: number;
+      /** Sentences */
+      sentences: number;
+      /** Suggested */
+      suggested: number;
+      /** Truncated */
+      truncated: boolean;
+    };
     /** BlendIn */
     BlendIn: {
       /** Name */
@@ -2069,6 +2182,27 @@ export type components = {
       dialogueVoiceId?: string | null;
       /** Splitdialogue */
       splitDialogue?: boolean | null;
+    };
+    /** CategoryOut */
+    CategoryOut: {
+      /**
+       * Id
+       * @enum {string}
+       */
+      id:
+        | 'weather'
+        | 'nature'
+        | 'animals'
+        | 'doors'
+        | 'footsteps'
+        | 'household'
+        | 'fantasy'
+        | 'impacts'
+        | 'vehicles'
+        | 'ambience'
+        | 'mechanical';
+      /** Label */
+      label: string;
     };
     /** CharacterAssignment */
     CharacterAssignment: {
@@ -2279,6 +2413,13 @@ export type components = {
       /** Wordcount */
       wordCount: number;
     };
+    /** DocumentEffectsOut */
+    DocumentEffectsOut: {
+      /** Analyses */
+      analyses: components['schemas']['SectionAnalysis'][];
+      /** Effects */
+      effects: components['schemas']['EffectOut'][];
+    };
     /** DocumentStylesOut */
     DocumentStylesOut: {
       /** Dialoguevoiceid */
@@ -2336,6 +2477,85 @@ export type components = {
       title: string;
       /** Wordcount */
       wordCount: number;
+    };
+    /** EffectIn */
+    EffectIn: {
+      /**
+       * Offsetms
+       * @default 0
+       */
+      offsetMs: number;
+      /**
+       * Position
+       * @default 0
+       */
+      position: number;
+      /** Segmentindex */
+      segmentIndex: number;
+      /** Soundid */
+      soundId: string;
+      /** Untilsegment */
+      untilSegment?: number | null;
+      /** Volume */
+      volume?: number | null;
+    };
+    /** EffectOut */
+    EffectOut: {
+      /** Confidence */
+      confidence: number | null;
+      /** Createdat */
+      createdAt: string;
+      /** Enabled */
+      enabled: boolean;
+      /** Event */
+      event: string;
+      /** Id */
+      id: string;
+      /** Offsetms */
+      offsetMs: number;
+      /**
+       * Origin
+       * @enum {string}
+       */
+      origin: 'suggested' | 'manual';
+      /** Position */
+      position: number;
+      /** Sectionindex */
+      sectionIndex: number;
+      /** Segmentindex */
+      segmentIndex: number;
+      /** Soundid */
+      soundId: string;
+      /** Stale */
+      stale: boolean;
+      /**
+       * Status
+       * @enum {string}
+       */
+      status: 'suggested' | 'accepted' | 'dismissed';
+      /** Text */
+      text: string;
+      /** Untilsegment */
+      untilSegment: number | null;
+      /** Updatedat */
+      updatedAt: string;
+      /** Volume */
+      volume: number;
+    };
+    /** EffectUpdate */
+    EffectUpdate: {
+      /** Enabled */
+      enabled?: boolean | null;
+      /** Offsetms */
+      offsetMs?: number | null;
+      /** Position */
+      position?: number | null;
+      /** Soundid */
+      soundId?: string | null;
+      /** Untilsegment */
+      untilSegment?: number | null;
+      /** Volume */
+      volume?: number | null;
     };
     /**
      * EngineControl
@@ -2402,6 +2622,31 @@ export type components = {
        * @default false
        */
       updateAvailable: boolean;
+    };
+    /** EventOut */
+    EventOut: {
+      /**
+       * Category
+       * @enum {string}
+       */
+      category:
+        | 'weather'
+        | 'nature'
+        | 'animals'
+        | 'doors'
+        | 'footsteps'
+        | 'household'
+        | 'fantasy'
+        | 'impacts'
+        | 'vehicles'
+        | 'ambience'
+        | 'mechanical';
+      /** Id */
+      id: string;
+      /** Label */
+      label: string;
+      /** Loop */
+      loop: boolean;
     };
     /**
      * ExportOut
@@ -2661,6 +2906,24 @@ export type components = {
        * @default false
        */
       trustedNetwork: boolean;
+    };
+    /** LibraryOut */
+    LibraryOut: {
+      /** Categories */
+      categories: components['schemas']['CategoryOut'][];
+      /** Events */
+      events: components['schemas']['EventOut'][];
+      /** Sounds */
+      sounds: components['schemas']['SoundOut'][];
+      /** Version */
+      version: number;
+    };
+    /** Licence */
+    Licence: {
+      /** Name */
+      name: string;
+      /** Url */
+      url: string;
     };
     /** NetworkAddress */
     NetworkAddress: {
@@ -3031,6 +3294,13 @@ export type components = {
       report: components['schemas']['QualityReport'];
       suggested: components['schemas']['Cleanup'] | null;
     };
+    /** ReviewIn */
+    ReviewIn: {
+      /** Accept */
+      accept?: string[];
+      /** Dismiss */
+      dismiss?: string[];
+    };
     /** SearchHit */
     SearchHit: {
       /** Sectionindex */
@@ -3048,6 +3318,21 @@ export type components = {
       query: string;
       /** Total */
       total: number;
+    };
+    /** SectionAnalysis */
+    SectionAnalysis: {
+      /** Analysedat */
+      analysedAt: string;
+      /** Detector */
+      detector: string;
+      /** Intensity */
+      intensity: string;
+      /** Sectionindex */
+      sectionIndex: number;
+      /** Sentences */
+      sentences: number;
+      /** Suggested */
+      suggested: number;
     };
     /** SectionContent */
     SectionContent: {
@@ -3315,6 +3600,52 @@ export type components = {
         | null;
       /** Tags */
       tags?: string[] | null;
+    };
+    /** SoundOut */
+    SoundOut: {
+      /** Attribution */
+      attribution?: string | null;
+      /** Bytes */
+      bytes: number;
+      /**
+       * Category
+       * @enum {string}
+       */
+      category:
+        | 'weather'
+        | 'nature'
+        | 'animals'
+        | 'doors'
+        | 'footsteps'
+        | 'household'
+        | 'fantasy'
+        | 'impacts'
+        | 'vehicles'
+        | 'ambience'
+        | 'mechanical';
+      /** Description */
+      description: string;
+      /** Durationseconds */
+      durationSeconds: number;
+      /** Events */
+      events: string[];
+      /** File */
+      file: string;
+      /** Gain */
+      gain: number;
+      /** Id */
+      id: string;
+      /** Keywords */
+      keywords: string[];
+      licence: components['schemas']['Licence'];
+      /** Loop */
+      loop: boolean;
+      /** Name */
+      name: string;
+      /** Sha256 */
+      sha256: string;
+      /** Source */
+      source: string;
     };
     /** SpeechApiActivity */
     SpeechApiActivity: {
@@ -4842,6 +5173,208 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['DocumentSummary'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  list_effects_api_documents__document_id__sound_effects_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        document_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DocumentEffectsOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  add_effect_api_documents__document_id__sound_effects_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        document_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['EffectIn'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['EffectOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  delete_effect_api_documents__document_id__sound_effects__effect_id__delete: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        document_id: string;
+        effect_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  update_effect_api_documents__document_id__sound_effects__effect_id__patch: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        document_id: string;
+        effect_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['EffectUpdate'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['EffectOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  analyse_section_api_documents__document_id__sound_effects_analyse_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        document_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['AnalysisIn'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['AnalysisOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  review_effects_api_documents__document_id__sound_effects_review_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        document_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ReviewIn'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DocumentEffectsOut'];
         };
       };
       /** @description Validation Error */
@@ -6525,6 +7058,26 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  get_library_api_sound_effects_library_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['LibraryOut'];
         };
       };
     };

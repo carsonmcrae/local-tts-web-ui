@@ -10,8 +10,10 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { FakeAudioContext, fakeBuffer } from '@/test/audio';
-import type { BufferLike, MusicTarget } from './engine';
-import { loopBounds, MusicEngine } from './engine';
+import type { BufferLike } from '@/lib/audio/webAudio';
+import { loopBounds } from '@/lib/audio/webAudio';
+import type { MusicTarget } from './engine';
+import { MusicEngine } from './engine';
 
 const A: MusicTarget = { id: 'a', url: '/music/a.webm', resume: true };
 const B: MusicTarget = { id: 'b', url: '/music/b.webm', resume: true };

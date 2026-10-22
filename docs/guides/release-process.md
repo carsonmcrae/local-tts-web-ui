@@ -98,8 +98,8 @@ instead (`release:prepare`).
 
 These need the repository owner; none of them is in the repository.
 
-1. **Updater signing key.** A key pair was generated for this project on the maintainer's computer
-   (`C:\Users\wcars\.ttsnative-release\updater.key`, one line of base64 as Tauri writes it, with its
+1. **Updater signing key.** A key pair was generated for this project on the maintainer's computer, in
+   a folder outside the repository (`updater.key`, one line of base64 as Tauri writes it, with its
    password in `updater.key.password`); its public key is already in
    `apps/desktop/src-tauri/tauri.conf.json`, and the key id in both matches. Do not regenerate or rotate
    it without a reason (step 3 says when). _If you'd rather create your own key_, run
@@ -126,10 +126,10 @@ These need the repository owner; none of them is in the repository.
      somewhere offline (an encrypted drive). GitHub's environment secret is write-only and is not a
      backup. Keep the password apart from the key.
    - Check a backup before trusting it, without the key ever appearing on screen or in a history file.
-     In a fresh PowerShell window, from the repository:
+     In a fresh PowerShell window, from the repository, with `$keys` set to the folder holding the key:
      ```powershell
-     $env:TAURI_SIGNING_PRIVATE_KEY = (Get-Content -Raw C:\Users\wcars\.ttsnative-release\updater.key).Trim()
-     $env:TAURI_SIGNING_PRIVATE_KEY_PASSWORD = (Get-Content -Raw C:\Users\wcars\.ttsnative-release\updater.key.password).Trim()
+     $env:TAURI_SIGNING_PRIVATE_KEY = (Get-Content -Raw "$keys\updater.key").Trim()
+     $env:TAURI_SIGNING_PRIVATE_KEY_PASSWORD = (Get-Content -Raw "$keys\updater.key.password").Trim()
      Set-Content -Path "$env:TEMP\sign-check.txt" -Value "sign check"
      npx tauri signer sign "$env:TEMP\sign-check.txt"
      node scripts/release/verify-update-signature.mjs "$env:TEMP\sign-check.txt"

@@ -13,9 +13,16 @@ import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
-import { addRelease } from './changelog.mjs';
+import { addRelease, amendRelease } from './changelog.mjs';
 import { releaseTags } from './git.mjs';
-import { draftNotes, formatDate, parseRelease, readReleases, renderRelease } from './releases.mjs';
+import {
+  amendNotes,
+  draftNotes,
+  formatDate,
+  parseRelease,
+  readReleases,
+  renderRelease,
+} from './releases.mjs';
 
 const GOOD = `---
 version: 2.1.0
@@ -194,5 +201,88 @@ test('without Unreleased notes the entry goes above the newest release', () => {
   });
   assert.ok(
     bare.endsWith('### Custom\n\n- x\n\n[1.0.0]: https://github.com/o/r/compare/v0.9.0...v1.0.0\n'),
+  );
+});
+
+const FINISHED = `---
+version: 2.1.0
+date: 2026-10-22
+---
+
+A summary.
+
+## New
+
+- Bookmarks.
+
+## Fixed
+
+- An old fix.
+`;
+
+test('late change files join the matching sections of finished notes', () => {
+  const amended = amendNotes(FINISHED, [
+    { title: 'Fixed', user: true, items: ['A later fix.'] },
+    { title: 'Improved', user: true, items: ['Faster.'] },
+    { title: 'Security & reliability', user: true, items: ['Safer.'] },
+    { title: 'Technical', user: false, items: ['Internal.'] },
+  ]);
+  assert.equal(
+    amended,
+    `---
+version: 2.1.0
+date: 2026-10-22
+---
+
+A summary.
+
+## New
+
+- Bookmarks.
+
+## Improved
+
+- Faster.
+
+## Fixed
+
+- An old fix.
+- A later fix.
+
+## Security & reliability
+
+- Safer.
+`,
+  );
+  const { release, problems } = parseRelease('docs/releases/2.1.0.md', amended);
+  assert.deepEqual(problems, []);
+  assert.ok(!release.draft);
+  assert.equal(amendNotes(FINISHED, []), FINISHED);
+  assert.equal(amendNotes(FINISHED.replaceAll('\n', '\r\n'), []), FINISHED);
+});
+
+test('an amendment adds late change files to the prepared CHANGELOG entry', () => {
+  const prepared = addRelease(CHANGELOG, {
+    version: '2.1.0',
+    previous: '2.0.0',
+    date: '2026-11-02',
+    repo: 'o/r',
+    sections: [{ changelog: 'Added', items: ['New thing.'] }],
+  });
+  const result = amendRelease(prepared, {
+    version: '2.1.0',
+    sections: [
+      { changelog: 'Technical', items: ['Tooling.'] },
+      { changelog: 'Fixed', items: ['A later fix.'] },
+    ],
+  });
+  assert.ok(
+    result.includes(
+      '## [2.1.0] - 2026-11-02\n\nSome prose.\n\n### Added\n\n- **Old feature.** Details.\n- New thing.\n\n### Fixed\n\n- Old fix.\n- A later fix.\n\n### Technical\n\n- Tooling.\n\n## [2.0.0] - 2026-10-19\n\n- First.\n\n[2.1.0]:',
+    ),
+  );
+  assert.throws(
+    () => amendRelease(CHANGELOG, { version: '2.1.0', sections: [] }),
+    /no "## \[2\.1\.0\]" entry/,
   );
 });

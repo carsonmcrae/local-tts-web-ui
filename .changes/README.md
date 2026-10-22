@@ -3,7 +3,9 @@
 Every pull request adds (or edits) one small Markdown file here that says **how it affects the next
 version** and **what to tell people**. CI fails without one. Nobody edits version numbers or
 `CHANGELOG.md` in a normal pull request: when a release is prepared, these files are combined into the
-next version, the user-facing release notes and the developer changelog, and then deleted.
+next version, the user-facing release notes and the developer changelog, and then deleted. A file that
+lands after the release was prepared but before its tag is folded into that release the same way
+(`npm run release:amend`).
 
 Start one with `npm run change -- <bump>` (it names the file after your branch), or copy this:
 

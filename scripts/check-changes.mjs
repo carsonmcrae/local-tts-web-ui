@@ -8,8 +8,9 @@
  *   change file, leaves the version and CHANGELOG.md alone, and edits published notes only with a new
  *   `revised` date; a release PR (one that changes the version) sets exactly the version its base's
  *   change files lead to, consumes all of them, adds that version's finished notes and dated
- *   CHANGELOG entry, and uses a version that was never tagged.
- *   Usage: `node scripts/check-changes.mjs [--base <commit>]`.
+ *   CHANGELOG entry, and uses a version that was never tagged; an amendment PR (same version, change
+ *   files consumed and none added: `npm run release:amend`) leaves none pending and that untagged
+ *   version's notes and entry in place. Usage: `node scripts/check-changes.mjs [--base <commit>]`.
  * Does NOT belong: Version consistency across files (check-version.mjs).
  */
 import { existsSync, readFileSync } from 'node:fs';
@@ -65,6 +66,14 @@ function checkOrdinaryPr(base, diff) {
       'CHANGELOG.md is written when a release is prepared; describe this change in a change file instead',
     );
   }
+  checkPublishedNotes(base, diff);
+}
+
+/**
+ * Notes published with a tag are corrected only with a new `revised` date, and never deleted.
+ * @param {string} base @param {{ status: string, file: string }[]} diff
+ */
+function checkPublishedNotes(base, diff) {
   const tags = new Set(releaseTags());
   for (const { status, file } of diff.filter((entry) =>
     entry.file.startsWith(`${RELEASES_DIR}/`),
@@ -96,17 +105,53 @@ function checkReleasePr(base, baseVersion, headVersion, headChanges) {
       `this release sets ${headVersion}, but the change files on its base lead to ${nextVersion(baseVersion, baseChanges)}; run npm run release:prepare on an up-to-date branch`,
     );
   }
-  if (headChanges.length)
-    problems.push(`a release must consume every change file (${headChanges.length} left)`);
   if (releaseTags().includes(headVersion))
     problems.push(`v${headVersion} was already released; versions are never reused`);
-  const notes = `${RELEASES_DIR}/${headVersion}.md`;
+  checkPrepared(headVersion, headChanges, 'a release');
+}
+
+/**
+ * What a prepared version needs before its tag: no change file left, its notes, and a dated
+ * CHANGELOG entry.
+ * @param {string} version @param {import('./lib/changes.mjs').Change[]} headChanges @param {string} what
+ */
+function checkPrepared(version, headChanges, what) {
+  if (headChanges.length)
+    problems.push(`${what} must consume every change file (${headChanges.length} left)`);
+  const notes = `${RELEASES_DIR}/${version}.md`;
   if (!existsSync(path.join(repoRoot, notes))) problems.push(`${notes} is missing`);
   const changelog = readFileSync(path.join(repoRoot, 'CHANGELOG.md'), 'utf8');
-  const escaped = headVersion.replaceAll('.', String.raw`\.`);
+  const escaped = version.replaceAll('.', String.raw`\.`);
   if (!new RegExp(String.raw`^## \[${escaped}\] - \d{4}-\d{2}-\d{2}$`, 'm').test(changelog)) {
-    problems.push(`CHANGELOG.md needs a dated "## [${headVersion}] - YYYY-MM-DD" entry`);
+    problems.push(`CHANGELOG.md needs a dated "## [${version}] - YYYY-MM-DD" entry`);
   }
+}
+
+/** @param {{ status: string, file: string }[]} diff */
+function isAmendment(diff) {
+  const changeFiles = diff.filter(({ file }) => isChangeFile(file));
+  return changeFiles.length > 0 && changeFiles.every(({ status }) => status === 'D');
+}
+
+/**
+ * Change files that landed after a release was prepared, folded into that version while it is untagged.
+ * @param {string} base @param {string} version @param {import('./lib/changes.mjs').Change[]} headChanges
+ * @param {{ status: string, file: string }[]} diff
+ */
+function checkAmendmentPr(base, version, headChanges, diff) {
+  if (releaseTags().includes(version)) {
+    problems.push(
+      `v${version} was already released; a change file is consumed by npm run release:prepare (next version) or release:amend (a prepared, untagged version), never deleted by hand`,
+    );
+  }
+  const folded = [`${RELEASES_DIR}/${version}.md`, 'CHANGELOG.md'];
+  if (!diff.some(({ file }) => folded.includes(file))) {
+    problems.push(
+      `an amendment adds the consumed change files to ${folded.join(' and ')} (npm run release:amend)`,
+    );
+  }
+  checkPrepared(version, headChanges, 'an amendment');
+  checkPublishedNotes(base, diff);
 }
 
 function main() {
@@ -117,9 +162,11 @@ function main() {
     const baseVersion = packageVersion(fileAt(base, 'package.json'));
     const headVersion = packageVersion(readFileSync(path.join(repoRoot, 'package.json'), 'utf8'));
     const order = compareVersions(headVersion, baseVersion);
+    const diff = changedFiles(base);
     if (order < 0) problems.push(`the version moves backwards (${baseVersion} → ${headVersion})`);
-    else if (order === 0) checkOrdinaryPr(base, changedFiles(base));
-    else checkReleasePr(base, baseVersion, headVersion, headChanges);
+    else if (order > 0) checkReleasePr(base, baseVersion, headVersion, headChanges);
+    else if (isAmendment(diff)) checkAmendmentPr(base, headVersion, headChanges, diff);
+    else checkOrdinaryPr(base, diff);
   }
   for (const problem of problems) console.error(`${color.red('✗')} ${problem}`);
   if (problems.length) process.exit(1);

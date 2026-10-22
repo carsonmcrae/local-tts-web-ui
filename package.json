@@ -30,6 +30,7 @@
     "change": "node scripts/release/new-change.mjs",
     "release:status": "node scripts/release/status.mjs",
     "release:prepare": "node scripts/release/prepare.mjs",
+    "release:amend": "node scripts/release/amend.mjs",
     "desktop:build": "node scripts/desktop/build.mjs",
     "desktop:runtime": "node scripts/desktop/build-runtime.mjs",
     "desktop:smoke-test": "node scripts/desktop/smoke-test.mjs",

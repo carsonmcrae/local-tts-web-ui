@@ -143,6 +143,10 @@ All notable changes to this project are documented here. The format follows
 - Numbers in brackets, such as array[3] or [0, 1], are read as written; superscripts in equations are no longer taken for footnote markers.
 - Reading progress reaches 100 % at the last sentence that is read.
 - Library cards no longer push the page sideways on phones.
+- Importing a long studio recording, or a shared voice file larger than 25 MB, works again; before, the upload stopped with a general error.
+- A file or request over the size limit is answered with a clear "too large" message instead of a general error.
+- An audiobook whose title is a name Windows reserves for devices (such as NUL or CON) is exported under a usable file name.
+- A paired phone's name is shown with visible characters only.
 
 ### Security
 
@@ -167,6 +171,7 @@ All notable changes to this project are documented here. The format follows
 - Other programs' use of the voices is off by default, needs a token shown once and stored only as a hash, refuses web pages, and has limits on length, size, rate and time per request.
 - The switch the automated tests use to look inside the Windows app's window is no longer built into released versions, and a release can't be built with it.
 - Security update for the optional voice-cloning engine.
+- A request that reaches the computer's own address from another device is refused outright unless network mode is on; phones and tablets come in through LAN mode.
 
 ### Technical
 
@@ -214,6 +219,8 @@ All notable changes to this project are documented here. The format follows
 - Website: a "Background music" feature card, gated on `<!-- if:released-2.1.0 -->`, so it stays out of the published site until GitHub lists 2.1.0 as released and appears on release day by itself. Local builds show it.
 - Website: `<!-- if:released-X.Y.Z -->` blocks in `site/index.html` stay out of the published site until GitHub lists that version as a released version (`scripts/site/releases.mjs` `releasedFlags`), so a feature card can merge with its feature and appear on release day by itself. Local builds show them.
 - The voice library report (`docs/research/voice-library.md`) now matches what was merged in #45: the narrowed English reading rules, the benchmark method (cold and warm starts, recorded environment, privacy) with the second run's measurements, the blind listening packs, the misaki decision rule fixed before listening, and a link to the narrator programme proposal. It no longer describes clips as heard, or Kokoro's run-to-run differences as inaudible: nobody has listened yet. The benchmark's README says the same.
+- `SecurityMiddleware` applies per-route body caps (`ROUTE_BODY_CAPS`: voice-session import 600 MB, voice-profile import and preview 40 MB) above the general `max_upload_mb` and records a cut-off body in `scope["state"]` (`BODY_TOO_LARGE`), which the HTTP error handler answers with 413 `payload_too_large`; `_check_here` refuses non-loopback clients when `allow_network` is off; `safe_filename` suffixes Windows reserved device names; `plain_text` moves to `ltts.common` and is applied to paired device names.
+- `npm run release:amend` folds change files that landed after a release was prepared into that version while it has no tag: `amendNotes` (releases.mjs) and `amendRelease` (changelog.mjs) append their entries to the matching sections of `docs/releases/X.Y.Z.md` and the `[X.Y.Z]` CHANGELOG entry, the change files are deleted and the version stays. `check-changes.mjs` accepts such an amendment pull request (same version, change files consumed and none added, none left, notes and entry in place, version untagged).
 
 ## [2.0.0] - 2026-10-19
 

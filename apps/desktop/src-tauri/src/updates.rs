@@ -23,15 +23,21 @@ const REMIND_AFTER_S: u64 = 3 * 24 * 60 * 60;
 #[derive(Clone, Debug, Serialize)]
 #[serde(rename_all = "camelCase", tag = "status")]
 pub enum CheckResult {
-    Available { update: FoundUpdate },
-    Snoozed { update: FoundUpdate },
+    Available {
+        update: FoundUpdate,
+    },
+    Snoozed {
+        update: FoundUpdate,
+    },
     UpToDate,
     /// GitHub answered, but no release carries an update manifest yet (before the first release that
     /// ships one): not a connection problem, and nothing to remember.
     NoRelease,
     Disabled,
     NotDue,
-    Failed { message: String },
+    Failed {
+        message: String,
+    },
 }
 
 /// What the release address said.

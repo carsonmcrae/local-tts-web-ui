@@ -168,7 +168,8 @@ Three independent layers, each with its own switch and volume:
 ### Storage: a validated, versioned arrangement per document
 
 - Table `sound_effects`: id, document, sentence, position, offset, end sentence (ambience), event,
-  sound id, volume, origin (`suggested` or `manual`), status (`suggested`, `accepted`, `dismissed`),
+  sound id, volume, origin (`suggested`, `manual` or `preset`), status (`suggested`, `accepted`,
+  `dismissed`),
   enabled, confidence, a 16-character hash of the sentence's text, detector version and timestamps.
   Table `sound_analyses`: per document and section, when and how it was last analysed.
 - Rows are deleted with their document (foreign-key cascade) and the only document-derived data
@@ -177,6 +178,17 @@ Three independent layers, each with its own switch and volume:
 - Nothing is ever written into the document's file; the document's text is never changed.
 - Dismissed suggestions stay as rows so that reanalysis cannot bring them back; manual effects are
   never touched by analysis. Portable export and import of arrangements is not in this release.
+- **Reading experiences (addendum).** A reading experience from the literary library may place curated effects in a document's
+  arrangement: rows with origin `preset` and status `accepted` (choosing the experience is the
+  acceptance), no confidence, the sentence's hash as usual, and the experience's identity in the
+  detector column (`preset:<preset id>@<version>`). Applying an experience removes the document's
+  `preset` rows and places its rows again, so two versions never mix, and skips any sentence that
+  already carries an accepted effect; turning it off removes its rows and nothing else. A reader's
+  edit of a preset row makes it theirs (`manual`), so later applies and removals leave it; a
+  reader's removal deletes it, and applying the experience again brings its version back.
+  Reanalysis never touches preset rows and spaces its suggestions around them. Nothing an
+  experience does turns the Sound effects switch on. No migration: origin and status are text,
+  and the mark lives in an existing column.
 
 ### User controls
 

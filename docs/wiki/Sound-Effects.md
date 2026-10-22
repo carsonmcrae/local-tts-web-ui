@@ -49,6 +49,10 @@ with a delay, its own volume, and for ambience how many sentences it lasts), **r
 another sound, or **removed**. Sentences that carry an effect are tinted in the text, and clicking
 an effect's sentence in the panel jumps to it.
 
+Effects placed by a reading experience show as **From the reading experience**. Adjust one and it
+becomes yours; remove one and it stays gone until you apply the experience again; turning the
+experience off removes the rest. Effects stay off until you turn them on, as always.
+
 ## Timing
 
 Narration is read one sentence at a time, so an effect lands exactly at the start or end of its

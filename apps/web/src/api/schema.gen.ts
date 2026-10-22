@@ -2517,7 +2517,7 @@ export type components = {
        * Origin
        * @enum {string}
        */
-      origin: 'suggested' | 'manual';
+      origin: 'suggested' | 'manual' | 'preset';
       /** Position */
       position: number;
       /** Sectionindex */
@@ -3266,6 +3266,8 @@ export type components = {
       editionMatches: boolean;
       /** Effects */
       effects: number;
+      /** Effectsplaced */
+      effectsPlaced: number;
       music: components['schemas']['PresetMusicOut'] | null;
       narrator: components['schemas']['PresetVoiceOut'] | null;
       /** Presetid */

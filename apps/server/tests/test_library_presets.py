@@ -7,11 +7,11 @@ only sentences that exist in the shipped text, in the named chapter. Anchors res
 quote, by occurrence, and otherwise not at all. The schema refuses unknown sound events and music tracks,
 loops without an end, repeated names, speakers that aren't characters and unknown fields, and a bad file
 is left out of the load with a log line. Over the API: a document that isn't a bundled work has no preset;
-a report says which voices are here and which components can be applied; applying voices and speakers
-writes character voices and sentence annotations the planner then uses, music is only recorded as chosen
-(the track is each device's own player setting), effects are refused as not yet available, applying again
-replaces rather than mixes, and removing takes out only what was written. The known track ids are the web
-app's music library. A paired phone may do all of this (test_lan_security.py lists the routes).
+a report says which voices are here; applying writes character voices and sentence annotations the planner
+uses, sound effects as rows the preset owns in the Sounds panel (unresolved anchors and occupied sentences
+skipped, a reader's edit or removal respected, taken out with the preset) and music as a record only (the
+track is each device's own setting); applying again replaces rather than mixes; removing takes out only what
+was written. The known track ids are the web app's music library. A paired phone may do all of this.
 Does NOT belong: The catalog itself (test_library_catalog.py) or the planner's rules (test_sentence_styling.py).
 """
 
@@ -33,6 +33,8 @@ from ltts.documents.segmenter import segment_extraction
 from ltts.documents.structures import ExtractionLimits
 from ltts.errors import NotFoundError
 from ltts.library import catalog as catalog_module
+from ltts.library import preset_service as service_module
+from ltts.library import presets as presets_module
 from ltts.library.presets import KNOWN_TRACKS, Anchor, Preset, load_presets, make_anchor, resolve, sentence_hash
 
 LIMITS = ExtractionLimits(10_000_000, 10_000, 10_000, 200 * 1024 * 1024, 500)
@@ -175,7 +177,7 @@ def test_the_report_applies_and_removes_voices_and_speakers(
     report = client.get(f"/api/documents/{doc}/preset").json()
     assert report["presetId"] == f"{ALICE}-immersive" and report["workId"] == ALICE and report["appliedAt"] is None
     assert [c["name"] for c in report["components"]] == ["narrator", "characters", "speakers", "effects", "music"]
-    assert [c["available"] for c in report["components"]] == [True, True, True, False, True]
+    assert [c["available"] for c in report["components"]] == [True, True, True, True, True]
     assert report["narrator"] == {"preferred": "kokoro:af_heart", "chosen": None}  # that voice isn't installed here
     assert report["speakersResolved"] == 8 and report["speakersUnresolved"] == 0 and report["effects"] == 5
     assert report["music"] == {
@@ -189,10 +191,8 @@ def test_the_report_applies_and_removes_voices_and_speakers(
     applied = client.post(f"/api/documents/{doc}/preset/apply", json={"components": ["characters"]}).json()
     assert applied["appliedAt"] and applied["appliedVersion"] == 1
     assert all(c["voiceId"] is None for c in client.get(f"/api/documents/{doc}/characters").json())
-    # Effects can't be applied yet. Music is recorded as chosen, and nothing else: which track a device plays
-    # is the player's own setting there, so the server has nothing to write.
-    refused = client.post(f"/api/documents/{doc}/preset/apply", json={"components": ["characters", "effects"]})
-    assert refused.status_code == 409 and refused.json()["error"]["code"] == "component_unavailable"
+    # Music is recorded as chosen, and nothing else: which track a device plays is the player's own setting
+    # there, so the server has nothing to write.
     with_music = client.post(f"/api/documents/{doc}/preset/apply", json={"components": ["music", "characters"]}).json()
     assert [c["applied"] for c in with_music["components"]] == [False, True, False, False, True]
     assert services.presets._record(doc) is not None
@@ -292,3 +292,82 @@ def test_organising_and_presets_never_touch_the_shipped_books(client: TestClient
     version, works = catalog_module.load_catalog()  # every shipped file still matches its recorded hash
     assert version >= 1 and len(works) == 25
     assert not list((services.settings.resolved_data_dir / "tmp").glob("*.upload"))  # and no copy was left behind
+
+
+def test_effects_become_rows_the_experience_owns_in_the_sounds_panel(client: TestClient, services: Services) -> None:
+    doc = client.post(f"/api/library/works/{ALICE}/open").json()["id"]
+    sounds = f"/api/documents/{doc}/sound-effects"
+    report = client.post(f"/api/documents/{doc}/preset/apply", json={"components": ["effects"]}).json()
+    # The crowd is an experimental sound: left to the reader's own hand, so four of the five are placed.
+    assert report["effects"] == 5 and report["effectsPlaced"] == 4
+    rows = client.get(sounds).json()["effects"]
+    assert len(rows) == 4 and "crowd-murmur" not in {r["event"] for r in rows}
+    assert {(r["origin"], r["status"], r["enabled"], r["stale"]) for r in rows} == {("preset", "accepted", True, False)}
+    by_event = {r["event"]: r for r in rows}
+    # Volumes are percents of each sound's own level: wind-gust (0.6) at 70 % stores 42, the clock (0.35) at 40 % 14.
+    assert by_event["wind-gust"]["volume"] == 42 and by_event["door-creak"]["volume"] == 39
+    assert by_event["clock-tick"]["volume"] == 14
+    # An ambience given as a duration lasts about four seconds a sentence: 20 s is 5 sentences.
+    clock = by_event["clock-tick"]
+    assert clock["untilSegment"] == clock["segmentIndex"] + 5
+    assert by_event["wind-gust"]["untilSegment"] is None
+    record = services.presets._record(doc)
+    assert record is not None and sorted(record[0]["effects"]["placed"]) == sorted(r["id"] for r in rows)
+    assert record[0]["effects"]["skipped"] == {
+        "occupied": 0,
+        "experimental": 1,
+        "invalid": 0,
+        "limit": 0,
+        "unresolved": 0,
+    }
+    # A reader's change makes a row theirs: applying again leaves it and finds its sentence occupied.
+    door = by_event["door-creak"]
+    assert client.patch(f"{sounds}/{door['id']}", json={"volume": 80}).json()["origin"] == "manual"
+    again = client.post(f"/api/documents/{doc}/preset/apply", json={"components": ["effects"]}).json()
+    assert again["effectsPlaced"] == 3
+    rows = client.get(sounds).json()["effects"]
+    assert len(rows) == 4 and next(r for r in rows if r["id"] == door["id"])["volume"] == 80
+    assert services.presets._record(doc)[0]["effects"]["skipped"]["occupied"] == 1  # type: ignore[index]
+    # Removing a row is a removal; only applying again brings the experience's version back.
+    clock = next(r for r in rows if r["event"] == "clock-tick")
+    assert client.delete(f"{sounds}/{clock['id']}").status_code == 204
+    assert len(client.get(sounds).json()["effects"]) == 3
+    restored = client.post(f"/api/documents/{doc}/preset/apply", json={"components": ["effects"]}).json()
+    assert restored["effectsPlaced"] == 3
+    assert any(r["event"] == "clock-tick" for r in client.get(sounds).json()["effects"])
+    # Standard takes out the experience's rows and leaves the reader's.
+    assert client.delete(f"/api/documents/{doc}/preset").status_code == 204
+    assert [(r["id"], r["origin"]) for r in client.get(sounds).json()["effects"]] == [(door["id"], "manual")]
+    assert client.get(f"/api/documents/{doc}/preset").json()["effectsPlaced"] == 0
+    # An anchor that isn't in this text is skipped and counted, never guessed.
+    lost = {"id": "lost", "anchor": ANCHOR, "event": "thud", "category": "impacts", "intent": "x"}
+    elsewhere = Preset.model_validate({**PRESETS[ALICE].model_dump(by_alias=True), "effects": [lost]})
+    assert services.presets.apply(doc, elsewhere, ["effects"]).effects_placed == 0
+    skipped = {"occupied": 0, "experimental": 0, "invalid": 0, "limit": 0, "unresolved": 1}
+    assert services.presets._record(doc)[0]["effects"] == {"placed": [], "skipped": skipped}  # type: ignore[index]
+
+
+def test_an_ambience_lasts_to_its_end_anchor_or_its_duration_and_volumes_follow_the_sound() -> None:
+    sentences = [(i, f"Sentence {i}.") for i in range(100)]
+
+    def anchor(index: int) -> dict[str, Any]:
+        return {"chapter": "c", "hash": sentence_hash(f"Sentence {index}."), "quote": f"Sentence {index}."}
+
+    def effect(**fields: Any) -> presets_module.EffectAnnotation:
+        data = {"id": "e", "anchor": anchor(10), "event": "rain-light", "category": "weather", "intent": "x", **fields}
+        return presets_module.EffectAnnotation.model_validate(data)
+
+    until = service_module._until
+    assert until(effect(event="thud", category="impacts"), 10, sentences, True, 99) is None  # a one-shot
+    assert until(effect(loop=True, end_anchor=anchor(14)), 10, sentences, True, 99) == 14
+    # An end before the start, or one that isn't in this text: the duration counts; without one, no end (the store
+    # refuses a loop without an end).
+    assert until(effect(loop=True, end_anchor=anchor(3), duration_s=20), 10, sentences, True, 99) == 15
+    assert until(effect(loop=True, end_anchor=ANCHOR), 10, sentences, True, 99) is None
+    assert until(effect(loop=True, duration_s=2), 10, sentences, True, 99) == 11
+    assert until(effect(loop=True, duration_s=240), 10, sentences, True, 99) == 70  # the store's longest span
+    assert until(effect(loop=True, duration_s=240), 10, sentences, True, 30) == 30  # or the document's end
+    volume = service_module._effect_volume
+    assert volume(effect(event="wind-gust", category="weather", volume=70)) == 42  # wind-gust's own level is 0.6
+    assert volume(effect(event="thud", category="impacts", sound_id="thud", volume=150)) == 105
+    assert volume(effect(event="thud", category="impacts", sound_id="nope", volume=140)) == 140  # the store refuses it

@@ -21,7 +21,7 @@ from fastapi.responses import PlainTextResponse
 from ltts.container import ServicesDep
 from ltts.documents.schemas import DocumentDetail
 from ltts.library.catalog import WORK_ID_PATTERN, HiddenUpdate, WorkOut
-from ltts.library.presets import PresetApplyRequest, ReadingPresetOut
+from ltts.library.preset_service import PresetApplyRequest, ReadingPresetOut
 
 router = APIRouter(prefix="/api/library/works", tags=["library"])
 presets_router = APIRouter(prefix="/api/documents", tags=["library"])

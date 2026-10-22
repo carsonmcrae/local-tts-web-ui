@@ -465,6 +465,17 @@ when a choice changes the stack, a trust boundary, data storage or the setup exp
 - **Consequences:** Exports carry no effects yet (as with music). Placement inside long sentences is
   approximate. A false positive is treated as worse than a missed effect, so the default intensity
   suggests few effects and the review list is the normal path, with **Accept all** kept secondary.
+- **Addendum (reading experiences, 2026-10-22):** A reading experience from the literary library may place curated effects in a document's
+  arrangement: rows with origin `preset` and status `accepted` (choosing the experience is the
+  acceptance), no confidence, the sentence's hash as usual, and the experience's identity in the
+  detector column (`preset:<preset id>@<version>`). Applying an experience removes the document's
+  `preset` rows and places its rows again, so two versions never mix, and skips any sentence that
+  already carries an accepted effect; turning it off removes its rows and nothing else. A reader's
+  edit of a preset row makes it theirs (`manual`), so later applies and removals leave it; a
+  reader's removal deletes it, and applying the experience again brings its version back.
+  Reanalysis never touches preset rows and spaces its suggestions around them. Nothing an
+  experience does turns the Sound effects switch on. No migration: origin and status are text,
+  and the mark lives in an existing column.
 
 ## ADR-24: Documents are organised by folders, collections, genres, types and tags, kept apart from the documents
 

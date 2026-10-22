@@ -216,15 +216,18 @@ async function main() {
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ add: [pdf.id, docx.id] }),
   });
-  // An included book, opened from the catalog without any network, its preset applied, and the
-  // person's own choice of voice for one character over the preset's; another book hidden.
+  // An included book, opened from the catalog without any network, its whole reading experience
+  // applied (voices, speaker lines, sound effects placed in the Sounds panel, the music choice
+  // recorded), and the person's own choice of voice for one character over the preset's; another
+  // book hidden.
   const carol = await api(`${origin}/api/library/works/a-christmas-carol/open`, { method: 'POST' });
   check(carol.bundledWorkId === 'a-christmas-carol', 'an included book opened from the catalog');
-  await api(`${origin}/api/documents/${carol.id}/preset/apply`, {
+  const experience = await api(`${origin}/api/documents/${carol.id}/preset/apply`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ components: ['characters', 'speakers'] }),
+    body: JSON.stringify({ components: ['characters', 'speakers', 'effects', 'music'] }),
   });
+  check(experience.effectsPlaced > 0, 'the reading experience placed sound effects');
   await api(`${origin}/api/documents/${carol.id}/characters`, {
     method: 'PUT',
     headers: { 'content-type': 'application/json' },

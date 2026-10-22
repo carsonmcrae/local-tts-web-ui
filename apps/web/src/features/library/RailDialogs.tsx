@@ -7,7 +7,7 @@
  *   its documents up and never deletes them; deleting a collection leaves its documents alone.
  * Does NOT belong: The rail that opens them (LibraryRail.tsx) or document-level organising.
  */
-import type { KeyboardEvent } from 'react';
+import type { KeyboardEvent, ReactNode } from 'react';
 import { useState } from 'react';
 import { describeError } from '@/api/client';
 import {
@@ -61,6 +61,95 @@ export function folderPath(folders: readonly Folder[], folderId: string): string
   return names.join(' / ');
 }
 
+/** A text field of a naming dialog: Enter submits it. */
+function NameField({
+  label,
+  value,
+  maxLength,
+  onChange,
+  submit,
+}: Readonly<{
+  label: string;
+  value: string;
+  maxLength: number;
+  onChange: (value: string) => void;
+  submit: () => void;
+}>) {
+  return (
+    <Field label={label}>
+      {({ id }) => (
+        <Input
+          id={id}
+          value={value}
+          maxLength={maxLength}
+          onChange={(event) => onChange(event.target.value)}
+          onKeyDown={submitOnEnter(submit)}
+        />
+      )}
+    </Field>
+  );
+}
+
+interface NameForm {
+  name: string;
+  setName: (name: string) => void;
+  submit: () => void;
+  pending: boolean;
+  error: unknown;
+  onClose: () => void;
+}
+
+/** A small dialog that names something: the name field, the fields given, cancel and save. */
+function NameDialog({
+  title,
+  description,
+  saveLabel,
+  form,
+  children,
+}: Readonly<{
+  title: string;
+  description?: string;
+  saveLabel: string;
+  form: NameForm;
+  children?: ReactNode;
+}>) {
+  const { name, setName, submit, pending, error, onClose } = form;
+  return (
+    <Dialog
+      open
+      onOpenChange={onClose}
+      title={title}
+      {...(description ? { description } : {})}
+      size="sm"
+      footer={
+        <>
+          <Button onClick={onClose}>Cancel</Button>
+          <Button variant="primary" onClick={submit} loading={pending} disabled={!name.trim()}>
+            {saveLabel}
+          </Button>
+        </>
+      }
+    >
+      <div className="flex flex-col gap-4">
+        <NameField label="Name" value={name} maxLength={80} onChange={setName} submit={submit} />
+        {children}
+        {error ? <Banner tone="error">{describeError(error)}</Banner> : null}
+      </div>
+    </Dialog>
+  );
+}
+
+/** The name being typed, and whether the create-or-update pair is saving or failed. */
+function useNameForm(
+  initial: string,
+  create: { isPending: boolean; error: unknown },
+  update: { isPending: boolean; error: unknown },
+) {
+  const [name, setName] = useState(initial);
+  const pending = create.isPending || update.isPending;
+  return { name, setName, pending, error: create.error ?? update.error };
+}
+
 export function FolderDialog({
   folder,
   parentId,
@@ -74,10 +163,8 @@ export function FolderDialog({
 }>) {
   const create = useCreateFolder();
   const update = useUpdateFolder();
-  const [name, setName] = useState(folder?.name ?? '');
+  const { name, setName, pending, error } = useNameForm(folder?.name ?? '', create, update);
   const [parent, setParent] = useState(folder?.parentId ?? parentId ?? '');
-  const pending = create.isPending || update.isPending;
-  const error = create.error ?? update.error;
   const submit = () => {
     const trimmed = name.trim();
     if (!trimmed) return;
@@ -96,47 +183,24 @@ export function FolderDialog({
     }
   };
   return (
-    <Dialog
-      open
-      onOpenChange={onClose}
+    <NameDialog
       title={folder ? 'Rename or move folder' : 'New folder'}
-      size="sm"
-      footer={
-        <>
-          <Button onClick={onClose}>Cancel</Button>
-          <Button variant="primary" onClick={submit} loading={pending} disabled={!name.trim()}>
-            {folder ? 'Save' : 'Create folder'}
-          </Button>
-        </>
-      }
+      saveLabel={folder ? 'Save' : 'Create folder'}
+      form={{ name, setName, submit, pending, error, onClose }}
     >
-      <div className="flex flex-col gap-4">
-        <Field label="Name">
-          {({ id }) => (
-            <Input
-              id={id}
-              value={name}
-              maxLength={80}
-              onChange={(event) => setName(event.target.value)}
-              onKeyDown={submitOnEnter(submit)}
-            />
-          )}
-        </Field>
-        <Field label="Inside">
-          {({ id }) => (
-            <Select id={id} value={parent} onChange={(event) => setParent(event.target.value)}>
-              <option value="">Top level</option>
-              {possibleParents(folders, folder?.id ?? null).map((option) => (
-                <option key={option.id} value={option.id}>
-                  {folderPath(folders, option.id)}
-                </option>
-              ))}
-            </Select>
-          )}
-        </Field>
-        {error ? <Banner tone="error">{describeError(error)}</Banner> : null}
-      </div>
-    </Dialog>
+      <Field label="Inside">
+        {({ id }) => (
+          <Select id={id} value={parent} onChange={(event) => setParent(event.target.value)}>
+            <option value="">Top level</option>
+            {possibleParents(folders, folder?.id ?? null).map((option) => (
+              <option key={option.id} value={option.id}>
+                {folderPath(folders, option.id)}
+              </option>
+            ))}
+          </Select>
+        )}
+      </Field>
+    </NameDialog>
   );
 }
 
@@ -146,10 +210,8 @@ export function CollectionDialog({
 }: Readonly<{ collection: Collection | null; onClose: () => void }>) {
   const create = useCreateCollection();
   const update = useUpdateCollection();
-  const [name, setName] = useState(collection?.name ?? '');
+  const { name, setName, pending, error } = useNameForm(collection?.name ?? '', create, update);
   const [description, setDescription] = useState(collection?.description ?? '');
-  const pending = create.isPending || update.isPending;
-  const error = create.error ?? update.error;
   const submit = () => {
     const trimmed = name.trim();
     if (!trimmed) return;
@@ -158,47 +220,20 @@ export function CollectionDialog({
     else create.mutate(values, { onSuccess: onClose });
   };
   return (
-    <Dialog
-      open
-      onOpenChange={onClose}
+    <NameDialog
       title={collection ? 'Edit collection' : 'New collection'}
       description="A document can be in any number of collections without being copied."
-      size="sm"
-      footer={
-        <>
-          <Button onClick={onClose}>Cancel</Button>
-          <Button variant="primary" onClick={submit} loading={pending} disabled={!name.trim()}>
-            {collection ? 'Save' : 'Create collection'}
-          </Button>
-        </>
-      }
+      saveLabel={collection ? 'Save' : 'Create collection'}
+      form={{ name, setName, submit, pending, error, onClose }}
     >
-      <div className="flex flex-col gap-4">
-        <Field label="Name">
-          {({ id }) => (
-            <Input
-              id={id}
-              value={name}
-              maxLength={80}
-              onChange={(event) => setName(event.target.value)}
-              onKeyDown={submitOnEnter(submit)}
-            />
-          )}
-        </Field>
-        <Field label="Description (optional)">
-          {({ id }) => (
-            <Input
-              id={id}
-              value={description}
-              maxLength={500}
-              onChange={(event) => setDescription(event.target.value)}
-              onKeyDown={submitOnEnter(submit)}
-            />
-          )}
-        </Field>
-        {error ? <Banner tone="error">{describeError(error)}</Banner> : null}
-      </div>
-    </Dialog>
+      <NameField
+        label="Description (optional)"
+        value={description}
+        maxLength={500}
+        onChange={setDescription}
+        submit={submit}
+      />
+    </NameDialog>
   );
 }
 

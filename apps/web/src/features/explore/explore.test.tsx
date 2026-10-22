@@ -82,6 +82,10 @@ function renderExplore(routes: Record<string, unknown> = {}) {
   return { user: userEvent.setup(), ...api, ...view };
 }
 
+/** The card of the work with that title. */
+const cardOf = (title: string) =>
+  screen.getByText(title, { selector: 'h3' }).closest('li') as HTMLElement;
+
 describe('Explore', () => {
   it('groups the books with featured experiences first and describes each', async () => {
     renderExplore();
@@ -151,27 +155,20 @@ describe('Explore', () => {
       'PUT /api/library/works/': () => ({ ...work({}), hidden: true }),
     });
     await screen.findByRole('heading', { level: 2, name: 'Poetry' });
-    const poemsCard = screen
-      .getByText('The Raven and Other Poems', { selector: 'h3' })
-      .closest('li') as HTMLElement;
+    const poemsCard = cardOf('The Raven and Other Poems');
     await user.click(within(poemsCard).getByRole('button', { name: 'Continue' }));
     expect(router.state.location.pathname).toBe(`/read/${'d'.repeat(32)}`);
-    await router.navigate('/explore');
-    await screen.findByRole('heading', { level: 2, name: 'Poetry' });
-    const machine = screen
-      .getByText('The Time Machine', { selector: 'h3' })
-      .closest('li') as HTMLElement;
-    await user.click(within(machine).getByRole('button', { name: 'Read' }));
+    const backToExplore = async () => {
+      await router.navigate('/explore');
+      await screen.findByRole('heading', { level: 2, name: 'Poetry' });
+      return cardOf('The Time Machine');
+    };
+    await user.click(within(await backToExplore()).getByRole('button', { name: 'Read' }));
     await waitFor(() => expect(router.state.location.pathname).toBe(`/read/${'e'.repeat(32)}`));
     expect(calls.find((c) => c.method === 'POST')?.path).toBe(
       '/api/library/works/the-time-machine/open',
     );
-    await router.navigate('/explore');
-    await screen.findByRole('heading', { level: 2, name: 'Poetry' });
-    const again = screen
-      .getByText('The Time Machine', { selector: 'h3' })
-      .closest('li') as HTMLElement;
-    await user.click(within(again).getByRole('button', { name: 'Hide' }));
+    await user.click(within(await backToExplore()).getByRole('button', { name: 'Hide' }));
     await waitFor(() =>
       expect(calls.filter((c) => c.method === 'PUT').at(-1)?.body).toBe('{"hidden":true}'),
     );
@@ -183,9 +180,7 @@ describe('Explore', () => {
         json({ error: { code: 'document_limit', message: 'Your library is full.' } }, 409),
     });
     await screen.findByRole('heading', { level: 2, name: 'Poetry' });
-    const machine = screen
-      .getByText('The Time Machine', { selector: 'h3' })
-      .closest('li') as HTMLElement;
+    const machine = cardOf('The Time Machine');
     await user.click(within(machine).getByRole('button', { name: 'Read' }));
     expect(await within(machine).findByRole('alert')).toHaveTextContent('Your library is full.');
   });

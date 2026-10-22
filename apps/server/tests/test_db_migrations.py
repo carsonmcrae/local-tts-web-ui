@@ -114,12 +114,8 @@ def _rows(path: Path) -> dict[str, list[tuple[object, ...]]]:
 
 @pytest.mark.parametrize("version", [1, 5, 13])
 def test_a_database_people_already_have_upgrades_with_its_rows_intact(
-    version: int, tmp_path: Path, engines: dict[str, FakeEngine]
+    version: int, settings: Settings, engines: dict[str, FakeEngine]
 ) -> None:
-    settings = Settings(
-        env="test", data_dir=tmp_path / "data", models_dir=tmp_path / "models", warm_up_engines=False,
-        extra_allowed_hosts=["testserver"],
-    )  # fmt: skip
     settings.path()
     _at_version(settings.database_path, version)
     before = _rows(settings.database_path)

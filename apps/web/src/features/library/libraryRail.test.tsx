@@ -103,9 +103,12 @@ describe('Library rail', () => {
     expect(within(dialog).getByLabelText('Inside')).toHaveValue(F1);
     await user.click(within(dialog).getByRole('button', { name: 'Cancel' }));
 
-    await user.click(screen.getByRole('button', { name: 'Options for Fantasy' }));
-    await user.click(await screen.findByRole('button', { name: 'Rename or move…' }));
-    dialog = await screen.findByRole('dialog', { name: 'Rename or move folder' });
+    const renameFantasy = async () => {
+      await user.click(screen.getByRole('button', { name: 'Options for Fantasy' }));
+      await user.click(await screen.findByRole('button', { name: 'Rename or move…' }));
+      return screen.findByRole('dialog', { name: 'Rename or move folder' });
+    };
+    dialog = await renameFantasy();
     const inside = within(dialog).getByLabelText('Inside');
     expect(
       within(inside)
@@ -118,9 +121,7 @@ describe('Library rail', () => {
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
     expect(calls.find((c) => c.method === 'PATCH')?.body).toBe('{"name":"Myth"}');
 
-    await user.click(screen.getByRole('button', { name: 'Options for Fantasy' }));
-    await user.click(await screen.findByRole('button', { name: 'Rename or move…' }));
-    dialog = await screen.findByRole('dialog', { name: 'Rename or move folder' });
+    dialog = await renameFantasy();
     await user.selectOptions(within(dialog).getByLabelText('Inside'), '');
     await user.click(within(dialog).getByRole('button', { name: 'Save' }));
     await waitFor(() =>

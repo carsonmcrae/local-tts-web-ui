@@ -16,7 +16,7 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { repoRoot } from '../lib/paths.mjs';
-import { appPage, launchForDebugging, removeDebugOverride } from './webview-debugging.mjs';
+import { appPage, launchForDebugging } from './webview-debugging.mjs';
 
 const exe = path.join(process.env.LOCALAPPDATA ?? '', 'TTSNative', 'TTSNative.exe');
 const DEBUG_PORT = 9334;
@@ -201,6 +201,4 @@ try {
 } catch (error) {
   console.error(error instanceof Error ? error.message : error);
   process.exit(1);
-} finally {
-  removeDebugOverride();
 }

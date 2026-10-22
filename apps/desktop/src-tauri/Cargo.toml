@@ -17,6 +17,12 @@ edition = "2021"
 rust-version = "1.85"
 publish = false
 
+[features]
+# Only the builds the automated installer tests drive have this (scripts/desktop/build.mjs with
+# TTSNATIVE_TEST_HOOKS=1): it lets `--remote-debugging-port=N` open WebView2's debugging port on
+# 127.0.0.1. A release build never has it; build.mjs and the release workflow check the binary.
+test-hooks = []
+
 [build-dependencies]
 tauri-build = { version = "=2.7.1", features = [] }
 

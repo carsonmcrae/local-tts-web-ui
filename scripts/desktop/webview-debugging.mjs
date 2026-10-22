@@ -2,15 +2,13 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 Carson McRae
 /**
- * Purpose: Start the installed TTSNative with WebView2's debugging port open, so a test can drive its window.
+ * Purpose: Start a test build of TTSNative with WebView2's debugging port open, so a test can drive its window.
  * Scope: Ends any running copy first (one without the port would take the single instance), starts the
- *   app with `--remote-debugging-port=N` (which the app passes through to WebView2), checks that the port
- *   answers and takes the server's origin from the window's own address. Falls back to
- *   WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS and then to Microsoft's registry override
- *   (HKCU\Software\Policies\Microsoft\Edge\WebView2\AdditionalBrowserArguments, read only when the
- *   variable is absent; `removeDebugOverride` takes it away again); GitHub's Windows runners ignore both.
- *   Finds the app's page over CDP. When the port never opens, prints the browser process's switches.
- *   TTSNATIVE_WEBVIEW_DEBUG=argument|variable|registry tries one route only, to test it by hand.
+ *   app with `--remote-debugging-port=N` (honoured only by builds with the `test-hooks` Cargo feature,
+ *   which the Desktop workflow's installer and update builds have and a release never does), checks that
+ *   the port answers, and takes the server's origin from the window's own address rather than scanning
+ *   ports (another server in the range may answer first on a developer's PC). Finds the app's page over
+ *   CDP. When the port never opens, prints the browser process's switches so the cause shows.
  * Does NOT belong: What the tests check (persistence-test.mjs, update-test.mjs) or installing (smoke-test.mjs).
  */
 import { execFileSync, spawn, spawnSync } from 'node:child_process';
@@ -20,14 +18,7 @@ import { chromium } from '@playwright/test';
 
 const system32 = path.join(process.env.SystemRoot ?? 'C:/Windows', 'System32');
 const POWERSHELL = path.join(system32, 'WindowsPowerShell', 'v1.0', 'powershell.exe');
-const REG = path.join(system32, 'reg.exe');
-const POLICY = String.raw`HKCU\Software\Policies\Microsoft\Edge\WebView2\AdditionalBrowserArguments`;
-/** The names WebView2 looks up, in order: the app's user model id, its executable, then any app. */
-const APP_IDS = ['com.ttsnative.desktop', 'TTSNative.exe', '*'];
 const PORTS = { first: 8770, last: 8789 };
-
-/** @type {{ keyExisted: boolean } | null} what `removeDebugOverride` must undo */
-let override = null;
 
 /** @param {string} script */
 const powershell = (script) =>
@@ -59,8 +50,6 @@ const healthy = (origin) =>
 /**
  * The server's origin once it answers, without the window's help (after an update reopened the app):
  * the origin it used before, which the app takes again when free, else the first port that answers.
- * On a developer's PC another server in the range could answer first; the tests take the origin from
- * the window (`launchForDebugging`) whenever they can.
  * @param {number} timeoutMs
  * @param {string} [preferred]
  */
@@ -100,66 +89,32 @@ function browserSwitches() {
   return line ? line.split(' ').filter((part) => part.startsWith('--')) : ['(no browser process)'];
 }
 
-/** @param {number} port */
-function setDebugOverride(port) {
-  const keyExisted = spawnSync(REG, ['query', POLICY], { stdio: 'ignore' }).status === 0;
-  for (const id of APP_IDS) {
-    execFileSync(
-      REG,
-      ['add', POLICY, '/v', id, '/t', 'REG_SZ', '/d', `--remote-debugging-port=${port}`, '/f'],
-      { stdio: 'ignore' },
-    );
-  }
-  override = { keyExisted };
-}
-
-/** Takes the registry override away again (a no-op when it was never set). */
-export function removeDebugOverride() {
-  if (!override) return;
-  for (const id of APP_IDS) spawnSync(REG, ['delete', POLICY, '/v', id, '/f'], { stdio: 'ignore' });
-  if (!override.keyExisted) spawnSync(REG, ['delete', POLICY, '/f'], { stdio: 'ignore' });
-  override = null;
-}
-
 /**
  * Starts the app with the debugging port open and returns its server's origin.
  * @param {string} exe
  * @param {number} port
  */
 export async function launchForDebugging(exe, port) {
-  const forced = process.env.TTSNATIVE_WEBVIEW_DEBUG;
-  const routes = forced ? [forced] : ['argument', 'variable', 'registry'];
-  for (const route of routes) {
-    await endApp();
-    const env = { ...process.env };
-    delete env.WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS;
-    const args = [];
-    // The app passes Chromium's own switch through to WebView2; the two overrides WebView2 documents
-    // stay as fallbacks, although GitHub's Windows runners ignore both.
-    if (route === 'argument') args.push(`--remote-debugging-port=${port}`);
-    else if (route === 'variable')
-      env.WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS = `--remote-debugging-port=${port}`;
-    else setDebugOverride(port);
-    spawn(exe, args, { detached: true, stdio: 'ignore', env }).unref();
-    if (await portAnswers(port, 120_000)) {
-      // The window leaves the start-up page for the server's address once the server is ready, so
-      // its address is the one to trust (another server in the port range may answer on a developer's PC).
-      const page = await appPage(port, 'http://127.0.0.1:', 240_000);
-      const origin = new URL(page.url()).origin;
-      await page.context().browser()?.close();
-      // The first answers after start-up can take longer than one probe allows on a slow runner.
-      const deadline = Date.now() + 120_000;
-      while (Date.now() < deadline) {
-        if (await healthy(origin)) return origin;
-        await sleep(1000);
-      }
-      throw new Error(`FAILED: the window shows ${origin} but its server does not answer`);
-    }
+  await endApp();
+  spawn(exe, [`--remote-debugging-port=${port}`], { detached: true, stdio: 'ignore' }).unref();
+  if (!(await portAnswers(port, 120_000))) {
     console.log(
-      `(WebView2 did not open port ${port} through the ${route}; browser switches: ${browserSwitches().join(' ')})`,
+      `(WebView2 did not open port ${port}: is this a test build? browser switches: ${browserSwitches().join(' ')})`,
     );
+    throw new Error('FAILED: the app window could not be reached through WebView2');
   }
-  throw new Error('FAILED: the app window could not be reached through WebView2');
+  // The window leaves the start-up page for the server's address once the server is ready, so its
+  // address is the one to trust.
+  const page = await appPage(port, 'http://127.0.0.1:', 240_000);
+  const origin = new URL(page.url()).origin;
+  await page.context().browser()?.close();
+  // The first answers after start-up can take longer than one probe allows on a slow runner.
+  const deadline = Date.now() + 120_000;
+  while (Date.now() < deadline) {
+    if (await healthy(origin)) return origin;
+    await sleep(1000);
+  }
+  throw new Error(`FAILED: the window shows ${origin} but its server does not answer`);
 }
 
 /**

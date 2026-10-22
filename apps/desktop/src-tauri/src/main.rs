@@ -135,23 +135,36 @@ fn focus_main(app: &AppHandle) {
     }
 }
 
-/// WebView2's switches: wry's own (no "mini menu", no SmartScreen prompt, autoplay) and, when the app was
-/// started with Chromium's `--remote-debugging-port=N`, a debugging port on 127.0.0.1 for the tests that
-/// drive the window (WebView2's environment-variable and registry overrides are ignored on GitHub's
-/// Windows runners). Anyone able to start the app with arguments can already act as that user.
+/// WebView2's switches: wry's own (no "mini menu", no SmartScreen prompt, autoplay), plus the debugging
+/// switch that only a build with the `test-hooks` feature can add (see `debug_switch`).
 #[cfg(windows)]
-fn browser_args() -> String {
-    let mut args = String::from(
+fn browser_args(args: impl Iterator<Item = String>) -> String {
+    let mut switches = String::from(
         "--disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection --autoplay-policy=no-user-gesture-required",
     );
-    let port = std::env::args().find_map(|arg| {
+    if let Some(switch) = debug_switch(args) {
+        switches.push(' ');
+        switches.push_str(&switch);
+    }
+    switches
+}
+
+/// Test builds only (the automated installer tests drive the window): Chromium's
+/// `--remote-debugging-port=N` on the command line opens that port on 127.0.0.1. The switch text exists
+/// only in this build, which is how build.mjs and the release workflow prove a release has no hooks.
+#[cfg(all(windows, feature = "test-hooks"))]
+fn debug_switch(args: impl Iterator<Item = String>) -> Option<String> {
+    let port = args.find_map(|arg| {
         arg.strip_prefix("--remote-debugging-port=")
             .and_then(|value| value.parse::<u16>().ok())
-    });
-    if let Some(port) = port {
-        args.push_str(&format!(" --remote-debugging-port={port}"));
-    }
-    args
+    })?;
+    Some(format!("--remote-debugging-port={port}"))
+}
+
+/// Release builds ignore every argument.
+#[cfg(all(windows, not(feature = "test-hooks")))]
+fn debug_switch(_args: impl Iterator<Item = String>) -> Option<String> {
+    None
 }
 
 fn create_window(app: &AppHandle) -> tauri::Result<()> {
@@ -159,7 +172,7 @@ fn create_window(app: &AppHandle) -> tauri::Result<()> {
     let popups = app.clone();
     let builder = WebviewWindowBuilder::new(app, "main", WebviewUrl::App("index.html".into()));
     #[cfg(windows)]
-    let builder = builder.additional_browser_args(&browser_args());
+    let builder = builder.additional_browser_args(&browser_args(std::env::args()));
     builder
         .title("TTSNative")
         .inner_size(1280.0, 860.0)
@@ -178,6 +191,10 @@ fn create_window(app: &AppHandle) -> tauri::Result<()> {
 }
 
 fn main() {
+    // WebView2 would also take browser switches from this variable in the process environment; the app
+    // never wants that route (a test build takes the switch on its command line instead), so it is
+    // dropped before any window exists. The matching registry policy stays an administrator's decision.
+    std::env::remove_var("WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS");
     let app = tauri::Builder::default()
         // Registered first, so a second launch only focuses the running window.
         .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| focus_main(app)))
@@ -216,4 +233,44 @@ fn main() {
             app.state::<AppState>().backend.stop();
         }
     });
+}
+
+#[cfg(all(test, windows))]
+mod tests {
+    use super::browser_args;
+
+    fn started_with(args: &[&str]) -> impl Iterator<Item = String> {
+        args.iter()
+            .map(|arg| (*arg).to_string())
+            .collect::<Vec<_>>()
+            .into_iter()
+    }
+
+    #[test]
+    fn keeps_wrys_own_switches() {
+        let switches = browser_args(started_with(&["TTSNative.exe"]));
+        assert!(switches.starts_with("--disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection"));
+        assert!(switches.ends_with("--autoplay-policy=no-user-gesture-required"));
+    }
+
+    #[cfg(feature = "test-hooks")]
+    #[test]
+    fn a_test_build_opens_the_port_it_is_given() {
+        let switches = browser_args(started_with(&["TTSNative.exe", "--remote-debugging-port=9222"]));
+        assert!(switches.ends_with(" --remote-debugging-port=9222"));
+    }
+
+    #[cfg(feature = "test-hooks")]
+    #[test]
+    fn a_test_build_ignores_a_port_that_is_not_a_number() {
+        let switches = browser_args(started_with(&["TTSNative.exe", "--remote-debugging-port=nine"]));
+        assert!(!switches.contains("debugging"));
+    }
+
+    #[cfg(not(feature = "test-hooks"))]
+    #[test]
+    fn a_release_build_ignores_the_switch() {
+        let switches = browser_args(started_with(&["TTSNative.exe", "--remote-debugging-port=9222"]));
+        assert!(!switches.contains("debugging"));
+    }
 }

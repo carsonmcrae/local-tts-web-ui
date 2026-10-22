@@ -46,6 +46,17 @@ updates:
       # torch stays there too (docs/security/supply-chain.md). Revisit when Chatterbox drops torchaudio.
       - dependency-name: torch
         versions: ['>=2.12']
+  - package-ecosystem: cargo
+    directory: /apps/desktop/src-tauri
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 14
+    ignore:
+      # Linux-only crates in Tauri's tree are not compiled for the Windows app (cargo-deny checks that
+      # target). RustSec's glib notice needs glib 0.20, which Tauri 2's GTK stack doesn't take yet, so
+      # Dependabot's security update for it can only fail. Revisit when Tauri moves its Linux stack.
+      - dependency-name: glib
   - package-ecosystem: github-actions
     directories: ['/', '/.github/actions/*']
     schedule:

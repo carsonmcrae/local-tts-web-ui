@@ -109,9 +109,14 @@ local filesystem, and the integrity of installed model files and Python/npm depe
   provenance are the check until a certificate is in place. The updater's own signature is enforced.
 - **The updater key is a single point of trust.** Whoever holds it can sign updates that installed
   copies accept; it lives only in the `release` environment's secrets behind a required reviewer.
-- **The Windows app opens WebView2's debugging port when started with `--remote-debugging-port=N`**
-  (Chromium's own switch, used by the installer tests to drive the window; it listens on 127.0.0.1
-  only). Anyone able to start the app with arguments already runs as that user, so this adds nothing a
-  local attacker lacks, and the server's own protections (`x-ltts-client`, origin checks) still apply.
+- **Only test builds can open WebView2's debugging port.** The automated installer tests drive the
+  window through `--remote-debugging-port=N`, which the app honours only when compiled with the
+  `test-hooks` feature (the Desktop workflow's throwaway builds). A release build ignores the argument,
+  its binary is checked for the switch text by `scripts/desktop/build.mjs` and the Desktop workflow, and
+  the release workflow refuses to build with the feature. The app also drops
+  `WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS` from its environment before the window exists, so a shortcut or
+  environment setting cannot add switches either. What remains is Microsoft's own registry policy for
+  WebView2 (`Software\Policies\Microsoft\Edge\WebView2\AdditionalBrowserArguments`), an administrator's
+  decision for the machine, which is why the server keeps its own origin and client checks regardless.
 - **The Chatterbox environment** contains a large third-party dependency tree (PyTorch, transformers).
   It is isolated, locked and only installed on request, but it is not audited line by line.

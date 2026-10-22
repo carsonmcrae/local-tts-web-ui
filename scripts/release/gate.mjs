@@ -97,10 +97,11 @@ function gitHub(endpoint, fields = []) {
 
 /** The newest released version before this one in the release history, or null. */
 function previousVersion() {
-  const earlier = readReleases().releases.filter(
+  // The history is sorted newest first, so the first earlier release is the previous one.
+  const previous = readReleases().releases.find(
     (release) => !release.draft && compareVersions(release.version, version) < 0,
   );
-  return earlier[0]?.version ?? null;
+  return previous?.version ?? null;
 }
 
 /** The previous release on GitHub and what its tag's commit holds (version files, pending changes). */

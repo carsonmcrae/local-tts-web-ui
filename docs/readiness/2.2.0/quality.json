@@ -1,0 +1,45 @@
+{
+  "version": "2.2.0",
+  "commit": "66d626e3d0366d79e5cb19a3ec9fbdd817c7e26c",
+  "analysedAt": "2026-10-22T21:32:48+0000",
+  "gate": "OK",
+  "conditions": [
+    {
+      "metric": "new_coverage",
+      "status": "OK",
+      "actual": "100.0",
+      "threshold": "80"
+    },
+    {
+      "metric": "new_duplicated_lines_density",
+      "status": "OK",
+      "actual": "0.0",
+      "threshold": "3"
+    },
+    {
+      "metric": "new_security_hotspots_reviewed",
+      "status": "OK",
+      "actual": "100.0",
+      "threshold": "100"
+    },
+    {
+      "metric": "new_violations",
+      "status": "OK",
+      "actual": "0",
+      "threshold": "0"
+    }
+  ],
+  "measures": {
+    "coverage": "100.0",
+    "line_coverage": "100.0",
+    "branch_coverage": "100.0",
+    "duplicated_lines_density": "0.0",
+    "duplicated_blocks": "0",
+    "bugs": "0",
+    "vulnerabilities": "0",
+    "security_hotspots": "0",
+    "security_hotspots_reviewed": "100.0",
+    "code_smells": "0",
+    "ncloc": "51679"
+  }
+}

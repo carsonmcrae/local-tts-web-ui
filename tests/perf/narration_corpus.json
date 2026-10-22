@@ -1,5 +1,5 @@
 {
-  "//": "Purpose: Held-out narration passages for comparing voices by ear and by measurement (tests/perf/narration_benchmark.py). Scope: Original text written for this benchmark on 2026-10-21, never used as studio passages, reference recordings or training data, covering the kinds of text an audiobook narrator meets. Does NOT belong: Anything a voice was built from (apps/server/src/ltts/voices/passages.json) or the two-voice A/B sentences (voices/ab_test.py).",
+  "//": "Purpose: Held-out narration passages for comparing voices by ear and by measurement (tests/perf/narration_benchmark.py). Scope: Original text written for this benchmark on 2026-10-21 (the homograph passage rewritten on 2026-10-22 so that no sentence follows a widely circulated example list), never used as studio passages, reference recordings or training data, covering the kinds of text an audiobook narrator meets. Does NOT belong: Anything a voice was built from (apps/server/src/ltts/voices/passages.json) or the two-voice A/B sentences (voices/ab_test.py).",
   "items": [
     {
       "id": "fantasy",
@@ -59,7 +59,7 @@
       "id": "homographs",
       "kind": "Pronunciation challenges",
       "panel": true,
-      "text": "She had read the letter twice before she agreed to read it aloud. The lead actor, who had once worked in a lead mine, took a bow and tied a bow in the ribbon. We live on a farm where the pigs live in the barn and the band plays live every Sunday. Strong winds wind through the valley; he will wind the clock before the wind picks up. A tear ran down her cheek as she watched him tear the page. Close the door; it's too close to the fire. The bass player caught a bass. I refuse to carry the refuse. The nurse wound a bandage around the wound. Can you record the record? Present the present now. The dove dove into the hedge. Polish the Polish silver. They will not object to the object. Does the farmer feed the does at minute intervals? It's a minute amount."
+      "text": "Marta had read the warning twice, yet she agreed to read it aloud to the crew. The foreman took the lead, pointing at a lead pipe half buried in the clay. On stage the cellist took a bow, then tied a red bow around her case. They live above the bakery and play live music there each Friday. As the gale rose, the keeper climbed up to wind the tower clock against the wind. A tear slid down his face when he found the tear in the old chart. Shut the gate; the edge of the quarry is too close. The angler fished for bass while his brother tuned a bass guitar on the bank. The council promised it would not refuse to collect the refuse this week. The medic wound clean linen over the wound. Could you record the record before the archive closes? Please present the present to our guest when she arrives. A dove dove from the rafters as the doors swung open. On Sundays the steward would polish the Polish brass in the hall. Nobody thought to object to the strange object on the mantel. The ranger watched the does at minute intervals and noted every minute change in the herd."
     },
     {
       "id": "quiet",

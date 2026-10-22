@@ -3,14 +3,17 @@
 """Purpose: Read held-out narration passages with several voices through the real synthesis path, measure
 each reading, and build a blind listening pack.
 
-Scope: Every passage in ``narration_corpus.json`` becomes a pasted document (so sentences, pauses, headings
-and speech normalisation are exactly what the app does), each sentence is rendered by the synthesis service
-and the sentences are joined into one clip per voice and passage. Per voice: model load time, first and
-median sentence latency, real-time factor, peak memory of the server and its worker, GPU memory in use,
-loudness, pause share, pace and clipping, and whether the same text comes out identical twice. Then a blind
-panel (``ltts voice-panel``) of the shorter passages and an anonymised long-form folder for fatigue listening.
+Scope: Every passage in ``narration_corpus.json`` becomes a pasted document (so sentences, pauses, headings,
+pronunciations and the English reading rules are exactly what the app does), each sentence is rendered by the
+synthesis service and the sentences are joined into one clip per voice and passage. Per voice: cold start (every
+engine unloaded, model files verified again, first sentence), warm first sentence, median sentence, cached
+sentence, real-time factor, memory before and after the model loads and at its peak, GPU memory on the card,
+loudness, pause share, pace and clipping, and whether the same text comes out the same twice. The run records
+its environment (``bench_support.environment``), refuses to write inside the repository unless Git ignores the
+folder, and writes a blind panel (``ltts voice-panel``) of the shorter passages, an anonymised long-form folder
+for fatigue listening, and a README separating automated measurements from listening judgements.
 Run: ``node scripts/uv-run.mjs --cwd apps/server run --frozen python ../../tests/perf/narration_benchmark.py
---out FOLDER --voice kokoro:af_heart --voice chatterbox:default [--local NAME=PROFILE_DIR]``.
+--out .tools/bench --voice kokoro:af_heart --voice chatterbox:default [--local NAME=PROFILE_DIR] [--seed N]``.
 Does NOT belong: Pass/fail tests, or judging quality: listening does that (docs/research/voice-library.md).
 """
 
@@ -18,12 +21,12 @@ from __future__ import annotations
 
 import argparse
 import csv
+import gc
 import json
 import os
 import random
 import shutil
 import statistics
-import subprocess
 import sys
 import time
 from dataclasses import asdict, dataclass
@@ -37,6 +40,7 @@ import soundfile as sf
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "apps" / "server" / "src"))
 
+from bench_support import check_output, environment, write_readme  # noqa: E402
 from ltts.config import Settings  # noqa: E402
 from ltts.container import Services, build_services  # noqa: E402
 from ltts.engines.base import VoiceInfo, VoiceSpec  # noqa: E402
@@ -47,20 +51,27 @@ from ltts.voices.quality import measure  # noqa: E402
 
 CLIP_FIELDS = ("voice", "item", "sentences", "duration_s", "speech_s", "wall_s", "rtf", "first_sentence_s",
                "syllables_per_s", "rms_dbfs", "peak_dbfs", "pause_ratio", "clipping_ratio")  # fmt: skip
+PROBES = ("The kettle had gone cold by the time she remembered it.",
+          "Outside, the first snow was settling on the garden wall.")  # fmt: skip
 
 
 @dataclass
 class VoiceResult:
     voice: str
     engine: str
-    device: str | None
-    load_s: float
-    first_sentence_s: float | None = None
+    device: str | None = None
+    cold_start_s: float | None = None  # engines unloaded, files verified, first sentence
+    warm_first_s: float | None = None  # model loaded, a sentence not in the cache
     median_sentence_s: float | None = None
+    cached_sentence_s: float | None = None
     audio_s: float = 0.0
     wall_s: float = 0.0
     rtf: float | None = None
+    rss_before_mb: int = 0  # this process and its workers, before the model loads
+    rss_loaded_mb: int = 0
     peak_rss_mb: int = 0
+    gpu_before_mb: int | None = None  # the whole card, other programs included
+    gpu_loaded_mb: int | None = None
     peak_gpu_mb: int | None = None
     repeat_same_length: bool | None = None  # the same text twice: the same number of samples?
     repeat_max_diff: float | None = None  # and the largest sample difference (1.0 is full scale)
@@ -71,6 +82,8 @@ def gpu_used_mb() -> int | None:
     smi = shutil.which("nvidia-smi")
     if not smi:
         return None
+    import subprocess
+
     try:
         out = subprocess.run(  # noqa: S603 - fixed arguments to the binary found on PATH
             [smi, "--query-gpu=memory.used", "--format=csv,noheader,nounits"], capture_output=True, text=True,
@@ -149,27 +162,30 @@ def clip_row(voice: str, item: dict[str, Any], samples: np.ndarray, rate: int, l
     }  # fmt: skip
 
 
-def load_voice(services: Services, voice: str) -> VoiceResult:
-    """Make the engine ready and time it (Kokoro loads on warm-up; Chatterbox loads on its first clip)."""
+def measure_start(services: Services, voice: str) -> VoiceResult:
+    """Cold start (every engine unloaded and its files verified again, as after the app starts), then warm."""
     resolved = services.engines.resolve(voice)
-    before_gpu = gpu_used_mb()
+    for engine in services.engines.all():
+        engine.close()
+    services.model_store._hashes.clear()  # noqa: SLF001 - a new app process hashes every model file again
+    gc.collect()
+    result = VoiceResult(voice, resolved.engine.id, rss_before_mb=rss_mb(), gpu_before_mb=gpu_used_mb())
     started = time.perf_counter()
-    if resolved.engine.id == "kokoro":
-        resolved.engine.warm_up()
-    else:
-        services.synthesis.render_blocking(voice, "Ready.", "sentence", 1.0, PRIORITY_PLAYBACK, lambda: False)
-    info = resolved.engine.info()
-    result = VoiceResult(voice, resolved.engine.id, info.device, round(time.perf_counter() - started, 2))
-    result.peak_rss_mb = rss_mb()
-    after_gpu = gpu_used_mb()
-    if before_gpu is not None and after_gpu is not None and resolved.engine.id != "kokoro":
-        result.peak_gpu_mb = max(after_gpu - before_gpu, 0)
+    resolved.engine.synthesize(PROBES[0], resolved.spec, 1.0)  # the engine itself: the audio cache can't help
+    result.cold_start_s = round(time.perf_counter() - started, 3)
+    started = time.perf_counter()
+    resolved.engine.synthesize(PROBES[1], resolved.spec, 1.0)
+    result.warm_first_s = round(time.perf_counter() - started, 3)
+    result.device = resolved.engine.info().device
+    result.rss_loaded_mb = result.peak_rss_mb = rss_mb()
+    result.gpu_loaded_mb = result.peak_gpu_mb = gpu_used_mb()
     return result
 
 
 def run_voice(services: Services, voice: str, items: list[dict[str, Any]], documents: dict, args: argparse.Namespace,
               clips_dir: Path) -> tuple[VoiceResult, list[dict]]:  # fmt: skip
-    result, rows, all_latencies = load_voice(services, voice), [], []
+    services.synthesis.purge_voice(voice)  # every sentence is synthesised, even when run again in this folder
+    result, rows, all_latencies = measure_start(services, voice), [], []
     folder = clips_dir / voice.replace(":", "-")
     folder.mkdir(parents=True, exist_ok=True)
     for item in items:
@@ -185,14 +201,20 @@ def run_voice(services: Services, voice: str, items: list[dict[str, Any]], docum
         result.audio_s += len(samples) / rate
         result.wall_s += sum(latencies)
         result.peak_rss_mb = max(result.peak_rss_mb, rss_mb())
-        if result.engine != "kokoro" and (gpu := gpu_used_mb()) is not None:
+        if (gpu := gpu_used_mb()) is not None:
             result.peak_gpu_mb = max(result.peak_gpu_mb or 0, gpu)
         print(f"  {voice} / {item['id']}: {rows[-1]['duration_s']} s of audio in {rows[-1]['wall_s']} s")
     if all_latencies:
-        result.first_sentence_s = round(all_latencies[0], 3)
         result.median_sentence_s = round(statistics.median(all_latencies), 3)
-    if result.audio_s:
-        result.rtf = round(result.wall_s / result.audio_s, 3)
+        result.audio_s = round(result.audio_s, 1)
+        result.rtf = round(result.wall_s / result.audio_s, 3) if result.audio_s else None
+        result.wall_s = round(result.wall_s, 1)
+        first = items[0]
+        index, text, boundary = documents[first["id"]][0]
+        plan = services.synthesis.plan_segment(first["document_id"], index, text, voice)
+        started = time.perf_counter()
+        services.synthesis.render_blocking(plan, text, boundary, args.pace, PRIORITY_PLAYBACK, lambda: False)
+        result.cached_sentence_s = round(time.perf_counter() - started, 4)
     if args.repeat_check:
         result.repeat_same_length, result.repeat_max_diff = repeat_check(services, voice, items, documents, args.pace)
     return result, rows
@@ -217,12 +239,13 @@ def write_pack(out: Path, items: list[dict], voices: list[str], panel_voices: li
              for v in panel_voices}  # fmt: skip
     usable = {v: paths for v, paths in clips.items() if all(p.is_file() for p in paths)}
     if len(usable) >= 2 and panel_items:
+        shutil.rmtree(out / "panel", ignore_errors=True)
         listening_panel.make(out / "panel", panel_items, usable, seed)
-    longform = [i for i in items if i["id"] == "longform"]
-    if not longform:
+    if not any(i["id"] == "longform" for i in items):
         return
     folder = out / "longform"
-    folder.mkdir(parents=True, exist_ok=True)
+    shutil.rmtree(folder, ignore_errors=True)
+    folder.mkdir(parents=True)
     order = [v for v in voices if (clips_dir / v.replace(":", "-") / "longform.wav").is_file()]
     random.Random(seed).shuffle(order)  # noqa: S311 - only hides which voice is which, for listening
     key = {}
@@ -245,17 +268,36 @@ def write_pack(out: Path, items: list[dict], voices: list[str], panel_voices: li
         + "".join(rows) + "</body></html>", "utf-8")  # fmt: skip
 
 
+def _mb(value: int | None) -> str:
+    return "—" if value is None else f"{value:,} MB"
+
+
 def summary_table(results: list[VoiceResult]) -> str:
-    head = ("| Voice | Engine | Device | Load | First sentence | Median sentence | Audio | RTF | Peak RSS | GPU | "
-            "Same length twice | Max repeat diff | Failed |\n"
+    head = ("| Voice | Device | Cold start | Warm first | Median sentence | Cached | Audio | RTF | Memory before / "
+            "loaded / peak | GPU card before / loaded / peak | Same length twice | Max repeat diff | Failed |\n"
             "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |")
     lines = [head]
     for r in results:
-        lines.append(f"| {r.voice} | {r.engine} | {r.device or '—'} | {r.load_s} s | {r.first_sentence_s} s | "
-                     f"{r.median_sentence_s} s | {r.audio_s / 60:.1f} min | {r.rtf} | {r.peak_rss_mb} MB | "
-                     f"{r.peak_gpu_mb if r.peak_gpu_mb is not None else '—'} MB | {r.repeat_same_length} | "
-                     f"{r.repeat_max_diff} | {r.errors} |")  # fmt: skip
+        lines.append(f"| {r.voice} | {r.device or '—'} | {r.cold_start_s} s | {r.warm_first_s} s | "
+                     f"{r.median_sentence_s} s | {r.cached_sentence_s} s | {r.audio_s / 60:.1f} min | {r.rtf} | "
+                     f"{_mb(r.rss_before_mb)} / {_mb(r.rss_loaded_mb)} / {_mb(r.peak_rss_mb)} | "
+                     f"{_mb(r.gpu_before_mb)} / {_mb(r.gpu_loaded_mb)} / {_mb(r.peak_gpu_mb)} | "
+                     f"{r.repeat_same_length} | {r.repeat_max_diff} | {r.errors} |")  # fmt: skip
     return "\n".join(lines)
+
+
+def summary(results: list[VoiceResult], env: dict[str, Any]) -> str:
+    machine = env["machine"]
+    gpus = ", ".join(f"{g['name']} ({g['memory_mb']} MB, driver {g['driver']})" for g in machine["gpus"]) or "none"
+    return (
+        "# Automated measurements\n\nSpeed, memory and signal statistics only. They don't measure how natural a voice"
+        " sounds: the blind pages in `panel/` and `longform/` are for that (see README.md).\n\n"
+        f"- Measured {env['measured_at']} on commit {env['commit']}"
+        f"{' (with uncommitted changes)' if env['uncommitted_changes'] else ''}; corpus {env['corpus_sha256'][:12]}.\n"
+        f"- {machine['os']}; {machine['cpu']}, {machine['cores_physical']} cores / {machine['cores_logical']} threads;"
+        f" {machine['ram_gb']} GB RAM; GPU {gpus}; CPU {machine['cpu_busy_percent_at_start']} % busy at the start.\n"
+        f"- Settings: {json.dumps(env['settings'])}.\n\n" + summary_table(results) + "\n"
+    )
 
 
 def merge_metrics(out: Path, results: list[VoiceResult], rows: list[dict]) -> tuple[list[dict], list[dict]]:
@@ -264,9 +306,10 @@ def merge_metrics(out: Path, results: list[VoiceResult], rows: list[dict]) -> tu
     if (out / "metrics.json").is_file():
         previous = json.loads((out / "metrics.json").read_text("utf-8"))
     fresh = {r.voice for r in results}
-    voices = [v for v in previous["voices"] if v["voice"] not in fresh] + [asdict(r) for r in results]
+    known = set(VoiceResult.__dataclass_fields__)
+    voices = [{k: v for k, v in old.items() if k in known} for old in previous["voices"] if old["voice"] not in fresh]
     clips = [c for c in previous["clips"] if c["voice"] not in fresh] + rows
-    return voices, clips
+    return voices + [asdict(r) for r in results], clips
 
 
 def main() -> None:
@@ -281,11 +324,13 @@ def main() -> None:
     parser.add_argument("--items", default="", help="comma-separated passage ids (default: all)")
     parser.add_argument("--panel-voice", action="append", default=[], help="voices in the rated panel (default: all)")
     parser.add_argument("--repeat-check", action="store_true")
-    parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument("--seed", type=int, default=0, help="the order of voices on the blind pages")
     parser.add_argument("--pack-only", action="store_true", help="only build the listening pack from earlier clips")
     args = parser.parse_args()
     out = Path(args.out).resolve()
-    items = json.loads(Path(args.corpus).read_text("utf-8"))["items"]
+    check_output(out)
+    corpus = Path(args.corpus)
+    items = json.loads(corpus.read_text("utf-8"))["items"]
     if args.items:
         wanted = set(args.items.split(","))
         items = [i for i in items if i["id"] in wanted]
@@ -293,6 +338,8 @@ def main() -> None:
     if args.pack_only:
         write_pack(out, items, voices, args.panel_voice or voices, args.seed)
         return
+    out.mkdir(parents=True, exist_ok=True)
+    write_readme(out)
     settings = Settings(env="test", data_dir=out / "data", models_dir=Path(args.models_dir),
                         engines_dir=Path(args.engines_dir), warm_up_engines=False)  # fmt: skip
     services = build_services(settings)
@@ -305,15 +352,19 @@ def main() -> None:
         result, voice_rows = run_voice(services, voice, items, documents, args, out / "clips")
         results.append(result)
         rows += voice_rows
+    run_settings = {"voices": voices, "items": [i["id"] for i in items], "pace": args.pace, "seed": args.seed,
+                    "repeat_check": args.repeat_check, "panel_voices": args.panel_voice or voices}  # fmt: skip
+    env = environment(services, corpus, run_settings, {r.engine for r in results})
     for engine in services.engines.all():
         engine.close()
     all_voices, all_clips = merge_metrics(out, results, rows)
-    (out / "metrics.json").write_text(json.dumps({"voices": all_voices, "clips": all_clips}, indent=2), "utf-8")
+    metrics = {"environment": env, "voices": all_voices, "clips": all_clips}
+    (out / "metrics.json").write_text(json.dumps(metrics, indent=2), "utf-8")
     with (out / "metrics.csv").open("w", newline="", encoding="utf-8") as handle:
         writer = csv.DictWriter(handle, CLIP_FIELDS)
         writer.writeheader()
         writer.writerows(all_clips)
-    (out / "summary.md").write_text(summary_table([VoiceResult(**v) for v in all_voices]) + "\n", "utf-8")
+    (out / "summary.md").write_text(summary([VoiceResult(**v) for v in all_voices], env), "utf-8")
     print(summary_table(results))
     write_pack(out, items, voices, args.panel_voice or voices, args.seed)
 

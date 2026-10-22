@@ -66,6 +66,7 @@ describe('App', () => {
       'GET /api/voice-profiles': [],
       'GET /api/system': () => json({ error: { code: 'starting', message: 'Starting.' } }, 503),
       'GET /api/documents': [],
+      'GET /api/library/works': [],
       'GET /api/exports': [],
       'GET /api/integrations/audiobookshelf': { configured: false, hasKey: false },
     });
@@ -88,6 +89,10 @@ describe('App', () => {
     await go('Voice Studio', 'Voice Studio');
     await go('Exports', 'Exports');
     await go('Settings', 'Settings');
+    await go('Library', 'Library');
+    // The included books are a tab of the library, not a section of their own.
+    await user.click(screen.getByRole('link', { name: 'Explore included books' }));
+    expect(await screen.findByRole('heading', { level: 1, name: 'Explore' })).toBeInTheDocument();
     await go('Library', 'Library');
     // The sidebar shows the version this copy runs and leads to About.
     const version = screen.getByRole('link', { name: 'Version test' });

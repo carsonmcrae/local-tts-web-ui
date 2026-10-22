@@ -275,9 +275,53 @@ TTSNative has two ways to change how fast you hear the text:
 
 ## Your library
 
-With more than one document, the Library has a search box (titles and file names) and a **Sort by**
-menu: **Last read or added** (the default), **Title**, **Date added** or **Least listened**. The
-sort is remembered on this device.
+With more than one document, the Library has a search box (titles, authors, file names and tags)
+and a **Sort by** menu: **Last read or added** (the default), **Title**, **Author**, **Date added**
+or **Least listened**. The sort is remembered on this device. Filter by **Genre**, **Type** or
+**Progress** (new, in progress, finished).
+
+The rail on the left (a menu on phones) shows **All documents**, **Continue reading**,
+**Favourites**, **Recently added**, your **Collections** and your **Folders**:
+
+- **Folders** hold documents the way folders on a disk do, nested as deep as you like. Deleting a
+  folder never deletes documents: they move to the folder above. Drag a document onto a folder, or
+  use **Move to folder…** from its menu.
+- **Collections** gather documents from anywhere in your folders; a document can be in several
+  collections at once. Deleting a collection only forgets the grouping.
+- **Favourites** is the star on a card.
+- **Details** (from a card's menu) set a document's **type** (novel, short story collection,
+  poetry, essay, memoir…), its **genres** and your own **tags**. Tags match without regard to case.
+
+**Select** turns on a checkbox on every card so you can move, tag, favourite, collect or delete
+several documents at once.
+
+## Included books
+
+**Browse the included books** (from the Library) opens **Explore**: 25 public-domain works that come
+with TTSNative, grouped by kind, each with its cover, description, content notes and where its
+rights stand: every book is public domain in the United States, and each card says where else it is
+known to be free from the author's death year, naming the countries where a longer term still runs. **Read**
+adds a book to your library, where it behaves like any other document (progress, bookmarks, voices,
+export); **Continue** opens it again. **Hide** removes a book from Explore without touching your
+library, and **Show hidden books** brings it back. Nothing is added to your library on its own, and
+no book is downloaded: the texts ship inside the app. **Credits** names every edition and source.
+
+## Reading experiences
+
+Six of the included books come with a curated cast. In the reader, **Reading experience** offers:
+
+- **Standard**: your reading voice throughout.
+- **Multi-voice**: the book's suggested reading voice, each character in their own voice (Alice,
+  the White Rabbit, the Hatter and the Queen; Scrooge, Marley and the Cratchits; Holmes and
+  Lestrade; Elizabeth, Jane and Darcy…) and a few lines the analysis can't attribute given to their
+  speaker, such as the Raven's "Nevermore". Only voices installed on this computer are used; a
+  character whose voice isn't installed is listed as such and keeps the dialogue voice.
+- **Immersive**: voices plus sound effects and background music. This appears once those features
+  exist in your version; until then the panel says so.
+
+Choosing **Standard** again takes out exactly what the experience set; voices you gave characters
+yourself and your own sentence styling stay. **Use this voice** hands the suggested reading voice
+to the player. A music recommendation is only named: music never starts on its own.
 
 ## Deleting a document
 

@@ -175,6 +175,16 @@ export const documentDetail = (overrides: Partial<DocumentDetail> = {}): Documen
   createdAt: '2026-10-19T10:00:00+00:00',
   lastOpenedAt: null,
   progress: null,
+  author: null,
+  hasCover: false,
+  shelf: {
+    folderId: null,
+    favorite: false,
+    documentType: null,
+    genres: [],
+    tags: [],
+    collectionIds: [],
+  },
   sections: [
     { index: 0, title: 'Chapter One', startSegment: 0, segmentCount: 2, page: 1 },
     { index: 1, title: 'Chapter Two', startSegment: 2, segmentCount: 2, page: 5 },

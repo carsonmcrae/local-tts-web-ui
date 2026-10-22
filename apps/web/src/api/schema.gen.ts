@@ -305,6 +305,50 @@ export type paths = {
     patch?: never;
     trace?: never;
   };
+  '/api/documents/{document_id}/preset': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Document Preset
+     * @description What the book's reading preset offers this document: voices found here, anchors that resolve, what's applied.
+     */
+    get: operations['document_preset_api_documents__document_id__preset_get'];
+    put?: never;
+    post?: never;
+    /**
+     * Remove Preset
+     * @description Take out what the preset wrote; the reader's own voices and styling stay.
+     */
+    delete: operations['remove_preset_api_documents__document_id__preset_delete'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/documents/{document_id}/preset/apply': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Apply Preset
+     * @description Apply the chosen components (voices and speakers today); music and effects are never started here.
+     */
+    post: operations['apply_preset_api_documents__document_id__preset_apply_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/documents/{document_id}/progress': {
     parameters: {
       query?: never;
@@ -388,6 +432,26 @@ export type paths = {
      * @description Generate another take of one sentence to listen to; keep it by setting the sentence's take.
      */
     post: operations['make_take_api_documents__document_id__segments__index__takes_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/documents/{document_id}/shelf': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /**
+     * Update Shelf
+     * @description Set a document's folder, favourite, type, genres and tags (fields left out are kept).
+     */
+    put: operations['update_shelf_api_documents__document_id__shelf_put'];
+    post?: never;
     delete?: never;
     options?: never;
     head?: never;
@@ -916,6 +980,232 @@ export type paths = {
     };
     /** Pairing Qr */
     get: operations['pairing_qr_api_lan_pairing_qr_svg_get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/library/collections': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List Collections */
+    get: operations['list_collections_api_library_collections_get'];
+    put?: never;
+    /** Create Collection */
+    post: operations['create_collection_api_library_collections_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/library/collections/{collection_id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /**
+     * Delete Collection
+     * @description Delete a collection; the documents in it are untouched.
+     */
+    delete: operations['delete_collection_api_library_collections__collection_id__delete'];
+    options?: never;
+    head?: never;
+    /** Update Collection */
+    patch: operations['update_collection_api_library_collections__collection_id__patch'];
+    trace?: never;
+  };
+  '/api/library/collections/{collection_id}/documents': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Set Collection Members */
+    post: operations['set_collection_members_api_library_collections__collection_id__documents_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/library/folders': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List Folders */
+    get: operations['list_folders_api_library_folders_get'];
+    put?: never;
+    /** Create Folder */
+    post: operations['create_folder_api_library_folders_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/library/folders/{folder_id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /**
+     * Delete Folder
+     * @description Delete a folder and the folders inside it; their documents move to the folder above.
+     */
+    delete: operations['delete_folder_api_library_folders__folder_id__delete'];
+    options?: never;
+    head?: never;
+    /**
+     * Update Folder
+     * @description Rename a folder and/or move it (``parentId`` null puts it at the top level).
+     */
+    patch: operations['update_folder_api_library_folders__folder_id__patch'];
+    trace?: never;
+  };
+  '/api/library/organize': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Organize Documents
+     * @description Move, favourite, classify or tag several documents, and add them to or remove them from collections.
+     */
+    post: operations['organize_documents_api_library_organize_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/library/tags': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List Tags */
+    get: operations['list_tags_api_library_tags_get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/library/works': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List Works */
+    get: operations['list_works_api_library_works_get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/library/works/{work_id}/cover': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Work Cover */
+    get: operations['work_cover_api_library_works__work_id__cover_get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/library/works/{work_id}/hidden': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /**
+     * Set Hidden
+     * @description Hide a work from Explore (or show it again); the library's documents are untouched.
+     */
+    put: operations['set_hidden_api_library_works__work_id__hidden_put'];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/library/works/{work_id}/open': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Open Work
+     * @description Add the book to the library (read through the ordinary document pipeline), or return it if it is there.
+     */
+    post: operations['open_work_api_library_works__work_id__open_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/library/works/credits': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Credits */
+    get: operations['credits_api_library_works_credits_get'];
     put?: never;
     post?: never;
     delete?: never;
@@ -1850,6 +2140,48 @@ export type components = {
       /** Notice */
       notice?: string | null;
     };
+    /** CollectionIn */
+    CollectionIn: {
+      /**
+       * Description
+       * @default
+       */
+      description: string;
+      /** Name */
+      name: string;
+    };
+    /**
+     * CollectionMembers
+     * @description Documents to add to and remove from a collection; an id in both is removed.
+     */
+    CollectionMembers: {
+      /** Add */
+      add?: string[];
+      /** Remove */
+      remove?: string[];
+    };
+    /** CollectionOut */
+    CollectionOut: {
+      /** Createdat */
+      createdAt: string;
+      /** Description */
+      description: string;
+      /** Documentcount */
+      documentCount: number;
+      /** Id */
+      id: string;
+      /** Name */
+      name: string;
+      /** Position */
+      position: number;
+    };
+    /** CollectionUpdate */
+    CollectionUpdate: {
+      /** Description */
+      description?: string | null;
+      /** Name */
+      name?: string | null;
+    };
     /** ConsentInfo */
     ConsentInfo: {
       /** Statement */
@@ -1901,6 +2233,10 @@ export type components = {
     };
     /** DocumentDetail */
     DocumentDetail: {
+      /** Author */
+      author: string | null;
+      /** Bundledworkid */
+      bundledWorkId?: string | null;
       /** Charcount */
       charCount: number;
       /** Createdat */
@@ -1911,6 +2247,11 @@ export type components = {
       filename: string | null;
       /** Filetype */
       fileType: string;
+      /**
+       * Hascover
+       * @default false
+       */
+      hasCover: boolean;
       /** Id */
       id: string;
       /** Lastopenedat */
@@ -1924,6 +2265,7 @@ export type components = {
       sections: components['schemas']['SectionOut'][];
       /** Segmentcount */
       segmentCount: number;
+      shelf: components['schemas']['ShelfFacets'];
       /** Sizebytes */
       sizeBytes: number;
       /** Spokencharcount */
@@ -1953,6 +2295,10 @@ export type components = {
     };
     /** DocumentSummary */
     DocumentSummary: {
+      /** Author */
+      author: string | null;
+      /** Bundledworkid */
+      bundledWorkId?: string | null;
       /** Charcount */
       charCount: number;
       /** Createdat */
@@ -1963,6 +2309,11 @@ export type components = {
       filename: string | null;
       /** Filetype */
       fileType: string;
+      /**
+       * Hascover
+       * @default false
+       */
+      hasCover: boolean;
       /** Id */
       id: string;
       /** Lastopenedat */
@@ -1974,6 +2325,7 @@ export type components = {
       sectionCount: number;
       /** Segmentcount */
       segmentCount: number;
+      shelf: components['schemas']['ShelfFacets'];
       /** Sizebytes */
       sizeBytes: number;
       /** Spokencharcount */
@@ -2138,6 +2490,13 @@ export type components = {
       /** Voiceid */
       voiceId: string;
     };
+    /** Featured */
+    Featured: {
+      /** Blurb */
+      blurb: string;
+      /** Presetid */
+      presetId: string;
+    };
     /** FinishRequest */
     FinishRequest: {
       /** Candidate */
@@ -2152,6 +2511,38 @@ export type components = {
       delivery: 'steady' | 'natural' | 'expressive';
       /** Name */
       name: string;
+    };
+    /** FolderIn */
+    FolderIn: {
+      /** Name */
+      name: string;
+      /** Parentid */
+      parentId?: string | null;
+    };
+    /** FolderOut */
+    FolderOut: {
+      /** Createdat */
+      createdAt: string;
+      /** Documentcount */
+      documentCount: number;
+      /** Id */
+      id: string;
+      /** Name */
+      name: string;
+      /** Parentid */
+      parentId: string | null;
+      /** Position */
+      position: number;
+    };
+    /**
+     * FolderUpdate
+     * @description A new name and/or a new place: ``parent_id`` null (sent) moves the folder to the top.
+     */
+    FolderUpdate: {
+      /** Name */
+      name?: string | null;
+      /** Parentid */
+      parentId?: string | null;
     };
     /** GpuInfo */
     GpuInfo: {
@@ -2168,6 +2559,11 @@ export type components = {
       status: string;
       /** Version */
       version: string;
+    };
+    /** HiddenUpdate */
+    HiddenUpdate: {
+      /** Hidden */
+      hidden: boolean;
     };
     /** HTTPValidationError */
     HTTPValidationError: {
@@ -2283,6 +2679,66 @@ export type components = {
       /** Note */
       note: string;
     };
+    /**
+     * OrganizeRequest
+     * @description Organise several documents at once; a field left out changes nothing.
+     */
+    OrganizeRequest: {
+      /** Addtags */
+      addTags?: string[];
+      /** Addtocollections */
+      addToCollections?: string[];
+      /** Documentids */
+      documentIds: string[];
+      /** Documenttype */
+      documentType?:
+        | (
+            | 'novel'
+            | 'novella'
+            | 'short-story'
+            | 'short-story-collection'
+            | 'poem'
+            | 'poetry-collection'
+            | 'memoir'
+            | 'biography'
+            | 'essay'
+            | 'research-paper'
+            | 'report'
+            | 'personal-document'
+            | 'other'
+          )
+        | null;
+      /** Favorite */
+      favorite?: boolean | null;
+      /** Folderid */
+      folderId?: string | null;
+      /** Genres */
+      genres?:
+        | (
+            | 'fantasy'
+            | 'science-fiction'
+            | 'mystery'
+            | 'horror'
+            | 'historical-fiction'
+            | 'romance'
+            | 'literary-fiction'
+            | 'adventure'
+            | 'poetry'
+            | 'biography'
+            | 'memoir'
+            | 'history'
+            | 'philosophy'
+            | 'science'
+            | 'technology'
+            | 'childrens'
+            | 'other'
+          )[]
+        | null;
+      /** Removefromcollections */
+      removeFromCollections?: string[];
+      /** Removetags */
+      removeTags?: string[];
+    };
     /** PairingOut */
     PairingOut: {
       /** Code */
@@ -2345,6 +2801,44 @@ export type components = {
        * @default 15
        */
       skipSeconds: number;
+    };
+    /** PresetApplyRequest */
+    PresetApplyRequest: {
+      /** Components */
+      components: ('narrator' | 'characters' | 'speakers' | 'effects' | 'music')[];
+    };
+    /** PresetCharacterOut */
+    PresetCharacterOut: {
+      /** Description */
+      description: string | null;
+      /** Id */
+      id: string;
+      /** Lines */
+      lines: number;
+      /** Name */
+      name: string;
+      voice: components['schemas']['PresetVoiceOut'];
+    };
+    /** PresetComponentOut */
+    PresetComponentOut: {
+      /** Applied */
+      applied: boolean;
+      /** Available */
+      available: boolean;
+      /**
+       * Name
+       * @enum {string}
+       */
+      name: 'narrator' | 'characters' | 'speakers' | 'effects' | 'music';
+      /** Note */
+      note: string;
+    };
+    /** PresetVoiceOut */
+    PresetVoiceOut: {
+      /** Chosen */
+      chosen: string | null;
+      /** Preferred */
+      preferred: string;
     };
     /** PreviewRequest */
     PreviewRequest: {
@@ -2486,6 +2980,38 @@ export type components = {
       /** Syllablesheard */
       syllablesHeard?: number | null;
     };
+    /** ReadingPresetOut */
+    ReadingPresetOut: {
+      /** Appliedat */
+      appliedAt: string | null;
+      /** Appliedversion */
+      appliedVersion: number | null;
+      /** Characters */
+      characters: components['schemas']['PresetCharacterOut'][];
+      /** Components */
+      components: components['schemas']['PresetComponentOut'][];
+      /** Editionmatches */
+      editionMatches: boolean;
+      /** Effects */
+      effects: number;
+      /** Musictrackid */
+      musicTrackId: string | null;
+      narrator: components['schemas']['PresetVoiceOut'] | null;
+      /** Presetid */
+      presetId: string;
+      /** Presetversion */
+      presetVersion: number;
+      /** Speakersresolved */
+      speakersResolved: number;
+      /** Speakersunresolved */
+      speakersUnresolved: number;
+      /** Summary */
+      summary: string;
+      /** Title */
+      title: string;
+      /** Workid */
+      workId: string;
+    };
     /** ReadingProgress */
     ReadingProgress: {
       /** Percent */
@@ -2559,7 +3085,7 @@ export type components = {
        * Boundary
        * @enum {string}
        */
-      boundary: 'sentence' | 'paragraph' | 'section';
+      boundary: 'sentence' | 'line' | 'paragraph' | 'section';
       /** Index */
       index: number;
       /**
@@ -2673,6 +3199,122 @@ export type components = {
     /** SessionCreate */
     SessionCreate: {
       cleanup?: components['schemas']['Cleanup'] | null;
+    };
+    /**
+     * ShelfFacets
+     * @description How a document is organised, carried by every library summary.
+     */
+    ShelfFacets: {
+      /**
+       * Collectionids
+       * @default []
+       */
+      collectionIds: string[];
+      /** Documenttype */
+      documentType?:
+        | (
+            | 'novel'
+            | 'novella'
+            | 'short-story'
+            | 'short-story-collection'
+            | 'poem'
+            | 'poetry-collection'
+            | 'memoir'
+            | 'biography'
+            | 'essay'
+            | 'research-paper'
+            | 'report'
+            | 'personal-document'
+            | 'other'
+          )
+        | null;
+      /**
+       * Favorite
+       * @default false
+       */
+      favorite: boolean;
+      /** Folderid */
+      folderId?: string | null;
+      /**
+       * Genres
+       * @default []
+       */
+      genres: (
+        | 'fantasy'
+        | 'science-fiction'
+        | 'mystery'
+        | 'horror'
+        | 'historical-fiction'
+        | 'romance'
+        | 'literary-fiction'
+        | 'adventure'
+        | 'poetry'
+        | 'biography'
+        | 'memoir'
+        | 'history'
+        | 'philosophy'
+        | 'science'
+        | 'technology'
+        | 'childrens'
+        | 'other'
+      )[];
+      /**
+       * Tags
+       * @default []
+       */
+      tags: string[];
+    };
+    /**
+     * ShelfUpdate
+     * @description Set the given fields on one document; a field left out is kept, ``folder_id`` null means no folder.
+     */
+    ShelfUpdate: {
+      /** Documenttype */
+      documentType?:
+        | (
+            | 'novel'
+            | 'novella'
+            | 'short-story'
+            | 'short-story-collection'
+            | 'poem'
+            | 'poetry-collection'
+            | 'memoir'
+            | 'biography'
+            | 'essay'
+            | 'research-paper'
+            | 'report'
+            | 'personal-document'
+            | 'other'
+          )
+        | null;
+      /** Favorite */
+      favorite?: boolean | null;
+      /** Folderid */
+      folderId?: string | null;
+      /** Genres */
+      genres?:
+        | (
+            | 'fantasy'
+            | 'science-fiction'
+            | 'mystery'
+            | 'horror'
+            | 'historical-fiction'
+            | 'romance'
+            | 'literary-fiction'
+            | 'adventure'
+            | 'poetry'
+            | 'biography'
+            | 'memoir'
+            | 'history'
+            | 'philosophy'
+            | 'science'
+            | 'technology'
+            | 'childrens'
+            | 'other'
+          )[]
+        | null;
+      /** Tags */
+      tags?: string[] | null;
     };
     /** SpeechApiActivity */
     SpeechApiActivity: {
@@ -2810,6 +3452,13 @@ export type components = {
       telemetry: boolean;
       /** Version */
       version: string;
+    };
+    /** TagOut */
+    TagOut: {
+      /** Count */
+      count: number;
+      /** Tag */
+      tag: string;
     };
     /** TakeOut */
     TakeOut: {
@@ -3075,6 +3724,87 @@ export type components = {
     WebPageRequest: {
       /** Url */
       url: string;
+    };
+    /**
+     * WorkOut
+     * @description A bundled work as Explore shows it, with where it stands in this library.
+     */
+    WorkOut: {
+      /** Authors */
+      authors: string[];
+      /** Chaptercount */
+      chapterCount: number;
+      /** Contentnotes */
+      contentNotes: string[];
+      /** Covernote */
+      coverNote: string | null;
+      /** Description */
+      description: string | null;
+      /** Documentid */
+      documentId: string | null;
+      /**
+       * Documenttype
+       * @enum {string}
+       */
+      documentType:
+        | 'novel'
+        | 'novella'
+        | 'short-story'
+        | 'short-story-collection'
+        | 'poem'
+        | 'poetry-collection'
+        | 'memoir'
+        | 'biography'
+        | 'essay'
+        | 'research-paper'
+        | 'report'
+        | 'personal-document'
+        | 'other';
+      /** Editionsource */
+      editionSource: string;
+      /** Editionsourceurl */
+      editionSourceUrl: string;
+      /** Estimatedseconds */
+      estimatedSeconds: number;
+      featured: components['schemas']['Featured'] | null;
+      /** Firstpublished */
+      firstPublished: number;
+      /** Genres */
+      genres: (
+        | 'fantasy'
+        | 'science-fiction'
+        | 'mystery'
+        | 'horror'
+        | 'historical-fiction'
+        | 'romance'
+        | 'literary-fiction'
+        | 'adventure'
+        | 'poetry'
+        | 'biography'
+        | 'memoir'
+        | 'history'
+        | 'philosophy'
+        | 'science'
+        | 'technology'
+        | 'childrens'
+        | 'other'
+      )[];
+      /** Hascover */
+      hasCover: boolean;
+      /** Hidden */
+      hidden: boolean;
+      /** Rightscaveat */
+      rightsCaveat: string | null;
+      /** Rightsscope */
+      rightsScope: string;
+      /** Sorttitle */
+      sortTitle: string;
+      /** Title */
+      title: string;
+      /** Wordcount */
+      wordCount: number;
+      /** Workid */
+      workId: string;
     };
   };
   responses: never;
@@ -3791,6 +4521,101 @@ export interface operations {
       };
     };
   };
+  document_preset_api_documents__document_id__preset_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        document_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ReadingPresetOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  remove_preset_api_documents__document_id__preset_delete: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        document_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  apply_preset_api_documents__document_id__preset_apply_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        document_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['PresetApplyRequest'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ReadingPresetOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
   save_progress_api_documents__document_id__progress_put: {
     parameters: {
       query?: never;
@@ -3982,6 +4807,41 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['SentenceTakeOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  update_shelf_api_documents__document_id__shelf_put: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        document_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ShelfUpdate'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DocumentSummary'];
         };
       };
       /** @description Validation Error */
@@ -5003,6 +5863,465 @@ export interface operations {
         };
         content: {
           'image/svg+xml': unknown;
+        };
+      };
+    };
+  };
+  list_collections_api_library_collections_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CollectionOut'][];
+        };
+      };
+    };
+  };
+  create_collection_api_library_collections_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CollectionIn'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CollectionOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  delete_collection_api_library_collections__collection_id__delete: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        collection_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  update_collection_api_library_collections__collection_id__patch: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        collection_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CollectionUpdate'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CollectionOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  set_collection_members_api_library_collections__collection_id__documents_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        collection_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CollectionMembers'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CollectionOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  list_folders_api_library_folders_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['FolderOut'][];
+        };
+      };
+    };
+  };
+  create_folder_api_library_folders_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['FolderIn'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['FolderOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  delete_folder_api_library_folders__folder_id__delete: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        folder_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  update_folder_api_library_folders__folder_id__patch: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        folder_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['FolderUpdate'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['FolderOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  organize_documents_api_library_organize_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['OrganizeRequest'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DocumentSummary'][];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  list_tags_api_library_tags_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['TagOut'][];
+        };
+      };
+    };
+  };
+  list_works_api_library_works_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['WorkOut'][];
+        };
+      };
+    };
+  };
+  work_cover_api_library_works__work_id__cover_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        work_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': unknown;
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  set_hidden_api_library_works__work_id__hidden_put: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        work_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['HiddenUpdate'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['WorkOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  open_work_api_library_works__work_id__open_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        work_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DocumentDetail'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  credits_api_library_works_credits_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'text/plain': string;
         };
       };
     };

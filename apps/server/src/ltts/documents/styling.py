@@ -3,7 +3,8 @@
 """Purpose: How each sentence of a document is read: the reader's choices, its characters and its context.
 
 Scope: Sentence annotations (``segment_annotations``, one row per sentence and kind: ``voice``,
-``effect``, ``sound``, ``style``, ``take``, ``pause`` in ms, ``speak_as`` from speech marks, ``skip``
+``effect``, ``sound``, ``style``, ``take``, ``pause`` in ms, ``speak_as`` from speech marks, ``speaker``
+(the character a bundled book's preset says speaks a quoted line the analysis can't attribute), ``skip``
 with its reason, and the cleanup's ``footnotes``, ``citations`` and ``cleanup`` finds, see ``cleanup_store.py``),
 validated by a registry so a new kind needs no new table; nothing is written into the text. The cast
 (``document_cast``): a dialogue voice, and whether quoted speech in a narrated sentence is voiced apart.
@@ -56,6 +57,7 @@ KINDS: dict[str, Callable[[str], bool]] = {
     "take": _int_in(1, MAX_TAKE),
     "pause": _int_in(0, MAX_PAUSE_MS),
     "speak_as": lambda value: len(value) <= 4_000,
+    "speaker": lambda value: 0 < len(value) <= 60,  # the character a curated preset says speaks this line
     "skip": lambda value: value in SKIP_REASONS,  # not read: a reason the cleanup found, or "manual"
     "footnotes": is_pairs,  # footnote markers left unread: (written, spoken) replacements
     "citations": is_pairs,  # citation markers left unread: (marker, "") replacements
@@ -150,7 +152,10 @@ class StylingStore:
 
     def get(self, document_id: str) -> DocumentStylesOut:
         segments = []
+        speakers = {}
         for index, kinds in self._rows(document_id).items():
+            if "speaker" in kinds:
+                speakers[index] = kinds["speaker"]
             values: dict[str, Any] = {field: kinds.get(kind) for field, kind in _FIELDS.items()}
             values["take"] = int(values["take"]) if values["take"] else None
             values["pause_ms"] = int(values["pause_ms"]) if values["pause_ms"] is not None else None
@@ -158,7 +163,8 @@ class StylingStore:
             if any(value is not None for value in values.values()):
                 segments.append(SegmentStyleOut(index=index, **values))
         dialogue, split = self._cast(document_id)
-        digest = hashlib.sha256(repr(([s.model_dump() for s in segments], dialogue, split)).encode()).hexdigest()
+        state = ([s.model_dump() for s in segments], speakers, dialogue, split)
+        digest = hashlib.sha256(repr(state).encode()).hexdigest()
         return DocumentStylesOut(
             segments=segments, dialogue_voice_id=dialogue, split_dialogue=split, revision=digest[:16]
         )
@@ -243,7 +249,7 @@ class StylingStore:
         kinds = self._rows_for(document_id, index)
         line = self.lines(document_id).get(index) or analyse([Sentence(index, 0, "paragraph", text)])[index]
         dialogue_voice, split = self._cast(document_id)
-        speaker_voice = (characters or {}).get(line.speaker or "") or dialogue_voice
+        speaker_voice = (characters or {}).get(kinds.get("speaker") or line.speaker or "") or dialogue_voice
         own = kinds.get("voice")
         parts: tuple[PartPlan, ...] = ()
         if own:
@@ -251,7 +257,7 @@ class StylingStore:
         elif line.parts and split and speaker_voice and speaker_voice != voice_id:
             voice = voice_id
             parts = tuple(PartPlan(part.text, speaker_voice if part.quoted else voice_id) for part in line.parts)
-        elif line.dialogue and speaker_voice:
+        elif (line.dialogue or "speaker" in kinds) and speaker_voice:  # a curated speaker makes the line dialogue
             voice = speaker_voice
         else:
             voice = voice_id

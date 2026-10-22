@@ -1,0 +1,37 @@
+{
+  "schema": "ttsnative.immersive-preset/1",
+  "preset_id": "poe-selected-stories-immersive",
+  "preset_version": 1,
+  "work_id": "poe-selected-stories",
+  "edition_id": "standardebooks:edgar-allan-poe/short-fiction@f0a5168",
+  "text_version": 1,
+  "title": "Poe, after dark",
+  "summary": "A low, too-calm voice for Poe's narrators, and Dupin in his own.",
+  "narrator": {
+    "voice": { "preferred": "kokoro:bm_fable", "fallbacks": ["kokoro:bm_george"] },
+    "note": "Low, deliberate, a little too calm."
+  },
+  "characters": [
+    { "id": "dupin", "name": "Dupin", "description": "The detective of the Rue Morgue and the purloined letter.",
+      "voice": { "preferred": "kokoro:bm_george", "fallbacks": ["kokoro:bm_lewis"] } }
+  ],
+  "effects": [
+    { "id": "the-latch", "anchor": { "chapter": "the-telltale-heart", "hash": "d48cc4b7a7f1f493", "quote": "And every night, about midnight, I turned the latch of his door and opened it—oh", "occurrence": 1 },
+      "event": "door-creak", "category": "doors", "intent": "The old man's door, opened at midnight.", "volume": 45 },
+    { "id": "the-heart", "anchor": { "chapter": "the-telltale-heart", "hash": "0c815571f4cfc20a", "quote": "It was a low, dull, quick sound—much such a sound as a watch makes when envelope", "occurrence": 1 },
+      "event": "clock-tick", "category": "household", "intent": "The low, dull, quick sound, like a watch wrapped in cotton.", "loop": true, "duration_s": 40, "volume": 55 },
+    { "id": "the-deed", "anchor": { "chapter": "the-telltale-heart", "hash": "c124b0107094079d", "quote": "He shrieked once—once only.", "occurrence": 1 },
+      "event": "thud", "category": "impacts", "intent": "The bed pulled over him.", "position": 1.0, "volume": 60 },
+    { "id": "catacombs", "anchor": { "chapter": "the-cask-of-amontillado", "hash": "c08b590c8fad04a7", "quote": "We passed through a range of low arches, descended, passed on, and descending ag", "occurrence": 1 },
+      "event": "footsteps-stone", "category": "footsteps", "intent": "Descending through the catacombs of the Montresors.", "loop": true, "duration_s": 20, "volume": 50 },
+    { "id": "tempest", "anchor": { "chapter": "the-fall-of-the-house-of-usher", "hash": "b9c372d23973f03a", "quote": "It was, indeed, a tempestuous yet sternly beautiful night, and one wildly singul", "occurrence": 1 },
+      "event": "thunder-distant", "category": "weather", "intent": "A tempestuous night.", "volume": 60 },
+    { "id": "whirlwind", "anchor": { "chapter": "the-fall-of-the-house-of-usher", "hash": "cc47f8a2b4a726ac", "quote": "A whirlwind had apparently collected its force in our vicinity; for there were f", "occurrence": 1 },
+      "event": "wind-howl", "category": "weather", "intent": "The whirlwind about the house.", "loop": true, "duration_s": 30, "volume": 45 },
+    { "id": "antique-panels", "anchor": { "chapter": "the-fall-of-the-house-of-usher", "hash": "64674d1f48689be7", "quote": "As if in the superhuman energy of his utterance there had been found the potency", "occurrence": 1 },
+      "event": "door-creak", "category": "doors", "intent": "The huge antique panels thrown slowly back.", "position": 0.6, "volume": 60 }
+  ],
+  "music": {
+    "recommendation": { "track_id": "warriors-lament", "volume": 10, "note": "Low and mournful." }
+  }
+}

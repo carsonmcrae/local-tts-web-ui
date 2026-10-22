@@ -194,7 +194,7 @@ class _PageReader(HTMLParser):
 def _sections(content: BlockBuilder, first_title: str) -> list[ExtractedSection]:
     builder = SectionBuilder(first_title)
     for block, level in zip(content.blocks, content.levels, strict=True):
-        builder.add(block.text, level or None)
+        builder.add(block.text, level or None, line_break=block.line_break)
     builder.flush()
     return builder.sections
 

@@ -30,6 +30,7 @@ import { CastButton } from './CastDialog';
 import { DocumentNotices } from './CleanupNote';
 import { ReaderPanels } from './ReaderPanels';
 import { ReaderHeader, SectionBody, SectionPager } from './ReaderParts';
+import { ReadingExperience } from './ReadingExperience';
 import { SearchDialog } from './SearchDialog';
 import { SectionNav } from './SectionNav';
 import { SelectionStyler } from './SentenceStyling';
@@ -161,6 +162,12 @@ function Reader({ doc }: Readonly<{ doc: DocumentDetail }>) {
           warnings={doc.warnings}
           onJump={jumpTo}
           onChanged={stylingChanged}
+        />
+        <ReadingExperience
+          documentId={doc.id}
+          bundledWorkId={doc.bundledWorkId}
+          onChanged={stylingChanged}
+          onVoice={(voiceId) => void controller.setVoice(voiceId)}
         />
         <div className="mb-6 flex flex-wrap items-center justify-between gap-2">
           <p className="text-[13px] font-medium text-muted">

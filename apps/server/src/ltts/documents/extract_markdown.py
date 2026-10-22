@@ -41,12 +41,13 @@ class SectionBuilder:
         self.sections: list[ExtractedSection] = []
         self.current = ExtractedSection(title=title)
 
-    def add(self, text: str, heading_level: int | None) -> None:
+    def add(self, text: str, heading_level: int | None, *, line_break: bool = False) -> None:
+        """Add a block; ``line_break`` says a line break (not a paragraph break) follows it."""
         if heading_level is not None and heading_level <= 2:
             self.flush()
-            self.current = ExtractedSection(title=text, blocks=[Block("heading", text)])
+            self.current = ExtractedSection(title=text, blocks=[Block("heading", text, line_break=line_break)])
         else:
-            self.current.blocks.append(Block("heading" if heading_level else "paragraph", text))
+            self.current.blocks.append(Block("heading" if heading_level else "paragraph", text, line_break=line_break))
 
     def flush(self) -> None:
         if self.current.blocks:

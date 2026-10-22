@@ -5,7 +5,8 @@
 Scope: A device that isn't paired may only load the app itself and pair (or ask whether it is
 paired). A paired device may use only what is listed here (anything new stays on this computer until
 it is added): read, listen, control playback, change reading preferences and pronunciations, add and
-edit documents, style sentences, and start, pause, resume and download exports. Sensitive operations
+edit documents, organise the library (folders, collections, tags), style sentences, and start, pause,
+resume and download exports. Sensitive operations
 stay on this computer: LAN, speech API and integration settings, voices and their recordings,
 engines, this computer's jobs, the system, importing web pages, and anything that throws work away
 or uses this computer's accounts (deleting documents or exports, cancelling an export, sending one to
@@ -29,6 +30,7 @@ _ALLOWED: tuple[tuple[frozenset[str], str], ...] = (
     (_READ, "/api/health"),
     (_READ, "/api/system"),  # versions and storage sizes; the data folder's path is hidden
     (_ANY, "/api/documents"),  # except what _ON_THE_COMPUTER keeps here
+    (_ANY, "/api/library"),  # folders, collections, tags and organising; nothing here deletes a document
     (_ANY, "/api/cast-presets"),
     (_READ, "/api/audio"),
     (_ANY, "/api/voices"),  # the voice list and previews
@@ -49,7 +51,9 @@ _ON_THE_COMPUTER: tuple[tuple[str, re.Pattern[str]], ...] = (
 )
 _ID = r"[0-9a-f]{32}"
 # Starting work that costs minutes of synthesis or stores files.
-_COSTLY = re.compile(rf"^/api/(exports|exports/{_ID}/resume|documents/(upload|text)|documents/{_ID}/cover)/?$")
+_COSTLY = re.compile(
+    rf"^/api/(exports|exports/{_ID}/resume|documents/(upload|text)|documents/{_ID}/cover|library/works/[a-z0-9-]+/open)/?$"
+)
 COSTLY_PER_WINDOW = 20
 COSTLY_WINDOW_S = 600.0
 

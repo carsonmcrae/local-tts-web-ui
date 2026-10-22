@@ -23,6 +23,8 @@ from fastapi.testclient import TestClient
 from conftest import SAMPLE_RATE, FakeEngine, speech_like, wait_job, wav_bytes
 from ltts.container import Services
 from ltts.documents import styling as styling_module
+from ltts.documents.delivery import Sentence
+from ltts.documents.styling import StylingStore
 from ltts.effects import EFFECTS, apply_effect
 from ltts.synthesis.service import SpokenPlan, SynthesisService
 
@@ -167,3 +169,11 @@ def test_deleting_a_voice_hands_its_sentences_back(client: TestClient, services:
     after = client.get(f"/api/documents/{doc_id}/styles").json()
     assert after["segments"] == [] and after["dialogueVoiceId"] is None
     assert services.styling.plan(doc_id, 1, "x", "kokoro:alpha").voice_id == "kokoro:alpha"
+
+
+def test_the_analysis_cache_keeps_only_the_last_few_documents(services: Services) -> None:
+    store = StylingStore(services.db, lambda doc: [Sentence(0, 0, "paragraph", f"Hello from {doc}.")])
+    for number in range(9):
+        store.lines(f"doc{number}")
+    assert "doc0" not in store._analysed and len(store._analysed) == 8  # the oldest made room
+    assert store.lines("doc1")[0].style == "narration" and list(store._analysed)[-1] == "doc1"  # reading renews it

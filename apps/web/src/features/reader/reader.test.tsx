@@ -357,4 +357,22 @@ describe('Reader states', () => {
     expect(sentence('Plain.')).toHaveAttribute('data-skipped', 'false');
     expect(sentence('Plain.')).toHaveAttribute('data-styled', 'false');
   });
+
+  it('hands an included book’s suggested voice to the player', async () => {
+    const included = documentDetail({ ...book, bundledWorkId: 'alices-adventures-in-wonderland' });
+    mockReaderApi(included, {
+      [`GET /api/documents/${book.id}/preset`]: {
+        presetId: 'alice', presetVersion: 1, workId: 'alices-adventures-in-wonderland',
+        title: 'Wonderland, in voices', summary: 'Alice in her own voice.',
+        narrator: { preferred: 'kokoro:af_sarah', chosen: 'kokoro:af_sarah' },
+        characters: [], speakersResolved: 0, speakersUnresolved: 0, effects: 0, musicTrackId: null,
+        components: [{ name: 'narrator', available: true, note: 'A voice.', applied: false }],
+        appliedAt: null, appliedVersion: null,
+      }, // prettier-ignore
+    });
+    const { user, state } = await openReader(included);
+    const experience = await screen.findByRole('region', { name: 'Reading experience' });
+    await user.click(within(experience).getByRole('button', { name: 'Use this voice' }));
+    await waitFor(() => expect(state().voiceId).toBe('kokoro:af_sarah'));
+  });
 });

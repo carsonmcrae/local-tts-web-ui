@@ -49,6 +49,10 @@ TTSNative is free and open source (MIT). It was called **Local TTS** until versi
 - **Study and listening aids** — search inside a document, bookmarks with notes (exported as Markdown), a
   sleep timer, adjustable text size, spacing and typeface, a searchable and sortable library, and a fix for
   chapters that start in the wrong place.
+- **A library you can organise, with 25 books included** — folders, collections, favourites, genres, types
+  and tags, filters and bulk actions; and an Explore page of public-domain classics (Alice, Frankenstein,
+  Pride and Prejudice, Sherlock Holmes, Poe, Dickinson, Douglass…) that ship inside the app with their
+  rights recorded, six of them with a curated multi-voice cast.
 - **Characters and effects** — select text to read it in another voice or accent, as a loudspeaker
   announcement, a phone call or a radio broadcast, give each character a voice (reusable cast presets), or
   choose one voice for all dialogue while the narration keeps yours; exports sound the same. Blend built-in

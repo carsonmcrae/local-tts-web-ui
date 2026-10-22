@@ -4,7 +4,8 @@
 
 Scope: Rule-based sentence splitting (abbreviations, initials, decimals, closing quotes), splitting
 of over-long sentences at clause punctuation then whitespace, and tagging each segment with the
-boundary that follows it (sentence / paragraph / section) so synthesis can add natural pauses.
+boundary that follows it (sentence / line / paragraph / section) so synthesis can add natural pauses;
+blocks that a line break joins (verse) share one paragraph.
 The same input always yields the same segments, which keeps audio cache keys stable.
 Does NOT belong: Speech rewriting (``normalize.speech_text``) or engine phoneme limits.
 """
@@ -179,9 +180,14 @@ def segment_extraction(extraction: Extraction) -> tuple[list[Segment], list[Sect
     for section_index, section in enumerate(extraction.sections):
         start = len(segments)
         for block_number, block in enumerate(section.blocks):
-            last: Boundary = "section" if block_number == len(section.blocks) - 1 else "paragraph"
+            final = block_number == len(section.blocks) - 1
+            # A line break inside a paragraph (verse): a shorter pause, and the next block keeps the
+            # paragraph number so the reader shows a line break rather than a new paragraph.
+            continues = block.line_break and not final
+            last: Boundary = "section" if final else "line" if continues else "paragraph"
             segments += _block_segments(block, section_index, paragraph_index, len(segments), last)
-            paragraph_index += 1
+            if not continues:
+                paragraph_index += 1
         if len(segments) > start:
             sections.append(SectionInfo(len(sections), section.title, start, len(segments) - start, section.page))
     _renumber_sections(segments, sections)

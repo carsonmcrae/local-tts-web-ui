@@ -37,6 +37,7 @@ class Sentence:
     paragraph: int
     heading: bool
     text: str
+    line_break: bool = False  # a verse line ends here: the next sentence starts a new line, not a new paragraph
 
 
 @dataclass(frozen=True, slots=True)
@@ -82,6 +83,8 @@ def _xhtml(chapter: EpubChapter, language: str) -> str:
             close()
             current, parts = key, []
         parts.append(f'<span id="s{sentence.index}">{clean(sentence.text)}</span>')
+        if sentence.line_break:
+            parts.append("<br/>")
     close()
     return (
         '<?xml version="1.0" encoding="UTF-8"?>\n<!DOCTYPE html>\n'

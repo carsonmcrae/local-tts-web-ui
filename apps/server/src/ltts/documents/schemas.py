@@ -2,8 +2,9 @@
 # Copyright (c) 2026 Carson McRae
 """Purpose: Wire-format models for the documents API.
 
-Scope: Library summaries, document detail with sections, section contents, paste and web page requests,
-section corrections (title and where it starts), search results and reading-progress updates. Counts come
+Scope: Library summaries (with the author, whether there is a cover, and how the document is organised:
+``shelf.py``), document detail with sections, section contents, paste and web page requests, section
+corrections (title and where it starts), search results and reading-progress updates. Counts come
 twice: of all the extracted text (as stored) and of what is read aloud, without skipped sentences and the
 markers left unread; ``estimated_seconds`` is a character-rate estimate of what is read aloud.
 Does NOT belong: Internal extraction structures (``types.py``).
@@ -16,6 +17,7 @@ from typing import Literal
 from pydantic import Field
 
 from ltts.common import ApiModel
+from ltts.documents.shelf import ShelfFacets
 
 CHARS_PER_SECOND = 15.0
 MAX_TITLE_CHARS = 200
@@ -53,6 +55,10 @@ class DocumentSummary(ApiModel):
     created_at: str
     last_opened_at: str | None
     progress: ReadingProgress | None = None
+    author: str | None  # from the audiobook details, for sorting and searching the library
+    has_cover: bool = False
+    shelf: ShelfFacets  # folder, favourite, type, genres, tags, collections
+    bundled_work_id: str | None = None  # set when the document is one of the books that ship with the app
 
 
 class DocumentDetail(DocumentSummary):
@@ -65,7 +71,7 @@ class SegmentOut(ApiModel):
     section_index: int
     paragraph_index: int
     kind: Literal["heading", "paragraph"]
-    boundary: Literal["sentence", "paragraph", "section"]
+    boundary: Literal["sentence", "line", "paragraph", "section"]  # "line": a verse line ends here
     text: str
 
 

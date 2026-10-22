@@ -1,0 +1,55 @@
+{
+  "schema": "ttsnative.immersive-preset/1",
+  "preset_id": "a-christmas-carol-immersive",
+  "preset_version": 1,
+  "work_id": "a-christmas-carol",
+  "edition_id": "standardebooks:charles-dickens/a-christmas-carol@d5a9e58",
+  "text_version": 1,
+  "title": "A Christmas Carol, in voices",
+  "summary": "Scrooge, Marley, Bob Cratchit, Fred, Tiny Tim and old Fezziwig in their own voices, with Marley's and Fred's untagged lines given to them.",
+  "narrator": {
+    "voice": { "preferred": "kokoro:bm_george", "fallbacks": ["kokoro:bm_fable"] },
+    "note": "A fireside storyteller."
+  },
+  "characters": [
+    { "id": "scrooge", "name": "Scrooge", "description": "A squeezing, wrenching, grasping old sinner, at first.",
+      "voice": { "preferred": "kokoro:bm_lewis", "fallbacks": ["kokoro:bm_daniel", "kokoro:bm_george"] } },
+    { "id": "marley", "name": "Marley", "description": "Scrooge's late partner, in chains.",
+      "voice": { "preferred": "kokoro:bm_fable", "fallbacks": ["kokoro:am_onyx"] } },
+    { "id": "bob", "name": "Bob", "aliases": ["Bob Cratchit"], "description": "Scrooge's clerk.",
+      "voice": { "preferred": "kokoro:am_michael", "fallbacks": ["kokoro:am_fenrir"] } },
+    { "id": "fred", "name": "Fred", "description": "Scrooge's cheerful nephew.",
+      "voice": { "preferred": "kokoro:am_puck", "fallbacks": ["kokoro:am_echo"] } },
+    { "id": "tiny-tim", "name": "Tiny Tim",
+      "voice": { "preferred": "kokoro:bf_alice", "fallbacks": ["kokoro:af_sarah"] } },
+    { "id": "fezziwig", "name": "Fezziwig", "description": "Scrooge's old master, host of the ball.",
+      "voice": { "preferred": "kokoro:am_fenrir", "fallbacks": ["kokoro:am_michael"] } },
+    { "id": "peter", "name": "Peter", "description": "Peter Cratchit.",
+      "voice": { "preferred": "kokoro:am_echo", "fallbacks": ["kokoro:am_puck"] } },
+    { "id": "joe", "name": "Joe", "description": "Old Joe, the dealer in rags.",
+      "voice": { "preferred": "kokoro:bm_daniel", "fallbacks": ["kokoro:bm_lewis"] } }
+  ],
+  "speakers": [
+    { "anchor": { "chapter": "chapter-1", "hash": "e3fabe2955170140", "quote": "“A merry Christmas, uncle!", "occurrence": 1 },
+      "speaker": "fred" },
+    { "anchor": { "chapter": "chapter-1", "hash": "257d0fed879e9ea1", "quote": "“I wear the chain I forged in life,” replied the Ghost.", "occurrence": 1 },
+      "speaker": "marley" }
+  ],
+  "effects": [
+    { "id": "church-bell", "anchor": { "chapter": "chapter-1", "hash": "3a447946c453ba4d", "quote": "The ancient tower of a church, whose gruff old bell was always peeping slyly dow", "occurrence": 1 },
+      "event": "bell-toll", "category": "fantasy", "intent": "The church tower's gruff old bell.", "volume": 60 },
+    { "id": "scrooges-door", "anchor": { "chapter": "chapter-1", "hash": "c6704c069fd7bb96", "quote": "And then let any man explain to me, if he can, how it happened that Scrooge, hav", "occurrence": 1 },
+      "event": "door-creak", "category": "doors", "intent": "Scrooge's key in the lock of his door, and the knocker.", "position": 0.5, "volume": 55 },
+    { "id": "ball-ends", "anchor": { "chapter": "chapter-2", "hash": "ecd0d2385945f72b", "quote": "When the clock struck eleven, this domestic ball broke up.", "occurrence": 1 },
+      "event": "clock-chime", "category": "household", "intent": "Eleven strikes and Fezziwig's ball breaks up.", "volume": 65 },
+    { "id": "ruddy-blaze", "anchor": { "chapter": "chapter-3", "hash": "0896f277f18918b0", "quote": "All this time he lay upon his bed, the very core and centre of a blaze of ruddy ", "occurrence": 1 },
+      "event": "fire-crackle", "category": "nature", "intent": "The blaze of ruddy light that fills Scrooge's room.", "loop": true, "duration_s": 30, "volume": 35 },
+    { "id": "snowy-streets", "anchor": { "chapter": "chapter-3", "hash": "7d02030278aae13d", "quote": "By this time it was getting dark, and snowing pretty heavily; and as Scrooge and", "occurrence": 1 },
+      "event": "wind-gust", "category": "weather", "intent": "Dark, and snowing heavily.", "volume": 40 },
+    { "id": "nine-strikes", "anchor": { "chapter": "chapter-5", "hash": "d22e80766b40028e", "quote": "The clock struck nine.", "occurrence": 1 },
+      "event": "clock-chime", "category": "household", "intent": "Nine o'clock, and no Bob.", "volume": 65 }
+  ],
+  "music": {
+    "recommendation": { "track_id": "rising-moon", "volume": 10, "note": "Quiet and wintry." }
+  }
+}

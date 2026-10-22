@@ -1,121 +1,182 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 Carson McRae
 /**
- * Purpose: The library's document list, with search and sorting once there is more than one document.
- * Scope: Filters by title or file name as you type; sorts by last read or added (the server's
- *   order), title, date added or how much is left; remembers the sort on this device; explains an
- *   empty search with a way to clear it.
- * Does NOT belong: Uploading (UploadArea) or a document's card (DocumentCard).
+ * Purpose: The documents of a library view, with search, filters, sorting, selection and bulk actions.
+ * Scope: The view's title and count, the filter bar once there is more than one document, a Select
+ *   mode with checkboxes and a bar of actions for the chosen documents (move, collections, details,
+ *   favourite, delete), the cards, and what an empty view or an empty search says.
+ * Does NOT belong: Choosing the view (LibraryRail), uploading (UploadArea) or a card (DocumentCard).
  */
-import { Search } from 'lucide-react';
+import { CheckSquare, Star, X } from 'lucide-react';
 import { useState } from 'react';
-import type { DocumentSummary } from '@/api/types';
+import { useOrganize } from '@/api/libraryQueries';
+import type { Collection, DocumentSummary, Folder } from '@/api/types';
 import { Button } from '@/components/ui/Button';
-import { Input, Select } from '@/components/ui/Field';
+import { EmptyState } from '@/components/ui/Feedback';
 import { DocumentCard } from './DocumentCard';
+import { applyFilters, defaultFilters, hasNarrowing, LibraryFilterBar } from './LibraryFilters';
+import type { OrganizeAction } from './OrganizeDialogs';
+import { OrganizeDialog } from './OrganizeDialogs';
+import type { LibraryView } from './views';
+import { emptyCopy, viewTitle } from './views';
 
-type Sort = 'recent' | 'title' | 'added' | 'progress';
-const SORTS: readonly { value: Sort; label: string }[] = [
-  { value: 'recent', label: 'Last read or added' },
-  { value: 'title', label: 'Title' },
-  { value: 'added', label: 'Date added' },
-  { value: 'progress', label: 'Least listened' },
-];
-const STORAGE_KEY = 'ltts.librarySort';
-
-function readSort(): Sort {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    return SORTS.find((sort) => sort.value === stored)?.value ?? 'recent';
-  } catch {
-    return 'recent';
-  }
+interface ListProps {
+  documents: readonly DocumentSummary[]; // the view's documents
+  view: LibraryView;
+  folders: readonly Folder[];
+  collections: readonly Collection[];
+  total: number; // every document in the library
 }
 
-function saveSort(sort: Sort): void {
-  try {
-    localStorage.setItem(STORAGE_KEY, sort);
-  } catch {
-    // Storage unavailable (private window): the sort still applies until the page closes.
-  }
+function BulkBar({
+  chosen,
+  onAction,
+  onDone,
+}: Readonly<{
+  chosen: readonly DocumentSummary[];
+  onAction: (action: OrganizeAction) => void;
+  onDone: () => void;
+}>) {
+  const organize = useOrganize();
+  const allFavourite = chosen.length > 0 && chosen.every((doc) => doc.shelf.favorite);
+  return (
+    <div
+      role="toolbar"
+      aria-label="Selected documents"
+      className="mb-4 flex flex-wrap items-center gap-2 rounded-[var(--radius-lg)] border border-accent/40 bg-accent-soft/60 p-2 pl-3"
+    >
+      <span className="mr-auto text-sm font-medium">{chosen.length} selected</span>
+      <Button size="sm" onClick={() => onAction('move')} disabled={!chosen.length}>
+        Move to folder…
+      </Button>
+      <Button size="sm" onClick={() => onAction('collect')} disabled={!chosen.length}>
+        Collections…
+      </Button>
+      <Button size="sm" onClick={() => onAction('edit')} disabled={!chosen.length}>
+        Edit details…
+      </Button>
+      <Button
+        size="sm"
+        icon={<Star size={14} />}
+        disabled={!chosen.length}
+        loading={organize.isPending}
+        onClick={() =>
+          organize.mutate({ documentIds: chosen.map((doc) => doc.id), favorite: !allFavourite })
+        }
+      >
+        {allFavourite ? 'Remove favourite' : 'Favourite'}
+      </Button>
+      <Button
+        size="sm"
+        variant="danger"
+        onClick={() => onAction('delete')}
+        disabled={!chosen.length}
+      >
+        Delete…
+      </Button>
+      <Button size="sm" variant="ghost" icon={<X size={14} />} onClick={onDone}>
+        Done
+      </Button>
+    </div>
+  );
 }
 
-export function sortDocuments(list: readonly DocumentSummary[], sort: Sort): DocumentSummary[] {
-  const sorted = [...list];
-  if (sort === 'title')
-    sorted.sort((a, b) => a.title.localeCompare(b.title, undefined, { numeric: true }));
-  if (sort === 'added') sorted.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-  if (sort === 'progress')
-    sorted.sort((a, b) => (a.progress?.percent ?? 0) - (b.progress?.percent ?? 0));
-  return sorted;
-}
+export function LibraryList({ documents, view, folders, collections, total }: Readonly<ListProps>) {
+  const [filters, setFilters] = useState(defaultFilters);
+  const [selecting, setSelecting] = useState(false);
+  const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
+  const [dialog, setDialog] = useState<{
+    action: OrganizeAction;
+    documents: DocumentSummary[];
+  } | null>(null);
+  const shown = applyFilters(documents, filters);
+  const chosen = documents.filter((doc) => selected.has(doc.id));
+  const tools = total > 1;
+  const title = viewTitle(view, folders, collections);
+  const stopSelecting = () => {
+    setSelecting(false);
+    setSelected(new Set());
+  };
+  const select = (id: string, on: boolean) =>
+    setSelected((previous) => {
+      const next = new Set(previous);
+      if (on) next.add(id);
+      else next.delete(id);
+      return next;
+    });
 
-function matchesSearch(doc: DocumentSummary, query: string): boolean {
-  const wanted = query.trim().toLocaleLowerCase();
-  return `${doc.title} ${doc.filename ?? ''}`.toLocaleLowerCase().includes(wanted);
-}
-
-export function LibraryList({ documents }: Readonly<{ documents: readonly DocumentSummary[] }>) {
-  const [query, setQuery] = useState('');
-  const [sort, setSort] = useState<Sort>(readSort);
-  const shown = sortDocuments(documents, sort).filter((doc) => matchesSearch(doc, query));
-  const tools = documents.length > 1;
   return (
     <>
       <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
-        <h2 className="text-base font-semibold tracking-tight">All documents</h2>
-        <span className="text-[13px] text-muted">
-          {documents.length} total · drag files anywhere to add
-        </span>
-      </div>
-      {tools ? (
-        <div className="mb-4 flex flex-col gap-2 sm:flex-row">
-          <div className="relative flex-1">
-            <Search
-              size={16}
-              className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-subtle"
-            />
-            <Input
-              type="search"
-              aria-label="Search your library"
-              placeholder="Search by title or file name"
-              className="pl-9"
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-            />
-          </div>
-          <Select
-            aria-label="Sort by"
-            className="sm:w-52"
-            value={sort}
-            onChange={(event) => {
-              const next = event.target.value as Sort;
-              setSort(next);
-              saveSort(next);
-            }}
-          >
-            {SORTS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </Select>
+        <h2 className="text-base font-semibold tracking-tight">{title}</h2>
+        <div className="flex items-center gap-3">
+          <span className="text-[13px] text-muted">
+            {documents.length === total
+              ? `${total} total · drag files anywhere to add`
+              : `${documents.length} of ${total}`}
+          </span>
+          {tools ? (
+            <Button
+              size="sm"
+              variant={selecting ? 'subtle' : 'ghost'}
+              icon={<CheckSquare size={14} />}
+              aria-pressed={selecting}
+              onClick={() => (selecting ? stopSelecting() : setSelecting(true))}
+            >
+              Select
+            </Button>
+          ) : null}
         </div>
+      </div>
+      {tools ? <LibraryFilterBar filters={filters} onChange={setFilters} /> : null}
+      {selecting ? (
+        <BulkBar
+          chosen={chosen}
+          onAction={(action) => setDialog({ action, documents: chosen })}
+          onDone={stopSelecting}
+        />
       ) : null}
-      {shown.length === 0 ? (
+      {documents.length === 0 ? (
+        <EmptyState icon={<CheckSquare size={24} />} title={emptyCopy(view).title}>
+          {emptyCopy(view).hint}
+        </EmptyState>
+      ) : shown.length === 0 ? (
         <div className="flex flex-col items-center gap-3 rounded-[var(--radius-lg)] border border-dashed border-line-strong p-8 text-center text-sm text-muted">
-          <p>No documents match “{query.trim()}”.</p>
-          <Button size="sm" onClick={() => setQuery('')}>
-            Clear search
+          <p>
+            {filters.query.trim()
+              ? `No documents match “${filters.query.trim()}”.`
+              : 'No documents match these filters.'}
+          </p>
+          <Button size="sm" onClick={() => setFilters({ ...defaultFilters(), sort: filters.sort })}>
+            Clear {hasNarrowing(filters) ? 'filters' : 'search'}
           </Button>
         </div>
       ) : (
         <ul className="grid grid-cols-1 gap-3 lg:grid-cols-2">
           {shown.map((doc) => (
-            <DocumentCard key={doc.id} doc={doc} />
+            <DocumentCard
+              key={doc.id}
+              doc={doc}
+              selectable={selecting}
+              selected={selected.has(doc.id)}
+              onSelectChange={selecting ? (on) => select(doc.id, on) : undefined}
+              onAction={(action, target) => setDialog({ action, documents: [target] })}
+            />
           ))}
         </ul>
       )}
+      {dialog ? (
+        <OrganizeDialog
+          action={dialog.action}
+          documents={dialog.documents}
+          folders={folders}
+          collections={collections}
+          onClose={() => {
+            setDialog(null);
+            if (dialog.action === 'delete') stopSelecting();
+          }}
+        />
+      ) : null}
     </>
   );
 }

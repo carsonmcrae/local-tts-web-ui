@@ -112,7 +112,7 @@ def strip(text: str) -> str:
     return " ".join("".join(" " if _is_mark(char) else char for char in text).split())
 
 
-_RANK = {"sentence": 0, "paragraph": 1, "section": 2}
+_RANK = {"sentence": 0, "line": 1, "paragraph": 2, "section": 3}
 
 
 def fold(segments: list[Segment], sections: list[SectionInfo]) -> tuple[list[Segment], list[SectionInfo]]:

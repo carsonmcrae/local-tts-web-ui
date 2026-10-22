@@ -100,6 +100,11 @@ class DocumentDetailsStore:
                 return Cover(path, media_type)
         return None
 
+    def ids_with_cover(self) -> set[str]:
+        """The documents that have a cover, read once for the whole library listing."""
+        extensions = {f".{extension}" for _, extension in _SIGNATURES.values()}
+        return {path.stem for path in self._folder().iterdir() if path.suffix in extensions and path.is_file()}
+
     def remove_cover(self, document_id: str) -> None:
         for _, extension in _SIGNATURES.values():
             (self._folder() / f"{document_id}.{extension}").unlink(missing_ok=True)

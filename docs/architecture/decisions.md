@@ -425,3 +425,102 @@ when a choice changes the stack, a trust boundary, data storage or the setup exp
 - **Consequences:** Version advancement and publication are separate: `main` always knows its next
   version, and users only see reviewed releases. The app, the website and GitHub Releases show the same
   notes, and the history works offline.
+
+## ADR-24: Documents are organised by folders, collections, genres, types and tags, kept apart from the documents
+
+- **Context:** The library was one list sorted by recency, searched by title. A reader with a few
+  dozen books, papers and notes, plus the works TTSNative now includes (ADR-25), needs to find and
+  group them. Other branches in flight (background music, sound effects, the Windows app, the voice
+  library) store nothing about documents, so this is the one place that organisation lives.
+  (ADR-18 is background music, ADR-19 to ADR-21 the Windows app, ADR-22 sound effects; ADR-23 is left
+  free for the voice library branch.)
+- **Decision:**
+  - **Separate tables, never columns on `documents`.** Folders (`folders`, a tree by `parent_id`),
+    a document's shelf entry (`document_shelf`: its folder, document type and favourite), its genres
+    (`document_genres`), its tags (`document_tags`, stored as typed and matched case-insensitively),
+    collections (`collections`) and their membership (`collection_documents`). Every row is deleted
+    with its document by foreign key; a deleted folder leaves its documents in the folder above it,
+    never deletes them. A document has one folder (its place) and any number of collections (ways
+    of grouping it) without being copied.
+  - **Genre and type are different attributes.** Genres come from a fixed list (fantasy, science
+    fiction, mystery, horror, historical fiction, romance, literary fiction, adventure, poetry,
+    biography, memoir, history, philosophy, science, technology, children's, other); a document may
+    have several. Its type is one of novel, novella, short story, short story collection, poem, poetry
+    collection, memoir, biography, essay, research paper, report, personal document or other. Both
+    are optional: an imported document has neither until the reader says. Tags are free text.
+  - **One summary carries it all.** The library listing (`GET /api/documents`) adds each document's
+    author, folder, favourite, type, genres, tags and collections, so the browser sorts, filters and
+    searches the list it already has; the server keeps no search index. Changes go through
+    `PUT /api/documents/{id}/shelf` for one document and `POST /api/library/organize` for many.
+  - **Additive migration.** Migration 14 creates the tables (`IF NOT EXISTS`, so branches that add
+    migrations in parallel can be merged in either order) and touches nothing that exists; documents,
+    progress, bookmarks, styling, casts and covers keep their rows and identities. Rolling back is
+    dropping the new tables.
+- **Alternatives:**
+  - **Folders only** (the file-system model). Rejected: a book in two groups would need two copies.
+  - **Columns on `documents`** for folder and favourite. Rejected: every document query and every
+    branch that touches that table would change; separate tables migrate and roll back on their own.
+  - **A full-text search table (FTS5).** Not needed: the library is at most 500 documents, and the
+    listing already holds everything searched.
+- **Consequences:** The listing grows by a few fields per document (still one query plus three small
+  ones). Phones and tablets in LAN mode may organise too (`/api/library` is allowed), while deleting
+  documents stays on the computer as before.
+
+## ADR-25: Public-domain books ship as a catalog of checked editions, read through the ordinary pipeline, with immersive presets as separate data
+
+- **Context:** A new install shows an empty library and a one-paragraph sample. Readers should be
+  able to start a real book offline, and the app should show what it can do (characters, effects,
+  music) on books whose rights are settled. Other branches build the voice library, the music bed
+  (ADR-18) and sound effects (ADR-22) at the same time, so anything the books say about voices,
+  effects and music must be data those features can read, not code that depends on them.
+- **Decision:**
+  - **A versioned catalog inside the server package** (`ltts/library`: `catalog.json`, one EPUB per
+    work, one small cover, `CREDITS.md`). Every work records its canonical `work_id`, its edition
+    (source, URL, revision, SHA-256 of the file downloaded and of the file shipped, what was changed),
+    rights (status, whether worldwide, basis, evidence, date verified, what is permitted, attribution
+    and trademark notes), genres, type, word count, chapters and a content note where the text needs
+    one. `scripts/library/build_catalog.py` rebuilds everything from the recorded sources and refuses
+    a source whose checksum changed. Only works whose text is public domain in the United States and
+    whose edition's own work is dedicated to the public domain (CC0) are included; works whose author
+    died less than seventy years ago are left out even when they are public domain in the US, so
+    that the catalog is also usable elsewhere, and the record says so where a limit remains.
+  - **Smaller files, same text.** The shipped EPUB keeps the edition's text and chapter structure and
+    drops its images, list of illustrations, imprint, colophon and uncopyright pages (the publisher's
+    branding and logo), so a library of about twenty books is a few megabytes. Standard Ebooks is
+    credited in `CREDITS.md`, never implied as the publisher of what ships. A Project Gutenberg text
+    is used only with its header, footer and trademark removed, as its licence allows, and its
+    provenance is kept in the catalog.
+  - **Read like any other document.** A bundled book becomes a document only when the reader opens
+    it from **Explore**: the server copies the EPUB to the temporary folder and runs the same sniffing,
+    sandboxed extraction, segmentation and cleanup as an upload (ADR-5), then links the document to
+    its work (`bundled_documents`: work, edition, content hash, catalog version). Progress, bookmarks,
+    styling and casts work unchanged; opening the same work again returns the document that exists. A
+    bundled document can be removed (its progress goes, the work stays in Explore) and a work can be
+    hidden from Explore (`hidden_works`); an update never adds a book to the library by itself.
+  - **Verse keeps its lines.** A line break inside a paragraph (`<br>`) now ends a sentence with a
+    `line` boundary: a shorter pause than a paragraph's, and a line break in the reader instead of a
+    new paragraph. Existing documents are untouched; new imports of any format with such breaks
+    benefit.
+  - **Immersive presets are data beside the book.** A preset (`ltts/library/presets/*.json`; the
+    schema is in `docs/architecture/literary-library.md`) recommends a narrator, assigns characters
+    to voices with fallbacks, annotates who speaks which sentences, places sound effects and recommends
+    music, all through durable text anchors (a 16-character hash of the sentence, a short quote and an
+    occurrence number) and stable identifiers (voice ids, the music library's track ids, the effects
+    library's sound ids). The text is never changed to carry any of this. Applying a preset is the
+    reader's explicit choice, component by component; it writes into the same tables the reader's own
+    choices use (`document_characters`, `segment_annotations`), is recorded (`document_presets`) so
+    "back to the preset" works, and never turns on music or effects, which stay opt-in per narration
+    (ADR-18, ADR-22). Components for features not merged yet ship as validated fixtures and are not
+    offered in the interface until those features exist.
+- **Alternatives:**
+  - **Adding every bundled book to the library on first start.** Rejected: twenty extractions on
+    first run, a library full of books nobody asked for, and an update that re-adds removed ones.
+  - **A text format of our own.** Rejected: the EPUB extractor is already sandboxed and tested
+    against hostile files, and Standard Ebooks' semantic markup carries chapters and verse.
+  - **Downloading books on demand.** Deferred: a starter set of a few megabytes ships; a larger
+    optional catalog would be a checked archive downloaded only when asked, like the model store.
+  - **Encoding speakers in the text** (speech marks). Rejected: the text must stay the author's.
+- **Consequences:** The repository and installer grow by the catalog's size (measured in the build).
+  Anchors are only valid for the edition they were made against: the catalog's `text_version` is
+  part of the preset, and a changed text flags unresolved anchors instead of guessing. Character
+  names in presets must match what the dialogue analysis finds or be applied through annotations.

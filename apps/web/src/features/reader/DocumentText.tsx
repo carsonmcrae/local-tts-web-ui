@@ -213,7 +213,13 @@ export function DocumentText({
                 onSelect={onSelect}
                 onMove={focusNeighbour}
               />
-              {position < block.segments.length - 1 ? ' ' : null}
+              {position < block.segments.length - 1 ? (
+                segment.boundary === 'line' ? (
+                  <br />
+                ) : (
+                  ' '
+                )
+              ) : null}
             </span>
           );
         });

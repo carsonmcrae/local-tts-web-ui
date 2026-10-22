@@ -253,12 +253,16 @@ describe('Document list', () => {
     const { user, latest } = renderLibrary();
     await screen.findByRole('list');
     await act(() => latest.player?.controller.load(doc, 0, false));
-    await user.click(screen.getByRole('button', { name: 'Delete Other' }));
+    const deleteFromMenu = async (title: string) => {
+      await user.click(screen.getByRole('button', { name: `Options for ${title}` }));
+      await user.click(await screen.findByRole('button', { name: 'Delete…' }));
+    };
+    await deleteFromMenu('Other');
     let confirm = await screen.findByRole('dialog', { name: 'Delete this document?' });
     await user.click(within(confirm).getByRole('button', { name: 'Delete' }));
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
     expect(latest.player?.state.document?.id).toBe(doc.id);
-    await user.click(screen.getByRole('button', { name: 'Delete The Lighthouse' }));
+    await deleteFromMenu('The Lighthouse');
     confirm = await screen.findByRole('dialog', { name: 'Delete this document?' });
     expect(confirm).toHaveTextContent('“The Lighthouse” and its reading progress');
     await user.click(within(confirm).getByRole('button', { name: 'Delete' }));

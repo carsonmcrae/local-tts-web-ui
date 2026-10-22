@@ -426,6 +426,46 @@ when a choice changes the stack, a trust boundary, data storage or the setup exp
   version, and users only see reviewed releases. The app, the website and GitHub Releases show the same
   notes, and the history works offline.
 
+## ADR-22: Sound effects are suggested as data, reviewed before they play, and played beside the narration
+
+- **Context:** Listeners want a lightly sound-designed narration: a door creak, distant thunder, rain
+  under a scene. Narration plays one sentence at a time (ADR-3) and must not change, slow down or
+  wait for anything; documents are data, never instructions (ADR-6); the background music (ADR-18)
+  already plays beside the narration from a graph of its own.
+- **Decision:**
+  - **A third layer.** Effects are a Web Audio graph of their own in the browser (source → fade gain
+    → bus → limiter → volume → speakers) that follows the narration player from outside: it fires
+    an effect when the player is playing its sentence and the clip's time passes the effect's
+    position, stops everything on a seek, fades out on a pause and never touches the narration
+    element. Music and effects each keep their own context until both are merged.
+  - **Sentences are the anchors.** An effect belongs to a sentence and a fraction of its clip, with an
+    optional offset and, for ambience, an end sentence. Sentence boundaries are exact; a position
+    inside a sentence is an estimate from the trigger word's place in the text, and the interface
+    says so. Word timings, when they exist, make it exact without a schema change.
+  - **Detection is deterministic and on request.** `ltts/sfx/detect.py` matches an event vocabulary
+    with context rules for negation, figurative language, imagined and past events, questions and
+    quoted speech; `proposals.py` keeps a restrained selection under an intensity setting and is the
+    one validator every detector output passes through: sentence index, event, confidence, position,
+    nothing else. A chapter is analysed only when the reader asks. Suggestions are stored and shown;
+    none plays until accepted, and a dismissed one is kept so reanalysis cannot restore it.
+  - **Off by default, remembered edits.** Effects are off at the start of every narration; the
+    arrangement (manual and accepted effects, dismissed suggestions) lives in SQLite with the
+    document and is deleted with it. Volume and intensity are kept on the device.
+  - **A synthesised, MIT starter library.** The bundled sounds are generated from a script in this
+    repository, so licensing is settled and nothing is downloaded; the manifest records the fields
+    a verified recorded sound would need for a later pack.
+- **Alternatives:**
+  - **A local language model for detection.** Rejected for now: ADR-6, size, privacy and unmeasured
+    precision; the validation gate is where one would plug in, with no new privileges.
+  - **Semantic audio matching (CLAP) or sound generation (AudioCraft, AudioLDM).** Rejected: PyTorch,
+    large or non-commercial weights, slow on CPU.
+  - **howler.js.** Not needed: the raw API gives the fades, limiter and sample-accurate loops.
+  - **Mixing effects into each sentence's audio on the server.** Rejected: it changes cache keys,
+    couples effects to voices and makes review and undo impossible.
+- **Consequences:** Exports carry no effects yet (as with music). Placement inside long sentences is
+  approximate. A false positive is treated as worse than a missed effect, so the default intensity
+  suggests few effects and the review list is the normal path, with **Accept all** kept secondary.
+
 ## ADR-24: Documents are organised by folders, collections, genres, types and tags, kept apart from the documents
 
 - **Context:** The library was one list sorted by recency, searched by title. A reader with a few

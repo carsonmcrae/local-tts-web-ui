@@ -7,6 +7,7 @@
 - [Getting Started](Getting-Started)
 - [Reading Documents](Reading-Documents)
 - [Background Music and the Audio Mixer](Background-Music)
+- [Sound Effects](Sound-Effects)
 - [Exporting Audio](Exporting-Audio)
 - [Keyboard Shortcuts](Keyboard-Shortcuts)
 - [Settings and Models](Settings-and-Models)

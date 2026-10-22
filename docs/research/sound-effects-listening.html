@@ -1,0 +1,469 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Sound effects: listening panel</title>
+    <style>
+      body { font: 15px/1.45 system-ui, sans-serif; margin: 2rem auto; max-width: 70rem; padding: 0 1rem; color: #222; }
+      table { border-collapse: collapse; width: 100%; margin-bottom: 2rem; }
+      th, td { border-top: 1px solid #ddd; padding: 0.5rem 0.4rem; vertical-align: top; text-align: left; }
+      th { font-size: 13px; color: #555; }
+      audio { width: 15rem; display: block; }
+      textarea { width: 14rem; font: inherit; }
+      .bar { position: sticky; top: 0; background: #fff; padding: 0.6rem 0; border-bottom: 1px solid #ddd; display: flex; gap: 1.5rem; flex-wrap: wrap; align-items: center; }
+      code { font-size: 13px; }
+      small { color: #666; }
+    </style>
+  </head>
+  <body>
+    <h1>Sound effects: listening panel (36 sounds)</h1>
+    <p>
+      Generated from the bundled library by <code>scripts/media/sound-listening-page.py</code>. Open this file from
+      the repository so the players find <code>apps/web/public/sfx/</code>. The master level starts at the app's
+      default (40 %); each sound is also scaled by its own gain as the app does. To judge a sound under speech, pick
+      a narration recording (for example an MP3 exported from TTSNative) as the bed: it loops while you audition.
+    </p>
+    <div class="bar">
+      <label>Master level <input type="range" id="master" min="0" max="100" value="40" /> <span id="masterValue">40 %</span></label>
+      <label>Narration bed <input type="file" id="bed" accept="audio/*" /></label>
+      <label>Bed level <input type="range" id="bedLevel" min="0" max="100" value="100" /></label>
+      <button id="stopAll" type="button">Stop everything</button>
+      <button id="export" type="button">Copy notes as JSON</button>
+    </div>
+    <p><small>Measured: loudness is the 95th-percentile RMS over 100 ms windows; peak is the sample peak; the frequency is the spectral centroid, a rough brightness.</small></p>
+    <h2>Weather <small>(6)</small></h2>
+    <table>
+      <thead><tr><th>Sound</th><th>Meant to be</th><th>Length</th><th>Measured</th><th>Listen</th><th>Your notes</th></tr></thead>
+      <tbody>
+      <tr data-id="rain-light">
+        <td><strong>Light rain</strong><br /><code>rain-light</code><br /><small>rain-light</small></td>
+        <td>Steady light rain with soft drops.<br /><small>rain, drizzle, shower, wet</small></td>
+        <td>8.0 s<br />loop</td>
+        <td>-20 dBFS<br />peak -7<br />5044 Hz</td>
+        <td><audio controls preload="none" data-gain="0.45" src="../../apps/web/public/sfx/rain-light.mp3"></audio>
+          <label><input type="checkbox" class="loop" checked /> repeat</label></td>
+        <td><textarea class="note" rows="3" placeholder="Sounds like…? Distracting? Under speech?"></textarea></td>
+      </tr>
+      <tr data-id="rain-heavy">
+        <td><strong>Heavy rain</strong><br /><code>rain-heavy</code><br /><small>rain-heavy</small></td>
+        <td>Pouring rain, dense and close.<br /><small>rain, downpour, storm, pouring</small></td>
+        <td>8.0 s<br />loop</td>
+        <td>-20 dBFS<br />peak -7<br />5032 Hz</td>
+        <td><audio controls preload="none" data-gain="0.45" src="../../apps/web/public/sfx/rain-heavy.mp3"></audio>
+          <label><input type="checkbox" class="loop" checked /> repeat</label></td>
+        <td><textarea class="note" rows="3" placeholder="Sounds like…? Distracting? Under speech?"></textarea></td>
+      </tr>
+      <tr data-id="thunder-distant">
+        <td><strong>Distant thunder</strong><br /><code>thunder-distant</code><br /><small>thunder-distant</small></td>
+        <td>A long, low rumble far away.<br /><small>thunder, storm, rumble, distant</small></td>
+        <td>7.0 s<br />one-shot</td>
+        <td>-20 dBFS<br />peak -10<br />151 Hz</td>
+        <td><audio controls preload="none" data-gain="0.80" src="../../apps/web/public/sfx/thunder-distant.mp3"></audio>
+          <label><input type="checkbox" class="loop"  /> repeat</label></td>
+        <td><textarea class="note" rows="3" placeholder="Sounds like…? Distracting? Under speech?"></textarea></td>
+      </tr>
+      <tr data-id="thunder-close">
+        <td><strong>Thunder overhead</strong><br /><code>thunder-close</code><br /><small>thunder-close</small></td>
+        <td>A crack and a rolling rumble.<br /><small>thunder, storm, crack, lightning</small></td>
+        <td>5.8 s<br />one-shot</td>
+        <td>-21 dBFS<br />peak -9<br />801 Hz</td>
+        <td><audio controls preload="none" data-gain="0.70" src="../../apps/web/public/sfx/thunder-close.mp3"></audio>
+          <label><input type="checkbox" class="loop"  /> repeat</label></td>
+        <td><textarea class="note" rows="3" placeholder="Sounds like…? Distracting? Under speech?"></textarea></td>
+      </tr>
+      <tr data-id="wind-gust">
+        <td><strong>A gust of wind</strong><br /><code>wind-gust</code><br /><small>wind-gust</small></td>
+        <td>One gust that rises and dies away.<br /><small>wind, gust, breeze, draught</small></td>
+        <td>4.5 s<br />one-shot</td>
+        <td>-20 dBFS<br />peak -8<br />1925 Hz</td>
+        <td><audio controls preload="none" data-gain="0.60" src="../../apps/web/public/sfx/wind-gust.mp3"></audio>
+          <label><input type="checkbox" class="loop"  /> repeat</label></td>
+        <td><textarea class="note" rows="3" placeholder="Sounds like…? Distracting? Under speech?"></textarea></td>
+      </tr>
+      <tr data-id="wind-howl">
+        <td><strong>Howling wind</strong><br /><code>wind-howl</code><br /><small>wind-howl</small></td>
+        <td>Wind moaning and whistling without a break.<br /><small>wind, gale, storm, howl, blizzard</small></td>
+        <td>9.5 s<br />loop</td>
+        <td>-20 dBFS<br />peak -8<br />1466 Hz</td>
+        <td><audio controls preload="none" data-gain="0.40" src="../../apps/web/public/sfx/wind-howl.mp3"></audio>
+          <label><input type="checkbox" class="loop" checked /> repeat</label></td>
+        <td><textarea class="note" rows="3" placeholder="Sounds like…? Distracting? Under speech?"></textarea></td>
+      </tr>
+      </tbody>
+    </table>
+    <h2>Nature <small>(5)</small></h2>
+    <table>
+      <thead><tr><th>Sound</th><th>Meant to be</th><th>Length</th><th>Measured</th><th>Listen</th><th>Your notes</th></tr></thead>
+      <tbody>
+      <tr data-id="stream">
+        <td><strong>A running stream</strong><br /><code>stream</code><br /><small>stream</small></td>
+        <td>Water running over stones with small bubbles.<br /><small>stream, brook, river, water, creek</small></td>
+        <td>8.0 s<br />loop</td>
+        <td>-20 dBFS<br />peak -7<br />4257 Hz</td>
+        <td><audio controls preload="none" data-gain="0.40" src="../../apps/web/public/sfx/stream.mp3"></audio>
+          <label><input type="checkbox" class="loop" checked /> repeat</label></td>
+        <td><textarea class="note" rows="3" placeholder="Sounds like…? Distracting? Under speech?"></textarea></td>
+      </tr>
+      <tr data-id="waves">
+        <td><strong>Waves on the shore</strong><br /><code>waves</code><br /><small>waves</small></td>
+        <td>Slow waves breaking and washing back.<br /><small>sea, waves, ocean, shore, beach, surf</small></td>
+        <td>12.0 s<br />loop</td>
+        <td>-20 dBFS<br />peak -7<br />3242 Hz</td>
+        <td><audio controls preload="none" data-gain="0.40" src="../../apps/web/public/sfx/waves.mp3"></audio>
+          <label><input type="checkbox" class="loop" checked /> repeat</label></td>
+        <td><textarea class="note" rows="3" placeholder="Sounds like…? Distracting? Under speech?"></textarea></td>
+      </tr>
+      <tr data-id="fire-crackle">
+        <td><strong>A crackling fire</strong><br /><code>fire-crackle</code><br /><small>fire-crackle</small></td>
+        <td>A fire with a low glow, crackles and pops.<br /><small>fire, hearth, campfire, crackle, flames</small></td>
+        <td>8.0 s<br />loop</td>
+        <td>-21 dBFS<br />peak -10<br />2382 Hz</td>
+        <td><audio controls preload="none" data-gain="0.40" src="../../apps/web/public/sfx/fire-crackle.mp3"></audio>
+          <label><input type="checkbox" class="loop" checked /> repeat</label></td>
+        <td><textarea class="note" rows="3" placeholder="Sounds like…? Distracting? Under speech?"></textarea></td>
+      </tr>
+      <tr data-id="crickets">
+        <td><strong>Crickets at night</strong><br /><code>crickets</code><br /><small>crickets</small></td>
+        <td>A few crickets chirping.<br /><small>crickets, night, insects, summer</small></td>
+        <td>8.5 s<br />loop</td>
+        <td>-22 dBFS<br />peak -6<br />4687 Hz</td>
+        <td><audio controls preload="none" data-gain="0.30" src="../../apps/web/public/sfx/crickets.mp3"></audio>
+          <label><input type="checkbox" class="loop" checked /> repeat</label></td>
+        <td><textarea class="note" rows="3" placeholder="Sounds like…? Distracting? Under speech?"></textarea></td>
+      </tr>
+      <tr data-id="birdsong">
+        <td><strong>Birdsong</strong><br /><code>birdsong</code><br /><small>birdsong</small></td>
+        <td>Two birds trading short phrases.<br /><small>birds, song, morning, garden, dawn</small></td>
+        <td>6.5 s<br />one-shot</td>
+        <td>-21 dBFS<br />peak -7<br />3659 Hz</td>
+        <td><audio controls preload="none" data-gain="0.45" src="../../apps/web/public/sfx/birdsong.mp3"></audio>
+          <label><input type="checkbox" class="loop"  /> repeat</label></td>
+        <td><textarea class="note" rows="3" placeholder="Sounds like…? Distracting? Under speech?"></textarea></td>
+      </tr>
+      </tbody>
+    </table>
+    <h2>Animals <small>(4)</small></h2>
+    <table>
+      <thead><tr><th>Sound</th><th>Meant to be</th><th>Length</th><th>Measured</th><th>Listen</th><th>Your notes</th></tr></thead>
+      <tbody>
+      <tr data-id="owl">
+        <td><strong>An owl&#x27;s hoot</strong><br /><code>owl</code><br /><small>owl</small></td>
+        <td>Two soft hoots.<br /><small>owl, night, hoot, forest</small></td>
+        <td>3.2 s<br />one-shot</td>
+        <td>-21 dBFS<br />peak -14<br />540 Hz</td>
+        <td><audio controls preload="none" data-gain="0.60" src="../../apps/web/public/sfx/owl.mp3"></audio>
+          <label><input type="checkbox" class="loop"  /> repeat</label></td>
+        <td><textarea class="note" rows="3" placeholder="Sounds like…? Distracting? Under speech?"></textarea></td>
+      </tr>
+      <tr data-id="wolf-howl">
+        <td><strong>A wolf&#x27;s howl</strong><br /><code>wolf-howl</code><br /><small>wolf-howl</small></td>
+        <td>A single long howl.<br /><small>wolf, howl, night, wild</small></td>
+        <td>5.0 s<br />one-shot</td>
+        <td>-20 dBFS<br />peak -14<br />1025 Hz</td>
+        <td><audio controls preload="none" data-gain="0.55" src="../../apps/web/public/sfx/wolf-howl.mp3"></audio>
+          <label><input type="checkbox" class="loop"  /> repeat</label></td>
+        <td><textarea class="note" rows="3" placeholder="Sounds like…? Distracting? Under speech?"></textarea></td>
+      </tr>
+      <tr data-id="dog-bark">
+        <td><strong>A dog barking</strong><br /><code>dog-bark</code><br /><small>dog-bark</small></td>
+        <td>Three barks.<br /><small>dog, bark, hound</small></td>
+        <td>2.6 s<br />one-shot</td>
+        <td>-22 dBFS<br />peak -6<br />1539 Hz</td>
+        <td><audio controls preload="none" data-gain="0.60" src="../../apps/web/public/sfx/dog-bark.mp3"></audio>
+          <label><input type="checkbox" class="loop"  /> repeat</label></td>
+        <td><textarea class="note" rows="3" placeholder="Sounds like…? Distracting? Under speech?"></textarea></td>
+      </tr>
+      <tr data-id="horse-hooves">
+        <td><strong>Horse&#x27;s hooves</strong><br /><code>horse-hooves</code><br /><small>horse-hooves</small></td>
+        <td>A horse galloping past.<br /><small>horse, hooves, gallop, rider, carriage</small></td>
+        <td>5.5 s<br />one-shot</td>
+        <td>-27 dBFS<br />peak -6<br />2202 Hz</td>
+        <td><audio controls preload="none" data-gain="0.60" src="../../apps/web/public/sfx/horse-hooves.mp3"></audio>
+          <label><input type="checkbox" class="loop"  /> repeat</label></td>
+        <td><textarea class="note" rows="3" placeholder="Sounds like…? Distracting? Under speech?"></textarea></td>
+      </tr>
+      </tbody>
+    </table>
+    <h2>Doors and buildings <small>(4)</small></h2>
+    <table>
+      <thead><tr><th>Sound</th><th>Meant to be</th><th>Length</th><th>Measured</th><th>Listen</th><th>Your notes</th></tr></thead>
+      <tbody>
+      <tr data-id="door-creak">
+        <td><strong>A creaking door</strong><br /><code>door-creak</code><br /><small>door-creak</small></td>
+        <td>An old door opening slowly on dry hinges.<br /><small>door, creak, hinge, gate, open</small></td>
+        <td>2.4 s<br />one-shot</td>
+        <td>-21 dBFS<br />peak -11<br />874 Hz</td>
+        <td><audio controls preload="none" data-gain="0.65" src="../../apps/web/public/sfx/door-creak.mp3"></audio>
+          <label><input type="checkbox" class="loop"  /> repeat</label></td>
+        <td><textarea class="note" rows="3" placeholder="Sounds like…? Distracting? Under speech?"></textarea></td>
+      </tr>
+      <tr data-id="door-close">
+        <td><strong>A door closing</strong><br /><code>door-close</code><br /><small>door-close</small></td>
+        <td>A door closed with a soft thump and a latch.<br /><small>door, close, shut, latch</small></td>
+        <td>1.7 s<br />one-shot</td>
+        <td>-28 dBFS<br />peak -6<br />3928 Hz</td>
+        <td><audio controls preload="none" data-gain="0.60" src="../../apps/web/public/sfx/door-close.mp3"></audio>
+          <label><input type="checkbox" class="loop"  /> repeat</label></td>
+        <td><textarea class="note" rows="3" placeholder="Sounds like…? Distracting? Under speech?"></textarea></td>
+      </tr>
+      <tr data-id="door-slam">
+        <td><strong>A door slamming</strong><br /><code>door-slam</code><br /><small>door-slam</small></td>
+        <td>A door slammed hard.<br /><small>door, slam, bang</small></td>
+        <td>2.5 s<br />one-shot</td>
+        <td>-31 dBFS<br />peak -6<br />3671 Hz</td>
+        <td><audio controls preload="none" data-gain="0.70" src="../../apps/web/public/sfx/door-slam.mp3"></audio>
+          <label><input type="checkbox" class="loop"  /> repeat</label></td>
+        <td><textarea class="note" rows="3" placeholder="Sounds like…? Distracting? Under speech?"></textarea></td>
+      </tr>
+      <tr data-id="door-knock">
+        <td><strong>A knock at the door</strong><br /><code>door-knock</code><br /><small>door-knock</small></td>
+        <td>Three knocks on a wooden door.<br /><small>door, knock, visitor</small></td>
+        <td>2.2 s<br />one-shot</td>
+        <td>-25 dBFS<br />peak -6<br />1908 Hz</td>
+        <td><audio controls preload="none" data-gain="0.70" src="../../apps/web/public/sfx/door-knock.mp3"></audio>
+          <label><input type="checkbox" class="loop"  /> repeat</label></td>
+        <td><textarea class="note" rows="3" placeholder="Sounds like…? Distracting? Under speech?"></textarea></td>
+      </tr>
+      </tbody>
+    </table>
+    <h2>Footsteps and movement <small>(4)</small></h2>
+    <table>
+      <thead><tr><th>Sound</th><th>Meant to be</th><th>Length</th><th>Measured</th><th>Listen</th><th>Your notes</th></tr></thead>
+      <tbody>
+      <tr data-id="footsteps-wood">
+        <td><strong>Footsteps on wood</strong><br /><code>footsteps-wood</code><br /><small>footsteps-wood</small></td>
+        <td>Six unhurried steps on floorboards.<br /><small>footsteps, walking, floor, stairs, corridor</small></td>
+        <td>4.3 s<br />one-shot</td>
+        <td>-23 dBFS<br />peak -6<br />1433 Hz</td>
+        <td><audio controls preload="none" data-gain="0.60" src="../../apps/web/public/sfx/footsteps-wood.mp3"></audio>
+          <label><input type="checkbox" class="loop"  /> repeat</label></td>
+        <td><textarea class="note" rows="3" placeholder="Sounds like…? Distracting? Under speech?"></textarea></td>
+      </tr>
+      <tr data-id="footsteps-stone">
+        <td><strong>Footsteps on stone</strong><br /><code>footsteps-stone</code><br /><small>footsteps-stone</small></td>
+        <td>Six steps on stone with a little echo.<br /><small>footsteps, walking, street, stone, echo</small></td>
+        <td>4.7 s<br />one-shot</td>
+        <td>-31 dBFS<br />peak -7<br />5347 Hz</td>
+        <td><audio controls preload="none" data-gain="0.60" src="../../apps/web/public/sfx/footsteps-stone.mp3"></audio>
+          <label><input type="checkbox" class="loop"  /> repeat</label></td>
+        <td><textarea class="note" rows="3" placeholder="Sounds like…? Distracting? Under speech?"></textarea></td>
+      </tr>
+      <tr data-id="footsteps-gravel">
+        <td><strong>Footsteps on gravel</strong><br /><code>footsteps-gravel</code><br /><small>footsteps-gravel</small></td>
+        <td>Six crunching steps on gravel.<br /><small>footsteps, walking, gravel, path, snow</small></td>
+        <td>4.4 s<br />one-shot</td>
+        <td>-28 dBFS<br />peak -6<br />6550 Hz</td>
+        <td><audio controls preload="none" data-gain="0.60" src="../../apps/web/public/sfx/footsteps-gravel.mp3"></audio>
+          <label><input type="checkbox" class="loop"  /> repeat</label></td>
+        <td><textarea class="note" rows="3" placeholder="Sounds like…? Distracting? Under speech?"></textarea></td>
+      </tr>
+      <tr data-id="footsteps-run">
+        <td><strong>Running footsteps</strong><br /><code>footsteps-run</code><br /><small>footsteps-run</small></td>
+        <td>Ten quick, light steps.<br /><small>footsteps, running, chase, hurry</small></td>
+        <td>3.5 s<br />one-shot</td>
+        <td>-24 dBFS<br />peak -6<br />1452 Hz</td>
+        <td><audio controls preload="none" data-gain="0.60" src="../../apps/web/public/sfx/footsteps-run.mp3"></audio>
+          <label><input type="checkbox" class="loop"  /> repeat</label></td>
+        <td><textarea class="note" rows="3" placeholder="Sounds like…? Distracting? Under speech?"></textarea></td>
+      </tr>
+      </tbody>
+    </table>
+    <h2>Household <small>(2)</small></h2>
+    <table>
+      <thead><tr><th>Sound</th><th>Meant to be</th><th>Length</th><th>Measured</th><th>Listen</th><th>Your notes</th></tr></thead>
+      <tbody>
+      <tr data-id="clock-tick">
+        <td><strong>A ticking clock</strong><br /><code>clock-tick</code><br /><small>clock-tick</small></td>
+        <td>A clock ticking once a second.<br /><small>clock, tick, time, watch, waiting</small></td>
+        <td>4.0 s<br />loop</td>
+        <td>-31 dBFS<br />peak -6<br />5560 Hz</td>
+        <td><audio controls preload="none" data-gain="0.35" src="../../apps/web/public/sfx/clock-tick.mp3"></audio>
+          <label><input type="checkbox" class="loop" checked /> repeat</label></td>
+        <td><textarea class="note" rows="3" placeholder="Sounds like…? Distracting? Under speech?"></textarea></td>
+      </tr>
+      <tr data-id="clock-chime">
+        <td><strong>A clock chiming</strong><br /><code>clock-chime</code><br /><small>clock-chime</small></td>
+        <td>A clock striking three.<br /><small>clock, chime, strike, hour</small></td>
+        <td>6.5 s<br />one-shot</td>
+        <td>-21 dBFS<br />peak -10<br />2051 Hz</td>
+        <td><audio controls preload="none" data-gain="0.55" src="../../apps/web/public/sfx/clock-chime.mp3"></audio>
+          <label><input type="checkbox" class="loop"  /> repeat</label></td>
+        <td><textarea class="note" rows="3" placeholder="Sounds like…? Distracting? Under speech?"></textarea></td>
+      </tr>
+      </tbody>
+    </table>
+    <h2>Fantasy and adventure <small>(2)</small></h2>
+    <table>
+      <thead><tr><th>Sound</th><th>Meant to be</th><th>Length</th><th>Measured</th><th>Listen</th><th>Your notes</th></tr></thead>
+      <tbody>
+      <tr data-id="bell-toll">
+        <td><strong>A tolling bell</strong><br /><code>bell-toll</code><br /><small>bell-toll</small></td>
+        <td>A large bell tolling twice.<br /><small>bell, toll, church, tower</small></td>
+        <td>7.0 s<br />one-shot</td>
+        <td>-20 dBFS<br />peak -10<br />555 Hz</td>
+        <td><audio controls preload="none" data-gain="0.60" src="../../apps/web/public/sfx/bell-toll.mp3"></audio>
+          <label><input type="checkbox" class="loop"  /> repeat</label></td>
+        <td><textarea class="note" rows="3" placeholder="Sounds like…? Distracting? Under speech?"></textarea></td>
+      </tr>
+      <tr data-id="sword-clash">
+        <td><strong>Clashing swords</strong><br /><code>sword-clash</code><br /><small>sword-clash</small></td>
+        <td>Two strikes of steel on steel.<br /><small>sword, steel, battle, duel, clash</small></td>
+        <td>2.0 s<br />one-shot</td>
+        <td>-21 dBFS<br />peak -6<br />5271 Hz</td>
+        <td><audio controls preload="none" data-gain="0.65" src="../../apps/web/public/sfx/sword-clash.mp3"></audio>
+          <label><input type="checkbox" class="loop"  /> repeat</label></td>
+        <td><textarea class="note" rows="3" placeholder="Sounds like…? Distracting? Under speech?"></textarea></td>
+      </tr>
+      </tbody>
+    </table>
+    <h2>Impacts and action <small>(4)</small></h2>
+    <table>
+      <thead><tr><th>Sound</th><th>Meant to be</th><th>Length</th><th>Measured</th><th>Listen</th><th>Your notes</th></tr></thead>
+      <tbody>
+      <tr data-id="glass-break">
+        <td><strong>Breaking glass</strong><br /><code>glass-break</code><br /><small>glass-break</small></td>
+        <td>Glass shattering and scattering.<br /><small>glass, shatter, break, window, bottle</small></td>
+        <td>2.2 s<br />one-shot</td>
+        <td>-20 dBFS<br />peak -7<br />6867 Hz</td>
+        <td><audio controls preload="none" data-gain="0.65" src="../../apps/web/public/sfx/glass-break.mp3"></audio>
+          <label><input type="checkbox" class="loop"  /> repeat</label></td>
+        <td><textarea class="note" rows="3" placeholder="Sounds like…? Distracting? Under speech?"></textarea></td>
+      </tr>
+      <tr data-id="thud">
+        <td><strong>A heavy thud</strong><br /><code>thud</code><br /><small>thud</small></td>
+        <td>Something heavy hitting the floor.<br /><small>thud, fall, drop, impact, thump</small></td>
+        <td>1.7 s<br />one-shot</td>
+        <td>-28 dBFS<br />peak -6<br />268 Hz</td>
+        <td><audio controls preload="none" data-gain="0.70" src="../../apps/web/public/sfx/thud.mp3"></audio>
+          <label><input type="checkbox" class="loop"  /> repeat</label></td>
+        <td><textarea class="note" rows="3" placeholder="Sounds like…? Distracting? Under speech?"></textarea></td>
+      </tr>
+      <tr data-id="gunshot">
+        <td><strong>A gunshot</strong><br /><code>gunshot</code><br /><small>gunshot</small></td>
+        <td>One shot with an echo.<br /><small>gun, shot, pistol, rifle, fire</small></td>
+        <td>2.7 s<br />one-shot</td>
+        <td>-45 dBFS<br />peak -5<br />6797 Hz</td>
+        <td><audio controls preload="none" data-gain="0.60" src="../../apps/web/public/sfx/gunshot.mp3"></audio>
+          <label><input type="checkbox" class="loop"  /> repeat</label></td>
+        <td><textarea class="note" rows="3" placeholder="Sounds like…? Distracting? Under speech?"></textarea></td>
+      </tr>
+      <tr data-id="explosion">
+        <td><strong>An explosion</strong><br /><code>explosion</code><br /><small>explosion</small></td>
+        <td>A blast with a long rumble and debris.<br /><small>explosion, blast, bomb, boom</small></td>
+        <td>4.2 s<br />one-shot</td>
+        <td>-20 dBFS<br />peak -9<br />443 Hz</td>
+        <td><audio controls preload="none" data-gain="0.60" src="../../apps/web/public/sfx/explosion.mp3"></audio>
+          <label><input type="checkbox" class="loop"  /> repeat</label></td>
+        <td><textarea class="note" rows="3" placeholder="Sounds like…? Distracting? Under speech?"></textarea></td>
+      </tr>
+      </tbody>
+    </table>
+    <h2>Vehicles <small>(2)</small></h2>
+    <table>
+      <thead><tr><th>Sound</th><th>Meant to be</th><th>Length</th><th>Measured</th><th>Listen</th><th>Your notes</th></tr></thead>
+      <tbody>
+      <tr data-id="car-pass">
+        <td><strong>A passing car</strong><br /><code>car-pass</code><br /><small>car-pass</small></td>
+        <td>A car approaching and driving past.<br /><small>car, engine, traffic, road, vehicle</small></td>
+        <td>5.5 s<br />one-shot</td>
+        <td>-20 dBFS<br />peak -8<br />2172 Hz</td>
+        <td><audio controls preload="none" data-gain="0.55" src="../../apps/web/public/sfx/car-pass.mp3"></audio>
+          <label><input type="checkbox" class="loop"  /> repeat</label></td>
+        <td><textarea class="note" rows="3" placeholder="Sounds like…? Distracting? Under speech?"></textarea></td>
+      </tr>
+      <tr data-id="train-pass">
+        <td><strong>A passing train</strong><br /><code>train-pass</code><br /><small>train-pass</small></td>
+        <td>A train clattering past with a whistle.<br /><small>train, railway, station, locomotive</small></td>
+        <td>10.0 s<br />one-shot</td>
+        <td>-20 dBFS<br />peak -8<br />1633 Hz</td>
+        <td><audio controls preload="none" data-gain="0.50" src="../../apps/web/public/sfx/train-pass.mp3"></audio>
+          <label><input type="checkbox" class="loop"  /> repeat</label></td>
+        <td><textarea class="note" rows="3" placeholder="Sounds like…? Distracting? Under speech?"></textarea></td>
+      </tr>
+      </tbody>
+    </table>
+    <h2>Atmosphere <small>(2)</small></h2>
+    <table>
+      <thead><tr><th>Sound</th><th>Meant to be</th><th>Length</th><th>Measured</th><th>Listen</th><th>Your notes</th></tr></thead>
+      <tbody>
+      <tr data-id="crowd-murmur">
+        <td><strong>A murmuring crowd</strong><br /><code>crowd-murmur</code><br /><small>crowd-murmur</small></td>
+        <td>Many voices talking, none of them clear.<br /><small>crowd, voices, tavern, market, room, people</small></td>
+        <td>9.5 s<br />loop</td>
+        <td>-20 dBFS<br />peak -8<br />1725 Hz</td>
+        <td><audio controls preload="none" data-gain="0.35" src="../../apps/web/public/sfx/crowd-murmur.mp3"></audio>
+          <label><input type="checkbox" class="loop" checked /> repeat</label></td>
+        <td><textarea class="note" rows="3" placeholder="Sounds like…? Distracting? Under speech?"></textarea></td>
+      </tr>
+      <tr data-id="city-distant">
+        <td><strong>A city in the distance</strong><br /><code>city-distant</code><br /><small>city-distant</small></td>
+        <td>Far-off traffic and a horn.<br /><small>city, traffic, street, town, night</small></td>
+        <td>9.5 s<br />loop</td>
+        <td>-21 dBFS<br />peak -11<br />452 Hz</td>
+        <td><audio controls preload="none" data-gain="0.35" src="../../apps/web/public/sfx/city-distant.mp3"></audio>
+          <label><input type="checkbox" class="loop" checked /> repeat</label></td>
+        <td><textarea class="note" rows="3" placeholder="Sounds like…? Distracting? Under speech?"></textarea></td>
+      </tr>
+      </tbody>
+    </table>
+    <h2>Machines <small>(1)</small></h2>
+    <table>
+      <thead><tr><th>Sound</th><th>Meant to be</th><th>Length</th><th>Measured</th><th>Listen</th><th>Your notes</th></tr></thead>
+      <tbody>
+      <tr data-id="machine-hum">
+        <td><strong>Humming machinery</strong><br /><code>machine-hum</code><br /><small>machine-hum</small></td>
+        <td>A steady electrical hum with a faint tick.<br /><small>machine, engine, hum, generator, factory</small></td>
+        <td>6.5 s<br />loop</td>
+        <td>-21 dBFS<br />peak -12<br />2675 Hz</td>
+        <td><audio controls preload="none" data-gain="0.35" src="../../apps/web/public/sfx/machine-hum.mp3"></audio>
+          <label><input type="checkbox" class="loop" checked /> repeat</label></td>
+        <td><textarea class="note" rows="3" placeholder="Sounds like…? Distracting? Under speech?"></textarea></td>
+      </tr>
+      </tbody>
+    </table>
+
+    <audio id="bedPlayer" loop></audio>
+    <script>
+      const players = [...document.querySelectorAll('tbody audio')];
+      const master = document.getElementById('master');
+      const apply = () => {
+        document.getElementById('masterValue').textContent = `${master.value} %`;
+        for (const audio of players) audio.volume = Math.min(1, (master.value / 100) * Number(audio.dataset.gain));
+      };
+      master.addEventListener('input', apply);
+      apply();
+      for (const box of document.querySelectorAll('input.loop')) {
+        const audio = box.closest('tr').querySelector('audio');
+        audio.loop = box.checked;
+        box.addEventListener('change', () => (audio.loop = box.checked));
+      }
+      const bed = document.getElementById('bedPlayer');
+      document.getElementById('bed').addEventListener('change', (event) => {
+        const file = event.target.files[0];
+        if (!file) return;
+        bed.src = URL.createObjectURL(file);
+        bed.play();
+      });
+      document.getElementById('bedLevel').addEventListener('input', (event) => (bed.volume = event.target.value / 100));
+      document.getElementById('stopAll').addEventListener('click', () => {
+        for (const audio of [...players, bed]) { audio.pause(); audio.currentTime = 0; }
+      });
+      const KEY = 'sfx-listening-notes';
+      let notes = {};
+      try { notes = JSON.parse(localStorage.getItem(KEY) || '{}'); } catch { notes = {}; }
+      for (const area of document.querySelectorAll('textarea.note')) {
+        const id = area.closest('tr').dataset.id;
+        area.value = notes[id] || '';
+        area.addEventListener('input', () => {
+          notes[id] = area.value;
+          try { localStorage.setItem(KEY, JSON.stringify(notes)); } catch {}
+        });
+      }
+      document.getElementById('export').addEventListener('click', async () => {
+        const text = JSON.stringify(notes, null, 2);
+        try { await navigator.clipboard.writeText(text); alert('Notes copied.'); } catch { prompt('Copy your notes:', text); }
+      });
+    </script>
+  </body>
+</html>

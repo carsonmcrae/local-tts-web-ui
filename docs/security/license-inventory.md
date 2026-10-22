@@ -30,15 +30,17 @@ practical summary, not legal advice.
 
 ## Models and data
 
-| Item                              | Licence                                                                |
-| --------------------------------- | ---------------------------------------------------------------------- |
-| Kokoro-82M weights and voices     | Apache-2.0 (training data includes CC-BY sources — see README credits) |
-| kokoro-onnx export                | MIT                                                                    |
-| Chatterbox Turbo code and weights | MIT                                                                    |
-| Fonts: Inter, Literata            | SIL Open Font License 1.1 (self-hosted via @fontsource)                |
-| Icons: Lucide                     | ISC                                                                    |
-| Background music (11 tracks)      | CC0 1.0 / public domain; see `apps/web/public/music/CREDITS.md`        |
-| Sample text in the app            | "A Scandal in Bohemia", Arthur Conan Doyle (1891), public domain       |
+| Item                                           | Licence                                                                                                                                                                                |
+| ---------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Kokoro-82M weights and voices                  | Apache-2.0 (training data includes CC-BY sources — see README credits)                                                                                                                 |
+| kokoro-onnx export                             | MIT                                                                                                                                                                                    |
+| Chatterbox Turbo code and weights              | MIT                                                                                                                                                                                    |
+| Fonts: Inter, Literata                         | SIL Open Font License 1.1 (self-hosted via @fontsource)                                                                                                                                |
+| Icons: Lucide                                  | ISC                                                                                                                                                                                    |
+| Background music (11 tracks)                   | CC0 1.0 / public domain; see `apps/web/public/music/CREDITS.md`                                                                                                                        |
+| Bundled books (25 works: EPUB text and covers) | Public domain in the United States; where else each is free, its sources and its cover's painter are in `apps/server/src/ltts/library/CREDITS.md`; the edits and that file are CC0 1.0 |
+| Sound effects (36 synthesised sounds)          | MIT, made for TTSNative by `scripts/media/sound-library.py`; each sound's licence and source are recorded in `apps/server/src/ltts/sfx/library.json`                                   |
+| Sample text in the app                         | "A Scandal in Bohemia", Arthur Conan Doyle (1891), public domain                                                                                                                       |
 
 ## Approaches adapted from other projects
 

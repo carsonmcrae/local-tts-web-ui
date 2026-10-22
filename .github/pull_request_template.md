@@ -22,5 +22,7 @@ Anything you could **not** test, and why:
 - [ ] Tests cover new behaviour and failure paths
 - [ ] Loading, empty and error states handled in the UI
 - [ ] Docs updated (not `CHANGELOG.md` or version numbers: releases write those)
+- [ ] Reviewed all affected user-facing surfaces (app, desktop, website, documentation and release
+      information); updated and verified them, or explained why no changes were needed
 - [ ] No new dependency, or its licence/maintenance/install scripts were reviewed
 - [ ] No document text, recordings or secrets in logs, fixtures or commits

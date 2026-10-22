@@ -6,8 +6,8 @@
  *   calls to action reach real sections, the base URL fills canonical and social links, the browser
  *   speech demo (a scripted SpeechSynthesis: voices on the device first, online voices warned about,
  *   speak and stop, unsupported browsers), axe finds no serious violations in light and dark, phones
- *   get no sideways scrolling, and the release history has a page per version with Older and Newer
- *   links and the latest version named in the footer.
+ *   get no sideways scrolling on the home and release pages, and the release history has a page per
+ *   version with Older and Newer links and the latest version named in the footer.
  * Does NOT belong: The app (the other specs) or the page's wording.
  */
 import type { Page } from '@playwright/test';
@@ -283,13 +283,16 @@ test.describe('website @site @cross-browser', () => {
 });
 
 test.describe('website on phones @mobile', () => {
-  test('the page fits the screen and passes axe', async ({ page }) => {
-    await page.goto(`${BASE}/`);
-    const overflow = await page.evaluate(
-      () => document.documentElement.scrollWidth - window.innerWidth,
-    );
-    expect(overflow).toBeLessThanOrEqual(0);
-    // On a phone the install commands scroll sideways, so keyboards must be able to reach them.
-    expect(await seriousViolations(page)).toEqual([]);
-  });
+  // The home page (its install commands scroll sideways, so keyboards must be able to reach them),
+  // the release history and one version's own page.
+  for (const path of ['/', '/releases.html', '/releases/1.0.0/']) {
+    test(`${path} fits the screen and passes axe`, async ({ page }) => {
+      await page.goto(`${BASE}${path}`);
+      const overflow = await page.evaluate(
+        () => document.documentElement.scrollWidth - window.innerWidth,
+      );
+      expect(overflow).toBeLessThanOrEqual(0);
+      expect(await seriousViolations(page)).toEqual([]);
+    });
+  }
 });

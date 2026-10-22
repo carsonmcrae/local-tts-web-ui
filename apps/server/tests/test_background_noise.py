@@ -4,8 +4,8 @@
 
 Scope: Synthetic readings (bursts of a voice-like sound with pauses) over each kind of background, at
 24 and 48 kHz, plus a clean room and backgrounds too quiet to hear, which must name nothing; the guards
-for too little audio to judge (hiss, clicks, a cut-off); and how the take verdict words its advice for
-each kind.
+for too little audio to judge (hiss, clicks, a cut-off); a cut-off told apart from steady noise at the
+edges; and how the take verdict words its advice for each kind.
 Does NOT belong: Measuring loudness or SNR (test_take_checks.py) or noise reduction (test_cleanup*).
 """
 
@@ -162,3 +162,13 @@ def test_a_take_cut_off_mid_word_is_pointed_out() -> None:
     stopped = whole[: int(10.55 * rate)]
     assert "cut_off" in [issue.code for issue in judge_take(stopped, rate, TakeContext(), recorded=stopped).issues]
     assert "cut_off" not in [issue.code for issue in judge_take(stopped, rate, TakeContext()).issues]
+
+
+def test_steady_noise_at_the_edges_is_not_a_word_cut_off() -> None:
+    rate = 24_000
+    noisy = (reading(rate) + at(noise(rate), -30)).astype(np.float32)  # noise about 10 dB below the voice
+    assert cut_off(noisy, rate) is None  # starts and ends in a pause, under the noise
+    report = judge_take(noisy, rate, TakeContext(), recorded=noisy)
+    assert "noisy" in [issue.code for issue in report.issues] and "cut_off" not in [i.code for i in report.issues]
+    assert cut_off(noisy[: int(10.55 * rate)], rate) == "end"  # a real mid-word stop still stands out
+    assert cut_off(noisy[int(0.6 * rate) :], rate) == "start"

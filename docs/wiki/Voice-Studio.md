@@ -244,7 +244,9 @@ closer to the microphone.
 **Studio takes** are judged on what really went wrong, so a take you stop straight away gets one
 message (nothing was heard, or the take stopped before the reading started) instead of every
 measurement that follows from it. A take needs 3 seconds of speech; a very quiet voice is named as the
-cause of a short take. Two further checks are advice only, so the take still counts:
+cause of a short take. A whole reading recorded far too quietly (a distant microphone or a low input
+level) is called too quiet rather than missing, because the app looks for your voice against the
+recording's own background. Two further checks are advice only, so the take still counts:
 
 - **Completeness:** the app estimates how much of the passage you read, from the syllables it hears and
   how long you spoke, and after three takes it calibrates to your own pace. A take that seems to stop

@@ -55,6 +55,24 @@ If anything fails, nothing is published; fix the cause and run the workflow agai
 (**Actions → Release → Run workflow**). A published version is never replaced or reused, and tags
 matching `v*` are protected.
 
+### A pull request lands after the release branch was cut
+
+Its change file is still pending on `main` when the release pull request merges, so its change would
+be missing from the notes and the tag would be refused (the workflow requires no pending change file).
+While the version has no tag, fold it in rather than preparing another version:
+
+```bash
+git switch main && git pull --tags && git switch -c release/vX.Y.Z-amend
+npm run release:amend
+```
+
+This adds the change files' entries to the end of the matching sections of `docs/releases/X.Y.Z.md`
+and of the `[X.Y.Z]` entry in `CHANGELOG.md`, deletes them, and leaves the version and date alone. Read
+the added lines (they were written for a change file and may need a word), commit and open a pull
+request; CI checks it as an amendment: the same version, no change file left, that version's notes and
+entry in place. Merge it before tagging. Once the tag exists, a change file belongs to the next version
+instead (`release:prepare`).
+
 ## One-time setup before the first Windows release
 
 These need the repository owner; none of them is in the repository.

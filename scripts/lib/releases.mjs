@@ -7,7 +7,8 @@
  *   name, a `date`, optionally `published-as` for releases under an earlier name and `revised` after a
  *   correction; a plain-language summary; New / Improved / Fixed / Security & reliability entries; no
  *   unfinished draft marker), sorting them newest first, and rendering one as Markdown for GitHub
- *   Releases and the updater manifest. The app, the website and the release workflow all read these.
+ *   Releases and the updater manifest, and adding late change files to notes that are finished but not
+ *   tagged yet (`amendNotes`). The app, the website and the release workflow all read these.
  * Does NOT belong: Developer changelog entries (CHANGELOG.md) or pending changes (changes.mjs).
  */
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
@@ -121,6 +122,38 @@ export function formatDate(date) {
     day: 'numeric',
     timeZone: 'UTC',
   });
+}
+
+/**
+ * Adds change-file entries to finished notes (a release prepared but not tagged yet): each user-facing
+ * section's items go to the end of the same `## Title` section, or into a new section in the usual
+ * order; the front matter and the summary stay as they are.
+ * @param {string} text docs/releases/X.Y.Z.md
+ * @param {{ title: string, user: boolean, items: string[] }[]} sections
+ */
+export function amendNotes(text, sections) {
+  let notes = `${text.replaceAll('\r\n', '\n').trimEnd()}\n`;
+  const titles = SECTIONS.filter((section) => section.user).map((section) => section.title);
+  for (const section of sections.filter((item) => item.user && item.items.length)) {
+    const block = section.items.map((item) => `- ${item}`).join('\n');
+    const heading = `## ${section.title}\n`;
+    const at = notes.indexOf(`\n${heading}`);
+    if (at >= 0) {
+      const start = at + 1 + heading.length;
+      const next = notes.indexOf('\n## ', start);
+      const end = next === -1 ? notes.length : next + 1;
+      const body = notes.slice(start, end).trimEnd();
+      notes = `${notes.slice(0, start)}${body}\n${block}\n\n${notes.slice(end)}`;
+    } else {
+      const later = titles
+        .slice(titles.indexOf(section.title) + 1)
+        .map((title) => notes.indexOf(`\n## ${title}\n`))
+        .filter((index) => index >= 0);
+      const insertAt = later.length ? Math.min(...later) + 1 : notes.length;
+      notes = `${notes.slice(0, insertAt)}${heading}\n${block}\n\n${notes.slice(insertAt)}`;
+    }
+  }
+  return `${notes.replace(/\n{3,}/g, '\n\n').trimEnd()}\n`;
 }
 
 /**

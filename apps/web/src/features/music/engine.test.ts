@@ -2,16 +2,16 @@
 // Copyright (c) 2026 Carson McRae
 /**
  * Purpose: Tests for the background-music engine against a fake Web Audio context.
- * Scope: Lazy context creation, fades and crossfades, one track at a time, sample-accurate loops
- *   that skip codec padding, pausing and resuming in place, superseded and failed loads, missing Web
- *   Audio, the decoded-track cache, idle suspension, disposal, and that faded-out nodes are released
- *   even after many on/off cycles.
+ * Scope: Lazy context creation, fades and crossfades, one track at a time, loops that skip codec
+ *   padding and crossfade their seam (also where a decoder drops samples), pausing and resuming in
+ *   place, superseded and failed loads, missing Web Audio, the decoded-track cache, idle suspension,
+ *   disposal, and that faded-out nodes are released even after many on/off cycles.
  * Does NOT belong: When music plays (session.test.ts) or the controls (music.test.tsx).
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { FakeAudioContext, fakeBuffer } from '@/test/audio';
 import type { BufferLike } from '@/lib/audio/webAudio';
-import { loopBounds } from '@/lib/audio/webAudio';
+import { loopBounds, seamlessLoop } from '@/lib/audio/webAudio';
 import type { MusicTarget } from './engine';
 import { MusicEngine } from './engine';
 
@@ -59,7 +59,9 @@ describe('MusicEngine', () => {
     expect(master?.gain.events[0]).toEqual({ type: 'set', value: 0.1, time: 0 });
     expect(master?.outputs.has(context().destination)).toBe(true);
     const source = context().sources[0];
-    expect(source).toMatchObject({ loop: true, loopStart: 0, loopEnd: 60 });
+    // The 60 s track loops 30 ms short: its last 30 ms are crossfaded into its start.
+    expect(source).toMatchObject({ loop: true, loopStart: 0 });
+    expect(source?.loopEnd).toBeCloseTo(59.97);
     expect(source?.started).toEqual({ when: 0, offset: 0 });
     expect(source?.outputs.has(fade as never)).toBe(true);
     expect(fade?.gain.events).toEqual([
@@ -149,7 +151,7 @@ describe('MusicEngine', () => {
     const { engine, context } = setup();
     engine.play(A, 1);
     await flush();
-    context().currentTime = 75; // 75 s into a 60 s loop: 15 s into the second time round
+    context().currentTime = 75; // 75.5 s into a 59.97 s loop: 15.53 s into the second time round
     engine.play(null, 0.5);
     context().advance(1);
     engine.play({ id: 'b', url: '/music/b.webm', resume: false }, 0.5);
@@ -158,7 +160,7 @@ describe('MusicEngine', () => {
     engine.play(null, 0.5);
     engine.play(A, 1);
     await flush();
-    expect(context().sources[2]?.started?.offset).toBeCloseTo(15.5);
+    expect(context().sources[2]?.started?.offset).toBeCloseTo(15.53);
   });
 
   it('starts a track from its beginning when it was not the one paused', async () => {
@@ -371,5 +373,53 @@ describe('loopBounds', () => {
   it('keeps the whole track when it is silent throughout', () => {
     const silent = fakeBuffer(0.2, 100);
     expect(loopBounds(silent)).toEqual({ start: 0, end: 0.2 });
+  });
+});
+
+describe('seamlessLoop', () => {
+  const RATE = 48_000;
+  /** One second of a 480 Hz tone: a whole number of periods, so it loops perfectly. */
+  const tone = () =>
+    Float32Array.from({ length: RATE }, (_, i) => Math.sin((2 * Math.PI * i) / 100));
+  const bufferOf = (samples: Float32Array): BufferLike => ({
+    duration: samples.length / RATE,
+    length: samples.length,
+    sampleRate: RATE,
+    numberOfChannels: 1,
+    getChannelData: () => samples,
+  });
+  const largestStep = (samples: Float32Array, from: number, to: number) => {
+    let largest = 0;
+    for (let i = from + 1; i < to; i += 1)
+      largest = Math.max(largest, Math.abs(Number(samples[i]) - Number(samples[i - 1])));
+    return largest;
+  };
+
+  it('joins without a jump where a decoder dropped the first samples (Chromium 156 drops 24)', () => {
+    const samples = tone().slice(24);
+    const normal = largestStep(samples, 0, samples.length);
+    // Played sample-exactly, the loop would jump from its last sample straight to its first.
+    expect(Math.abs(Number(samples[0]) - Number(samples.at(-1)))).toBeGreaterThan(10 * normal);
+    const { start, end } = seamlessLoop(bufferOf(samples));
+    expect(start).toBe(0);
+    const last = Math.round(end * RATE);
+    expect(last).toBe(samples.length - 1440);
+    expect(Math.abs(Number(samples[0]) - Number(samples[last - 1]))).toBeLessThanOrEqual(normal);
+    // Inside the 30 ms crossfade the wave stays as smooth as anywhere else in the track.
+    expect(largestStep(samples, 0, 1441)).toBeLessThan(1.2 * normal);
+  });
+
+  it('crossfades a buffer once, however often it is looped', () => {
+    const samples = tone().slice(24);
+    const buffer = bufferOf(samples);
+    const first = seamlessLoop(buffer);
+    const blended = samples.slice();
+    expect(seamlessLoop(buffer)).toBe(first);
+    expect(samples).toEqual(blended);
+  });
+
+  it('stays inside the audible edges, and blends at most a quarter of a very short loop', () => {
+    expect(seamlessLoop(fakeBuffer(10, 25))).toEqual({ start: 0.025, end: 9.945 });
+    expect(seamlessLoop(fakeBuffer(0.1))).toEqual({ start: 0, end: 0.075 });
   });
 });

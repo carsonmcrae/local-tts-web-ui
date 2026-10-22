@@ -4,15 +4,16 @@
  * Purpose: Framework-free player for the background music under the narration.
  * Scope: One Web Audio graph per page (track → fade gain → volume gain → speakers), created on first
  *   use. Decodes tracks (keeping the two most recent), plays one track at a time with fades and
- *   crossfades (never more than two overlapping, however fast it is toggled), loops sample-accurately (skipping codec padding at the edges), remembers where a
- *   paused track was, stops and disconnects every faded-out track, suspends the audio context when
- *   nothing plays and reports tracks that fail to load. Each load is guarded by a generation counter
- *   so a track that was replaced while loading never starts.
+ *   crossfades (never more than two overlapping, however fast it is toggled), loops with the seam
+ *   crossfaded (after skipping codec padding at the edges), remembers where a paused track was,
+ *   stops and disconnects every faded-out track, suspends the audio context when nothing plays and
+ *   reports tracks that fail to load. Each load is guarded by a generation counter so a track that
+ *   was replaced while loading never starts.
  * Does NOT belong: When music plays (session.ts), the narration (it never passes through here) or UI.
  */
 
 import type { BufferLike, ContextLike, GainLike, SourceLike } from '@/lib/audio/webAudio';
-import { createMaster, loadOnce, loopBounds, ramp, setMasterVolume } from '@/lib/audio/webAudio';
+import { createMaster, loadOnce, ramp, seamlessLoop, setMasterVolume } from '@/lib/audio/webAudio';
 
 /** What should be heard: a track, and whether it carries on from where it was paused. */
 export interface MusicTarget {
@@ -166,7 +167,7 @@ export class MusicEngine {
   private start(context: ContextLike, target: MusicTarget, buffer: BufferLike, fade: number): void {
     this.retire(fade);
     this.keep(target.id, buffer);
-    const { start, end } = loopBounds(buffer);
+    const { start, end } = seamlessLoop(buffer);
     const resumeAt = target.resume && this.paused?.id === target.id ? this.paused.position : start;
     const now = context.currentTime;
     const source = context.createBufferSource();

@@ -20,7 +20,7 @@ repository was cloned or executed. Numbers come from the GitHub and npm registri
   treatments rendered on the server (ADR-13), and "sounds" (a laugh, a sigh) are tags for engines
   that perform them. They are unrelated to this feature; the code calls the new layer `sfx` and the
   interface calls it **Sound effects** to keep them apart.
-- **Background music** (branch `feat/background-music`, ADR-18, in flight): a Web Audio graph
+- **Background music** (ADR-18, on `main` since PR #43): a Web Audio graph
   beside the narration, off for every new narration, with bundled CC0 loops under `/music/`. The
   effects layer copies its shape and must merge beside it, not into it.
 - **Text analysis** is deterministic (`documents/delivery.py`); documents are data, never
@@ -52,7 +52,7 @@ Three independent layers, each with its own switch and volume:
 | ----- | ---------------------------------------- | ----------------------------- | ----------------------- |
 | A     | Narration, highlighting, seeking, voices | `features/player`, the server | No                      |
 | B     | Sound effects at sentence positions      | `features/sfx`, `ltts/sfx`    | New                     |
-| C     | Background music                         | `features/music` (in flight)  | No                      |
+| C     | Background music                         | `features/music` (merged)     | No                      |
 
 ### Detection runs on the server, deterministically, on request
 
@@ -109,8 +109,11 @@ Three independent layers, each with its own switch and volume:
 - **Limits.** Two one-shot effects and one ambience at once; a third one-shot is skipped, never
   queued. At most twelve decoded buffers are kept (a few seconds of mono audio each, about a
   megabyte), the context is suspended after five idle seconds and closed when the provider unmounts.
-- **Its own context.** The effects and the music each own an `AudioContext` today, because the music
-  branch is not merged. Sharing one context (and one limiter) is a small later refactor.
+- **In the mixer.** The audio mixer in the player has a Sound effects channel: the same switch and
+  level as the Sounds panel (which keeps the arrangement), saved on this device like the mixer's
+  other levels. The effects and the music each still own an `AudioContext`, built from one shared
+  module for the node types, ramps, loop bounds, master gain and loading (`lib/audio/webAudio.ts`)
+  and tested with one fake; sharing one context (and one limiter) remains a small later refactor.
 
 ### Timing and placement
 

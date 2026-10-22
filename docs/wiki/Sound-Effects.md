@@ -9,7 +9,9 @@ them on in the reader's **Sounds** tab. Everything happens on your computer; no 
 Open a document and choose the **Sounds** tab in the side panel (on a phone, open **Contents** and
 pick **Sounds**). The switch at the top turns effects on for this narration only: opening another
 document, or reaching the end, turns them off again. The **volume** and the **intensity** (Minimal,
-Balanced or Immersive) are remembered on this device.
+Balanced or Immersive) are remembered on this device. The **Audio mixer** button in the player has
+the same switch and volume as a **Sound effects** channel, beside the narration and background
+music levels.
 
 Effects never change the narration: they play on a separate audio path with their own volume and a
 limiter, so a loud effect cannot clip or drown the voice. If a sound fails to load, it is skipped and

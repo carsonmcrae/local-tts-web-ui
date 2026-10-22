@@ -19,7 +19,7 @@ import {
 } from 'react';
 import type { SfxSound } from '@/api/types';
 import { usePlayer } from '@/features/player/PlayerProvider';
-import type { ContextLike } from './engine';
+import type { SfxContextLike } from './engine';
 import { SfxEngine } from './engine';
 import { readSfxChoice, saveSfxChoice } from './preferences';
 import { useSoundEffects, useSoundLibrary } from './queries';
@@ -34,7 +34,7 @@ interface SfxContextValue {
 const SfxContext = createContext<SfxContextValue | null>(null);
 
 /** Throws where the browser has no Web Audio; the engine reports that as "unavailable". */
-function createAudioContext(): ContextLike {
+function createAudioContext(): SfxContextLike {
   return new AudioContext({ latencyHint: 'interactive' });
 }
 

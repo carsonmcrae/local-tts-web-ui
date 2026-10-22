@@ -64,15 +64,15 @@ listening panel: [sound-effects-listening.html](sound-effects-listening.html).
   Background music (PR #43, not on `main`) follows the same pattern with its own context, so the
   three never compete over pause and resume, context lifetime or the narration's level; a browser's
   limit on audio contexts is not approached with two.
-- **Mixer contract.** The music branch documents how effects join its mixer: one more `VolumeControl`
-  after the music channel (name "Sound effects", label "Effects volume", the switch as its action),
-  levels kept through `lib/deviceSettings`, and later one shared context through a `createContext`
-  seam. Since music is not on `main`, nothing of that was built here, to avoid combining unrelated
-  branches early; the smallest compatible interface already exists on this side (`useSfx()` gives
-  `state.enabled`, `state.volume`, `setEnabled`, `setVolume`). **Integration owner:** this branch, after
-  PR #43 merges, agreed with the music session; the same step moves the stored level to
-  `lib/deviceSettings` and extracts the Web Audio pieces the two engines share (the duplication gate
-  will insist).
+- **Mixer channel (done once PR #43 landed).** The audio mixer now has a Sound effects channel after
+  the music channel, as the music branch's contract asked: a `VolumeControl` named "Sound effects"
+  with the switch as its action, the same switch and level as the Sounds panel, the mixer button's
+  name and highlight saying when effects are on, and the saved level and intensity kept through
+  `lib/deviceSettings` like the other channels. The pieces the two engines shared (node types, the
+  parameter ramp, loop bounds, the master gain, one load per id) moved to `lib/audio/webAudio.ts`,
+  the two sessions follow the player through one `followPlayer` helper, and one fake context in
+  `src/test/audio.ts` serves both engines' tests; the duplication gate is back at zero clones. The
+  two contexts stay separate; one shared context and limiter is still a later change.
 
 ## Detection quality
 

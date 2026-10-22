@@ -10,6 +10,8 @@
  * Does NOT belong: Web Audio (engine.ts), the narration state machine (controller.ts) or UI.
  */
 import type { PlayerState } from '@/features/player/controller';
+import type { PlayerSource } from '@/features/player/follow';
+import { followPlayer } from '@/features/player/follow';
 import type { EngineEvents, MusicTarget } from './engine';
 import type { MusicTrack } from './library';
 import { clampVolume } from '@/lib/deviceSettings';
@@ -19,11 +21,6 @@ export interface MusicEngineLike {
   play(target: MusicTarget | null, fade: number): void;
   setVolume(volume: number): void;
   dispose(): void;
-}
-
-export interface PlayerSource {
-  getState(): PlayerState;
-  subscribe(listener: (state: PlayerState) => void): () => void;
 }
 
 export interface MusicState {
@@ -85,14 +82,16 @@ export class MusicSession {
 
   /** Follow the narration player; the returned function silences the music and lets go of it. */
   attach(): () => void {
-    const unsubscribe = this.deps.player.subscribe((player) => this.follow(player));
-    return () => {
-      unsubscribe();
-      clearTimeout(this.previewTimer);
-      this.heard = null;
-      this.set({ enabled: false, previewId: null });
-      this.engine.dispose();
-    };
+    return followPlayer(
+      this.deps.player,
+      (player) => this.follow(player),
+      () => {
+        clearTimeout(this.previewTimer);
+        this.heard = null;
+        this.set({ enabled: false, previewId: null });
+        this.engine.dispose();
+      },
+    );
   }
 
   subscribe(listener: (state: MusicState) => void): () => void {

@@ -13,21 +13,15 @@
  * Does NOT belong: When effects play (scheduler.ts, session.ts), the catalogue or the interface.
  */
 
-export interface ParamLike {
-  value: number;
-  setValueAtTime(value: number, time: number): unknown;
-  linearRampToValueAtTime(value: number, time: number): unknown;
-  cancelScheduledValues(time: number): unknown;
-}
-
-export interface NodeLike {
-  connect(destination: NodeLike): unknown;
-  disconnect(): void;
-}
-
-export interface GainLike extends NodeLike {
-  readonly gain: ParamLike;
-}
+import type {
+  BufferLike,
+  ContextLike,
+  GainLike,
+  NodeLike,
+  ParamLike,
+  SourceLike,
+} from '@/lib/audio/webAudio';
+import { createMaster, loadOnce, loopBounds, ramp, setMasterVolume } from '@/lib/audio/webAudio';
 
 export interface CompressorLike extends NodeLike {
   readonly threshold: ParamLike;
@@ -37,35 +31,9 @@ export interface CompressorLike extends NodeLike {
   readonly release: ParamLike;
 }
 
-export interface BufferLike {
-  readonly duration: number;
-  readonly length: number;
-  readonly sampleRate: number;
-  readonly numberOfChannels: number;
-  getChannelData(channel: number): Float32Array;
-}
-
-export interface SourceLike extends NodeLike {
-  buffer: BufferLike | null;
-  loop: boolean;
-  loopStart: number;
-  loopEnd: number;
-  start(when: number, offset: number): void;
-  stop(when: number): void;
-  addEventListener(type: 'ended', listener: () => void): void;
-}
-
-export interface ContextLike {
-  readonly currentTime: number;
-  readonly state: string;
-  readonly destination: NodeLike;
-  createGain(): GainLike;
-  createBufferSource(): SourceLike;
+/** A context that can also make the limiter. */
+export interface SfxContextLike extends ContextLike {
   createDynamicsCompressor(): CompressorLike;
-  decodeAudioData(data: ArrayBuffer): Promise<BufferLike>;
-  resume(): Promise<void>;
-  suspend(): Promise<void>;
-  close(): Promise<void>;
 }
 
 /** What to play under one key (an effect's id, or a preview). */
@@ -87,7 +55,7 @@ export interface EngineEvents {
 }
 
 export interface EngineDeps extends EngineEvents {
-  createContext: () => ContextLike;
+  createContext: () => SfxContextLike;
   fetchSound: (url: string) => Promise<ArrayBuffer>;
 }
 
@@ -104,34 +72,13 @@ export const KEEP_DECODED = 12;
 export const MAX_GAIN = 1.5;
 const VOLUME_RAMP_SECONDS = 0.05;
 const IDLE_SUSPEND_MS = 5_000;
-const EDGE_SCAN_SECONDS = 0.2;
+/** -80 dBFS: a synthesised sound's edges are quieter than this, codec noise included. */
 const SILENT = 1e-4;
 /** The limiter: nothing above about -10 dBFS gets through, however the gains add up. */
 const LIMITER = { threshold: -10, knee: 0, ratio: 12, attack: 0.003, release: 0.25 } as const;
 
-function ramp(param: ParamLike, now: number, to: number, seconds: number): void {
-  param.cancelScheduledValues(now);
-  param.setValueAtTime(param.value, now);
-  param.linearRampToValueAtTime(to, now + Math.max(seconds, 0.01));
-}
-
-/** Where a loop runs: the whole sound minus the digital silence a decoder leaves at either edge. */
-export function loopBounds(buffer: BufferLike): { start: number; end: number } {
-  const channels = Array.from({ length: buffer.numberOfChannels }, (_, c) =>
-    buffer.getChannelData(c),
-  );
-  const audible = (at: number) => channels.some((data) => Math.abs(Number(data[at])) > SILENT);
-  const limit = Math.min(Math.floor(buffer.sampleRate * EDGE_SCAN_SECONDS), buffer.length >> 1);
-  let first = 0;
-  while (first < limit && !audible(first)) first += 1;
-  let last = buffer.length;
-  while (buffer.length - last < limit && !audible(last - 1)) last -= 1;
-  if (last <= first) return { start: 0, end: buffer.duration };
-  return { start: first / buffer.sampleRate, end: last / buffer.sampleRate };
-}
-
 export class SfxEngine {
-  private context: ContextLike | null = null;
+  private context: SfxContextLike | null = null;
   private master: GainLike | null = null;
   private limiter: CompressorLike | null = null;
   private readonly voices = new Map<string, Voice>();
@@ -145,15 +92,14 @@ export class SfxEngine {
 
   constructor(private readonly deps: EngineDeps) {}
 
+  isPlaying(key: string): boolean {
+    return this.voices.has(key) || this.pending.has(key);
+  }
+
   /** Master volume as a gain from 0 to 1, applied with a short ramp. */
   setVolume(volume: number): void {
     this.volume = volume;
-    if (this.context && this.master)
-      ramp(this.master.gain, this.context.currentTime, volume, VOLUME_RAMP_SECONDS);
-  }
-
-  isPlaying(key: string): boolean {
-    return this.voices.has(key) || this.pending.has(key);
+    setMasterVolume(this.context, this.master, volume, VOLUME_RAMP_SECONDS);
   }
 
   /** Start `cue` under `key` unless it already plays or the limits leave no room for it. */
@@ -235,13 +181,11 @@ export class SfxEngine {
     return loop ? loops === 0 : shots < MAX_ONE_SHOTS;
   }
 
-  private ensureContext(soundId: string): ContextLike | null {
+  private ensureContext(soundId: string): SfxContextLike | null {
     if (this.context) return this.context;
     try {
       const context = this.deps.createContext();
-      const master = context.createGain();
-      master.gain.setValueAtTime(this.volume, context.currentTime);
-      master.connect(context.destination);
+      const master = createMaster(context, this.volume);
       const limiter = context.createDynamicsCompressor();
       limiter.threshold.setValueAtTime(LIMITER.threshold, context.currentTime);
       limiter.knee.setValueAtTime(LIMITER.knee, context.currentTime);
@@ -260,19 +204,15 @@ export class SfxEngine {
   }
 
   private load(context: ContextLike, cue: Cue): Promise<BufferLike> {
-    let promise = this.loading.get(cue.soundId);
-    if (!promise) {
-      promise = this.deps
-        .fetchSound(cue.url)
-        .then((data) => context.decodeAudioData(data))
-        .then((buffer) => {
-          if (this.context === context) this.keep(cue.soundId, buffer);
-          return buffer;
-        })
-        .finally(() => this.loading.delete(cue.soundId));
-      this.loading.set(cue.soundId, promise);
-    }
-    return promise;
+    return loadOnce(
+      this.loading,
+      cue.soundId,
+      () => this.deps.fetchSound(cue.url),
+      context,
+      (buffer) => {
+        if (this.context === context) this.keep(cue.soundId, buffer);
+      },
+    );
   }
 
   /** Keep the most recently used decoded sounds only (a few seconds of mono audio each). */
@@ -292,7 +232,7 @@ export class SfxEngine {
     source.buffer = buffer;
     let offset = 0;
     if (cue.loop) {
-      const { start, end } = loopBounds(buffer);
+      const { start, end } = loopBounds(buffer, SILENT);
       source.loop = true;
       source.loopStart = start;
       source.loopEnd = end;

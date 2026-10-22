@@ -14,9 +14,12 @@
  */
 import type { SfxEffect, SfxSound } from '@/api/types';
 import type { PlayerState } from '@/features/player/controller';
+import type { PlayerSource } from '@/features/player/follow';
+import { followPlayer } from '@/features/player/follow';
+import { clampVolume } from '@/lib/deviceSettings';
 import type { Cue, EngineEvents } from './engine';
 import type { Intensity, SfxChoice } from './preferences';
-import { AMBIENCE_SECONDS, INTENSITY_GAIN, clampVolume } from './preferences';
+import { AMBIENCE_SECONDS, INTENSITY_GAIN } from './preferences';
 import type { Playback } from './scheduler';
 import { activeAmbience, dueOneShots, isFreshVisit } from './scheduler';
 
@@ -26,11 +29,6 @@ export interface SfxEngineLike {
   stopAll(fade: number): void;
   setVolume(volume: number): void;
   dispose(): void;
-}
-
-export interface PlayerSource {
-  getState(): PlayerState;
-  subscribe(listener: (state: PlayerState) => void): () => void;
 }
 
 export interface SfxState {
@@ -106,13 +104,15 @@ export class SfxSession {
 
   /** Follow the narration player; the returned function silences everything and lets go of it. */
   attach(): () => void {
-    const unsubscribe = this.deps.player.subscribe((player) => this.follow(player));
-    return () => {
-      unsubscribe();
-      clearTimeout(this.previewTimer);
-      this.set({ enabled: false, previewId: null, ambienceId: null });
-      this.engine.dispose();
-    };
+    return followPlayer(
+      this.deps.player,
+      (player) => this.follow(player),
+      () => {
+        clearTimeout(this.previewTimer);
+        this.set({ enabled: false, previewId: null, ambienceId: null });
+        this.engine.dispose();
+      },
+    );
   }
 
   subscribe(listener: (state: SfxState) => void): () => void {

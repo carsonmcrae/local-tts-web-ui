@@ -9,9 +9,10 @@
  * Does NOT belong: When effects play (session.test.ts).
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { FakeSfxContext, fakeSound } from '@/test/webAudio';
+import { loopBounds } from '@/lib/audio/webAudio';
+import { FakeAudioContext, fakeBuffer } from '@/test/audio';
 import type { Cue, EngineDeps } from './engine';
-import { KEEP_DECODED, MAX_GAIN, MAX_ONE_SHOTS, SfxEngine, loopBounds } from './engine';
+import { KEEP_DECODED, MAX_GAIN, MAX_ONE_SHOTS, SfxEngine } from './engine';
 
 const cue = (soundId: string, overrides: Partial<Cue> = {}): Cue => ({
   soundId,
@@ -23,7 +24,7 @@ const cue = (soundId: string, overrides: Partial<Cue> = {}): Cue => ({
 });
 
 function harness(overrides: Partial<EngineDeps> = {}, withLoading = true) {
-  const context = new FakeSfxContext();
+  const context = new FakeAudioContext();
   const fetchSound = vi.fn(async () => new ArrayBuffer(8));
   const onError = vi.fn();
   const onLoading = vi.fn();
@@ -69,7 +70,7 @@ describe('sound-effects engine', () => {
 
   it('decodes each sound once, keeps the recent ones and trims a loop to its audible part', async () => {
     const { context, engine, fetchSound } = harness();
-    context.decode = () => Promise.resolve(fakeSound(4, 10));
+    context.decode = () => Promise.resolve(fakeBuffer(4, 10));
     engine.play('rain', cue('rain-light', { loop: true }));
     await vi.advanceTimersByTimeAsync(0);
     const [source] = context.playing;
@@ -88,7 +89,7 @@ describe('sound-effects engine', () => {
     }
     engine.play('again', cue('sound-0'));
     expect(fetchSound).toHaveBeenCalledTimes(KEEP_DECODED + 4); // sound-0 was evicted and fetched again
-    expect(loopBounds(fakeSound(0.01, 10))).toEqual({ start: 0, end: 0.01 }); // silent throughout: whole length
+    expect(loopBounds(fakeBuffer(0.01, 10))).toEqual({ start: 0, end: 0.01 }); // silent throughout: whole length
   });
 
   it('allows two one-shots and one loop at a time, skipping the rest', async () => {
@@ -117,13 +118,13 @@ describe('sound-effects engine', () => {
   });
 
   it('never starts a sound that was stopped while loading, and reports one that fails', async () => {
-    let resolveDecode: (buffer: ReturnType<typeof fakeSound>) => void = () => undefined;
+    let resolveDecode: (buffer: ReturnType<typeof fakeBuffer>) => void = () => undefined;
     const { context, engine, onError, onLoading } = harness();
     context.decode = () => new Promise((resolve) => (resolveDecode = resolve));
     engine.play('e1', cue('thud'));
     engine.stop('e1', 0);
     expect(onLoading).toHaveBeenLastCalledWith(null);
-    resolveDecode(fakeSound(1));
+    resolveDecode(fakeBuffer(1));
     await vi.advanceTimersByTimeAsync(0);
     expect(context.playing).toHaveLength(0);
     context.decode = () => Promise.reject(new Error('bad file'));

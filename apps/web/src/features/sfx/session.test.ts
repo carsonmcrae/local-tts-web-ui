@@ -16,7 +16,8 @@ import type { PlayerState } from '@/features/player/controller';
 import type { Cue, EngineEvents } from './engine';
 import { AMBIENCE_SECONDS } from './preferences';
 import { effect } from './scheduler.test';
-import type { PlayerSource, SfxEngineLike } from './session';
+import type { PlayerSource } from '@/features/player/follow';
+import type { SfxEngineLike } from './session';
 import { FADES, PREVIEW_SECONDS, SfxSession } from './session';
 
 class FakeEngine implements SfxEngineLike {
@@ -56,6 +57,7 @@ class FakePlayer implements PlayerSource {
     currentTime: 0,
     duration: 10,
     sleep: null,
+    volume: 1,
   };
   private readonly listeners = new Set<(state: PlayerState) => void>();
   getState() {

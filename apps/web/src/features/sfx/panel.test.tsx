@@ -13,14 +13,14 @@ import { renderHook, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { json } from '@/test/render';
 import { BASE, doc, openSounds, soundsApi, startNarration, thud } from '@/test/sfx';
-import { FakeSfxContext } from '@/test/webAudio';
+import { FakeAudioContext } from '@/test/audio';
 import { useSfx } from './SfxProvider';
 import { SoundPanel, latestError, placement } from './SoundPanel';
 
 const failure = (message: string) => () => json({ error: { code: 'boom', message } }, 500);
 
 beforeEach(() => {
-  vi.stubGlobal('AudioContext', FakeSfxContext);
+  vi.stubGlobal('AudioContext', FakeAudioContext);
 });
 
 afterEach(() => {

@@ -7,13 +7,8 @@
  * Does NOT belong: Playing effects.
  */
 import { describe, expect, it, vi } from 'vitest';
-import {
-  DEFAULT_SFX_VOLUME,
-  clampVolume,
-  isIntensity,
-  readSfxChoice,
-  saveSfxChoice,
-} from './preferences';
+import { DEFAULT_SFX_VOLUME, isIntensity, readSfxChoice, saveSfxChoice } from './preferences';
+import { clampVolume } from '@/lib/deviceSettings';
 
 describe('sound-effects choice', () => {
   it('starts from the defaults and keeps what was saved', () => {

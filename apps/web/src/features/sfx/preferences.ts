@@ -2,12 +2,13 @@
 // Copyright (c) 2026 Carson McRae
 /**
  * Purpose: Remember the sound-effects volume and intensity on this device.
- * Scope: Reads and writes them in localStorage (per device, like the theme and the music choice),
+ * Scope: Reads and writes them as a device setting (like the music choice and the mixer's levels),
  *   falling back to 40 % and "balanced" when nothing valid is saved. Whether effects are on is
  *   deliberately never stored: every narration starts without them. Also the intensity presets
  *   the interface offers and the gain each applies on top of the volume.
  * Does NOT belong: Applying the choice (session.ts) or the controls (SoundPanel).
  */
+import { clampVolume, readDeviceSetting, saveDeviceSetting } from '@/lib/deviceSettings';
 
 export type Intensity = 'minimal' | 'balanced' | 'immersive';
 
@@ -37,22 +38,13 @@ export const AMBIENCE_SECONDS: Readonly<Record<Intensity, number>> = {
 };
 const STORAGE_KEY = 'ltts.sfx';
 
-export function clampVolume(volume: number): number {
-  return Number.isFinite(volume) ? Math.round(Math.min(Math.max(volume, 0), 100)) : 0;
-}
-
 export function isIntensity(value: unknown): value is Intensity {
   return INTENSITIES.some((intensity) => intensity.id === value);
 }
 
 /** The saved choice, keeping only a usable volume and a known intensity. */
 export function readSfxChoice(): SfxChoice {
-  let saved: Partial<Record<keyof SfxChoice, unknown>> = {};
-  try {
-    saved = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '{}') as typeof saved;
-  } catch {
-    // Unreadable or unavailable storage: start from the defaults.
-  }
+  const saved = (readDeviceSetting(STORAGE_KEY) ?? {}) as Partial<Record<keyof SfxChoice, unknown>>;
   return {
     volume: typeof saved.volume === 'number' ? clampVolume(saved.volume) : DEFAULT_SFX_VOLUME,
     intensity: isIntensity(saved.intensity) ? saved.intensity : 'balanced',
@@ -60,9 +52,5 @@ export function readSfxChoice(): SfxChoice {
 }
 
 export function saveSfxChoice(choice: SfxChoice): void {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(choice));
-  } catch {
-    // Private window or full storage: the choice still applies until the page closes.
-  }
+  saveDeviceSetting(STORAGE_KEY, choice);
 }

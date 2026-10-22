@@ -10,30 +10,14 @@
  * Does NOT belong: Engine, trigger or session rules in isolation (their own tests).
  */
 import { act, screen, waitFor, within } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type { SfxEffect } from '@/api/types';
 import { json, soundLibrary } from '@/test/render';
 import { BASE, openSounds, rain, soundsApi, startNarration, thud } from '@/test/sfx';
-import { FakeSfxContext } from '@/test/webAudio';
+import type { FakeAudioContext } from '@/test/audio';
+import { stubAudioContexts } from '@/test/audio';
 
-let contexts: FakeSfxContext[] = [];
-
-beforeEach(() => {
-  contexts = [];
-  vi.stubGlobal(
-    'AudioContext',
-    class extends FakeSfxContext {
-      constructor() {
-        super();
-        contexts.push(this);
-      }
-    },
-  );
-});
-
-afterEach(() => {
-  vi.unstubAllGlobals();
-});
+const contexts = stubAudioContexts();
 
 const body = (
   calls: { method: string; path: string; body: unknown }[],
@@ -272,6 +256,48 @@ describe('Sounds panel', () => {
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
   });
 
+  it('has a channel in the audio mixer with the same switch and level as the panel', async () => {
+    soundsApi([thud({ segmentIndex: 0 }), rain()]);
+    const { user, panel, media, press } = await openSounds();
+    const player = screen.getByRole('region', { name: 'Audio player' });
+    const openMixer = async () => {
+      const [button] = within(player).getAllByRole('button', { name: /^Audio mixer/ });
+      await user.click(button as HTMLElement);
+      return screen.findByRole('dialog', { name: 'Audio mixer' });
+    };
+    let mixer = await openMixer();
+    expect(within(mixer).getByText(/the next narration starts without them/)).toBeInTheDocument();
+    await user.keyboard('{Escape}');
+    await startNarration(user, panel, media);
+    await waitFor(() => expect(contexts[0]?.playing).toHaveLength(1));
+    mixer = await openMixer();
+    expect(within(mixer).getByRole('switch', { name: 'Sound effects' })).toBeChecked();
+    expect(within(mixer).getByText('Playing beside the narration.')).toBeInTheDocument();
+    expect(
+      within(player).getAllByRole('button', { name: 'Audio mixer. Sound effects on' }),
+    ).not.toHaveLength(0);
+    const slider = within(mixer).getByRole('slider', { name: 'Effects volume' });
+    act(() => slider.focus());
+    await user.keyboard('{ArrowRight}');
+    expect(within(panel).getByRole('slider', { name: 'Sound effects volume' })).toHaveAttribute(
+      'aria-valuenow',
+      '41',
+    );
+    await user.keyboard('{Escape}');
+    await user.click(within(player).getByRole('button', { name: 'Pause' }));
+    await waitFor(() => expect(contexts[0]?.playing).toHaveLength(0));
+    mixer = await openMixer(user, player);
+    expect(within(mixer).getByText('They start when the narration plays.')).toBeInTheDocument();
+    await user.keyboard('{Escape}');
+    (contexts[0] as FakeAudioContext).decode = () => new Promise(() => undefined);
+    await press('Preview Light rain'); // placed in chapter two, so not decoded yet
+    mixer = await openMixer();
+    expect(within(mixer).getByText('Loading a sound…')).toBeInTheDocument();
+    await user.click(within(mixer).getByRole('switch', { name: 'Sound effects' }));
+    expect(within(panel).getByRole('switch', { name: 'Sound effects' })).not.toBeChecked();
+    expect(within(mixer).getByText(/the next narration starts without them/)).toBeInTheDocument();
+  });
+
   it('says when a sound cannot play, and when this browser has no Web Audio', async () => {
     vi.stubGlobal('AudioContext', undefined);
     soundsApi([thud({ segmentIndex: 0 })]);
@@ -281,6 +307,11 @@ describe('Sounds panel', () => {
       'Sound effects aren’t available in this browser.',
     );
     expect(within(panel).getByRole('switch', { name: 'Sound effects' })).not.toBeChecked();
+    const player = screen.getByRole('region', { name: 'Audio player' });
+    const [button] = within(player).getAllByRole('button', { name: /^Audio mixer/ });
+    await user.click(button as HTMLElement);
+    const mixer = await screen.findByRole('dialog', { name: 'Audio mixer' });
+    expect(within(mixer).getByRole('alert')).toHaveTextContent('aren’t available in this browser');
   });
 
   it('shows errors from the arrangement, the library and analysis', async () => {

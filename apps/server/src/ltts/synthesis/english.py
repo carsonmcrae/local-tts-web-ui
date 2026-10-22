@@ -77,6 +77,7 @@ _CLOCK = r"(?P<{0}h>[01]?\d|2[0-3]):(?P<{0}m>[0-5]\d)(?P<{0}x> ?[AaPp][Mm]\b)?"
 _TIME_SEP = r"\s*(?:\bto\b|\band\b|\bor\b|\buntil\b|\btill\b|-|\N{EN DASH})\s*"
 _CLOCK_END = r"(?![\d:\]/]|\.\d)"
 _GROUPS = r"\d{1,5}(?:[ -]\d{1,5}){1,8}"
+_NEXT_WORD = re.compile(r"\s*([A-Za-z']+|\S)?")
 _AUTHOR = re.compile(r"(?:[A-Z][\w'-]*|al\.)\s*$")
 _DIGITS_END = r"(?![\w/-]|[.,]\d)"
 
@@ -106,7 +107,7 @@ def _year_words(year: str) -> str:
 
 def _reads_as_year(match: re.Match[str]) -> bool:
     """A year is followed by the end, punctuation, a capitalised word or a small word, never by a noun it counts."""
-    following = re.match(r"\s*([A-Za-z']+|\S)?", match.string[match.end() :])
+    following = _NEXT_WORD.match(match.string, match.end())  # matched in place: no copy of the rest
     word = following[1] if following else None
     return (not word or word[0] in ",.;:!?)]\"'\N{EN DASH}\N{EM DASH}" or word[0].isupper()
             or word.lower() in _AFTER_YEAR)  # fmt: skip
@@ -116,7 +117,8 @@ def _year(match: re.Match[str]) -> str:
     """ "in 1998 the" is "in nineteen ninety-eight the"; a range "from 1990 to 1995" reads both years."""
     if match["y1"] == "1000" or match["y2"] == "1000" or not _reads_as_year(match):
         return match[0]
-    if match["cue"].startswith("(") and not match["y2"] and not _AUTHOR.search(match.string[: match.start()]):
+    before = match.string[max(0, match.start() - 60) : match.start()]  # a bounded look back
+    if match["cue"].startswith("(") and not match["y2"] and not _AUTHOR.search(before):
         return match[0]  # "(1998)" after a name is a citation; "(1024)" alone may be a count
     second = f"{match['sep']}{_year_words(match['y2'])}" if match["y2"] else ""
     return f"{match['cue']}{_year_words(match['y1'])}{second}"

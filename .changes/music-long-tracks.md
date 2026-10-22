@@ -29,8 +29,8 @@ docs: changed
   the browser allows it): the chunk playing and the next one per track, plus three recently used
   chunks decoded. It finds each chunk's music from the decoded length (Chromium 156 trims 24 frames
   from the start, Firefox 157 0–1) and crossfades every join, the loop point included, over 10 ms.
-  This replaces the whole-buffer loop for music, and with it `seamlessLoop`'s seam crossfade, which
-  the music no longer calls. `dispose()` also disconnects the master gain.
+  This replaces the whole-buffer loop for music, and the 30 ms whole-track seam crossfade that first
+  fixed Chromium 156's trim. `dispose()` also disconnects the master gain.
 - Measured in Chromium (the page's private memory, after a forced garbage collection): +24, +31 and
   +40 MB for 2, 10 and 20-minute tracks walked to the end, +55 MB during a crossfade between two
   20-minute tracks; decoding the whole track at once, as before: +52, +243 and +493 MB.

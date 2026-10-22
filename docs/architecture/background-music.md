@@ -115,9 +115,9 @@ Effects plug in as a third channel without changing the other two:
   music encoded separately (Opus fills high frequencies with noise, differently in each encode), so
   a hard cut between two chunks would step by up to 2.8 times a large normal step; crossfaded, the
   join measures under 1 on every track in Chromium 156 and Firefox 157 (below). The seam therefore no
-  longer depends on what a decoder does at a file's edges. `seamlessLoop` in `lib/audio/webAudio.ts`
-  (which crossfaded a whole-track loop) is no longer used by the music; the sound effects' loops still
-  use `loopBounds`.
+  longer depends on what a decoder does at a file's edges. This replaced the earlier whole-track loop and
+  its 30 ms seam crossfade (the first fix for Chromium 156's trim); the sound effects' loops still use
+  `loopBounds`.
 - **The loop.** Each loop's end is crossfaded into its start when it is made (equal-power for
   ambient material; a one-beat linear blend at a bar-aligned cut, found by cross-correlation, for the
   lo-fi tracks), before it is cut into chunks.

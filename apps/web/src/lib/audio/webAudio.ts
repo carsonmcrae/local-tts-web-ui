@@ -4,8 +4,7 @@
  * Purpose: The slice of Web Audio that the background-music and sound-effects engines share.
  * Scope: Structural types for the nodes, parameters, buffers and context the engines touch (so a
  *   fake can stand in for a browser), a short linear ramp for a parameter, the audible bounds of a
- *   decoded buffer for a loop (skipping the digital silence a codec leaves at the edges), a loop whose
- *   seam is crossfaded so it joins without a jump whatever the decoder did at the edges, a master
+ *   decoded buffer for a loop (skipping the digital silence a codec leaves at the edges), a master
  *   gain wired to the speakers, and one fetch-and-decode per id while it is in flight.
  * Does NOT belong: What plays and when (each engine), or the narration (an audio element).
  */
@@ -60,37 +59,6 @@ export interface ContextLike {
 const EDGE_SCAN_SECONDS = 0.2;
 /** -100 dBFS: quiet music is louder than this; decoder padding is not. */
 const SILENT = 1e-5;
-/** The crossfade at a loop's seam: far longer than any decoder's edge error, too short to hear. */
-const SEAM_SECONDS = 0.03;
-const seamless = new WeakMap<BufferLike, { start: number; end: number }>();
-
-/**
- * Where a loop runs once its seam is crossfaded. The loop's last 30 ms are blended into its first 30 ms
- * (equal power), in place, and the loop ends 30 ms earlier, so the join is continuous whatever a
- * decoder did at the edges: Chromium 156 decodes Opus 24 samples short at the start, which a
- * sample-exact loop would turn into a jump at every repeat. Blended once per buffer; later calls return
- * the same bounds.
- */
-export function seamlessLoop(buffer: BufferLike): { start: number; end: number } {
-  const known = seamless.get(buffer);
-  if (known) return known;
-  const bounds = loopBounds(buffer);
-  const first = Math.round(bounds.start * buffer.sampleRate);
-  const last = Math.round(bounds.end * buffer.sampleRate);
-  const blend = Math.min(Math.round(SEAM_SECONDS * buffer.sampleRate), (last - first) >> 2);
-  for (let channel = 0; channel < buffer.numberOfChannels; channel += 1) {
-    const data = buffer.getChannelData(channel);
-    for (let i = 0; i < blend; i += 1) {
-      const angle = ((i + 0.5) / blend) * (Math.PI / 2);
-      data[first + i] =
-        Number(data[first + i]) * Math.sin(angle) +
-        Number(data[last - blend + i]) * Math.cos(angle);
-    }
-  }
-  const loop = { start: bounds.start, end: (last - blend) / buffer.sampleRate };
-  seamless.set(buffer, loop);
-  return loop;
-}
 
 /** Move `param` to `to` over `seconds` from `now`, from wherever it is, cancelling what was planned. */
 export function ramp(param: ParamLike, now: number, to: number, seconds: number): void {

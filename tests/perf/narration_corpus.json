@@ -1,0 +1,83 @@
+{
+  "//": "Purpose: Held-out narration passages for comparing voices by ear and by measurement (tests/perf/narration_benchmark.py). Scope: Original text written for this benchmark on 2026-10-21 (the homograph passage rewritten on 2026-10-22 so that no sentence follows a widely circulated example list), never used as studio passages, reference recordings or training data, covering the kinds of text an audiobook narrator meets. Does NOT belong: Anything a voice was built from (apps/server/src/ltts/voices/passages.json) or the two-voice A/B sentences (voices/ab_test.py).",
+  "items": [
+    {
+      "id": "fantasy",
+      "kind": "Long-form fantasy narration",
+      "panel": true,
+      "text": "The road to Harrowmere narrowed as it climbed, until it was little more than a goat track pressed between two walls of black stone. Teodric walked with his hood up and his staff held close, counting the cairns that marked the way. Seven, the old woman had said. Pass seven cairns and you will see the lanterns of the gate. He had passed nine, and there were no lanterns, only the wind, which came down the pass in long cold breaths and tugged at the hem of his cloak as if it wanted him to turn back.\n\nHe did not turn back. Below him, far below now, the valley lay under a skin of mist, and somewhere in that mist was the village he had left before dawn, with its one inn and its one well and its one sorrow. He thought of the girl who had given him bread at the door, and of her mother, who had not looked at him at all.\n\nThe tenth cairn was taller than the others, and someone had set a small iron bell on top of it. Teodric stopped. The bell was rusted through, and yet when the wind struck it, it rang: a thin, clear note that went on far longer than it should have. On the last breath of that note, the mist in the pass ahead drew apart like a curtain, and there, hanging in the dark between the cliffs, were the lanterns. Dozens of them. Hundreds. And not one of them was lit by fire."
+    },
+    {
+      "id": "literary",
+      "kind": "Literary fiction",
+      "panel": true,
+      "text": "Marguerite kept the shop the way her father had kept it, which is to say badly and with enormous affection. The till stuck. The bell above the door had lost its clapper years ago and announced customers with a dull wooden knock. In the back room, among the boxes of unsold almanacs, she had made herself a place to sit: a chair, a lamp, a window that looked onto the canal. From there she could watch the barges go by without being seen, and she had come to think of this as the chief privilege of her position.\n\nIt was in that chair, on a grey afternoon in late October, that she first understood she was going to leave. Nothing had happened. A barge passed, low in the water, carrying gravel. The lamp flickered and steadied. And yet she sat for a long time afterwards with her hands folded, feeling the decision settle in her like silt."
+    },
+    {
+      "id": "dialogue",
+      "kind": "Dialogue between three characters",
+      "panel": true,
+      "text": "\"You're late,\" said Lennart, not looking up from the engine.\n\n\"I'm exactly on time,\" said Wren. \"You're early, which isn't the same thing.\"\n\nDr. Ferreira closed the hatch behind her and set down a canvas bag that clinked. \"Children,\" she said mildly. \"If either of you has finished bickering, the pump is leaking again.\"\n\n\"It's not leaking,\" Lennart said. \"It's weeping. There's a difference.\"\n\n\"Is there?\" Wren asked. She crouched beside him and peered into the housing. \"Because from here it looks a lot like a puddle.\"\n\n\"A small puddle.\"\n\n\"Oh, well. A small puddle. Why didn't you say?\"\n\nDr. Ferreira began unpacking the bag: a wrench, a coil of wire, three oranges. \"I brought lunch,\" she said. \"Fix the weeping, and you may have it. Argue for another ten minutes, and I'll eat all three myself.\"\n\nLennart finally looked up. \"You wouldn't.\"\n\n\"Try me,\" she said, and peeled the first one."
+    },
+    {
+      "id": "emotion",
+      "kind": "Emotionally expressive passage",
+      "panel": true,
+      "text": "I didn't cry at the funeral. I want to say that first, because everyone remembers it, and they remember it wrong. I stood at the back with my coat buttoned to the throat and I did not make a sound. It was later, in the car park, when I found his umbrella on the back seat, that it came out of me all at once, loud and ugly, like something breaking. I hadn't even known the umbrella was there. He must have left it the last time I drove him home. The handle was still bent where he'd caught it in the door, and I sat holding it for an hour, and I would have given anything, anything at all, to hear him complain about it one more time."
+    },
+    {
+      "id": "complex",
+      "kind": "Complex sentence structure",
+      "panel": false,
+      "text": "Although the committee had been warned, repeatedly and in writing, that the bridge could not bear the weight of the new trams, it was not until the third report, the one that included photographs of the hairline fractures spreading from the eastern pier, that anyone proposed closing it; and even then the proposal, which came from the youngest member and was seconded, after an awkward pause, by nobody, was tabled until the following spring. By that time, of course, the question had answered itself. The bridge did not fall, exactly. It sagged, over the course of a single wet February night, by a little more than a metre, so that in the morning the tramlines dipped towards the river like a drawn breath, and the first driver of the day, seeing them, simply stopped, got out, and walked home."
+    },
+    {
+      "id": "names",
+      "kind": "Unusual names",
+      "panel": true,
+      "text": "The delegation from Qeshm arrived a day early: Ambassador Nkemdirim Oyelaran-Whitcombe, her secretary Siobhán Ní Bhriain, and a silent young interpreter called Xiulan Tchaikowsky-Ruiz. They were met at the quay by Councillor Przemysław Grzegorzewski and his aide, Aoife Uí Dhuibhir, who had spent the morning practising everyone's names and got most of them wrong anyway. Only old Ngozi Eshu, who kept the harbour records, greeted each visitor correctly, in the right order, without looking at the list. Later that night, in the inn at Ystradgynlais, the ambassador asked who the harbourmistress was, and was told, with some pride, that nobody really knew."
+    },
+    {
+      "id": "questions",
+      "kind": "Questions and exclamations",
+      "panel": true,
+      "text": "Did you hear that? No, really, did you? It came from the cellar, I'm sure of it. Well, don't just stand there! Get the torch! Why is it always me who has to go first? Because you're the one who said the house wasn't haunted, that's why. Fine. Fine! I'm going. Are you coming or not? What was that? Was that you? Oh, for heaven's sake, it's the cat. It's just the cat! Why on earth would you leave the cat in the cellar? I didn't! Then how did she get down there? Don't look at me like that. I'm serious. How?"
+    },
+    {
+      "id": "numbers",
+      "kind": "Numbers and dates",
+      "panel": true,
+      "text": "The invoice was dated 3 March 2019 and came to £1,284.50, of which exactly half, £642.25, was due within 30 days. By 1 April 2020 nothing had been paid. The second reminder, sent on 15/06/2021, added interest at 8.5% per annum, bringing the total to roughly $1,500, or about 1,300 euros at the time. The customer's account number was 0047-3391-2, their phone number was 020 7946 0321, and their last recorded address was Flat 3b, 221 Marlowe Street. In 1998 the firm had handled 11,000 such cases; in 2023, fewer than 400. The clerk sighed, stamped the file at 4:45 p.m., and went home."
+    },
+    {
+      "id": "abbreviations",
+      "kind": "Abbreviations",
+      "panel": false,
+      "text": "Dr. Amara Okafor, Ph.D., arrived at approx. 9 a.m. with Mr. and Mrs. Lindqvist, Lt. Col. Haines (ret.) and the Rev. T. J. Abernathy. The meeting, per the agenda, covered items 1 to 4: the Q3 budget, i.e. the shortfall; the NHS contract, etc.; a proposal from UNESCO re. the archive; and a note from the IT dept. about the new VPN. Mt. Pleasant Rd. remained closed, so most had come via St. John's Ave. Someone asked whether the CEO or the CFO would attend; neither did. The minutes were taken by Ms. Petrova and circulated as a PDF at 5 p.m., EST, under the ref. no. AB/2024-17."
+    },
+    {
+      "id": "homographs",
+      "kind": "Pronunciation challenges",
+      "panel": true,
+      "text": "Marta had read the warning twice, yet she agreed to read it aloud to the crew. The foreman took the lead, pointing at a lead pipe half buried in the clay. On stage the cellist took a bow, then tied a red bow around her case. They live above the bakery and play live music there each Friday. As the gale rose, the keeper climbed up to wind the tower clock against the wind. A tear slid down his face when he found the tear in the old chart. Shut the gate; the edge of the quarry is too close. The angler fished for bass while his brother tuned a bass guitar on the bank. The council promised it would not refuse to collect the refuse this week. The medic wound clean linen over the wound. Could you record the record before the archive closes? Please present the present to our guest when she arrives. A dove dove from the rafters as the doors swung open. On Sundays the steward would polish the Polish brass in the hall. Nobody thought to object to the strange object on the mantel. The ranger watched the does at minute intervals and noted every minute change in the herd."
+    },
+    {
+      "id": "quiet",
+      "kind": "Quiet descriptive passage",
+      "panel": true,
+      "text": "After the rain, the garden held its breath. Water gathered in the cupped leaves of the hostas and let go, one drop at a time, onto the flagstones below. A blackbird worked the lawn in short runs, stopping, tilting its head, listening to something under the grass. The light came sideways through the apple tree and lay in long pale bars across the path. Nothing moved quickly. Even the cat, who had been waiting under the bench for the weather to change its mind, came out slowly, placing each paw as though the ground might not hold. From the kitchen came the small domestic sounds of a kettle and a drawer, and then, after a while, nothing at all."
+    },
+    {
+      "id": "transitions",
+      "kind": "Paragraph and chapter transitions",
+      "panel": false,
+      "text": "The letter lay unopened on the table all evening. She looked at it when she passed, and did not touch it, and looked again.\n\nWhen at last she broke the seal, the candle had burned down to a stub. The hand was her brother's. The date was eleven years old.\n\nChapter Two\n\nMorning came grey and ordinary, as mornings do, with no regard for what the night has decided. She fed the hens. She drew the water. She put the letter in her apron pocket, where it stayed, warm against her, through every small task of the day.\n\nAt noon the carrier came, as he always did, and she gave him the reply she had written at dawn, as she had never done before.\n\nChapter Three\n\nThe road east was longer than she remembered."
+    },
+    {
+      "id": "longform",
+      "kind": "Long-form chapter (listening fatigue)",
+      "panel": false,
+      "text": "Ilse had been the cartographer's apprentice for three winters before he let her touch the red ink. Black was for coastlines, roads, and the names of towns; blue was for water, and anyone could be trusted with blue, since the rivers had already decided where they wanted to go. But red was for borders, and borders, the old man said, were the only lines on a map that could get a person killed.\n\n\"Draw a river wrong,\" he told her, \"and a boatman curses you. Draw a border wrong, and two villages that have shared a well for four hundred years wake up one morning as enemies.\" He said this the way other people said good morning, which was to say every day, and without expecting an answer.\n\nThe commission that changed everything arrived in the spring, carried up the hill by a clerk who was out of breath and plainly resentful about it. The Margravine wished to have her lands surveyed anew. The old maps, the clerk explained, were full of errors: hamlets that had moved, forests that had been cut, a lake that had quietly become a marsh and then a meadow without informing anyone in authority. The cartographer listened, nodded, and named a price that made the clerk sit down.\n\nThey set out in May. Ilse carried the instruments; the old man carried the opinions. For eleven weeks they walked the Margravine's country from the salt flats in the east to the beech woods along the western ridge, and every evening, by whatever light they could get, Ilse drew what they had seen and the old man corrected it. He corrected everything. The curve of a lane. The width of a ford. The spelling of a village whose name, she pointed out, the villagers themselves spelled three different ways.\n\n\"Then we will spell it a fourth,\" he said, \"and in a hundred years they will spell it ours.\"\n\nIt was in the seventh week, in the hills above a town called Greyfell, that they found the stone. It stood at the meeting of two sheep tracks, waist-high and lichened over, and it had been there long enough for the tracks to bend around it out of habit. On its eastern face, under the lichen, Ilse found a line cut into the rock, and above the line a mark she did not know. She scraped the western face clean and found the same line, the same mark, reversed.\n\n\"A boundary stone,\" said the old man. He did not sound pleased.\n\n\"Whose?\"\n\nHe did not answer at once. He walked around the stone twice, looked east, looked west, and then sat down on the grass with the heaviness of a man who has just been told the length of the road ahead. \"Not the Margravine's,\" he said at last. \"This is older than her family. Older than the duchy, probably. Someone drew a border here once, and then forgot it, and then died, and the grass grew back over the forgetting.\"\n\n\"Then it doesn't matter,\" Ilse said.\n\n\"It matters to the stone.\" He pulled his hat down over his eyes. \"Draw it,\" he said. \"In black. A stone is only a stone until someone makes it red.\"\n\nShe drew it. That night, in the inn at Greyfell, she drew it again, more carefully, with the mark copied exactly, and when she showed the drawing to the innkeeper, an old woman with forearms like a blacksmith's, the woman went very still and said nothing for the space of three long breaths.\n\n\"Where did you see that?\"\n\nIlse told her.\n\n\"My grandmother used to say,\" the innkeeper said slowly, \"that there was a time when the people on this side of the hill and the people on that side were not the same people. That they had different words for bread. That you did not marry across the stone.\" She wiped her hands on her apron, though they were already clean. \"She said it like a story. I never thought it was a place.\"\n\nLater, lying awake in the loft with the drawing under her pillow, Ilse thought about the two villages and the well, and about the Margravine's clerk, and about how a map was a kind of promise, and how the trouble with a promise was that you could not always tell, at the moment of making it, whom you were making it to.\n\nIn the morning the old man was already up, already packed, already standing at the door with the light behind him. \"We leave the stone off,\" he said. \"I thought about it all night. We leave it off, and in ten years nobody will be able to find it, and in fifty nobody will remember it was there to find.\"\n\nIlse looked at him for a long moment. Then she went back up to the loft, and took the drawing from under the pillow, and folded it very small, and put it inside her shirt, against her skin, where it would stay for the next forty years.\n\nShe drew the stone on every map she ever made. In black. She never told him."
+    }
+  ]
+}

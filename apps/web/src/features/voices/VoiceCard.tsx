@@ -3,7 +3,8 @@
 /**
  * Purpose: One voice in the Voice Library.
  * Scope: Name, engine, language, gender, built-in/custom, upstream quality grade, availability,
- *   preview play/stop, and "use for reading" (sets the default voice).
+ *   where the voice comes from (its model and licence; every voice is synthetic), preview play/stop,
+ *   and "use for reading" (sets the default voice).
  * Does NOT belong: Filtering or the preview audio itself (useVoicePreview).
  */
 import { Check, Loader2, Play, Square } from 'lucide-react';
@@ -126,6 +127,9 @@ export function VoiceCard({
       </div>
       {voice.description ? (
         <p className="text-[13px] leading-snug text-muted">{voice.description}</p>
+      ) : null}
+      {voice.attribution ? (
+        <p className="text-xs leading-snug text-subtle">{voice.attribution}</p>
       ) : null}
       {previewError ? (
         <p className="text-[13px] text-danger" role="alert">

@@ -183,6 +183,36 @@ only what is spoken: playback and exports both use the fix, and only the sentenc
 word are generated again. A document's pronunciations are deleted with it. Every pronunciation is
 listed, and can be changed, in [Settings → Pronunciation](Settings-and-Models#pronunciation).
 
+## How English voices read numbers, money and abbreviations
+
+Before an English voice speaks a sentence, a few things are rewritten the way a narrator would read
+them, whichever engine the voice uses. Each rule applies only where the meaning is clear; anything
+ambiguous is read as before.
+
+- **Money**: £1,284.50 is "1,284 pounds 50", $1 is "1 dollar", €0.99 is "99 cents", $3bn is
+  "3 billion dollars". Ranges ($5-10), other formats (€1.234,56) and ¥ are left alone.
+- **Clock times**: after words such as "at", "from", "until" or "opens", or before AM or PM: 4:45 p.m.
+  is "4 45 PM", 9:00 is "9 o'clock", 4:05 is "4 oh 5". Ratios (1:25), Bible verses (John 3:16), race
+  times and scores are left alone.
+- **Phone and account numbers**: read digit by digit, with a short pause between groups, when they
+  start with + or 0 (020 7946 0321), follow the US pattern (555-123-4567), or follow a word such as
+  "call", "account", "order" or "ISBN". Lists of numbers, scores and dates are left alone.
+- **Years**: after words such as "in", "since", "before" or a month, when the next word shows it is a
+  year: "in 1998 the firm" is "in nineteen ninety-eight the firm", but "in 1500 copies" stays a number.
+  The 1980s are "the nineteen eighties", and citations such as (Smith, 1998) read the year.
+- **Chapter numbers**: Chapter IV is "Chapter 4", and World War II is "World War 2". Lettered parts
+  and appendices (Part C, Appendix I) are left alone.
+- **Abbreviations**: Mr., Mrs., Ms., Prof., Lt., Col., Rev., Gen. and similar titles before a name;
+  Dr. and St. as Doctor and Saint before a name, Drive and Street after a street name; Mt., Rd., Ave.,
+  approx., dept., No. 5, e.g., i.e., vs., ft., lb., oz. and °C. "no." used as a word stays a word.
+- **Code and formulas**: a sentence that looks like code or a formula (with =, <, >, braces, paths or
+  function calls) is read exactly as before.
+
+The text you see never changes, only what is spoken: highlighting, search, word counts and the
+subtitles in an export all use the written text. Playback, exports, previews and the local speech API
+all say the same thing. These rules apply to English voices only, and a pronunciation you save for a
+word wins over them.
+
 ## Searching a document
 
 Press the magnifying glass next to Play (**Search this document**) and type a word, name or phrase.

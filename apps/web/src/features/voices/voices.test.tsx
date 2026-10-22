@@ -16,7 +16,7 @@ import VoiceLibraryPage from './VoiceLibraryPage';
 afterEach(() => vi.unstubAllGlobals());
 
 const voices = [
-  voice({ description: 'Warm and clear.' }),
+  voice({ description: 'Warm and clear.', attribution: 'Synthetic voice from the Kokoro-82M model (Apache-2.0).' }),
   voice({ id: 'kokoro:bm_george', name: 'George', language: 'English (UK)', gender: 'male' }),
   voice({ id: 'piper:x', name: 'Xavier', engineId: 'piper', language: 'French', gender: 'male', qualityGrade: null }),
   voice({ id: 'custom:me', name: 'Me', category: 'custom', engineId: 'chatterbox', language: 'English', gender: 'unspecified' }),
@@ -74,6 +74,9 @@ describe('Voice library filters', () => {
       'French',
     ]);
     expect(screen.getByText('Warm and clear.')).toBeInTheDocument();
+    expect(
+      screen.getByText('Synthetic voice from the Kokoro-82M model (Apache-2.0).'),
+    ).toBeInTheDocument();
     expect(screen.getByText('French · male · piper')).toBeInTheDocument();
     expect(screen.getByText('English · Chatterbox')).toBeInTheDocument();
   });

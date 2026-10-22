@@ -81,6 +81,9 @@ class VoiceInfo(ApiModel):
     quality_grade: str | None = None
     description: str = ""
     available: bool = True
+    # Where the voice comes from and under what licence, said plainly: every voice is synthetic speech from a
+    # model, never a recording of a person, and the library shows this with the voice.
+    attribution: str = ""
 
 
 @dataclass(frozen=True, slots=True)

@@ -39,6 +39,11 @@ ARTIFACT = "kokoro-v1.0"
 ENGINE_CODE_VERSION = "kokoro-onnx-0.6"
 SAMPLE_RATE = 24_000
 PACE = EngineControl(name="pace", label="Speaking pace", minimum=0.5, maximum=2.0, default=1.0, step=0.05)
+ATTRIBUTION = (
+    "Synthetic voice from the Kokoro-82M model (Apache-2.0, hexgrad), run with kokoro-onnx (MIT). "
+    "Not a recording of a person: the model was trained on permissively licensed and public-domain audio "
+    "(CC BY corpora are credited in the licence notices), and no speaker is named for any voice."
+)
 
 
 class KokoroEngine(Engine):
@@ -170,6 +175,7 @@ class KokoroEngine(Engine):
                     quality_grade=GRADES.get(voice_id),
                     description=note,
                     available=self.is_ready(),
+                    attribution=ATTRIBUTION,
                 )
             )
         return result

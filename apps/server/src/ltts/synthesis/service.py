@@ -32,6 +32,7 @@ from ltts.documents.styling import SegmentPlan, Sound, StylingStore
 from ltts.engines.registry import EngineRegistry, ResolvedVoice
 from ltts.errors import AppError, SynthesisError
 from ltts.synthesis.cache import AudioCache, CachedAudio
+from ltts.synthesis.english import english_speech
 from ltts.synthesis.render import TAKE_ENGINES, Piece, RenderJob, render, tuned
 from ltts.synthesis.scheduler import EngineScheduler
 
@@ -111,7 +112,10 @@ class SynthesisService:
             written = self._pronounce(written, None)
         elif plan.dictionary:
             written = self._pronounce(written, plan.document_id)
-        spoken = speech_text(written) or "."
+        spoken = speech_text(written)
+        if voice.spec.language_code.startswith("en"):
+            spoken = english_speech(spoken)  # money, times, years and abbreviations the way a narrator reads them
+        spoken = spoken or "."
         return f"[{sound}] {spoken}" if sound and voice.engine.id in SOUND_ENGINES else spoken
 
     def job(self, voice: str | SegmentPlan, text: str, boundary: str, pace: float) -> RenderJob:

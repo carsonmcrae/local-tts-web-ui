@@ -1,0 +1,138 @@
+{
+  "//": "Purpose: Held-out sentences for the blind phonemiser comparison (tests/perf/g2p_compare.py): how Kokoro reads English with espeak-ng phonemes (today) against misaki phonemes (what Kokoro v1.0 was trained on). Scope: Original sentences written on 2026-10-22 for this comparison, never used to build or tune a voice, grouped by what they test; a note tells the listener the intended reading where the text alone does not. Does NOT belong: Narration passages for comparing voices (narration_corpus.json).",
+  "voices": {
+    "us": ["af_heart", "am_michael"],
+    "uk": ["bf_emma", "bm_george"]
+  },
+  "items": [
+    {
+      "category": "homographs",
+      "text": "The wind was too strong for her to wind the kite string back in.",
+      "note": "wind (air), then wind (to turn)"
+    },
+    {
+      "category": "homographs",
+      "text": "He led the horses past the old lead mine at dawn.",
+      "note": "lead as in the metal"
+    },
+    {
+      "category": "homographs",
+      "text": "After the storm she found a tear in the sail, and wiped a tear from her cheek.",
+      "note": "tear (rip), then tear (crying)"
+    },
+    {
+      "category": "homographs",
+      "text": "Please don't desert your post in the middle of the desert.",
+      "note": "desert (abandon), then desert (dry land)"
+    },
+    {
+      "category": "homographs",
+      "text": "She wound the old clock and then dressed the wound on her hand.",
+      "note": "wound (turned, rhymes with sound), then wound (injury)"
+    },
+    {
+      "category": "homographs",
+      "text": "They had to live through the live broadcast without a script.",
+      "note": "live (to exist), then live (happening now)"
+    },
+    {
+      "category": "homographs",
+      "text": "Will the band record a new record this winter?",
+      "note": "record (verb, stress on the second syllable), then record (noun)"
+    },
+    {
+      "category": "homographs",
+      "text": "The manager will project the figures for the new project onto the wall.",
+      "note": "project (verb), then project (noun)"
+    },
+    {
+      "category": "names",
+      "text": "Siobhan and Niamh met Saoirse at the station in Dún Laoghaire.",
+      "note": "Irish names: shiv-AWN, NEEV, SEER-sha; Dun LEERY"
+    },
+    { "category": "names", "text": "Ngozi Okonjo and Chidi Nwosu flew in from Enugu on Tuesday." },
+    {
+      "category": "names",
+      "text": "Xiomara Quintero lectured in Guadalajara and Tlaquepaque last spring."
+    },
+    {
+      "category": "names",
+      "text": "Wojciech grew up near Łódź and studied in Wrocław.",
+      "note": "Polish: VOY-chekh, WOODGE, VROTS-wahf"
+    },
+    {
+      "category": "names",
+      "text": "Eilidh drove from Ystradgynlais to Llandudno in one long afternoon."
+    },
+    {
+      "category": "names",
+      "text": "Hermione, Persephone and Penelope argued about Thucydides until midnight."
+    },
+    {
+      "category": "names",
+      "text": "Tchaikovsky, Dvořák and Saint-Saëns filled the second half of the programme."
+    },
+    {
+      "category": "rare words",
+      "text": "The archipelago was quiet, and the boatswain kept to his hammock."
+    },
+    {
+      "category": "rare words",
+      "text": "Her idea of hospitality was a bowl of quinoa and a glass of chardonnay."
+    },
+    {
+      "category": "rare words",
+      "text": "The colonel's victuals arrived during a segue between two dull speeches."
+    },
+    {
+      "category": "rare words",
+      "text": "A splash of Worcestershire sauce stained the lieutenant's handkerchief."
+    },
+    {
+      "category": "rare words",
+      "text": "The choir sang a requiem in the chthonic gloom of the crypt."
+    },
+    {
+      "category": "rare words",
+      "text": "An awry glance revealed the hyperbole in his solemn eulogy."
+    },
+    { "category": "numbers", "text": "Dr. Ramos arrived at 4:45 p.m. with £1,284.50 in cash." },
+    { "category": "numbers", "text": "In 1998 the firm moved to 221 Elm Dr. in St. Albans." },
+    { "category": "numbers", "text": "Call 020 7946 0321 before Chapter IV ends." },
+    {
+      "category": "numbers",
+      "text": "The 1980s were loud, said Lt. Col. Haines (ret.) with a sigh."
+    },
+    {
+      "category": "narration",
+      "text": "The lamps along the harbour came on one by one, each a small surrender to the evening."
+    },
+    {
+      "category": "narration",
+      "text": "For three days the river rose, and on the fourth it went quietly back to its bed."
+    },
+    {
+      "category": "narration",
+      "text": "She folded the map, put it in her coat, and walked on without looking back."
+    },
+    {
+      "category": "narration",
+      "text": "Nobody in the village could remember who had planted the orchard, or why."
+    },
+    {
+      "category": "dialogue",
+      "text": "\"You can't be serious,\" said Tomas. \"We've only just arrived.\""
+    },
+    {
+      "category": "dialogue",
+      "text": "\"Hand me the lantern,\" she whispered, \"and keep your voice down.\""
+    },
+    {
+      "category": "dialogue",
+      "text": "\"Is that all?\" he asked. \"After everything, is that really all?\""
+    },
+    { "category": "questions", "text": "Where on earth did you find a key that old?" },
+    { "category": "questions", "text": "What a ridiculous, wonderful idea!" },
+    { "category": "questions", "text": "Are you coming with us, or not?" }
+  ]
+}

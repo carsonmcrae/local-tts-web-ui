@@ -471,6 +471,10 @@ class VoiceProfileService:
                 category="custom",
                 description=_describe(p),
                 available=ready,
+                attribution=(
+                    "Synthetic speech from Chatterbox Turbo (MIT, Resemble AI), conditioned on a recording made with "
+                    "the speaker's consent; it is not that recording. Every clip carries an inaudible watermark."
+                ),
             )
             for p in self.list_all()
         ]

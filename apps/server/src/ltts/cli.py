@@ -190,7 +190,8 @@ def _voice_panel(args: argparse.Namespace) -> int:
         if not args.answers:
             print("score needs the answers.json saved from the panel's page.")
             return 2
-        pairs = [(a, b) for a, _, b in (pair.partition(":") for pair in args.pair)]
+        # "A,B" for voice ids that contain colons (kokoro:af_heart,chatterbox:default); "A:B" for plain names.
+        pairs = [(a, b) for a, _, b in (pair.partition("," if "," in pair else ":") for pair in args.pair)]
         print(panel.summary(*panel.score(Path(args.folder), Path(args.answers), pairs)))
         return 0
     if not args.items or len(args.voice) < 2:
@@ -260,7 +261,12 @@ def main(argv: list[str] | None = None) -> int:
     panel.add_argument("answers", nargs="?", help="score: the answers.json saved from the page")
     panel.add_argument("--items", help="make: a JSON list of {kind, text}, in the clips' order")
     panel.add_argument("--voice", action="append", default=[], help="make: NAME=FOLDER, once per voice")
-    panel.add_argument("--pair", action="append", default=[], help="score: A:B, compare two voices item by item")
+    panel.add_argument(
+        "--pair",
+        action="append",
+        default=[],
+        help="score: A:B (or A,B for ids with colons), compare two voices item by item",
+    )
     panel.add_argument("--seed", type=int, default=0, help="make: shuffles the order of voices in every item")
     panel.set_defaults(func=_voice_panel)
     args = parser.parse_args(argv)

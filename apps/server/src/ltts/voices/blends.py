@@ -138,6 +138,7 @@ class BlendStore:
                     category="custom",
                     description=f"A blend of {mix}.",
                     available=ready and base is not None,
+                    attribution="Synthetic voice: a weighted mix of Kokoro-82M voices (Apache-2.0, hexgrad).",
                 )
             )
         return voices

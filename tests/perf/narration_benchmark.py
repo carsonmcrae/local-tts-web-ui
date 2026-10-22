@@ -1,20 +1,17 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2026 Carson McRae
-"""Purpose: Read held-out narration passages with several voices through the real synthesis path, measure
-each reading, and build a blind listening pack.
+"""Purpose: Read held-out narration passages with several voices through the real synthesis path, measure each
+reading, and build a blind listening pack.
 
-Scope: Every passage in ``narration_corpus.json`` becomes a pasted document (so sentences, pauses, headings,
-pronunciations and the English reading rules are exactly what the app does), each sentence is rendered by the
-synthesis service and the sentences are joined into one clip per voice and passage. Per voice: cold start (every
-engine unloaded, model files verified again, first sentence), warm first sentence, median sentence, cached
-sentence, real-time factor, memory before and after the model loads and at its peak, GPU memory on the card,
-loudness, pause share, pace and clipping, and whether the same text comes out the same twice. The run records
-its environment (``bench_support.environment``), refuses to write inside the repository unless Git ignores the
-folder, and writes a blind panel (``ltts voice-panel``) of the shorter passages, an anonymised long-form folder
-for fatigue listening, and a README separating automated measurements from listening judgements.
+Scope: Each passage in ``narration_corpus.json`` becomes a pasted document and is read sentence by sentence by the
+synthesis service (planner, pronunciations, English reading rules, pauses). Per voice: cold start, warm first
+sentence, median and cached sentence, real-time factor, memory, GPU memory, loudness, pauses, pace, clipping and
+repeatability; the run's environment (``bench_support``); a blind panel, a long-form folder and a README.
+Does NOT belong: Pass/fail tests, or judging quality: listening does that (docs/research/voice-library.md).
+
 Run: ``node scripts/uv-run.mjs --cwd apps/server run --frozen python ../../tests/perf/narration_benchmark.py
 --out .tools/bench --voice kokoro:af_heart --voice chatterbox:default [--local NAME=PROFILE_DIR] [--seed N]``.
-Does NOT belong: Pass/fail tests, or judging quality: listening does that (docs/research/voice-library.md).
+The output folder must be outside the repository or ignored by Git: benchmark audio can be a real person's voice.
 """
 
 from __future__ import annotations

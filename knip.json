@@ -3,7 +3,6 @@
   "workspaces": {
     ".": {
       "entry": [
-        "scripts/e2e-server.mjs",
         "scripts/media/demo-page.js",
         "scripts/media/promo/promo.js",
         "site/demo.js",

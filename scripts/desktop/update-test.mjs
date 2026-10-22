@@ -15,7 +15,8 @@
  * Does NOT belong: The installer smoke test (smoke-test.mjs) or release builds (build.mjs).
  */
 import { execFileSync, spawnSync } from 'node:child_process';
-import { copyFileSync, mkdirSync, mkdtempSync, readFileSync } from 'node:fs';
+import { randomBytes } from 'node:crypto';
+import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -38,7 +39,6 @@ const NOTES =
   'An update made by the update test.\n\n## Fixed\n\n- The update test can see these notes.';
 const local = process.env.LOCALAPPDATA ?? '';
 const installDir = path.join(local, 'TTSNative');
-const KEY_PASSWORD = 'update-test-only';
 const system32 = path.join(process.env.SystemRoot ?? 'C:/Windows', 'System32');
 const REG = path.join(system32, 'reg.exe');
 const KEY = String.raw`HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\TTSNative`;
@@ -61,9 +61,14 @@ function node(args, env = {}) {
 
 const TAURI_CLI = path.join(repoRoot, 'node_modules', '@tauri-apps', 'cli', 'tauri.js');
 
-/** Writes a new throwaway update key (update.key and update.key.pub) into `dir`. */
+/**
+ * Writes a new throwaway update key into `dir`: update.key, update.key.pub and the random password
+ * it was made with (update.key.password), which goes wherever the key goes and nowhere else.
+ */
 function makeKey(/** @type {string} */ dir) {
   mkdirSync(dir, { recursive: true });
+  const password = randomBytes(24).toString('hex');
+  writeFileSync(path.join(dir, 'update.key.password'), password);
   node([
     TAURI_CLI,
     'signer',
@@ -72,8 +77,9 @@ function makeKey(/** @type {string} */ dir) {
     '-w',
     path.join(dir, 'update.key'),
     '-p',
-    KEY_PASSWORD,
+    password,
   ]);
+  return password;
 }
 
 /**
@@ -82,7 +88,7 @@ function makeKey(/** @type {string} */ dir) {
  */
 function signWithAnotherKey(/** @type {string} */ installer) {
   const dir = mkdtempSync(path.join(tmpdir(), 'ttsnative-other-key-'));
-  makeKey(dir);
+  const password = makeKey(dir);
   const copy = path.join(dir, path.basename(installer));
   copyFileSync(installer, copy);
   // Bound to B's version like a real signature, so the only thing wrong with it is the key.
@@ -93,7 +99,7 @@ function signWithAnotherKey(/** @type {string} */ installer) {
     '-f',
     path.join(dir, 'update.key'),
     '-p',
-    KEY_PASSWORD,
+    password,
     '--app-version',
     NEW,
     copy,
@@ -104,7 +110,7 @@ function signWithAnotherKey(/** @type {string} */ installer) {
 function readKey(/** @type {string} */ dir) {
   const file = path.join(dir, 'update.key');
   return {
-    password: KEY_PASSWORD,
+    password: readFileSync(`${file}.password`, 'utf8'),
     privateKey: readFileSync(file, 'utf8'),
     publicKey: readFileSync(`${file}.pub`, 'utf8').trim(),
   };

@@ -98,7 +98,7 @@ test.describe('background music', () => {
 
     await page.reload();
     const again = await musicPanel(page);
-    await expect(again.getByRole('switch')).not.toBeChecked();
+    await expect(again.getByRole('switch', { name: 'Background music' })).not.toBeChecked();
     await expect(again.getByText(LIBRARY.tracks[0]?.title ?? '')).toBeVisible();
   });
 

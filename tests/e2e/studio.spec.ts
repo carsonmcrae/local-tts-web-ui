@@ -121,7 +121,8 @@ test('studio session records lossless takes with the microphone', async ({
     wizard.getByRole('alert').or(wizard.getByText('Your microphone sounds good')).first(),
   ).toBeVisible();
   await wizard.getByRole('button', { name: /Continue/ }).click();
-  await expect(wizard.getByText(/Passage 1 of 48/)).toBeVisible();
+  // A session opens on the foundation passage, the one to record first.
+  await expect(wizard.getByText(/^Foundation passage/)).toBeVisible();
   await wizard.getByRole('button', { name: 'Record', exact: true }).click();
   await expect(wizard.getByRole('button', { name: 'Stop' })).toBeVisible();
   await page.waitForTimeout(4000);

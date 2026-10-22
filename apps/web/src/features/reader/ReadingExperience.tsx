@@ -62,12 +62,14 @@ function MusicRecommendation({ music }: Readonly<{ music: PresetMusic }>) {
             <span>The recommended track isn't in this version's music library.</span>
           ) : state.trackId === track.id ? (
             <span>
-              {track.title} is recommended.{' '}
+              {track.title} is recommended at {music.volume}%.{' '}
               <span className="text-subtle">Chosen in the player.</span>
             </span>
           ) : (
             <>
-              <span>{track.title} is recommended.</span>
+              <span>
+                {track.title} is recommended at {music.volume}%.
+              </span>
               <Button variant="ghost" size="sm" onClick={() => acceptTrack(session, music)}>
                 Use this track
               </Button>

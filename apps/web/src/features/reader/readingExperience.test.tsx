@@ -157,7 +157,9 @@ describe('Reading experience', () => {
     expect(within(chooser).getByRole('radio', { name: /Standard/ })).toBeChecked();
     expect(within(chooser).queryByRole('radio', { name: /Immersive/ })).not.toBeInTheDocument();
     expect(within(chooser).getByText(NOTE)).toBeInTheDocument();
-    expect(within(chooser).getByText('Gymnopédie No. 1 is recommended.')).toBeInTheDocument();
+    expect(
+      within(chooser).getByText('Gymnopédie No. 1 is recommended at 10%.'),
+    ).toBeInTheDocument();
     expect(
       within(chooser).getByText('Light piano. Music stays off until you turn it on in the player.'),
     ).toBeInTheDocument();

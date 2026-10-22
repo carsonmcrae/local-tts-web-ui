@@ -58,7 +58,8 @@ const size = (items: readonly CleanupItem[]) =>
 function phrase(items: readonly CleanupItem[]): string {
   return REASONS.map(({ reason, one, many }) => {
     const count = size(items.filter((item) => item.reason === reason));
-    return count ? `${count.toString()} ${count === 1 ? one : many}` : '';
+    if (!count) return '';
+    return `${count.toString()} ${count === 1 ? one : many}`;
   })
     .filter(Boolean)
     .join(', ');

@@ -46,6 +46,13 @@ npm run dev
   behaviour change and a review from a code owner.
 - **Dependencies.** Ask before adding one. Prefer the standard library or an existing dependency; check
   its licence (no AGPL/GPL in app code), maintenance and install scripts. Releases must be ≥ 14 days old.
+- **Adding a language or package manager.** The project's ecosystems are npm, Python through uv, Rust
+  through Cargo and GitHub Actions, and each has Dependabot updates, an audit and a code scanner.
+  `scripts/check-ecosystems.mjs` (part of `npm run lint:repo`) fails on anything else: PHP, Ruby, Go,
+  the JVM, .NET, a second JavaScript or Python package manager, a container image and so on. Adding one
+  needs an architecture decision (`docs/architecture/decisions.md`) and, in the same pull request, its
+  Dependabot entry, an audit in `npm run security`, CodeQL or SonarQube coverage and an update to
+  `scripts/lib/ecosystems.mjs`, so nothing arrives before its security tooling does.
 - **No dead code, no TODOs** in merged code — open an issue instead.
 - **Accessibility.** Keyboard reachable, visible focus, labelled controls, WCAG 2.2 AA contrast. The e2e
   suite runs axe.
@@ -57,6 +64,19 @@ widths, including over the LAN), the website, the documentation and the release 
 change touches user-facing functionality, terminology, navigation, settings, version information or
 documented behaviour, find every surface it affects and keep them consistent. That does not mean every
 change touches every surface.
+
+Every change file declares the change's impact on each surface (`desktop`, `browser`, `phone`,
+`website`, `docs`; see [.changes/README.md](.changes/README.md#surfaces)), and CI checks the
+declaration against the pull request: the three app surfaces change together unless one is
+`limited:` with a reason, site/ changes need `website:`, documentation changes need `docs: changed`.
+Before declaring, answer for every user-facing change:
+
+1. Does the Windows app need it, and is it built from the same web assets the browser gets?
+2. Does the browser on the computer need it?
+3. Does a phone need it, or an explicit, explained limitation (never a weaker LAN security rule)?
+4. Does ttsnative.com need new product information, once the version that has it is published?
+5. Do the README, wiki, guides or release notes need updating?
+6. Which surfaces need new or changed regression tests?
 
 - Review which surfaces the change affects.
 - Update the affected interfaces, website content, documentation and tests together.

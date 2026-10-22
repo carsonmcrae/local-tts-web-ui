@@ -5,7 +5,9 @@
  * Purpose: Prove a built Windows installer works for someone with no developer tools.
  * Scope: Silent per-user install; Installed Apps entry with the right version and publisher; start
  *   TTSNative.exe; the bundled server answers on loopback with the bundled Kokoro model ready; real
- *   speech (a voice preview) and an MP3 export of pasted text; only the app's own window is visible
+ *   speech (a voice preview) and an MP3 export of pasted text; the app serves this installer's web
+ *   build byte for byte at every route and reports this version (the Windows app and the browser get
+ *   the same interface); only the app's own window is visible
  *   (no console windows); a second launch doesn't start another server; closing stops the server;
  *   the document is still there after a restart; silent uninstall removes the app but keeps the user's
  *   data. Usage: `node scripts/desktop/smoke-test.mjs <TTSNative-Setup-X.Y.Z.exe> <X.Y.Z>`.
@@ -13,22 +15,26 @@
  * Does NOT belong: Building (build.mjs) or the update path (update-test.mjs).
  */
 import { execFileSync, spawn, spawnSync } from 'node:child_process';
-import { existsSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
+import { APP_ROUTES } from '../lib/app-routes.mjs';
+import { describe, leftoverProcesses } from './processes.mjs';
+import { repoRoot } from '../lib/paths.mjs';
 
 const [installer = '', version = ''] = process.argv.slice(2);
 const local = process.env.LOCALAPPDATA ?? '';
 const installDir = path.join(local, 'TTSNative');
 const dataDir = path.join(local, 'com.ttsnative.desktop', 'data');
 const POWERSHELL = path.join(
-  process.env.SystemRoot ?? 'C:\\Windows',
+  process.env.SystemRoot ?? 'C:/Windows',
   'System32',
   'WindowsPowerShell',
   'v1.0',
   'powershell.exe',
 );
-const REG = path.join(process.env.SystemRoot ?? 'C:\\Windows', 'System32', 'reg.exe');
+const REG = path.join(process.env.SystemRoot ?? 'C:/Windows', 'System32', 'reg.exe');
 const HEADERS = { 'content-type': 'application/json', 'x-ltts-client': 'smoke-test' };
 
 /** @param {boolean} condition @param {string} message */
@@ -139,7 +145,48 @@ async function journey(origin) {
   );
   const page = await (await fetch(`${origin}/`)).text();
   check(page.includes('<div id="root"'), 'the reader UI is served by the bundled server');
+  await servesThisBuild(origin, page, document.id);
   return document.id;
+}
+
+/** @param {Buffer | string} bytes */
+const sha256 = (bytes) => createHash('sha256').update(bytes).digest('hex');
+
+/**
+ * The installed app serves exactly the web build this installer was made from (every file under
+ * apps/web/dist, byte for byte) at every page of the app, and reports this build's version: the
+ * Windows app and a browser on the computer get the same interface.
+ * @param {string} origin @param {string} page the served start page @param {string} documentId
+ */
+async function servesThisBuild(origin, page, documentId) {
+  const dist = path.join(repoRoot, 'apps', 'web', 'dist');
+  const built = readFileSync(path.join(dist, 'index.html'), 'utf8');
+  check(page === built, 'the start page is the one this installer was built with');
+  // Every file, not only assets/: the music chunks, sound effects and icons are part of the build too.
+  const files = readdirSync(dist, { recursive: true, encoding: 'utf8' })
+    .map((file) => file.split(path.sep).join('/'))
+    .filter((file) => statSync(path.join(dist, file)).isFile());
+  const differ = [];
+  for (const file of files) {
+    const served = await fetch(`${origin}/${file.split('/').map(encodeURIComponent).join('/')}`);
+    const bytes = Buffer.from(await served.arrayBuffer());
+    if (!served.ok || sha256(bytes) !== sha256(readFileSync(path.join(dist, file))))
+      differ.push(file);
+  }
+  const music = files.filter((file) => file.startsWith('music/')).length;
+  const detail = differ.length ? ` (differ: ${differ.join(', ')})` : '';
+  check(
+    differ.length === 0,
+    `all ${files.length} web files are served unchanged, ${music} of them music${detail}`,
+  );
+  for (const route of ['/', ...APP_ROUTES.map((page) => page.replace(':documentId', documentId))]) {
+    const response = await fetch(`${origin}${route}`);
+    check(response.ok && (await response.text()) === built, `${route} opens the app`);
+  }
+  const health = /** @type {{ version: string }} */ (
+    await (await fetch(`${origin}/api/health`)).json()
+  );
+  check(health.version === version, `the app reports version ${version}`);
 }
 
 async function main() {
@@ -187,6 +234,10 @@ async function main() {
   powershell('Get-Process -Name TTSNative | ForEach-Object { [void]$_.CloseMainWindow() }');
   check(await waitUntilGone('TTSNative', 30_000), 'closing the window quits the app');
   check(await waitUntilGone('ttsnative-backend', 20_000), 'the server stopped with the app');
+  // Nothing else either: the web view, uv, a voice-cloning worker, anything run from the app's folders.
+  const leftovers = await leftoverProcesses();
+  const detail = leftovers.length ? `: ${describe(leftovers)}` : '';
+  check(leftovers.length === 0, `nothing of TTSNative is left running${detail}`);
 
   launch();
   const again = await waitForServer(120_000);

@@ -217,7 +217,7 @@ def _page_number_paragraphs(segments: Sequence[Segment]) -> dict[int, Furniture]
     values = [value for _, value in found]
     if len(found) < MIN_RUN or any(later <= earlier for earlier, later in pairwise(values)):
         return {}
-    return {index: "page_number" for index, _ in found}
+    return dict.fromkeys((index for index, _ in found), "page_number")
 
 
 def _titled(segments: Sequence[Segment], sections: Sequence[SectionInfo], title: re.Pattern[str]) -> set[int]:

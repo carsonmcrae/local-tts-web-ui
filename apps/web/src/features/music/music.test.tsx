@@ -13,6 +13,7 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PlayerBar } from '@/features/player/PlayerBar';
 import ReaderPage from '@/features/reader/ReaderPage';
+import type { FakeGain } from '@/test/audio';
 import { openMixer, stubAudioContexts } from '@/test/audio';
 import { documentDetail, json, mockReaderApi, renderWithApp } from '@/test/render';
 import type * as LibraryModule from './library';
@@ -30,8 +31,10 @@ const track = (id: string, title: string, category: MusicTrack['category']): Mus
   title,
   creator: 'A. Composer',
   category,
-  file: `${id}.webm`,
   durationSeconds: 150,
+  bytes: 1000,
+  edgeFrames: 960,
+  chunks: [{ file: `${id}/01.webm`, frames: 7_200_000, bytes: 1000, sha256: 'unchecked' }],
   licence: { name: 'CC0 1.0', url: 'https://creativecommons.org/publicdomain/zero/1.0/' },
   attribution: null,
 });
@@ -88,8 +91,16 @@ async function openReader() {
     await user.click(within(await openMusic()).getByRole('button', { name: 'Browse' }));
     return screen.findByRole('dialog', { name: 'Music library' });
   };
-  const playing = () => contexts.flatMap((context) => context.playing);
-  const waitForPlaying = (count: number) => waitFor(() => expect(playing()).toHaveLength(count));
+  /** Tracks heard: the chunks playing, grouped by the track fade their join gains feed. */
+  const playing = () =>
+    new Set(
+      contexts.flatMap((context) =>
+        context.playing.flatMap((source) =>
+          [...source.outputs].flatMap((join) => [...(join as FakeGain).outputs]),
+        ),
+      ),
+    );
+  const waitForPlaying = (count: number) => waitFor(() => expect(playing().size).toBe(count));
   return { ...view, user, player, press, openMusic, toggleMusic, openLibrary, waitForPlaying };
 }
 
@@ -259,7 +270,8 @@ describe('Narration in the audio mixer', () => {
     const { user, media, toggleMusic, press } = await openReader();
     await press('Play');
     const panel = await toggleMusic();
-    await waitFor(() => expect(contexts[0]?.playing).toHaveLength(1));
+    // One track: the chunk playing and the one after it.
+    await waitFor(() => expect(contexts[0]?.playing).toHaveLength(2));
     const narration = within(panel).getByRole('slider', { name: 'Narration volume' });
     expect(narration).toHaveAttribute('aria-valuetext', '100%');
     const masterBefore = contexts[0]?.gains[0]?.gain.events.length;

@@ -34,7 +34,8 @@ from ltts.exports.service import ExportService
 from ltts.jobs import JobManager
 from ltts.lan.service import LanService
 from ltts.library.catalog import Catalog, LibraryStores
-from ltts.library.presets import PresetService, load_presets
+from ltts.library.preset_service import PresetService, PresetStores
+from ltts.library.presets import load_presets
 from ltts.modelstore.store import ModelStore
 from ltts.pronunciation.store import PronunciationStore
 from ltts.secrets import SecretStore
@@ -110,6 +111,7 @@ def build_services(
     db.migrate()
     jobs = JobManager(db)
     details = DocumentDetailsStore(settings, db)
+    sfx = SoundEffectStore(db)
     documents = DocumentRepository(db, details.ids_with_cover)
     store = ModelStore(
         settings.resolved_models_dir, reserve_mb=settings.min_free_disk_mb, bundled_dir=settings.bundled_models_dir
@@ -168,15 +170,14 @@ def build_services(
         catalog=Catalog(settings, db, LibraryStores(document_service, documents, details, shelf)),
         presets=PresetService(
             db,
-            styling,
-            casting,
+            PresetStores(styling, casting, sfx),
             lambda doc: [(s.index, s.text) for s in documents.segments_detail(doc)],
             lambda voice_id: any(v.id == voice_id and v.available for v in registry.voices()),
             load_presets(),
         ),
         audiobookshelf=Audiobookshelf(db, SecretStore(settings.path("secrets"))),
         speech_api=SpeechApi(settings, speech_store, synthesis, registry),
-        sfx=SoundEffectStore(db),
+        sfx=sfx,
     )
 
 

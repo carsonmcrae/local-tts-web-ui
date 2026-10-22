@@ -29,19 +29,7 @@
       content="Any document, read aloud with natural voices, on your own computer. Free and open source."
     />
     <meta property="og:url" content="%BASE_URL%/" />
-    <meta property="og:image" content="%BASE_URL%/media/social-preview.png" />
-    <meta
-      property="og:image:alt"
-      content="TTSNative: natural text-to-speech. Private, powerful, and local."
-    />
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="color-scheme" content="light dark" />
-    <meta name="theme-color" content="#f7f6f3" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#0e0f14" media="(prefers-color-scheme: dark)" />
-    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
-    <link rel="apple-touch-icon" href="apple-touch-icon.png" />
-    <link rel="stylesheet" href="styles.css" />
-    <link rel="stylesheet" href="sections.css" />
+    <!-- head:shared -->
     <script src="demo.js" defer></script>
   </head>
   <body>
@@ -138,7 +126,8 @@
               <h3>Any document, read aloud</h3>
               <p>
                 PDF, Word (DOCX), EPUB, Markdown, plain text or pasted text. Chapters come from the
-                document's own structure, and you can fix one that starts in the wrong place.
+                document's own structure<!-- if:released-2.1.0 -->, and you can fix one that starts
+                in the wrong place<!-- /if:released-2.1.0 -->.
               </p>
             </li>
             <li>
@@ -162,6 +151,7 @@
                 to be rendered up front.
               </p>
             </li>
+            <!-- if:released-2.1.0 -->
             <li>
               <h3>Books included, library organised</h3>
               <p>
@@ -177,27 +167,32 @@
                 names, a sleep timer, and adjustable text size and spacing.
               </p>
             </li>
+            <!-- /if:released-2.1.0 -->
             <!-- if:released-2.1.0 -->
             <li>
               <h3>Background music</h3>
               <p>
-                Eleven free tracks, from ambient to rain, play quietly under the narration when you
-                turn them on, with their own volume in the audio mixer.
+                Free tracks, from ambient to rain, play quietly under the narration when you turn
+                them on, with their own volume in the audio mixer.<!-- if:released-2.2.0 -->
+                New piano pieces and nature recordings run about five to eight minutes before they
+                repeat.<!-- /if:released-2.2.0 -->
               </p>
             </li>
             <!-- /if:released-2.1.0 -->
             <li>
               <h3>Audio export</h3>
               <p>
-                MP3 or WAV, the whole document or chosen chapters, one file or one per chapter, with
-                optional sentence-timed subtitles.
+                MP3 or WAV, the whole document or chosen chapters, one file or one per chapter with
+                a playlist<!-- if:released-2.1.0 -->, and optional sentence-timed subtitles<!-- /if:released-2.1.0 -->.
               </p>
             </li>
             <li>
               <h3>Voice Studio (optional)</h3>
               <p>
-                Create a narration voice from your own recording, with explicit consent, live
-                quality checks and noise cleanup. Uses the optional Chatterbox engine.
+                Create a narration voice from your own recording, with explicit consent, quality
+                checks as you record<!-- if:released-2.1.0 -->
+                and noise cleanup<!-- /if:released-2.1.0 -->, and a test before you keep it. Uses
+                the optional Chatterbox engine.
               </p>
             </li>
             <li>
@@ -219,6 +214,7 @@
               controls
               preload="none"
               playsinline
+              aria-label="45-second overview of TTSNative"
               poster="media/ttsnative-promo-poster.webp"
               width="1920"
               height="1080"
@@ -241,6 +237,7 @@
               controls
               preload="none"
               playsinline
+              aria-label="Recorded demo of the running app"
               poster="media/ttsnative-demo-poster.webp"
               width="1920"
               height="1080"
@@ -255,7 +252,7 @@
               />
             </video>
             <figcaption>
-              A 2-minute recording of the running app with its real narration: upload, read along,
+              A 2½-minute recording of the running app with its real narration: upload, read along,
               compare voices, Voice Studio and export.
               <a href="https://github.com/carsonmcrae/ttsnative/blob/main/docs/media/README.md"
                 >How the videos were made</a
@@ -264,6 +261,7 @@
           </figure>
         </div>
         <div class="gallery">
+          <!-- if:released-2.1.0 -->
           <figure>
             <img
               src="images/library.png"
@@ -284,6 +282,7 @@
             />
             <figcaption>Included books</figcaption>
           </figure>
+          <!-- /if:released-2.1.0 -->
           <figure>
             <img
               src="images/voices.png"
@@ -294,6 +293,7 @@
             />
             <figcaption>Voices</figcaption>
           </figure>
+          <!-- if:released-2.1.0 -->
           <figure>
             <img
               src="images/studio.png"
@@ -304,6 +304,7 @@
             />
             <figcaption>Voice Studio</figcaption>
           </figure>
+          <!-- /if:released-2.1.0 -->
         </div>
       </section>
 
@@ -323,31 +324,76 @@
           <ul class="samples">
             <li>
               <span>Heart <small>US English · grade A</small></span
-              ><audio controls preload="none" src="audio/af_heart.mp3"></audio>
+              ><audio
+                controls
+                preload="none"
+                src="audio/af_heart.mp3"
+                aria-label="Heart voice sample"
+              ></audio>
             </li>
             <li>
               <span>Bella <small>US English · grade A−</small></span
-              ><audio controls preload="none" src="audio/af_bella.mp3"></audio>
+              ><audio
+                controls
+                preload="none"
+                src="audio/af_bella.mp3"
+                aria-label="Bella voice sample"
+              ></audio>
             </li>
             <li>
               <span>Michael <small>US English · grade C+</small></span
-              ><audio controls preload="none" src="audio/am_michael.mp3"></audio>
+              ><audio
+                controls
+                preload="none"
+                src="audio/am_michael.mp3"
+                aria-label="Michael voice sample"
+              ></audio>
             </li>
             <li>
               <span>Emma <small>UK English · grade B−</small></span
-              ><audio controls preload="none" src="audio/bf_emma.mp3"></audio>
+              ><audio
+                controls
+                preload="none"
+                src="audio/bf_emma.mp3"
+                aria-label="Emma voice sample"
+              ></audio>
             </li>
             <li>
               <span>George <small>UK English · grade C</small></span
-              ><audio controls preload="none" src="audio/bm_george.mp3"></audio>
+              ><audio
+                controls
+                preload="none"
+                src="audio/bm_george.mp3"
+                aria-label="George voice sample"
+              ></audio>
             </li>
             <li>
-              <span>Siwis <small>French · “TTSNative lit vos documents à voix haute…”</small></span
-              ><audio controls preload="none" src="audio/ff_siwis.mp3"></audio>
+              <span
+                >Siwis
+                <small
+                  >French ·
+                  <span lang="fr">“TTSNative lit vos documents à voix haute…”</span></small
+                ></span
+              ><audio
+                controls
+                preload="none"
+                src="audio/ff_siwis.mp3"
+                aria-label="Siwis voice sample, French"
+              ></audio>
             </li>
             <li>
-              <span>Dora <small>Spanish · “TTSNative lee tus documentos en voz alta…”</small></span
-              ><audio controls preload="none" src="audio/ef_dora.mp3"></audio>
+              <span
+                >Dora
+                <small
+                  >Spanish ·
+                  <span lang="es">“TTSNative lee tus documentos en voz alta…”</span></small
+                ></span
+              ><audio
+                controls
+                preload="none"
+                src="audio/ef_dora.mp3"
+                aria-label="Dora voice sample, Spanish"
+              ></audio>
             </li>
           </ul>
         </div>
@@ -399,10 +445,11 @@ Open a document, press Play, and follow along as each sentence is read to you.</
             <p>
               The app runs a small server on your own computer that only listens to your own
               computer. Your documents, recordings and generated audio stay in its folder. It has no
-              accounts, analytics or telemetry (including ONNX Runtime's, which TTSNative switches
-              off). Besides installing its runtime (uv, Python and locked packages), the only
-              downloads are the voice models, from pinned addresses and checked against fixed
-              SHA-256 checksums.
+              accounts, analytics or telemetry<!-- if:released-2.1.0 -->
+              (including ONNX Runtime's, which TTSNative switches off)<!-- /if:released-2.1.0 -->.
+              Besides installing its runtime (uv, Python and locked packages), the only downloads
+              are the voice models, from pinned addresses and checked against fixed SHA-256
+              checksums.
             </p>
             <p>
               Voice cloning is optional, needs the speaker's explicit consent, and deleting a voice
@@ -439,7 +486,10 @@ Open a document, press Play, and follow along as each sentence is read to you.</
             <strong>Works offline</strong>: the default voice comes with the app, and documents and
             voices never leave your computer.
           </li>
-          <li><strong>For Windows 11</strong> (64-bit).</li>
+          <li>
+            <strong>For Windows 11</strong> (64-bit) with its built-in WebView2; about 1.5 GB of
+            free disk space; no graphics card needed.
+          </li>
         </ul>
         <p class="actions">
           <a class="btn primary" href="%WIN_URL%">Download TTSNative %WIN_VERSION%</a>
@@ -478,8 +528,11 @@ Open a document, press Play, and follow along as each sentence is read to you.</
       <!-- /if:download -->
 
       <section id="install" class="wrap" aria-labelledby="install-title">
+        <h2 id="install-title">
+          <!-- if:download -->Run from the source code<!-- /if:download -->
+          <!-- if:no-download -->Install TTSNative<!-- /if:no-download -->
+        </h2>
         <!-- if:download -->
-        <h2 id="install-title">Run from the source code</h2>
         <p>
           For developers, and on macOS and Linux, where there's no installer yet. You need
           <strong>Node.js 22.22 or newer</strong> and <strong>Git</strong>. The first run installs
@@ -487,11 +540,11 @@ Open a document, press Play, and follow along as each sentence is read to you.</
         </p>
         <!-- /if:download -->
         <!-- if:no-download -->
-        <h2 id="install-title">Install TTSNative</h2>
         <p>
           TTSNative runs from its source code; there's no installer yet. You need
           <strong>Node.js 22.22 or newer</strong> and <strong>Git</strong>. The first run installs
-          everything else inside the project folder.
+          everything else inside the project folder. This gives you the current development version,
+          which can be ahead of the newest release.
         </p>
         <!-- /if:no-download -->
         <div class="code">
@@ -503,7 +556,15 @@ Open a document, press Play, and follow along as each sentence is read to you.</
 cd ttsnative
 npm install
 npm run dev</code></pre>
-          <button class="btn copy" type="button" data-copy="install-commands">Copy</button>
+          <button
+            class="btn copy"
+            type="button"
+            data-copy="install-commands"
+            data-copy-label="the install commands"
+            aria-label="Copy the install commands"
+          >
+            Copy
+          </button>
         </div>
         <ol class="steps">
           <li>

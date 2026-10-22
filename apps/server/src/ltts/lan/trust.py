@@ -80,7 +80,7 @@ def powershell() -> str:
 
 def run_query(timeout: float) -> str:
     """Run the read-only query; raises OSError, subprocess.TimeoutExpired or QueryError."""
-    done = subprocess.run(  # noqa: S603 - a fixed argument list and an absolute path, never a shell
+    done = subprocess.run(  # noqa: S603 - a fixed argument list and an absolute path; never a shell
         [powershell(), "-NoProfile", "-NonInteractive", "-Command", QUERY],
         capture_output=True, stdin=subprocess.DEVNULL, timeout=timeout, check=False,
         creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
@@ -106,11 +106,17 @@ def parse_profiles(output: str) -> list[Profile]:
     for item in data if isinstance(data, list) else [data]:
         if not isinstance(item, dict) or not isinstance(item.get("InterfaceAlias"), str):
             raise ValueError("not a network profile")
-        raw = item.get("NetworkCategory")
-        key = raw.lower() if isinstance(raw, str) else raw if type(raw) is int else None  # never True or 1.0
-        category = _CATEGORIES.get(key) if key is not None else None
-        found.append(Profile(item["InterfaceAlias"], category or "unknown"))
+        found.append(Profile(item["InterfaceAlias"], _category(item.get("NetworkCategory")) or "unknown"))
     return found
+
+
+def _category(raw: object) -> Reading | None:
+    """What a profile's ``NetworkCategory`` means: a name in any case, or Windows' number (never True or 1.0)."""
+    if isinstance(raw, str):
+        return _CATEGORIES.get(raw.lower())
+    if isinstance(raw, int) and not isinstance(raw, bool):
+        return _CATEGORIES.get(raw)
+    return None
 
 
 def reading_for(interface: str, profiles: list[Profile]) -> Reading:

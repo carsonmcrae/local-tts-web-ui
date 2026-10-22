@@ -26,7 +26,7 @@ from ltts.db import Database
 from ltts.errors import NotFoundError
 
 NAME = "speech-api"
-TOKEN_PREFIX = "ttsn_"  # noqa: S105 - a prefix that makes a leaked token easy to recognise, not a token
+TOKEN_PREFIX = "ttsn_"  # noqa: S105 - a prefix that makes a leaked token easy to recognise; not a token
 
 
 def hash_token(token: str) -> str:

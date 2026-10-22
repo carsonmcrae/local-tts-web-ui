@@ -17,13 +17,21 @@
       content="Download TTSNative, the free, private text-to-speech reader, for Windows 11."
     />
     <link rel="canonical" href="%BASE_URL%/download/" />
-    <meta name="color-scheme" content="light dark" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="TTSNative" />
+    <meta property="og:title" content="Download TTSNative for Windows" />
+    <meta
+      property="og:description"
+      content="The free, private text-to-speech reader, installed on Windows 11 like any other app."
+    />
+    <meta property="og:url" content="%BASE_URL%/download/" />
     <!-- if:download -->
     <meta http-equiv="refresh" content="1; url=%WIN_URL%" />
     <!-- /if:download -->
-    <link rel="icon" href="%BASE_URL%/favicon.svg" type="image/svg+xml" />
-    <link rel="stylesheet" href="%BASE_URL%/styles.css" />
-    <link rel="stylesheet" href="%BASE_URL%/sections.css" />
+    <!-- if:no-download -->
+    <meta name="robots" content="noindex" />
+    <!-- /if:no-download -->
+    <!-- head:shared -->
   </head>
   <body>
     <main id="main" class="wrap releases">
@@ -42,6 +50,22 @@
         <a href="%WIN_SUMS%">SHA-256 checksums</a> ·
         <a href="%BASE_URL%/releases.html">What's new</a>
       </p>
+      <h2>What it needs</h2>
+      <ul class="checks">
+        <li>
+          <strong>Windows 11</strong> (64-bit) with the WebView2 runtime it includes; the installer
+          fetches WebView2 if it is missing. No administrator rights: it installs for your account.
+        </li>
+        <li>
+          <strong>About 1.5 GB of free disk space</strong> for the app, its bundled runtime and the
+          default voice. The optional voice-cloning engine adds about 8 GB with an NVIDIA GPU, or
+          4.5 GB on the CPU.
+        </li>
+        <li>
+          <strong>No graphics card needed</strong> for reading with the default voices; an NVIDIA
+          GPU speeds up the optional voice-cloning engine.
+        </li>
+      </ul>
       <!-- /if:download -->
       <!-- if:no-download -->
       <p class="lead">

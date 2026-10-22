@@ -80,14 +80,16 @@ export function PassageStrip({
       <ol className="mt-3 flex flex-wrap gap-1.5" aria-label="Passages">
         {PASSAGES.map((passage, position) => {
           const status = statusOf(session.takes.find((take) => take.promptId === passage.id));
-          const label = passage.id === FOUNDATION_ID ? 'F' : String(position);
+          const foundation = passage.id === FOUNDATION_ID;
+          const label = foundation ? 'F' : String(position);
+          const name = foundation ? 'Foundation passage' : `Passage ${position}`;
           return (
             <li key={passage.id}>
               <button
                 type="button"
                 disabled={disabled}
                 aria-current={position === index ? 'step' : undefined}
-                aria-label={`${passage.id === FOUNDATION_ID ? 'Foundation passage' : `Passage ${position}`}, ${STATUS_LABEL[status]}`}
+                aria-label={`${name}, ${STATUS_LABEL[status]}`}
                 className={cn(
                   'h-7 w-7 rounded-[var(--radius-sm)] border text-xs tabular-nums disabled:opacity-50',
                   STATUS_CLASS[status],

@@ -1,7 +1,7 @@
 # Background music and the audio mixer
 
-TTSNative can play quiet music under the narration: ambient pads, a fantasy theme, lo-fi, a piano
-piece or the sound of rain. It is off unless you turn it on, it has its own volume, and it never
+TTSNative can play quiet music under the narration: ambient pads, a fantasy theme, lo-fi, piano
+pieces, or the sound of rain, a stream or the sea. It is off unless you turn it on, it has its own volume, and it never
 changes the narration.
 
 ## The audio mixer
@@ -48,19 +48,22 @@ phone keeps its own.
 
 ## The library
 
-Eleven tracks, about 26 minutes in all, chosen to sit quietly under a voice: no singing, no sudden
-loud parts. Each one loops smoothly, so it can play for as long as you listen.
+Seventeen tracks, about 66 minutes in all, chosen to sit quietly under a voice: no singing, no sudden
+loud parts. They run from about a minute and a half to eight minutes, and each one loops smoothly,
+so it can play for as long as you listen. However long a track is, playing it takes the same small
+amount of memory: TTSNative plays it in pieces of about 20 seconds, blended into each other.
 
-| Category  | Tracks                                              |
-| --------- | --------------------------------------------------- |
-| Ambient   | Contemplation · Calm Ambient 1 (Synthwave 4k)       |
-| Fantasy   | Rising Moon · Lament for a Warrior's Soul           |
-| Cinematic | Waiting II                                          |
-| Lo-fi     | Washed Up · Currents We Used to Know                |
-| Focus     | Gymnopédie No. 1 (Satie) · Calm Piano 1 (Vaporware) |
-| Nature    | Soft rain on a tile roof · Brook, stream            |
+| Category  | Tracks                                                                                                                                                                                                |
+| --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Ambient   | Contemplation · Calm Ambient 1 (Synthwave 4k)                                                                                                                                                         |
+| Fantasy   | Rising Moon · Lament for a Warrior's Soul                                                                                                                                                             |
+| Cinematic | Waiting II                                                                                                                                                                                            |
+| Lo-fi     | Washed Up · Currents We Used to Know                                                                                                                                                                  |
+| Focus     | Gymnopédie No. 1 (Satie) · Calm Piano 1 (Vaporware) · Nocturne in B-flat minor, Op. 9 No. 1 (Chopin) · Moonlight Sonata, first movement (Beethoven) · Pathétique Sonata, Adagio cantabile (Beethoven) |
+| Nature    | Soft rain on a tile roof · Brook, stream · Gentle ocean waves · Rain in the forest · Small stream                                                                                                     |
 
-Every track was placed in the public domain by the people who made it, so it is free to share and use.
+Every track was placed in the public domain by the people who made it (or, for the classical pieces,
+both the music and the recording are in the public domain), so it is free to share and use.
 **Credits and licences** in the library lists each creator, where the track came from and how it
 was edited.
 

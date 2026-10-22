@@ -88,11 +88,11 @@ export function UpdatesProvider({ children }: Readonly<{ children: ReactNode }>)
 
   useEffect(() => {
     if (!inDesktop) return undefined;
-    const first = window.setTimeout(() => void check(false), 0);
-    const timer = window.setInterval(() => void check(false), RECHECK_MS);
+    const first = globalThis.setTimeout(() => void check(false), 0);
+    const timer = globalThis.setInterval(() => void check(false), RECHECK_MS);
     return () => {
-      window.clearTimeout(first);
-      window.clearInterval(timer);
+      globalThis.clearTimeout(first);
+      globalThis.clearInterval(timer);
     };
   }, [inDesktop, check]);
 

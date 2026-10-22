@@ -18,7 +18,7 @@ import {
 } from 'react';
 import type { ContextLike } from '@/lib/audio/webAudio';
 import { MusicEngine } from './engine';
-import { TRACKS, trackUrl } from './library';
+import { TRACKS, trackSource } from './library';
 import { readMusicChoice, saveMusicChoice } from './preferences';
 import type { PlayerSource } from '@/features/player/follow';
 import type { MusicState } from './session';
@@ -33,8 +33,14 @@ const MusicContext = createContext<MusicContextValue | null>(null);
 
 /** Throws where the browser has no Web Audio; the engine reports that as "unavailable". */
 function createAudioContext(): ContextLike {
-  // 'playback' trades a little latency (irrelevant for a music bed) for fewer wake-ups.
-  return new AudioContext({ latencyHint: 'playback' });
+  // 'playback' trades a little latency (irrelevant for a music bed) for fewer wake-ups. At the
+  // chunks' own 48 kHz they decode without resampling, so each joins its neighbour frame for frame;
+  // a browser that can't run at a chosen rate gets its own.
+  try {
+    return new AudioContext({ latencyHint: 'playback', sampleRate: 48_000 });
+  } catch {
+    return new AudioContext({ latencyHint: 'playback' });
+  }
 }
 
 async function fetchTrack(url: string): Promise<ArrayBuffer> {
@@ -52,7 +58,7 @@ export function MusicProvider({
       new MusicSession({
         player,
         tracks: TRACKS,
-        url: trackUrl,
+        source: trackSource,
         createEngine: (events) =>
           new MusicEngine({ ...events, createContext: createAudioContext, fetchTrack }),
         choice: {

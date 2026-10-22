@@ -85,6 +85,7 @@ const sound = (id: string, loop: boolean): SfxSound => ({
   sha256: 'a'.repeat(64),
   gain: 0.6,
   loop,
+  experimental: false,
   events: [id],
   licence: { name: 'MIT', url: 'https://example.invalid' },
   attribution: null,

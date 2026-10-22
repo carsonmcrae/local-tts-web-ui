@@ -80,7 +80,8 @@ node scripts/uv-run.mjs run --frozen --project apps/server ltts models verify ko
 
 ## Storage
 
-Storage shows the path of your data folder and how much space is used by **Voice models**,
+Storage shows the path of your data folder (on the computer only; a phone sees the sizes) and how much
+space is used by **Voice models**,
 **Audio cache**, **Voice recordings**, **Exports** and the **Library database**, plus the free space on
 that disk.
 
@@ -116,10 +117,11 @@ for examples (curl, Python, the OpenAI SDK), the voice names, limits and how it 
 
 A summary of how the app treats your data: no accounts, analytics or telemetry; documents, recordings
 and generated audio stay on this computer; the only network requests are model downloads you start
-yourself, web pages you choose to import and books you send to your own Audiobookshelf; everything
-works offline once models are installed. While LAN mode is on, a **LAN mode is on** warning appears
-here, and if the server was started in network mode, a **Network access is on** warning (see
-[Other Devices](Other-Devices)).
+yourself, web pages you choose to import, books you send to your own Audiobookshelf and, in the
+Windows app, a check for new TTSNative versions on GitHub (which you can turn off under **About**);
+everything works offline once models are installed. While LAN mode is on, a **LAN mode is on**
+warning appears here, and if the server was started in network mode, a **Network access is on**
+warning (see [Other Devices](Other-Devices)).
 
 ## About
 
@@ -129,7 +131,8 @@ link to the source code and how to credit the project.
 
 **Version** shows whether this is a stable release or a development build. In the
 [Windows app](Windows-App) you can **Check for updates**, turn automatic checks on or off, and open
-the data and log folders. **What's new** and **Release history** show the notes of every version, one
+the data folder, the log folder and the third-party notices. From source, it says that the app updates
+when you pull new code. **What's new** and **Release history** show the notes of every version, one
 version at a time with **Older** and **Newer**, also offline; the version at the bottom of the sidebar
 leads here.
 
@@ -160,3 +163,5 @@ read from the environment of the terminal you start the app from, not from `.env
 
 The full list is in the
 [configuration guide](https://github.com/carsonmcrae/ttsnative/blob/main/docs/guides/configuration.md).
+These variables apply to source installs. The Windows app sets its own settings and ignores `LTTS_*`
+variables.

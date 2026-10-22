@@ -16,10 +16,11 @@ import { useId, useState } from 'react';
 import { describeError } from '@/api/client';
 import type { SectionOut, SfxAnalysis, SfxEffect, SfxSound } from '@/api/types';
 import { Button } from '@/components/ui/Button';
-import { Banner, Skeleton } from '@/components/ui/Feedback';
+import { Banner, Skeleton, StatusRegion } from '@/components/ui/Feedback';
 import { Switch } from '@/components/ui/Field';
 import { Slider } from '@/components/ui/Slider';
 import { cn } from '@/lib/cn';
+import { pluralize } from '@/lib/format';
 import { EffectDialog } from './EffectDialog';
 import { EffectRow, SuggestionRow } from './EffectRows';
 import { INTENSITIES } from './preferences';
@@ -132,16 +133,35 @@ function AnalysisNote({ result }: Readonly<{ result: SfxAnalysis | undefined }>)
   const found =
     count === 0
       ? 'Nothing worth adding in this chapter.'
-      : `${count} new suggestion${count === 1 ? '' : 's'} for this chapter.`;
+      : `${pluralize(count, 'new suggestion')} for this chapter.`;
   const cut = result.truncated
     ? ` Only the first ${result.sentences} sentences were analysed.`
     : '';
   return (
-    <p className="text-[13px] text-muted" role="status">
+    <StatusRegion className="text-[13px] text-muted">
       {found}
       {cut}
-    </p>
+    </StatusRegion>
   );
+}
+
+/** What the sound library says when it opens to add a sound, or to replace one effect's sound. */
+function libraryCopy(picking: Picking, activeIndex: number | null) {
+  if (picking !== 'add') {
+    return { title: 'Replace the sound', description: 'Pick another sound for this moment.' };
+  }
+  const where =
+    activeIndex === null ? 'at the start of this chapter' : 'at the sentence being read';
+  return {
+    title: 'Add a sound effect',
+    description: `It will be placed ${where}. You can move it afterwards.`,
+  };
+}
+
+/** A fresh library each time it opens: the last search and category are not kept. */
+function libraryKey(picking: Picking): string {
+  if (picking === null) return 'closed';
+  return picking === 'add' ? 'add' : picking.id;
 }
 
 interface ListProps {
@@ -301,6 +321,7 @@ export function SoundPanel({
   };
   const error = latestError([add, update, analyse]);
   const lists = { documentId, nameOf, busy, onJump, onReplace: setPicking };
+  const copy = libraryCopy(picking, activeIndex);
 
   return (
     <div className="flex flex-col gap-4">
@@ -345,18 +366,11 @@ export function SoundPanel({
       <SuggestionList effects={suggestions} {...lists} />
       <PlacedList effects={placed} {...lists} />
       <SoundLibraryDialog
-        // A fresh dialog each time it opens: the last search and category are not kept.
-        key={picking === null ? 'closed' : picking === 'add' ? 'add' : picking.id}
+        key={libraryKey(picking)}
         open={picking !== null}
         onOpenChange={() => setPicking(null)}
-        title={picking === 'add' ? 'Add a sound effect' : 'Replace the sound'}
-        description={
-          picking !== 'add'
-            ? 'Pick another sound for this moment.'
-            : activeIndex === null
-              ? 'It will be placed at the start of this chapter. You can move it afterwards.'
-              : 'It will be placed at the sentence being read. You can move it afterwards.'
-        }
+        title={copy.title}
+        description={copy.description}
         busy={busy}
         onPick={pick}
       />

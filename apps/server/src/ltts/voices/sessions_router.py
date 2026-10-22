@@ -24,7 +24,7 @@ from ltts.container import ServicesDep
 from ltts.jobs import JobOut
 from ltts.voices.cleanup import Cleanup, RecordingCheck
 from ltts.voices.profiles import VoiceProfileOut
-from ltts.voices.router import receive_upload
+from ltts.voices.router import WAV_MEDIA_TYPE, receive_upload
 from ltts.voices.sessions import TakeOut, VoiceSessionOut
 from ltts.voices.studio import FinishRequest
 
@@ -87,21 +87,21 @@ async def save_take(
 
 
 @router.get(
-    "/{session_id}/takes/{number}/audio", response_class=Response, responses={200: {"content": {"audio/wav": {}}}}
+    "/{session_id}/takes/{number}/audio", response_class=Response, responses={200: {"content": {WAV_MEDIA_TYPE: {}}}}
 )
 def take_audio(session_id: SessionId, number: TakeNumber, services: ServicesDep) -> Response:
     audio = services.voice_sessions.take_audio(session_id, number)
-    return Response(content=audio, media_type="audio/wav", headers={"Cache-Control": "no-store"})
+    return Response(content=audio, media_type=WAV_MEDIA_TYPE, headers={"Cache-Control": "no-store"})
 
 
 @router.get(
     "/{session_id}/takes/{number}/previous/audio",
     response_class=Response,
-    responses={200: {"content": {"audio/wav": {}}}},
+    responses={200: {"content": {WAV_MEDIA_TYPE: {}}}},
 )
 def previous_take_audio(session_id: SessionId, number: TakeNumber, services: ServicesDep) -> Response:
     audio = services.voice_sessions.take_audio(session_id, number, previous=True)
-    return Response(content=audio, media_type="audio/wav", headers={"Cache-Control": "no-store"})
+    return Response(content=audio, media_type=WAV_MEDIA_TYPE, headers={"Cache-Control": "no-store"})
 
 
 @router.post("/{session_id}/takes/{number}/restore")
@@ -137,7 +137,7 @@ def candidate_sample(
     sample: Annotated[int, Path(ge=0, le=99)],
     services: ServicesDep,
 ) -> FileResponse:
-    return FileResponse(services.studio.sample_path(session_id, index, sample), media_type="audio/wav")
+    return FileResponse(services.studio.sample_path(session_id, index, sample), media_type=WAV_MEDIA_TYPE)
 
 
 @router.post("/{session_id}/finish", status_code=201)

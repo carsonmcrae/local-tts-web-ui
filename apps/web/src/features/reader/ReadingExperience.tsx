@@ -5,14 +5,16 @@
  * Scope: Shown in the reader for a document that is a bundled book with a reading preset. Asks what
  *   the preset offers this document and shows the experiences as a radio list: Standard (the reading
  *   voice throughout), Multi-voice (the narrator's suggested voice, each character in their own voice
- *   and the curated speaker lines) and, only once sound effects exist in this version, Immersive.
- *   Choosing one applies or removes the preset's components; the characters are listed with the
- *   voice each would get here or "not installed"; the suggested reading voice can be given to the
- *   player; the recommended music track is named from the music library and can be chosen for this
- *   device at the recommended level (Immersive chooses it too), and music is never turned on here.
+ *   and the curated speaker lines) and Immersive (those, the book's sound effects placed in the Sounds
+ *   panel, and the recommended music). Choosing one applies or removes the preset's components; the
+ *   characters are listed with the voice each would get here or "not installed"; the suggested reading
+ *   voice can be given to the player; the recommended music track is named from the music library and
+ *   can be chosen for this device at the recommended level (Immersive chooses it too); the effects line
+ *   says how many were placed. Neither music nor effects are ever turned on here.
  * Does NOT belong: The reader's own cast dialog (CastDialog), playback, or the music and effects players.
  */
 import { Sparkles } from 'lucide-react';
+import type { ReactNode } from 'react';
 import { describeError } from '@/api/client';
 import {
   useApplyReadingPreset,
@@ -25,6 +27,7 @@ import { Button } from '@/components/ui/Button';
 import { Badge, Banner } from '@/components/ui/Feedback';
 import { OptionList } from '@/components/ui/Menu';
 import { TRACKS } from '@/features/music/library';
+import { pluralize } from '@/lib/format';
 import { useMusic } from '@/features/music/MusicProvider';
 import type { MusicSession } from '@/features/music/session';
 import { voiceLabel } from './StyleSentencesDialog';
@@ -32,14 +35,17 @@ import { voiceLabel } from './StyleSentencesDialog';
 type Experience = 'standard' | 'voices' | 'immersive';
 type PresetMusic = NonNullable<ReadingPreset['music']>;
 const VOICE_PARTS: readonly PresetComponent[] = ['narrator', 'characters', 'speakers'];
-const IMMERSIVE_PARTS: readonly PresetComponent[] = ['effects', 'music'];
+const IMMERSIVE_PARTS: ReadonlySet<PresetComponent> = new Set(['effects', 'music']);
 
 /** Which experience the applied components amount to. */
 function currentExperience(preset: ReadingPreset): Experience {
   const applied = preset.components.filter((c) => c.applied).map((c) => c.name);
-  if (applied.some((name) => IMMERSIVE_PARTS.includes(name))) return 'immersive';
+  if (applied.some((name) => IMMERSIVE_PARTS.has(name))) return 'immersive';
   return applied.length ? 'voices' : 'standard';
 }
+
+/** A radio label that never breaks across lines; the hint beside it may wrap on a phone. */
+const name = (text: string): ReactNode => <span className="whitespace-nowrap">{text}</span>;
 
 const trackOf = (music: PresetMusic) => TRACKS.find((track) => track.id === music.trackId);
 
@@ -50,35 +56,61 @@ function acceptTrack(session: MusicSession, music: PresetMusic): void {
   session.setVolume(music.volume);
 }
 
-function MusicRecommendation({ music }: Readonly<{ music: PresetMusic }>) {
+/** The recommended track, with a way to choose it unless the player has it already. */
+function RecommendedTrack({ music }: Readonly<{ music: PresetMusic }>) {
   const { music: session, state } = useMusic();
   const track = trackOf(music);
+  if (!track) return <span>The recommended track isn't in this version's music library.</span>;
+  if (state.trackId === track.id) {
+    return (
+      <span>
+        {track.title} is recommended at {music.volume}%.{' '}
+        <span className="text-subtle">Chosen in the player.</span>
+      </span>
+    );
+  }
+  return (
+    <>
+      <span>
+        {track.title} is recommended at {music.volume}%.
+      </span>
+      <Button variant="ghost" size="sm" onClick={() => acceptTrack(session, music)}>
+        Use this track
+      </Button>
+    </>
+  );
+}
+
+function MusicRecommendation({ music }: Readonly<{ music: PresetMusic }>) {
   return (
     <div>
       <dt className="text-muted">Music</dt>
       <dd>
         <div className="flex flex-wrap items-center gap-2">
-          {!track ? (
-            <span>The recommended track isn't in this version's music library.</span>
-          ) : state.trackId === track.id ? (
-            <span>
-              {track.title} is recommended at {music.volume}%.{' '}
-              <span className="text-subtle">Chosen in the player.</span>
-            </span>
-          ) : (
-            <>
-              <span>
-                {track.title} is recommended at {music.volume}%.
-              </span>
-              <Button variant="ghost" size="sm" onClick={() => acceptTrack(session, music)}>
-                Use this track
-              </Button>
-            </>
-          )}
+          <RecommendedTrack music={music} />
         </div>
         <p className="text-xs text-subtle">
           {music.note ? `${music.note} ` : ''}Music stays off until you turn it on in the player.
         </p>
+      </dd>
+    </div>
+  );
+}
+
+/** How many of the book's sound effects there are or were placed, and that they start off. */
+function EffectsSummary({ report }: Readonly<{ report: ReadingPreset }>) {
+  const applied = report.components.some((c) => c.name === 'effects' && c.applied);
+  return (
+    <div>
+      <dt className="text-muted">Sound effects</dt>
+      <dd>
+        {applied
+          ? `${report.effectsPlaced} of ${report.effects} placed in the Sounds panel.`
+          : `${report.effects} for the Sounds panel.`}{' '}
+        {applied && report.effectsPlaced < report.effects
+          ? 'The others were left out, for example where a sentence already has your own effect or the sound is still experimental. '
+          : null}
+        They stay off until you turn them on in the player.
       </dd>
     </div>
   );
@@ -105,7 +137,7 @@ export function ReadingExperience({
   const offered = report.components;
   const voiceParts = VOICE_PARTS.filter((part) => offered.some((c) => c.name === part));
   const immersiveReady =
-    offered.some((c) => IMMERSIVE_PARTS.includes(c.name)) && offered.every((c) => c.available);
+    offered.some((c) => IMMERSIVE_PARTS.has(c.name)) && offered.every((c) => c.available);
   const busy = apply.isPending || remove.isPending;
   const known = new Map<string, VoiceInfo>((voices.data ?? []).map((voice) => [voice.id, voice]));
   const label = (voiceId: string | null) => {
@@ -124,14 +156,14 @@ export function ReadingExperience({
     if (experience === 'standard') remove.mutate(undefined, done);
     else apply.mutate(experience === 'voices' ? [...voiceParts] : offered.map((c) => c.name), done);
   };
-  const options: { value: Experience; label: string; hint: string }[] = [
-    { value: 'standard', label: 'Standard', hint: 'Your reading voice throughout.' },
-    { value: 'voices', label: 'Multi-voice', hint: 'Each character in their own voice.' },
+  const options: { value: Experience; label: ReactNode; hint: string }[] = [
+    { value: 'standard', label: name('Standard'), hint: 'Your reading voice throughout.' },
+    { value: 'voices', label: name('Multi-voice'), hint: 'Each character in their own voice.' },
   ];
   if (immersiveReady)
     options.push({
       value: 'immersive',
-      label: 'Immersive',
+      label: name('Immersive'),
       hint: 'Voices, sound effects and music.',
     });
   const error = apply.error ?? remove.error;
@@ -143,7 +175,7 @@ export function ReadingExperience({
       aria-busy={busy}
       className="bg-surface-1 mb-6 rounded-[var(--radius)] border border-line p-4 text-sm"
     >
-      <div className="flex flex-wrap items-start justify-between gap-4">
+      <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between">
         <div className="min-w-0 flex-1">
           <h2 className="flex items-center gap-1.5 font-semibold">
             <Sparkles size={14} aria-hidden="true" /> {report.title}
@@ -181,6 +213,7 @@ export function ReadingExperience({
           </div>
         ) : null}
         {report.music ? <MusicRecommendation music={report.music} /> : null}
+        {report.effects ? <EffectsSummary report={report} /> : null}
       </dl>
       {report.characters.length ? (
         <ul aria-label="Characters in this experience" className="mt-3 flex flex-wrap gap-1.5">
@@ -188,7 +221,7 @@ export function ReadingExperience({
             <li key={character.id}>
               <Badge>
                 {character.name}
-                {character.lines ? ` · ${character.lines} lines` : ''} ·{' '}
+                {character.lines ? ` · ${pluralize(character.lines, 'line')}` : ''} ·{' '}
                 {label(character.voice.chosen)}
               </Badge>
             </li>

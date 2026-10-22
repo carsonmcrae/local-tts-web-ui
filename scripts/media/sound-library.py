@@ -6,7 +6,8 @@ Scope: One recipe per sound (weather, water, fire, animals, doors, footsteps, ho
 vehicles, atmosphere) synthesised with sfx_synth.py from fixed seeds, levelled so each sound's
 loud moments sit near -20 dBFS with peaks under -6 dBFS, blended into seamless loops where they
 loop, encoded as mono 48 kHz MP3 into apps/web/public/sfx, and recorded in the server's manifest
-(apps/server/src/ltts/sfx/library.json: file, length, size, SHA-256, gain, events, licence) and in
+(apps/server/src/ltts/sfx/library.json: file, length, size, SHA-256, gain, the experimental flag and its
+note, events, licence) and in
 the credits file beside the audio. Run from the repository root with
 ``node scripts/uv-run.mjs --cwd apps/server run --frozen python ../../scripts/media/sound-library.py``.
 Does NOT belong: Synthesis primitives (sfx_synth.py) or playing sounds (the web app).
@@ -23,7 +24,7 @@ import numpy as np
 import soundfile as sf
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from sfx_recipes import SOUNDS  # noqa: E402
+from sfx_recipes import EXPERIMENTAL, SOUNDS  # noqa: E402
 from sfx_synth import RATE, Signal, linear_fade, seconds  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -60,7 +61,8 @@ def build() -> None:
         records.append({
             "id": sound_id, "name": name, "category": category, "description": description, "keywords": keywords,
             "file": path.name, "durationSeconds": round(info.frames / info.samplerate, 3), "bytes": len(data),
-            "sha256": hashlib.sha256(data).hexdigest(), "gain": gain, "loop": loop, "events": events,
+            "sha256": hashlib.sha256(data).hexdigest(), "gain": gain, "loop": loop,
+            "experimental": sound_id in EXPERIMENTAL, "qualityNote": EXPERIMENTAL.get(sound_id), "events": events,
             "licence": LICENCE, "attribution": None, "source": SOURCE,
         })  # fmt: skip
         print(f"{sound_id}: {records[-1]['durationSeconds']} s, {len(data) / 1000:.0f} kB")  # noqa: T201

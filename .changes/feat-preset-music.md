@@ -1,5 +1,10 @@
 ---
 bump: patch
+desktop: changed
+browser: changed
+phone: changed
+website: unchanged
+docs: changed
 ---
 
 ## Improved

@@ -3,7 +3,8 @@
 /**
  * Purpose: One voice in the Voice Library.
  * Scope: Name, engine, language, gender, built-in/custom, upstream quality grade, availability,
- *   where the voice comes from (its model and licence; every voice is synthetic), preview play/stop,
+ *   a one-line credit (its model and licence; every voice is synthetic) with a link to the library's full
+ *   credits, preview play/stop,
  *   and "use for reading" (sets the default voice).
  * Does NOT belong: Filtering or the preview audio itself (useVoicePreview).
  */
@@ -12,6 +13,7 @@ import type { VoiceInfo } from '@/api/types';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Feedback';
 import { cn } from '@/lib/cn';
+import { CREDITS_ID, showCredits } from './VoiceCredits';
 
 const ENGINE_NAMES: Record<string, string> = { kokoro: 'Kokoro', chatterbox: 'Chatterbox' };
 
@@ -73,6 +75,29 @@ function describeVoice(voice: VoiceInfo): string {
   return `${voice.language}${gender} · ${ENGINE_NAMES[voice.engineId] ?? voice.engineId}`;
 }
 
+/** The voice's one-line credit, with a link to the library's full credits when it has them. */
+function VoiceCredit({ voice }: Readonly<{ voice: VoiceInfo }>) {
+  if (!voice.credit) return null;
+  return (
+    <p className="text-xs leading-snug text-subtle">
+      {voice.credit}
+      {voice.attribution ? (
+        <>
+          {' · '}
+          <a
+            href={`#${CREDITS_ID}`}
+            onClick={showCredits}
+            aria-label={`Credits for ${voice.name}`}
+            className="font-medium text-accent-text underline-offset-2 hover:underline"
+          >
+            Credits
+          </a>
+        </>
+      ) : null}
+    </p>
+  );
+}
+
 export function VoiceCard({
   voice,
   isDefault,
@@ -88,7 +113,9 @@ export function VoiceCard({
       className={cn(
         'flex flex-col gap-3 rounded-[var(--radius-lg)] border bg-surface p-4 shadow-soft',
         isDefault ? 'border-accent' : 'border-line',
-        !voice.available && 'opacity-70',
+        // Unavailable shows as a dashed border and the "Engine not installed" badge, never by dimming,
+        // which would take the card's text below 4.5:1 contrast.
+        !voice.available && 'border-dashed',
       )}
     >
       <div className="flex items-start gap-3">
@@ -128,9 +155,7 @@ export function VoiceCard({
       {voice.description ? (
         <p className="text-[13px] leading-snug text-muted">{voice.description}</p>
       ) : null}
-      {voice.attribution ? (
-        <p className="text-xs leading-snug text-subtle">{voice.attribution}</p>
-      ) : null}
+      <VoiceCredit voice={voice} />
       {previewError ? (
         <p className="text-[13px] text-danger" role="alert">
           {previewError}

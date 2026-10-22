@@ -16,6 +16,7 @@ import {
   applyConditions,
   escapeHtml,
   fillDownload,
+  fillHead,
   fillLatest,
   fillReleasePage,
   githubReleases,
@@ -101,7 +102,10 @@ test('the latest published release with an installer is advertised', async () =>
       },
     ]),
   );
-  assert.deepEqual([...published].sort(), ['2.0.0', '2.1.0']);
+  assert.deepEqual(
+    [...published].toSorted((a, b) => a.localeCompare(b)),
+    ['2.0.0', '2.1.0'],
+  );
   assert.deepEqual(installer, {
     version: '2.1.0',
     url: 'https://github.com/carsonmcrae/ttsnative/releases/download/x/TTSNative-Setup-2.1.0.exe',
@@ -238,5 +242,28 @@ test('the footer names the latest release, or nothing before the first one', () 
   assert.equal(
     fillLatest(page, RELEASES[0] ?? null),
     'a <a href="%BASE_URL%/releases/2.0.0/">Local TTS 2.0.0 (2.0.0, October 19, 2026)</a>b',
+  );
+});
+
+test('the shared head goes where a page asks, relative to the page folder', () => {
+  const shared = `<!--\n  Purpose: shared.\n-->\n<meta name="a" content="%BASE_URL%/x.png" />\n<link rel="stylesheet" href="%ROOT%styles.css" />\n`;
+  const page = '  <head>\n    <title>t</title>\n    <!-- head:shared -->\n  </head>';
+  assert.equal(
+    fillHead(page, shared, 'index.html'),
+    '  <head>\n    <title>t</title>\n    <meta name="a" content="%BASE_URL%/x.png" />\n    <link rel="stylesheet" href="styles.css" />\n  </head>',
+  );
+  assert.match(fillHead(page, shared, 'download/index.html'), /href="\.\.\/styles\.css"/);
+  assert.match(
+    fillHead(page, shared, 'releases/2.0.0/index.html'),
+    /href="\.\.\/\.\.\/styles\.css"/,
+  );
+  assert.equal(fillHead('<head></head>', shared, 'index.html'), '<head></head>');
+  assert.equal(
+    fillHead('<!-- head:shared -->', '<meta name="b" />\n', 'index.html'),
+    '<meta name="b" />',
+  );
+  assert.throws(
+    () => fillHead('<!-- head:shared -->', '<!--\n  Purpose: shared.\n<meta />', 'index.html'),
+    /never closed/,
   );
 });

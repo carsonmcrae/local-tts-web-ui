@@ -94,14 +94,15 @@ export function RespellingFields({
           )}
         </Field>
       </div>
-      <div role="group" aria-label="Compare in the reading voice" className="flex flex-wrap gap-2">
+      <fieldset className="flex flex-wrap gap-2">
+        <legend className="sr-only">Compare in the reading voice</legend>
         <HearButton kind="written" text={word} preview={preview}>
           Hear as written
         </HearButton>
         <HearButton kind="respelling" text={sayAs} preview={preview}>
           Hear respelling
         </HearButton>
-      </div>
+      </fieldset>
       <StatusRegion className="sr-only">
         {preview.playing ? PLAYING[preview.playing] : ''}
       </StatusRegion>

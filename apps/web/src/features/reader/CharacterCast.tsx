@@ -23,7 +23,13 @@ import {
 import { Button, IconButton } from '@/components/ui/Button';
 import { Banner } from '@/components/ui/Feedback';
 import { Field, Input, Select } from '@/components/ui/Field';
+import { onThisComputer } from '@/features/lan/LanIndicator';
 import { voiceLabel } from './StyleSentencesDialog';
+
+/** "Nicole · 12 lines", or just the name of a character with no lines found. */
+function characterLabel({ name, lines }: Readonly<{ name: string; lines: number }>): string {
+  return lines ? `${name} · ${lines} lines` : name;
+}
 
 export function CharacterCast({
   documentId,
@@ -36,6 +42,7 @@ export function CharacterCast({
   const savePreset = useSavePreset(documentId);
   const applyPreset = useApplyPreset(documentId);
   const deletePreset = useDeletePreset();
+  const here = onThisComputer(); // a paired phone may use a saved cast but not remove one
   const [newName, setNewName] = useState('');
   const [presetName, setPresetName] = useState('');
   const available = (voices.data ?? []).filter((voice) => voice.available);
@@ -56,10 +63,7 @@ export function CharacterCast({
         <ul className="flex flex-col gap-3">
           {list.map((character) => (
             <li key={character.name} className="flex flex-col gap-1">
-              <Field
-                label={`${character.name}${character.lines ? ` · ${character.lines} lines` : ''}`}
-                hint={character.sample ?? undefined}
-              >
+              <Field label={characterLabel(character)} hint={character.sample ?? undefined}>
                 {({ id, describedBy }) => (
                   <Select
                     id={id}
@@ -148,23 +152,31 @@ export function CharacterCast({
                 >
                   Use here
                 </Button>
-                <IconButton
-                  size="sm"
-                  label={`Remove the saved cast ${preset.name}`}
-                  icon={<Trash2 size={14} />}
-                  onClick={() => deletePreset.mutate(preset.id)}
-                />
+                {here ? (
+                  <IconButton
+                    size="sm"
+                    label={`Remove the saved cast ${preset.name}`}
+                    icon={<Trash2 size={14} />}
+                    onClick={() => deletePreset.mutate(preset.id)}
+                  />
+                ) : null}
               </div>
             </div>
           ))}
+          {!here && saved.length ? (
+            <p className="text-[13px] text-muted">
+              Saved casts are removed on the computer running TTSNative.
+            </p>
+          ) : null}
         </div>
       </details>
-      {[assign, savePreset, applyPreset, deletePreset].map((mutation, position) =>
-        mutation.isError ? (
-          <Banner key={position} tone="error">
-            {describeError(mutation.error)}
-          </Banner>
-        ) : null,
+      {Object.entries({ assign, savePreset, applyPreset, deletePreset }).map(
+        ([action, mutation]) =>
+          mutation.isError ? (
+            <Banner key={action} tone="error">
+              {describeError(mutation.error)}
+            </Banner>
+          ) : null,
       )}
     </section>
   );

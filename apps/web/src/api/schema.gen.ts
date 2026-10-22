@@ -2517,7 +2517,7 @@ export type components = {
        * Origin
        * @enum {string}
        */
-      origin: 'suggested' | 'manual';
+      origin: 'suggested' | 'manual' | 'preset';
       /** Position */
       position: number;
       /** Sectionindex */
@@ -3266,6 +3266,8 @@ export type components = {
       editionMatches: boolean;
       /** Effects */
       effects: number;
+      /** Effectsplaced */
+      effectsPlaced: number;
       music: components['schemas']['PresetMusicOut'] | null;
       narrator: components['schemas']['PresetVoiceOut'] | null;
       /** Presetid */
@@ -3637,6 +3639,11 @@ export type components = {
       durationSeconds: number;
       /** Events */
       events: string[];
+      /**
+       * Experimental
+       * @default false
+       */
+      experimental: boolean;
       /** File */
       file: string;
       /** Gain */
@@ -3650,6 +3657,8 @@ export type components = {
       loop: boolean;
       /** Name */
       name: string;
+      /** Qualitynote */
+      qualityNote?: string | null;
       /** Sha256 */
       sha256: string;
       /** Source */
@@ -3892,6 +3901,11 @@ export type components = {
        * @enum {string}
        */
       category: 'built-in' | 'custom';
+      /**
+       * Credit
+       * @default
+       */
+      credit: string;
       /**
        * Description
        * @default

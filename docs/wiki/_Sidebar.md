@@ -12,6 +12,7 @@
 - [Keyboard Shortcuts](Keyboard-Shortcuts)
 - [Settings and Models](Settings-and-Models)
 - [Other Devices](Other-Devices)
+- [What Works Where](What-Works-Where)
 
 **Voices**
 

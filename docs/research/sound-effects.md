@@ -114,6 +114,30 @@ Three independent layers, each with its own switch and volume:
   other levels. The effects and the music each still own an `AudioContext`, built from one shared
   module for the node types, ramps, loop bounds, master gain and loading (`lib/audio/webAudio.ts`)
   and tested with one fake; sharing one context (and one limiter) remains a small later refactor.
+- **Experimental sounds.** Eight synthesised sounds are not credible enough to be suggested: the
+  dog, owl, wolf, horse, birdsong, crowd, breaking glass and clashing swords, whose real sources
+  (animal voices, people, glass, steel) the recipes cannot make convincing. They carry
+  `experimental: true` and a note saying why in the catalogue (`EXPERIMENTAL` in
+  `scripts/media/sfx_recipes.py` is the switch, one line per sound; delete the line and rebuild to
+  promote one after listening with `docs/research/sound-effects-listening.html`). The detector never
+  suggests an event whose only sounds are experimental (`catalogue.suggestable`), a reading preset's
+  apply path skips them (counted "experimental"), and `default_sound` prefers a credible sound; a reader can
+  still add an experimental sound by hand, where the library marks it. No sound was downloaded.
+- **Mix safety.** Every bundled sound is mastered at or below −19 dBFS loud (95th-percentile RMS over
+  100 ms) with peaks at or below −4.5 dBFS, which is the narration's own level: twelve Kokoro clips
+  measure −19.1 to −21.7 dBFS loud and −7.3 to −10.3 dBFS peak (reference −20.5). What a reader hears
+  is the file times the effects volume (default 40 %), the intensity (0.8, 1, 1.15), the sound's own
+  gain (0.3 to 0.8) and the effect's volume (up to 150 %), and the engine caps that product at 1: an
+  effect never plays above its mastered level. So by default (Balanced) the loudest sound sits 9.9 dB
+  under the narration and at Immersive 8.7 dB under; at the loudest settings a reader can choose
+  (effects 100 %, Immersive, an effect at 150 %) it reaches the narration's level and no further.
+  The limiter then holds peaks near −10 dBFS, under the narration's. `tests/test_sound_mix.py`
+  asserts the mastering and both margins from the files, and re-measures the narration reference
+  with Kokoro in the inference run; the web tests assert the same constants, that music (10 %) and
+  effects (40 %) play together under the narration with no gain above 1, that a pause stops both,
+  and that leaving the page closes both contexts and releases every node the effects made.
+  Background music is the music feature's: tracks at −28 LUFS and at most −10 dBTP, so its default
+  10 % sits about 22 dB under the voice and even 100 % stays under it.
 
 ### Timing and placement
 
@@ -144,7 +168,8 @@ Three independent layers, each with its own switch and volume:
 ### Storage: a validated, versioned arrangement per document
 
 - Table `sound_effects`: id, document, sentence, position, offset, end sentence (ambience), event,
-  sound id, volume, origin (`suggested` or `manual`), status (`suggested`, `accepted`, `dismissed`),
+  sound id, volume, origin (`suggested`, `manual` or `preset`), status (`suggested`, `accepted`,
+  `dismissed`),
   enabled, confidence, a 16-character hash of the sentence's text, detector version and timestamps.
   Table `sound_analyses`: per document and section, when and how it was last analysed.
 - Rows are deleted with their document (foreign-key cascade) and the only document-derived data
@@ -153,6 +178,17 @@ Three independent layers, each with its own switch and volume:
 - Nothing is ever written into the document's file; the document's text is never changed.
 - Dismissed suggestions stay as rows so that reanalysis cannot bring them back; manual effects are
   never touched by analysis. Portable export and import of arrangements is not in this release.
+- **Reading experiences (addendum).** A reading experience from the literary library may place curated effects in a document's
+  arrangement: rows with origin `preset` and status `accepted` (choosing the experience is the
+  acceptance), no confidence, the sentence's hash as usual, and the experience's identity in the
+  detector column (`preset:<preset id>@<version>`). Applying an experience removes the document's
+  `preset` rows and places its rows again, so two versions never mix, and skips any sentence that
+  already carries an accepted effect; turning it off removes its rows and nothing else. A reader's
+  edit of a preset row makes it theirs (`manual`), so later applies and removals leave it; a
+  reader's removal deletes it, and applying the experience again brings its version back.
+  Reanalysis never touches preset rows and spaces its suggestions around them. Nothing an
+  experience does turns the Sound effects switch on. No migration: origin and status are text,
+  and the mark lives in an existing column.
 
 ### User controls
 

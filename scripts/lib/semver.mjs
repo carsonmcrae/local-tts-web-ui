@@ -8,7 +8,9 @@
  * Does NOT belong: Where versions are stored (version-files.mjs) or which bump a change needs
  *   (changes.mjs).
  */
+import { compareCodeUnits } from './code-unit-order.mjs';
 
+/** The regular expression the SemVer 2.0.0 specification suggests, unchanged (semver.org, FAQ). */
 const PATTERN =
   /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$/;
 
@@ -58,7 +60,7 @@ function compareIdentifiers(a, b) {
   const numericB = /^\d+$/.test(b);
   if (numericA && numericB) return Math.sign(Number(a) - Number(b));
   if (numericA !== numericB) return numericA ? -1 : 1;
-  return a < b ? -1 : a > b ? 1 : 0;
+  return compareCodeUnits(a, b); // ASCII order, as SemVer asks, for identifiers with letters
 }
 
 /**

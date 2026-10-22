@@ -1,0 +1,22 @@
+<!--
+  Purpose: The part of <head> every page shares, inserted by scripts/site/build-site.mjs where a page
+    says <!- - head:shared - ->.
+  Scope: The social preview image, the card type, colour scheme and theme colours, the icons and the
+    stylesheets. %BASE_URL% is the site's address; %ROOT% is the path from the page's folder to the
+    site root, so a local build opens from disk at any depth.
+  Does NOT belong: Anything a page says differently (title, description, canonical, og:title and
+    friends stay in the page).
+-->
+<meta property="og:image" content="%BASE_URL%/media/social-preview.png" />
+<meta
+  property="og:image:alt"
+  content="TTSNative: natural text-to-speech. Private, powerful, and local."
+/>
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="color-scheme" content="light dark" />
+<meta name="theme-color" content="#f7f6f3" media="(prefers-color-scheme: light)" />
+<meta name="theme-color" content="#0e0f14" media="(prefers-color-scheme: dark)" />
+<link rel="icon" href="%ROOT%favicon.svg" type="image/svg+xml" />
+<link rel="apple-touch-icon" href="%ROOT%apple-touch-icon.png" />
+<link rel="stylesheet" href="%ROOT%styles.css" />
+<link rel="stylesheet" href="%ROOT%sections.css" />

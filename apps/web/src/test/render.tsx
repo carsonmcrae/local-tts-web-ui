@@ -135,6 +135,7 @@ export const voice = (overrides: Partial<VoiceInfo> = {}): VoiceInfo => ({
   qualityGrade: 'A',
   description: '',
   available: true,
+  credit: '',
   attribution: '',
   ...overrides,
 });
@@ -224,7 +225,7 @@ function sectionText(doc: DocumentDetail, sectionIndex: number) {
 
 const sound = (id: string, name: string, category: SfxLibrary['sounds'][number]['category'], loop: boolean, seconds: number) => ({
   id, name, category, description: `${name}, synthesised.`, keywords: [id.split('-')[0] ?? id], file: `${id}.mp3`,
-  durationSeconds: seconds, bytes: 1000, sha256: 'a'.repeat(64), gain: 0.6, loop, events: [id],
+  durationSeconds: seconds, bytes: 1000, sha256: 'a'.repeat(64), gain: 0.6, loop, experimental: false, events: [id],
   licence: { name: 'MIT', url: 'https://example.invalid/LICENSE' }, attribution: null, source: 'test',
 }); // prettier-ignore
 

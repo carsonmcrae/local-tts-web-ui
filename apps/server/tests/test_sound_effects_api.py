@@ -8,7 +8,8 @@ effects stay; adding, changing and removing effects with every validation (sound
 count, unknown fields); removing a suggestion keeping it dismissed; bulk review; the stale flag when
 a sentence's text changes; deletion with the document; analysis of text, PDF and EPUB documents that
 carry instruction-like text (which changes nothing: no settings, no files, no requests); malformed
-and flooding detector output; the client header the server requires on every change.
+and flooding detector output; the client header the server requires on every change; the rows a reading
+experience places (replaced as one, skipped where refused or occupied, the reader's rows and edits kept).
 Does NOT belong: Detection rules or the library's contents (test_sound_detection.py).
 """
 
@@ -23,6 +24,7 @@ from fastapi.testclient import TestClient
 
 from builders import make_epub, make_pdf
 from ltts.container import Services
+from ltts.sfx import catalogue
 from ltts.sfx import store as store_module
 from ltts.sfx.detect import DETECTOR_VERSION
 from ltts.sfx.events import EVENT_IDS
@@ -158,13 +160,17 @@ def test_adding_changing_and_removing_effects(client: TestClient) -> None:
         error(client.post(base, json={"segmentIndex": 1, "soundId": "rain-light", "untilSegment": 50}))
         == "segment_not_found"
     )
+    # An ambience always has the sentence it lasts to; without one it would never stop.
+    assert error(client.post(base, json={"segmentIndex": 1, "soundId": "rain-light"})) == "effect_span"
     assert client.post(base, json={"segmentIndex": 1, "soundId": "thud", "volume": 500}).status_code == 422
     assert client.post(base, json={"segmentIndex": 1, "soundId": "thud", "offsetMs": 99_999}).status_code == 422
     assert client.post(base, json={"segmentIndex": 1, "soundId": "../thud"}).status_code == 422
     assert client.post(base, json={"segmentIndex": 1, "soundId": "thud", "command": "x"}).status_code == 422
-    # A one-shot sound never keeps an ambience span.
+    # A one-shot sound never keeps an ambience span, and cannot become an ambience without an end.
     one_shot = client.post(base, json={"segmentIndex": 2, "soundId": "thud", "untilSegment": 4}).json()
     assert one_shot["untilSegment"] is None and one_shot["volume"] == 70
+    assert error(client.patch(f"{base}/{one_shot['id']}", json={"soundId": "rain-light"})) == "effect_span"
+    assert error(client.patch(f"{base}/{effect['id']}", json={"untilSegment": None})) == "effect_span"
 
     changed = client.patch(
         f"{base}/{effect['id']}", json={"soundId": "owl", "position": 1, "offsetMs": 500, "volume": 20}
@@ -215,6 +221,12 @@ def test_effects_whose_sentence_changed_are_stale_and_go_with_the_document(
         conn.execute("UPDATE segments SET text = 'Different words.' WHERE document_id = ? AND idx = 2", (doc["id"],))
     listed = effects_of(client, doc["id"])["effects"]
     assert listed[0]["id"] == effect["id"] and listed[0]["stale"] is True
+    # An ambience saved before an end was required can still be adjusted; changing its sound or end needs one.
+    rain = client.post(base, json={"segmentIndex": 3, "soundId": "rain-light", "untilSegment": 4}).json()
+    with services.db.connect() as conn:
+        conn.execute("UPDATE sound_effects SET until_idx = NULL WHERE id = ?", (rain["id"],))
+    assert client.patch(f"{base}/{rain['id']}", json={"volume": 30}).json()["volume"] == 30
+    assert error(client.patch(f"{base}/{rain['id']}", json={"soundId": "rain-light"})) == "effect_span"
     assert client.delete(f"/api/documents/{doc['id']}").status_code == 204
     assert error(client.get(base)) == "document_not_found"
     with services.db.connect() as conn:
@@ -283,6 +295,19 @@ def test_changes_need_the_app_header_like_every_other_route(settings: Any, servi
         assert bare.post(f"/api/documents/{doc_id}/sound-effects", json={}).status_code == 403
 
 
+def test_experimental_sounds_are_never_suggested_but_can_be_added_by_hand(client: TestClient) -> None:
+    library = client.get("/api/sound-effects/library").json()
+    experimental = {sound["id"]: sound["qualityNote"] for sound in library["sounds"] if sound["experimental"]}
+    assert "dog-bark" in experimental and all(experimental.values())  # each one says why
+    assert catalogue.default_sound("dog-bark").experimental and not catalogue.suggestable("dog-bark")
+    assert not catalogue.default_sound("door-creak").experimental and catalogue.suggestable("door-creak")
+    doc = document(client, "A dog barked twice from the yard. The old door creaked open.")
+    events = {effect["event"] for effect in analyse(client, doc["id"], 0, "immersive")["effects"]}
+    assert "door-creak" in events and "dog-bark" not in events
+    added = client.post(f"/api/documents/{doc['id']}/sound-effects", json={"segmentIndex": 0, "soundId": "dog-bark"})
+    assert added.status_code == 201 and added.json()["soundId"] == "dog-bark"
+
+
 def test_the_sentence_hash_ignores_whitespace_and_matches_the_shared_form() -> None:
     from ltts.sfx.store import text_hash
 
@@ -300,3 +325,72 @@ def test_the_tables_exist_after_migration(services: Services) -> None:
             "status, text_hash, created_at, updated_at) VALUES ('x', 'missing', 0, 0, 'thud', 'thud', 70, 'manual', "
             "'accepted', 'h', 'now', 'now')"
         )
+
+
+def test_a_reading_experience_places_rows_it_owns_and_leaves_the_readers(
+    client: TestClient, services: Services, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    doc = document(client)["id"]
+    base = f"/api/documents/{doc}/sound-effects"
+    store = services.sfx
+
+    def row(**fields: Any) -> store_module.PresetEffectIn:
+        return store_module.PresetEffectIn(**{"segment_index": 1, "event": "thud", "volume": 50, **fields})
+
+    ambience = row(segment_index=3, event="rain-light", loop=True, until_segment=5)
+    placed = store.apply_preset(doc, "test", 1, [row(), ambience])
+    assert len(placed.placed) == 2
+    assert placed.skipped == {"occupied": 0, "experimental": 0, "invalid": 0, "limit": 0}
+    rows = effects_of(client, doc)["effects"]
+    assert [(r["origin"], r["status"], r["confidence"]) for r in rows] == [("preset", "accepted", None)] * 2
+    assert rows[0]["untilSegment"] is None and rows[1]["untilSegment"] == 5
+    with services.db.connect() as conn:
+        marks = {r[0] for r in conn.execute("SELECT detector FROM sound_effects WHERE document_id = ?", (doc,))}
+    assert marks == {"preset:test@1"}
+    # Applying again replaces the experience's rows. What the store would refuse is skipped, never guessed, and
+    # a sentence takes one effect: the second row for sentence 1 finds it occupied.
+    refused = [
+        row(event="heartbeat"),  # not an event
+        row(sound_id="no-such-sound"),  # not a sound
+        row(sound_id="rain-light"),  # a sound that doesn't serve the event
+        row(loop=True),  # a one-shot sound said to loop
+        row(segment_index=999),  # a sentence that isn't there
+        row(segment_index=3, event="rain-light", loop=True, until_segment=99),  # a span past the store's limit
+        row(segment_index=3, event="rain-light", loop=True),  # a loop with no end
+    ]
+    second = store.apply_preset(doc, "test", 2, [*refused, row(), row(event="door-knock")])
+    assert len(second.placed) == 1
+    assert second.skipped == {"occupied": 1, "experimental": 0, "invalid": 7, "limit": 0}
+    assert [r["segmentIndex"] for r in effects_of(client, doc)["effects"]] == [1]
+    # The reader's own row keeps its sentence, and a reader's change makes an experience's row theirs.
+    mine = client.post(base, json={"segmentIndex": 2, "soundId": "thud"}).json()
+    third = store.apply_preset(doc, "test", 3, [row(segment_index=2), row(segment_index=4, event="door-knock")])
+    assert len(third.placed) == 1 and third.skipped["occupied"] == 1
+    theirs = client.patch(f"{base}/{third.placed[0]}", json={"volume": 20}).json()
+    assert theirs["origin"] == "manual" and theirs["volume"] == 20 and theirs["event"] == "door-knock"
+    with services.db.connect() as conn:
+        assert conn.execute("SELECT detector FROM sound_effects WHERE id = ?", (theirs["id"],)).fetchone()[0] is None
+    fourth = store.apply_preset(doc, "test", 4, [row(segment_index=4), row(segment_index=6)])
+    assert len(fourth.placed) == 1 and fourth.skipped["occupied"] == 1  # the edited row stays, on its sentence
+    # Analysis never touches the experience's rows; removing one is a removal, and only applying again brings
+    # it back; removing the experience takes its rows and nothing else.
+    analyse(client, doc, 0)
+    kept = {r["id"]: r["origin"] for r in effects_of(client, doc)["effects"] if r["origin"] != "suggested"}
+    assert kept == {mine["id"]: "manual", theirs["id"]: "manual", fourth.placed[0]: "preset"}
+    assert client.delete(f"{base}/{fourth.placed[0]}").status_code == 204
+    assert all(r["id"] != fourth.placed[0] for r in effects_of(client, doc)["effects"])  # gone, not dismissed
+    assert store.remove_preset(doc) == 0
+    fifth = store.apply_preset(doc, "test", 5, [row(segment_index=6)])
+    assert len(fifth.placed) == 1 and store.remove_preset(doc) == 1
+    left = {r["id"]: r["origin"] for r in effects_of(client, doc)["effects"] if r["origin"] != "suggested"}
+    assert left == {mine["id"]: "manual", theirs["id"]: "manual"}
+    # A sound the catalogue marks experimental (the owl) is left to the reader's own hand.
+    assert catalogue.default_sound("owl").experimental
+    owl = row(segment_index=6, event="owl", sound_id="owl")
+    guarded = store.apply_preset(doc, "test", 6, [owl, row(segment_index=8)])
+    assert len(guarded.placed) == 1 and guarded.skipped["experimental"] == 1
+    assert [r["event"] for r in effects_of(client, doc)["effects"] if r["origin"] == "preset"] == ["thud"]
+    # The document's cap holds for an experience too (its own earlier row goes first, so one fits).
+    monkeypatch.setattr(store_module, "MAX_EFFECTS", len(effects_of(client, doc)["effects"]))
+    capped = store.apply_preset(doc, "test", 7, [row(segment_index=6), row(segment_index=8)])
+    assert len(capped.placed) == 1 and capped.skipped["limit"] == 1

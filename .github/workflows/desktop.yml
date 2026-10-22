@@ -5,7 +5,8 @@
 #   key, an installer smoke test (silent install, speech, MP3 export, no console windows, restart,
 #   uninstall that keeps the user's data), everything a person did surviving a close and a crash
 #   (persistence-test.mjs), the installer kept as a workflow artifact for manual testing,
-#   and the update path between two builds signed with a throwaway key (scripts/desktop/update-test.mjs).
+#   and the update path between two builds signed with a throwaway key (scripts/desktop/update-test.mjs),
+#   with both builds running at the same time.
 #   Nothing is published, signed with the release key or attached to a release.
 # Does NOT belong: Publishing releases (release.yml) or the cross-platform server tests (ci.yml).
 name: Desktop
@@ -129,6 +130,10 @@ jobs:
         run: |
           version=$(cat dist/desktop/version.txt)
           node scripts/desktop/persistence-test.mjs --install "dist/desktop/TTSNative-Setup-$version.exe"
+      - name: Refuses a silent install into a drive without room, before writing anything
+        run: |
+          version=$(cat dist/desktop/version.txt)
+          node scripts/desktop/space-test.mjs "dist/desktop/TTSNative-Setup-$version.exe"
       - name: Keep the app's logs
         if: failure()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -146,10 +151,34 @@ jobs:
           if-no-files-found: ignore
           retention-days: 14
 
-  update:
-    name: Update path (two builds, verified update)
+  # The update path in three steps, so versions A and B build at the same time: a throwaway key that
+  # only this run's two test builds trust (passed between the jobs as a one-day artifact, never logged or
+  # committed), the two builds, then the update test on their installers and signatures.
+  update-key:
+    name: Update path (throwaway key)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15 # catches a hung job; real runs take under a minute
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: ./.github/actions/node-deps
+      - run: npm run desktop:update-test -- --make-key "$RUNNER_TEMP/update-key"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: update-test-key
+          path: ${{ runner.temp }}/update-key/
+          if-no-files-found: error
+          retention-days: 1
+
+  update-build:
+    name: Update path (build ${{ matrix.label }})
+    needs: update-key
+    strategy:
+      matrix:
+        include:
+          - { version: old, label: A }
+          - { version: new, label: B }
     runs-on: windows-2025
-    timeout-minutes: 60 # catches a hung job; real runs take 15-28 min
+    timeout-minutes: 45 # catches a hung job; real runs take 8-12 min
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -159,9 +188,36 @@ jobs:
         with:
           cache-name: installer
           runtime-cache: 'true'
-          save: never # the installer job saves the cache both jobs share
+          save: never # the installer job saves the cache these jobs share
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: update-test-key
+          path: ${{ runner.temp }}/update-key
+      - name: Build ${{ matrix.label }} trusting the throwaway key
+        run: npm run desktop:update-test -- --build ${{ matrix.version }} --key "$RUNNER_TEMP/update-key" --out "$RUNNER_TEMP/update-build"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: update-test-installer-${{ matrix.version }}
+          path: ${{ runner.temp }}/update-build/
+          if-no-files-found: error
+          retention-days: 1
+          compression-level: 0 # the installer is already compressed
+
+  update:
+    name: Update path (verified update from A to B)
+    needs: update-build
+    runs-on: windows-2025
+    timeout-minutes: 30 # catches a hung job; real runs take 6-8 min
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: ./.github/actions/node-deps
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: update-test-installer-*
+          path: ${{ runner.temp }}/update-build
+          merge-multiple: true
       - name: Install A, refuse a bad and a broken update, then update to B (throwaway key)
-        run: npm run desktop:update-test
+        run: npm run desktop:update-test -- --test "$RUNNER_TEMP/update-build"
       - name: Keep the app's logs
         if: failure()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

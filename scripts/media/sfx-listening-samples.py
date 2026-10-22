@@ -22,6 +22,7 @@ import json
 import sys
 import urllib.error
 import urllib.request
+from typing import Any
 
 HEADERS = {"X-LTTS-Client": "web", "Content-Type": "application/json"}
 TITLE = "Sound effects: listening samples"
@@ -132,37 +133,37 @@ def call(server: str, path: str, body: dict[str, object] | None = None, method: 
         sys.exit(f"Cannot reach {server}: {error.reason}. Start the app (or npm run dev) first.")
 
 
-def main() -> None:
-    parser = argparse.ArgumentParser(description="Seed the sound-effects listening samples into a running TTSNative.")
-    parser.add_argument("--server", default="http://127.0.0.1:8781", help="the local TTSNative server")
-    parser.add_argument("--web", default=None, help="the web app's address, when it differs from the server's")
-    args = parser.parse_args()
-    listed: object = call(args.server, "/api/documents")
+def remove_earlier_copy(server: str) -> None:
+    """Delete the document an earlier run left, so the samples are there only once."""
+    listed: object = call(server, "/api/documents")
     documents = listed if isinstance(listed, list) else listed.get("items", [])  # type: ignore[union-attr]
     for existing in documents:
         if existing.get("title") == TITLE:
-            call(args.server, f"/api/documents/{existing['id']}", method="DELETE")
-    text = "\n\n".join(
-        f"Chapter {number}: {title}\n\n{' '.join(sentences)}" for number, (title, sentences, _) in enumerate(SCENES, start=1)
-    )
-    document = call(args.server, "/api/documents/text", {"text": text, "title": TITLE})
-    doc_id = document["id"]
-    sections = document.get("sections", [])
+            call(server, f"/api/documents/{existing['id']}", method="DELETE")
+
+
+def accept_suggestions(server: str, doc_id: object, sections: Any) -> set[int]:
+    """Analyse every chapter at Immersive and accept what it suggests; the sentences that now have a sound."""
     taken: set[int] = set()
-    for section in sections:  # type: ignore[union-attr]
+    for section in sections:
         analysis = call(
-            args.server,
+            server,
             f"/api/documents/{doc_id}/sound-effects/analyse",
             {"sectionIndex": section["index"], "intensity": "immersive"},
         )
         ids = [e["id"] for e in analysis.get("effects", []) if e.get("status") == "suggested"]
         if ids:
-            call(args.server, f"/api/documents/{doc_id}/sound-effects/review", {"accept": ids, "dismiss": []})
+            call(server, f"/api/documents/{doc_id}/sound-effects/review", {"accept": ids, "dismiss": []})
         taken |= {e["segmentIndex"] for e in analysis.get("effects", []) if e.get("status") != "dismissed"}
         print(f"chapter {section['index'] + 1}: {len(ids)} suggested at Immersive")
+    return taken
+
+
+def place_by_hand(server: str, doc_id: object, sections: Any, taken: set[int]) -> int:
+    """Place every sound a scene names on a sentence the detector left empty; how many were placed."""
     placed = 0
     for section, (_, sentences, placements) in zip(sections, SCENES):
-        segments = call(args.server, f"/api/documents/{doc_id}/sections/{section['index']}")["segments"]
+        segments = call(server, f"/api/documents/{doc_id}/sections/{section['index']}")["segments"]
         by_text = {s["text"].strip(): s["index"] for s in segments}  # type: ignore[union-attr]
         for number, sound, lasts in placements:
             index = by_text.get(sentences[number])
@@ -172,8 +173,25 @@ def main() -> None:
             body: dict[str, object] = {"segmentIndex": index, "soundId": sound, "position": 0, "offsetMs": 0}
             if until is not None:
                 body["untilSegment"] = until
-            call(args.server, f"/api/documents/{doc_id}/sound-effects", body)
+            call(server, f"/api/documents/{doc_id}/sound-effects", body)
             placed += 1
+    return placed
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Seed the sound-effects listening samples into a running TTSNative.")
+    parser.add_argument("--server", default="http://127.0.0.1:8781", help="the local TTSNative server")
+    parser.add_argument("--web", default=None, help="the web app's address, when it differs from the server's")
+    args = parser.parse_args()
+    remove_earlier_copy(args.server)
+    text = "\n\n".join(
+        f"Chapter {number}: {title}\n\n{' '.join(sentences)}" for number, (title, sentences, _) in enumerate(SCENES, start=1)
+    )
+    document = call(args.server, "/api/documents/text", {"text": text, "title": TITLE})
+    doc_id = document["id"]
+    sections = document.get("sections", [])
+    taken = accept_suggestions(args.server, doc_id, sections)
+    placed = place_by_hand(args.server, doc_id, sections, taken)
     total = len(call(args.server, f"/api/documents/{doc_id}/sound-effects")["effects"])  # type: ignore[arg-type]
     web = args.web or args.server
     print(f"{TITLE!r}: {len(sections)} chapters, {placed} placed by hand, {total} effects in all.")

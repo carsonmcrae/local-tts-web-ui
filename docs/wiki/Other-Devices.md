@@ -10,10 +10,11 @@ screen and a speaker, and nothing works on it while the computer is off or aslee
 
 ## Before you start
 
-LAN mode needs the built app: start TTSNative with `npm run start`, or use the packaged app. Under
-`npm run dev` the phone gets an error page. The address it opens reaches TTSNative's server, and in
-development the server only serves the app's pages when started with `--static`, as `npm run start`
-does. The settings section says so when you're on the development server.
+LAN mode needs the built app: start TTSNative with `npm run start`, or use the
+[Windows app](Windows-App). Under `npm run dev` the phone gets an error page. The address it opens
+reaches TTSNative's server, and in development the server only serves the app's pages when started
+with `--static`, as `npm run start` does. The settings section says so when you're on the development
+server.
 
 Use LAN mode only on a network you trust, such as your home Wi-Fi. Never use it on public Wi-Fi in a
 café, hotel or airport: see [What to know](#what-to-know).
@@ -40,7 +41,8 @@ network, firewall or system settings.
    **Network address** your phone uses: usually your Wi-Fi, with an address starting with `192.168`.
    See [Which networks are offered](#which-networks-are-offered).
 3. The section shows:
-   - the address to open, such as `http://192.168.1.20:8765`;
+   - the address to open, such as `http://192.168.1.20:8765` (the port is the one TTSNative runs on:
+     8765 from source, 8770 in the Windows app, or the next free one);
    - a **QR code**;
    - a pairing code like `K7MP-3XQ9`.
 
@@ -79,9 +81,11 @@ phone replaces its old entry in the list.
 
 A paired phone or tablet can:
 
-- open your library, read and listen, and use bookmarks;
+- open your library, read and listen, and use bookmarks, search and the sleep timer;
 - change reading and playback settings and pronunciations (these are shared with the computer);
-- add and edit documents and style sentences;
+- add and edit documents, organise the library and open the included books;
+- style sentences, give characters voices, and place sound effects;
+- play background music, which plays on the phone itself;
 - start, pause, resume and download exports.
 
 Sensitive things stay on the computer. A paired device can't:
@@ -89,13 +93,17 @@ Sensitive things stay on the computer. A paired device can't:
 - change LAN mode, speech API or Audiobookshelf settings;
 - record, play back, import, export or manage voices and their recordings;
 - install engines, clear caches, or cancel the computer's own jobs;
+- hear a word before saving a pronunciation rule (the rule itself can be saved);
 - import web pages (the computer would fetch them);
-- delete documents or exports;
+- delete documents or exports, or remove a saved cast;
 - cancel an export, which throws away what it has made so far (pausing it is fine);
 - send an export to Audiobookshelf, which uses the computer's Audiobookshelf account.
 
 The phone shows **Do this on the computer running TTSNative.** if you try. Starting a lot of exports
-or uploads in a few minutes from one device is also refused for a while.
+or uploads (more than 20 in 10 minutes), or asking for a lot of voice previews or new takes of a
+sentence (more than 60 in 10 minutes), from one device is also refused for a while, and the phone
+says so.
+[What Works Where](What-Works-Where) has the full list, with the reasons.
 
 ## What works over LAN mode
 
@@ -179,7 +187,8 @@ Check the name in the list.
   or port forward on the computer (Tailscale Serve, Caddy, nginx, Cloudflare Tunnel, ngrok), and
   requests that only claim to, so they can't pass for you at the computer. Use LAN mode instead.
 - **Firewall prompt.** The first time, your computer's firewall may ask whether to allow TTSNative
-  (Python) to accept connections. Allow it for **private** networks only.
+  to accept connections (from source the program is Python; in the Windows app it is
+  `ttsnative-backend.exe`). Allow it for **private** networks only.
 - **Voices stay on the computer.** Browsers only allow recording on a secure page, so voices are
   recorded on the computer. LAN mode also keeps voice recordings themselves off the network: a phone
   can use your voices to listen, but not play, import or export their recordings.

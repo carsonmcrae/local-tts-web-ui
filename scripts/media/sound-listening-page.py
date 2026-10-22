@@ -54,9 +54,12 @@ def row(sound: dict[str, object], stats: dict[str, float]) -> str:
     events = ", ".join(html.escape(e) for e in sound.get("events", []))  # type: ignore[union-attr]
     keywords = ", ".join(html.escape(k) for k in sound.get("keywords", []))  # type: ignore[union-attr]
     loop = "loop" if sound.get("loop") else "one-shot"
+    flag = " <mark>Experimental</mark>" if sound.get("experimental") else ""
+    note = sound.get("qualityNote")
+    why = f"<br /><em>{html.escape(str(note))}</em>" if note else ""
     return f"""      <tr data-id="{sid}">
-        <td><strong>{html.escape(str(sound["name"]))}</strong><br /><code>{sid}</code><br /><small>{events}</small></td>
-        <td>{html.escape(str(sound["description"]))}<br /><small>{keywords}</small></td>
+        <td><strong>{html.escape(str(sound["name"]))}</strong>{flag}<br /><code>{sid}</code><br /><small>{events}</small></td>
+        <td>{html.escape(str(sound["description"]))}<br /><small>{keywords}</small>{why}</td>
         <td>{stats["seconds"]:.1f} s<br />{loop}</td>
         <td>{stats["loud"]:.0f} dBFS<br />peak {stats["peak"]:.0f}<br />{stats["centroid"]:.0f} Hz</td>
         <td><audio controls preload="none" data-gain="{float(sound["gain"]):.2f}" src="../../apps/web/public/sfx/{html.escape(str(sound["file"]))}"></audio>
@@ -112,6 +115,9 @@ TEMPLATE = """<!doctype html>
       the repository so the players find <code>apps/web/public/sfx/</code>. The master level starts at the app's
       default (40 %); each sound is also scaled by its own gain as the app does. To judge a sound under speech, pick
       a narration recording (for example an MP3 exported from TTSNative) as the bed: it loops while you audition.
+      Sounds marked <mark>Experimental</mark> are never suggested automatically; they can still be added by hand.
+      To promote one you judge credible, remove its line from <code>EXPERIMENTAL</code> in
+      <code>scripts/media/sfx_recipes.py</code> and rebuild the library.
     </p>
     <div class="bar">
       <label>Master level <input type="range" id="master" min="0" max="100" value="40" /> <span id="masterValue">40 %</span></label>

@@ -175,5 +175,7 @@ describe('Pronunciation dictionary', () => {
     expect(selectedWord(' — ')).toBeNull();
     expect(selectedWord('one two three four five six seven')).toBeNull();
     expect(selectedWord('x'.repeat(101))).toBeNull();
+    // A whole page selected is never looked at word by word.
+    expect(selectedWord(`gnocchi${' '.repeat(1000)}`)).toBeNull();
   });
 });

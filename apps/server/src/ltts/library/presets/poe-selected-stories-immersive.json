@@ -23,7 +23,7 @@
     { "id": "the-deed", "anchor": { "chapter": "the-telltale-heart", "hash": "c124b0107094079d", "quote": "He shrieked once—once only.", "occurrence": 1 },
       "event": "thud", "category": "impacts", "intent": "The bed pulled over him.", "position": 1.0, "volume": 60 },
     { "id": "catacombs", "anchor": { "chapter": "the-cask-of-amontillado", "hash": "c08b590c8fad04a7", "quote": "We passed through a range of low arches, descended, passed on, and descending ag", "occurrence": 1 },
-      "event": "footsteps-stone", "category": "footsteps", "intent": "Descending through the catacombs of the Montresors.", "loop": true, "duration_s": 20, "volume": 50 },
+      "event": "footsteps-stone", "category": "footsteps", "intent": "Descending through the catacombs of the Montresors.", "volume": 50 },
     { "id": "tempest", "anchor": { "chapter": "the-fall-of-the-house-of-usher", "hash": "b9c372d23973f03a", "quote": "It was, indeed, a tempestuous yet sternly beautiful night, and one wildly singul", "occurrence": 1 },
       "event": "thunder-distant", "category": "weather", "intent": "A tempestuous night.", "volume": 60 },
     { "id": "whirlwind", "anchor": { "chapter": "the-fall-of-the-house-of-usher", "hash": "cc47f8a2b4a726ac", "quote": "A whirlwind had apparently collected its force in our vicinity; for there were f", "occurrence": 1 },

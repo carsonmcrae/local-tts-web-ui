@@ -40,10 +40,18 @@ preview, and choose **Use** to place it at the sentence being read (or, when the
 this document, the first sentence of the chapter). An ambience such as rain plays under the next few
 sentences; a one-shot such as a knock plays once.
 
+You can also **select text** in the document and choose **Sound effect** beside it: the sound you pick
+starts at the first sentence you selected, and an ambience plays across all of them. This works on a
+phone too.
+
 Each placed effect can be turned off and on, **adjusted** (at the start or the end of its sentence,
 with a delay, its own volume, and for ambience how many sentences it lasts), **replaced** with
 another sound, or **removed**. Sentences that carry an effect are tinted in the text, and clicking
 an effect's sentence in the panel jumps to it.
+
+Effects placed by a reading experience show as **From the reading experience**. Adjust one and it
+becomes yours; remove one and it stays gone until you apply the experience again; turning the
+experience off removes the rest. Effects stay off until you turn them on, as always.
 
 ## Timing
 
@@ -59,6 +67,13 @@ The bundled library has 36 sounds across weather, nature, animals, doors, footst
 fantasy, impacts, vehicles, atmosphere and machines. Every one was synthesised from a recipe in the
 repository, so there are no recordings and nothing to license beyond the project's MIT licence;
 `apps/web/public/sfx/CREDITS.md` lists them. Importing your own sounds is not supported yet.
+
+Eight of them are marked **Experimental** in the library: the dog, owl, wolf, horse, birdsong,
+crowd, breaking glass and clashing swords, whose real sources the synthesis cannot yet make
+convincing. They are never suggested automatically, and a reading experience never places them;
+you can still add one by hand if it suits your book. Sounds never play louder than the narration:
+by default they sit well under it, and even at the loudest settings an effect only reaches the
+narration's own level.
 
 ## Where your arrangement lives
 

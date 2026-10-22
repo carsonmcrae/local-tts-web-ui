@@ -34,7 +34,7 @@ from ltts.lan import network as network_module
 from ltts.lan import service as service_module
 from ltts.lan.listener import LanListener
 from ltts.lan.network import NetworkAddress, adapter_kind
-from ltts.lan.policy import COSTLY_PER_WINDOW, refused_remotely
+from ltts.lan.policy import COSTLY_PER_WINDOW, WorkBudget, refused_remotely
 from ltts.lan.trust import NetworkTrust
 
 # Every API route a paired phone or tablet may use. A new route stays on this computer until it is
@@ -45,7 +45,7 @@ REACHABLE = {
     "GET /api/voice-profiles", "GET /api/voice-profiles/blends", "GET /api/voice-profiles/consent",
     "GET /api/preferences", "PUT /api/preferences", "GET /api/lan/device", "POST /api/lan/pair",
     "GET /api/pronunciations", "POST /api/pronunciations", "PUT /api/pronunciations/{rule_id}",
-    "DELETE /api/pronunciations/{rule_id}", "GET /api/cast-presets", "DELETE /api/cast-presets/{preset_id}",
+    "DELETE /api/pronunciations/{rule_id}", "GET /api/cast-presets",
     "GET /api/exports", "POST /api/exports", "GET /api/exports/queue", "GET /api/exports/{job_id}",
     "GET /api/exports/{job_id}/download",
     "POST /api/exports/{job_id}/pause", "POST /api/exports/{job_id}/resume",
@@ -202,6 +202,19 @@ def test_costly_work_from_one_device_is_limited(client: TestClient, lan: Service
     assert busy.status_code == 429 and busy.json()["error"]["code"] == "lan_busy"
     assert device.get("/api/documents").status_code == 200  # reading carries on
     assert client.post("/api/documents/text", json={"text": "On the computer."}).status_code == 201
+
+
+def test_previews_from_one_device_are_limited_on_their_own(client: TestClient, lan: Services) -> None:
+    device = paired(client, lan)
+    lan.lan.previews = WorkBudget(2)  # the real limit is BRIEF_PER_WINDOW; two keep the test quick
+    preview = {"text": "Short preview."}
+    for _ in range(2):
+        assert device.post("/api/voices/kokoro:alpha/preview", json=preview).status_code == 200
+    busy = device.post("/api/voices/kokoro:alpha/preview", json=preview)
+    assert busy.status_code == 429 and busy.json()["error"]["code"] == "lan_busy"
+    assert "previews" in busy.json()["error"]["message"]  # the phone can say why
+    assert device.post("/api/documents/text", json={"text": "Still allowed."}).status_code == 201  # its own budget
+    assert client.post("/api/voices/kokoro:alpha/preview", json=preview).status_code == 200  # the computer
 
 
 def test_other_devices_are_not_told_where_the_data_is_kept(client: TestClient, lan: Services) -> None:

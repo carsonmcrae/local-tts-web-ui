@@ -12,6 +12,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { PlayerDocument, PlayerState } from '@/features/player/controller';
 import type { EngineEvents, MusicTarget } from './engine';
 import type { MusicTrack } from './library';
+import { trackSource } from './library';
 import type { MusicChoice } from './preferences';
 import { FADES, MusicSession, PREVIEW_SECONDS } from './session';
 
@@ -20,8 +21,10 @@ const track = (id: string, title = id): MusicTrack => ({
   title,
   creator: 'Someone',
   category: 'ambient',
-  file: `${id}.webm`,
   durationSeconds: 120,
+  bytes: 1000,
+  edgeFrames: 960,
+  chunks: [{ file: `${id}/01.webm`, frames: 5_760_000, bytes: 1000, sha256: 'unchecked' }],
   licence: { name: 'CC0 1.0', url: 'https://creativecommons.org/publicdomain/zero/1.0/' },
   attribution: null,
 });
@@ -75,7 +78,7 @@ function setup({
   const music = new MusicSession({
     player,
     tracks,
-    url: (entry) => `/music/${entry.file}`,
+    source: trackSource,
     createEngine: (handlers) => {
       events = handlers;
       return engine;
@@ -87,7 +90,12 @@ function setup({
   return { player, engine, music, save, detach, lastPlay, events: () => events };
 }
 
-const bed = (id: string): MusicTarget => ({ id, url: `/music/${id}.webm`, resume: true });
+const bed = (id: string): MusicTarget => ({
+  id,
+  edgeFrames: 960,
+  chunks: [{ url: `/music/${id}/01.webm`, frames: 5_760_000 }],
+  resume: true,
+});
 
 beforeEach(() => vi.useFakeTimers());
 afterEach(() => vi.useRealTimers());

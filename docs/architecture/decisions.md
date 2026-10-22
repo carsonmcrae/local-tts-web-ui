@@ -240,7 +240,7 @@ when a choice changes the stack, a trust boundary, data storage or the setup exp
     chosen automatically (exports, the speech API and reading fall back to local voices).
   - **Per-provider, explicit consent** naming what is sent (the sentences being read) and where, given
     before the first request and revocable; the key is stored like the Audiobookshelf key (encrypted
-    on Windows) and never shown again.
+    on Windows, an owner-only file elsewhere) and never shown again.
   - **Per-document opt-in.** A document is read by a cloud voice only after the reader picks one for
     it; studio voices and voice recordings are never uploaded.
   - **Visible while it happens:** a "Sending text to <provider>" indicator, like the speech API's.
@@ -343,8 +343,8 @@ when a choice changes the stack, a trust boundary, data storage or the setup exp
   time through a single audio element (ADR-3); a second sound must not delay, interrupt or change it,
   and must not start by itself.
 - **Decision:**
-  - **A separate player.** Music is a Web Audio graph of its own (decoded track → fade gain → volume
-    gain → speakers) that follows the narration player's state from outside: it plays while the
+  - **A separate player.** Music is a Web Audio graph of its own (decoded chunks → join gains → fade
+    gain → volume gain → speakers) that follows the narration player's state from outside: it plays while the
     narration plays or fetches the next sentence, pauses (keeping its place) when narration pauses,
     stops on errors and at the end. The narration's audio is never routed through it, so a broken or
     missing track can only silence the music. The player itself gains two things: a narration
@@ -359,12 +359,14 @@ when a choice changes the stack, a trust boundary, data storage or the setup exp
     changing voice, speed or pace, and a sleep timer keep the session. The chosen track and both
     volumes are remembered on this device (localStorage, like the reading text); "on" never is.
   - **Bundled, checked tracks.** A small library ships with the web build under `/music/` as Opus in
-    WebM (decodable by Chromium, Firefox and Safari), loudness-matched below the narration and
-    prepared to loop. `library.json` records each track's source, creator and licence; only CC0 or
+    WebM (decodable by Chromium, Firefox and Safari), loudness-matched below the narration, prepared
+    to loop and cut into chunks of about 20 seconds that each carry 20 ms of their neighbours. `library.json` records each track's source, creator and licence; only CC0 or
     public-domain recordings (or licences that allow redistribution, editing and commercial use) are
     included. Tracks are served by the local server, so music needs no internet.
   - **Gentle changes.** Turning music on or off, pausing and switching tracks fade or crossfade;
-    loops are sample-accurate (`AudioBufferSourceNode.loop`). One track plays at a time, and an old
+    a track plays as its chunks on one frame-exact timeline, the last leading into the first, and
+    every join is a 10 ms crossfade over the copy of the music the next chunk carries, found in the
+    decoded chunk whatever a decoder trimmed from its start. One track plays at a time, and an old
     one is stopped and disconnected once its fade ends.
 - **Alternatives:**
   - **Mixing on the server into each sentence.** Rejected: it changes every sentence's audio and cache
@@ -372,8 +374,10 @@ when a choice changes the stack, a trust boundary, data storage or the setup exp
   - **Routing the narration through Web Audio** (for a shared mix or speech-driven ducking).
     Rejected for now: a suspended audio context would silence the narration itself.
   - **A looping `<audio>` element.** Rejected: loops leave an audible gap in several browsers.
-- **Consequences:** A decoded track lives in memory while it plays (about 23 MB a minute for 48 kHz
-  stereo), so tracks are kept short and only the current one (and the last preview) is kept. Automatic
+- **Consequences:** Only the chunk playing and the next one are decoded (about 7.7 MB each), plus a
+  few recent chunks for an instant resume, so memory doesn't grow with a track's length and tracks can
+  run for many minutes (2.2.0; before, a whole decoded track took about 23 MB a minute). Each track is
+  a folder of files, rebuilt by `npm run music:build`. Automatic
   ducking isn't built: the browser can't see pauses inside a sentence's audio without routing the
   narration. Exported audio has no music yet; an export would mix the same files on the server with
   the same gain and loop rules, and must keep the tracks' licence terms.
@@ -465,6 +469,17 @@ when a choice changes the stack, a trust boundary, data storage or the setup exp
 - **Consequences:** Exports carry no effects yet (as with music). Placement inside long sentences is
   approximate. A false positive is treated as worse than a missed effect, so the default intensity
   suggests few effects and the review list is the normal path, with **Accept all** kept secondary.
+- **Addendum (reading experiences, 2026-10-22):** A reading experience from the literary library may place curated effects in a document's
+  arrangement: rows with origin `preset` and status `accepted` (choosing the experience is the
+  acceptance), no confidence, the sentence's hash as usual, and the experience's identity in the
+  detector column (`preset:<preset id>@<version>`). Applying an experience removes the document's
+  `preset` rows and places its rows again, so two versions never mix, and skips any sentence that
+  already carries an accepted effect; turning it off removes its rows and nothing else. A reader's
+  edit of a preset row makes it theirs (`manual`), so later applies and removals leave it; a
+  reader's removal deletes it, and applying the experience again brings its version back.
+  Reanalysis never touches preset rows and spaces its suggestions around them. Nothing an
+  experience does turns the Sound effects switch on. No migration: origin and status are text,
+  and the mark lives in an existing column.
 
 ## ADR-24: Documents are organised by folders, collections, genres, types and tags, kept apart from the documents
 

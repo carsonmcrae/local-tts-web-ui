@@ -5,24 +5,24 @@
 > ordinary sandboxed pipeline when opened (ADR-25); and a few of those books carry an _immersive
 > preset_, data that recommends voices, speakers, sound effects and music through durable text
 > anchors and stable identifiers. This document is the design and the **contract shared with the
-> other branches** (voice library, sound effects, background music, Windows app). Section 6 is the
-> integration handoff and records what was delivered to whom.
+> other features** (voices and casts, sound effects, background music, the Windows app). Section 6
+> records those contracts.
 
-Branch: `feat/literary-library`, based on `feat/studio-voice-plus` (characters and casts live
-there). Research and licensing evidence: [../research/literary-catalog.md](../research/literary-catalog.md).
+Characters and casts are the voice features' own (ADR-13); the library only writes into their rows.
+Research and licensing evidence: [../research/literary-catalog.md](../research/literary-catalog.md).
 
 ## 1. Pieces
 
-| Area                 | Location                                                                                        | Role                                                                                                                               |
-| -------------------- | ----------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| Organisation storage | `apps/server/src/ltts/documents/shelf.py`                                                       | Folders, collections, genres, types, tags, favourites; the facets the library listing carries.                                     |
-| Organisation API     | `apps/server/src/ltts/documents/shelf_router.py`                                                | `/api/library/folders`, `/api/library/collections`, `/api/library/tags`, `/api/library/organize`, `PUT /api/documents/{id}/shelf`. |
-| Catalog data         | `apps/server/src/ltts/library/` (`catalog.json`, `works/`, `covers/`, `presets/`, `CREDITS.md`) | The bundled works, their rights and their presets. Built by `scripts/library/build_catalog.py`.                                    |
-| Catalog service      | `apps/server/src/ltts/library/catalog.py`, `library/router.py`                                  | Lists works, opens one as a document (through `DocumentService`), hides works, serves covers and presets.                          |
-| Presets              | `apps/server/src/ltts/library/presets.py`                                                       | Validates presets, resolves anchors against a document, applies chosen components, records them.                                   |
-| Web: organisation    | `apps/web/src/features/library/`                                                                | Sidebar (All, Continue, Favourites, Recent, Collections, Folders), filters, cards, bulk actions.                                   |
-| Web: Explore         | `apps/web/src/features/explore/`                                                                | Included books by category, featured experiences, open/hide.                                                                       |
-| Web: experience      | `apps/web/src/features/reader/ReadingExperience.tsx`                                            | Standard / Multi-voice / Immersive chooser for a bundled book with a preset.                                                       |
+| Area                 | Location                                                                                        | Role                                                                                                                                                 |
+| -------------------- | ----------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Organisation storage | `apps/server/src/ltts/documents/shelf.py`                                                       | Folders, collections, genres, types, tags, favourites; the facets the library listing carries.                                                       |
+| Organisation API     | `apps/server/src/ltts/documents/shelf_router.py`                                                | `/api/library/folders`, `/api/library/collections`, `/api/library/tags`, `/api/library/organize`, `PUT /api/documents/{id}/shelf`.                   |
+| Catalog data         | `apps/server/src/ltts/library/` (`catalog.json`, `works/`, `covers/`, `presets/`, `CREDITS.md`) | The bundled works, their rights and their presets. Built by `scripts/library/build_catalog.py`.                                                      |
+| Catalog service      | `apps/server/src/ltts/library/catalog.py`, `library/router.py`                                  | Lists works, opens one as a document (through `DocumentService`), hides works, serves covers and presets.                                            |
+| Presets              | `apps/server/src/ltts/library/presets.py`, `library/preset_service.py`                          | The format and the anchors; the report, applying chosen components (voices, speaker lines, sound-effect rows, the music record) and taking them out. |
+| Web: organisation    | `apps/web/src/features/library/`                                                                | Sidebar (All, Continue, Favourites, Recent, Collections, Folders), filters, cards, bulk actions.                                                     |
+| Web: Explore         | `apps/web/src/features/explore/`                                                                | Included books by category, featured experiences, open/hide.                                                                                         |
+| Web: experience      | `apps/web/src/features/reader/ReadingExperience.tsx`                                            | Standard / Multi-voice / Immersive chooser for a bundled book with a preset.                                                                         |
 
 ## 2. Storage
 
@@ -210,7 +210,7 @@ It is data about a book; nothing in it is executed, and it never changes the boo
 
 ### 5.1 Identifiers and who owns them
 
-| Identifier                    | Format                                                           | Owner (branch)   | Notes                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| Identifier                    | Format                                                           | Owner (feature)  | Notes                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | ----------------------------- | ---------------------------------------------------------------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `work_id`                     | `^[a-z0-9][a-z0-9-]{2,79}$`                                      | literary library | Canonical, never reused.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | `edition_id`                  | `source:path@revision`                                           | literary library | A new revision is a new edition; anchors are checked against `text_version`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
@@ -227,7 +227,7 @@ It is data about a book; nothing in it is executed, and it never changes the boo
 An anchor names one sentence of the work without depending on sentence numbers:
 
 - `hash`: the first 16 hex characters of SHA-256 over the sentence's stored text with whitespace
-  collapsed to single spaces and trimmed (UTF-8). This is also the field the sound-effects branch
+  collapsed to single spaces and trimmed (UTF-8). This is also the field the sound-effects feature
   stores per effect to detect a changed sentence, so both can be compared directly.
 - `quote`: the first 80 characters of that text, for people and for fallback matching.
 - `occurrence`: when the same text appears more than once in the work (short lines such as
@@ -249,9 +249,20 @@ whole-number percent of the sound's own recommended level (100 = as recommended,
 the player's (one-shot 0.02 s in; ambience 1 s in, 0.8 s out) and are not stored. `event` comes from
 `ltts/sfx/events.py` (`EVENT_IDS`, 36 ids such as `door-creak`, `thunder-distant`, `rain-light`,
 `crowd-murmur`) and `sound_id` from `ltts/sfx/library.json` (today every sound id equals its event
-id). Importing a preset's effect into the sound-effects table maps the anchor to the resolved
-sentence index, keeps the hash for staleness, and sets `origin: manual`, `status: accepted` only
-when the reader accepts it. Positions inside a sentence are estimates until word timings exist.
+id). Applying the `effects` component places each annotation as a row the experience owns
+(`origin: preset`, `status: accepted`, since choosing the experience is the acceptance; `detector:
+preset:<preset_id>@<version>`): the anchor resolves to the sentence index (hash first, the quote only
+for the preset's own edition; an anchor that doesn't resolve is skipped and counted, never guessed),
+the sentence's hash is kept for staleness, `volume` is stored as `round(gain × volume)` of the
+sound's own level, and an ambience lasts to its `end_anchor` when that resolves at or after the
+start, else `start + max(1, round(duration_s / 4))` sentences, within the store's 60 and the
+document's end. The store skips a sentence that already carries an accepted effect (`occupied`), a
+sound the catalogue marks experimental (`experimental`: such sounds are the reader's to add by hand,
+never an experience's), a row it would refuse (`invalid`) and rows past its cap (`limit`); applying
+again replaces the
+experience's rows; a reader's edit makes a row theirs (`manual`); a reader's removal is a removal
+until the experience is applied again; removing the experience deletes only its rows (ADR-22's
+addendum). Positions inside a sentence are estimates until word timings exist.
 
 ### 5.4 Speakers
 
@@ -268,120 +279,90 @@ reader's own **Voice & effect** choice writes. Removing the preset deletes exact
 (recorded in `document_presets.components_json`); applying again removes first, so there is never a
 mix of two versions. Over HTTP: `GET /api/documents/{id}/preset` (the report: voices found here,
 anchors that resolve, components with `available` and `applied`), `POST …/preset/apply`
-(`{"components": [...]}`; `effects` answers 409 `component_unavailable` until its player ships;
+(`{"components": [...]}`; `effects` places rows in the sound-effects store as 5.3 says, and the
+report's `effects_placed` counts them;
 `music` is recorded as chosen and writes nothing else, because the track a device plays is the web
 app's setting there: **Use this track**, and choosing Immersive, call `useMusic().music.selectTrack(id)`
 and `setVolume(level)` on that device, and nothing turns music on) and `DELETE …/preset`.
 
 ### 5.5 What applying a preset may and may not do
 
-- May: write character voices, sentence voice annotations and the recorded list of what it wrote
-  (for music, the recommended track and level only); set the narrator as the document's suggested
-  reading voice for the session.
+- May: write character voices, sentence voice annotations, sound-effect rows the experience owns,
+  and the recorded list of what it wrote (for music, the recommended track and level only); set the
+  narrator as the document's suggested reading voice for the session.
 - May not: start playback, turn on music or effects, change the text, change preferences, write
-  outside the document's own rows, or touch another document.
+  outside the document's own rows, touch a sound-effect row the reader placed, accepted, dismissed
+  or edited, or touch another document.
 - Updates: the report carries the shipped `preset_version` and the `applied_version`; nothing is
   applied until the reader chooses again, and choosing replaces what the earlier version wrote while
   every row the reader wrote themselves stays.
 
-## 6. Integration handoff
+## 6. Integration contracts
 
-Active work discovered on 2026-10-21 (worktrees under `.claude/worktrees/`):
+The library meets four other features. What each owns, and what this one relies on, is recorded
+here so that a change to a shared format is announced in this document first (section 5.1).
 
-| Workstream              | Branch                    | State on 2026-10-21                                                 | Session reachable |
-| ----------------------- | ------------------------- | ------------------------------------------------------------------- | ----------------- |
-| Background music        | `feat/background-music`   | ADR-18, Web Audio bed, 11 CC0 tracks, `library.json` with track ids | yes               |
-| Sound effects           | `feat/sound-effects`      | ADR-22 and design docs only; no code yet                            | yes               |
-| Voice library           | `feat/voice-library`      | Branched from `feat/studio-voice-plus`, no commits yet              | yes               |
-| Studio voice fine-tune  | `feat/voice-tune`         | ADR-16, merged into `feat/studio-voice-plus`                        | yes               |
-| Windows app and release | `feat/desktop-release`    | ADR-19 to 21, PR #37 (draft); change files in `.changes/`           | yes               |
-| Release navigation      | `feat/release-navigation` | Stacked on `feat/desktop-release`, PR #39                           | yes               |
+### 6.1 Voices and characters
 
-The desktop app sessions are reachable by session messaging in the Claude desktop app, which this
-branch used to deliver the requirements below; delivery status is recorded in section 6.6. Anything
-not confirmed there was **not** delivered.
+Presets name built-in voice ids only (`^[a-z]+:[A-Za-z0-9_-]+$`; an id never changes meaning), each
+with fallbacks; a character none of whose candidates is installed is listed as such and skipped,
+never guessed. Character-to-voice assignments live in `document_characters` and speaker lines in
+`segment_annotations`, the same rows the reader's own choices use, so the planner needs nothing
+preset-specific. `VoiceInfo.attribution` carries a voice's credit. No voice is bundled without
+licensing and synthetic-use authorisation. ADR-24 and ADR-25 are this feature's; ADR-23 belongs to
+the voice library.
 
-### 6.1 For the voice library / multi-speaker work
+### 6.2 Sound effects
 
-TTSNative is introducing a curated literary library containing books with optional immersive
-reading presets. Please account for these works in the voice and multi-speaker architecture. We need
-stable voice identifiers, persistent character-to-voice assignments, safe fallbacks when a voice is
-unavailable, and support for dialogue annotations linked to durable document text anchors
-(section 5). Please review the included demonstration books once available and validate character
-narration quality, dialogue transitions, voice consistency and chapter behaviour. Coordinate on the
-annotation format in section 5 before implementing incompatible assumptions. Do not modify the
-source literary text to encode speaker identities. No new voice should be bundled unless licensing
-and synthetic-use authorisation are verified. Also: ADR-23 is left free for your branch; this branch
-uses ADR-24 and ADR-25 and migrations 14–16 (`IF NOT EXISTS`, so order of merge does not matter).
+Both features identify a sentence by the same 16-character hash of its text (`sentence_hash` here,
+`text_hash` in `ltts/sfx/store.py`), so anchors and staleness agree. Presets name events from the
+sound-effects vocabulary (`ltts/sfx/events.py`, `CATEGORY_OF`, checked at load) and sounds from its
+catalogue (`ltts/sfx/library.json`; the event's default sound when a preset names none). The stored
+shape and the rows an experience places are in section 5.3 and ADR-22's addendum: origin `preset`,
+status `accepted`, the experience's identity in `detector`, replace-and-skip-occupied, a reader's
+edit makes a row `manual`, a reader's removal is a removal until the experience is applied again,
+removing the experience deletes only its rows, sounds the catalogue marks experimental are never
+placed, nothing turns the Sound effects switch on, and no migration (the columns are text). The
+sound-effects feature owns `ltts/sfx/store.py` and its rules; the preset service only calls
+`apply_preset` and `remove_preset`.
 
-### 6.2 For the sound-effects work
+### 6.3 Background music
 
-TTSNative is adding built-in public-domain literary works with optional immersive presets. Please
-review the included demonstration works and coordinate on the text-anchored sound-effect annotation
-schema in section 5 (it follows ADR-22's sentence-and-fraction model and uses the same 16-character
-sentence hash). The goal is accurate, subtle effects synchronised with narration. Please validate
-the showcase works (_The Raven_, _The Tell-Tale Heart_, _Alice's Adventures in Wonderland_,
-_A Christmas Carol_) against your detection, suggestion, editing, timing and playback systems. Curated
-effects and user changes must remain separate from the original book text. Avoid excessive effect
-placement, duplicated effects, broken seek behaviour and automatic activation. The literary library
-branch ships demonstration annotations as validated fixtures with `sound_id: null`; once your
-catalogue exists, the fixtures take its ids. If you add a database migration, use
-`CREATE TABLE IF NOT EXISTS` as well.
+Presets name tracks from `apps/web/src/features/music/library.json`; `tests/test_library_presets.py`
+fails when the server's copy of the ids and that file differ. A recommendation is data: the report
+carries the track, level and note, applying `music` records the choice and writes nothing else, and
+the web app's **Use this track** (and choosing Immersive) calls `useMusic().music.selectTrack(id)`
+and `setVolume(level)` on that device, never `setEnabled`. Copy never says music "will play": it
+stays off until the reader turns it on in the player. Levels: the tracks sit at about −28 LUFS, so
+10 % is about 22 dB under the narration.
 
-### 6.3 For the background-music work
+### 6.4 The desktop app and releases
 
-TTSNative is adding a curated literary library with optional immersive reading presets. Please
-ensure the background music system supports stable track identifiers (your `library.json` ids are
-what presets reference) and book/chapter-level recommendations without automatically starting music.
-Please review the demonstration works after integration and validate volume balancing, pause/resume
-behaviour, track availability and compatibility with narration and sound effects. Music must remain
-explicitly opt-in for every narration session. Coordinate with the literary library branch on preset
-metadata (section 5) rather than creating a competing format. A `MusicChoice`-level entry point
-("use the recommended track") would let the reader accept a recommendation with one click.
+The catalog ships as package data inside the `ltts` wheel (`ltts/library/`, about 4 MB, read with
+`importlib.resources` and never written), so the installer needs no extra step and opening a work
+is download-free. `scripts/desktop/notices.mjs` has a section for the included books that points at
+`ltts/library/CREDITS.md`. `scripts/desktop/persistence-test.mjs` opens a bundled work, applies its
+whole reading experience, organises the library (a folder, a collection, a document's facets) and
+hides a work before a restart, then checks that all of it survives an upgrade; the document list
+never grows by itself. API shapes and the `ltts.librarySort` setting are kept. The site's
+screenshots come from `scripts/capture-screenshots.mjs` against the running app, never from
+mock-ups.
 
-### 6.4 For the studio voice and desktop release work
+### 6.5 Studio voices
 
-The literary library feature will introduce bundled public-domain content (a few megabytes inside
-the `ltts` Python package: `ltts/library/`) and a new organisational UI. Please review potential
-conflicts with Studio Voice, document identity, reading progress, model downloads, packaging,
-installer size, upgrade persistence and offline operation. Bundled literary content never overwrites
-existing document data: a work becomes a document only when opened, and it is linked, not copied,
-to its catalog entry. Please flag interface or persistence contracts that the library implementation
-must preserve. This branch adds `.changes/literary-library.md` for the release tooling.
+Six rules keep the two apart: presets name built-in voice ids only; audio is keyed through
+`resolve()`, so a preset never changes cache keys; package data is read with `importlib.resources`
+and never written; voice data stays under `data/voices/`; opening a work stays download-free; and
+the synthesis worker interleaves a book's sentences with any other job.
 
-Follow-ups that need `scripts/desktop/` (on `main` since PR #37, not on this branch's base), to be
-made when the branches are reconciled: a line in `scripts/desktop/notices.mjs` after "6. WEB
-INTERFACE" naming the included books (24 Standard Ebooks editions, texts public domain in the United
-States and the editions' own work CC0 1.0, and one Project Gutenberg text) and pointing at
-`ltts/library/CREDITS.md`; and, in `scripts/desktop/persistence-test.mjs`, `snapshot()` extended
-with `/api/library/folders`, `/api/library/collections`, `/api/library/tags` and the works list
-(`workId`, `documentId`, `hidden`), with `main()` creating a folder and a collection, setting a
-document's shelf facets and opening one bundled work before the restart. The site's screenshots
-(`site/images/library.png`, the reader) predate the rail, Explore and the Reading experience panel.
-
-### 6.5 Shared rules
+### 6.6 Shared rules
 
 - Field ownership: section 5.1. A change to an owned format is announced in this document first.
-- Migrations: `CREATE TABLE IF NOT EXISTS`; never alter another branch's tables.
+- Migrations: `CREATE TABLE IF NOT EXISTS`; never alter another feature's tables (section 2).
 - Document text is data (ADR-6): presets, catalog entries and annotations never carry anything
   executable, and every value is validated against a pattern or a vocabulary before it is stored.
-- Integration tests for presets validate against the voice list, the music catalogue and the effects
-  catalogue through adapters (`tests/library_support.py`), with fixtures standing in for catalogues
-  that are not merged yet. A passing library test does not claim end-to-end immersive playback.
-
-### 6.6 Delivery record
-
-Filled in by the branch as messages are sent; "not delivered" means a handoff that still needs a
-person to pass it on.
-
-| Recipient                             | Channel                        | Delivered       | Reply (2026-10-21)                                                                                                                                                                                                                                                                                                                                                                                                     |
-| ------------------------------------- | ------------------------------ | --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Voice library expansion session       | Claude desktop session message | yes, 2026-10-21 | Compatible; voice ids unchanged, `VoiceInfo.attribution` added, English spoken-text rewrite after planning; ADR-23 reserved for them; their benchmark can render a document through the real planner for the blind listening panel.                                                                                                                                                                                    |
-| Sound effects system session          | Claude desktop session message | yes, 2026-10-21 | Adopted the same 16-character sentence hash; tables use `IF NOT EXISTS`; vocabulary in `ltts/sfx/events.py`, catalogue in `ltts/sfx/library.json`; their stored shape (segment index, fraction, `offset_ms`, `until_segment`, volume as percent of the recommended level) is in 5.3.                                                                                                                                   |
-| Background music library session      | Claude desktop session message | yes, 2026-10-21 | Track ids frozen (5.1); `useMusic().music.selectTrack/setVolume` accept a recommendation without starting music; volume guidance; copy rule: never say music "will play".                                                                                                                                                                                                                                              |
-| Background music library session      | Claude desktop session message | yes, 2026-10-22 | Their review once both were on `main`: `music` left `NOT_YET` (same version), track titles come from `library.json`, the id list is pinned by a test, and **Use this track** calls `selectTrack`/`setVolume`, never `setEnabled`. Done on `feat/preset-music`.                                                                                                                                                         |
-| Desktop installer and release session | Claude desktop session message | yes, 2026-10-21 | Package data ships through the hatchling wheel (commit the files; nothing in build-runtime.mjs changes); add a line to `scripts/desktop/notices.mjs` for `ltts/library/CREDITS.md`; extend `scripts/desktop/persistence-test.mjs` `snapshot()` with the library endpoints; keep API shapes and `ltts.librarySort`; the document list must not grow by itself across restarts; update site, images and wiki in this PR. |
-| Studio voice fine-tune session        | Claude desktop session message | yes, 2026-10-21 | No conflict; six contracts kept: built-in ids only in presets, audio keyed through `resolve()`, package data read with `importlib.resources` and never written, voice data stays under `data/voices/`, opening a work stays download-free, the worker interleaves.                                                                                                                                                     |
+- Preset tests validate against the real voice list, music library and sound catalogue; a passing
+  test claims what it checked, not end-to-end immersive playback.
 
 ## 7. Testing
 

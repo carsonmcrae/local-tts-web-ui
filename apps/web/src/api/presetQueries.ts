@@ -4,8 +4,8 @@
  * Purpose: TanStack Query hooks for a bundled book's reading preset.
  * Scope: What the preset offers a document (a document that is not one of the included books, or a
  *   book without a preset, answers null rather than an error), applying the components the reader
- *   chose and taking them out again. Applying or removing changes the document's characters and
- *   sentence styling, so those caches are refreshed too.
+ *   chose and taking them out again. Applying or removing changes the document's characters,
+ *   sentence styling and sound effects, so those caches are refreshed too.
  * Does NOT belong: Presentation (features/reader/ReadingExperience.tsx) or the catalog (catalogQueries).
  */
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -16,6 +16,7 @@ const presetKey = (documentId: string) => ['documents', documentId, 'reading-pre
 const touched = (documentId: string) => [
   ['documents', documentId, 'styles'],
   ['documents', documentId, 'characters'],
+  ['documents', documentId, 'sound-effects'],
 ];
 
 export function useReadingPreset(documentId: string, enabled: boolean) {

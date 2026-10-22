@@ -39,7 +39,7 @@ def make(folder: Path, items: Sequence[Item], clips: Mapping[str, Sequence[Path]
     if len(voices) < 2 or any(len(clips[v]) != len(items) for v in voices):
         raise ValueError("Every voice needs one clip per item, and the panel needs at least two voices.")
     folder.mkdir(parents=True, exist_ok=True)
-    shuffle = random.Random(seed)  # noqa: S311 - only hides which voice is which, for listening
+    shuffle = random.Random(seed)  # noqa: S311 - only hides which voice is which from the listener
     key: dict[str, Any] = {"voices": voices, "items": {}}
     for number, _item in enumerate(items, start=1):
         order = voices[:]
@@ -163,14 +163,28 @@ def _rating(answers: Mapping[str, object], name: str) -> int | None:
     return int(value) if isinstance(value, str) and value.isdigit() and int(value) in SCALE else None
 
 
+def _answers(answers_file: Path) -> dict[str, object]:
+    """The answers saved from the panel's page; anything else in the file counts as no answers."""
+    raw = json.loads(answers_file.read_text("utf-8"))
+    answers = raw.get("answers", {}) if isinstance(raw, dict) else {}
+    return answers if isinstance(answers, dict) else {}
+
+
+def _rate_clip(answers: Mapping[str, object], prefix: str, ratings: dict[str, list[int]]) -> int | None:
+    """Add one clip's likeness and naturalness to its voice's ratings; returns their sum when both were given."""
+    like, natural = _rating(answers, f"{prefix}-like"), _rating(answers, f"{prefix}-natural")
+    for question, value in (("like", like), ("natural", natural)):
+        if value is not None:
+            ratings[question].append(value)
+    return None if like is None or natural is None else like + natural
+
+
 def score(
     folder: Path, answers_file: Path, pairs: Sequence[tuple[str, str]] = ()
 ) -> tuple[list[VoiceScore], list[PairTest]]:
     """Unblind a listener's answers against the panel's key."""
     key = json.loads((folder / "key.json").read_text("utf-8"))
-    raw = json.loads(answers_file.read_text("utf-8"))
-    answers = raw.get("answers", {}) if isinstance(raw, dict) else {}
-    answers = answers if isinstance(answers, dict) else {}
+    answers = _answers(answers_file)
     ratings: dict[str, dict[str, list[int]]] = {v: {"like": [], "natural": []} for v in key["voices"]}
     best = dict.fromkeys(key["voices"], 0)
     garbled = dict.fromkeys(key["voices"], 0)
@@ -179,12 +193,9 @@ def score(
         per_item[item] = {}
         for label, voice in labels.items():
             prefix = f"i{item}-{label}"
-            like, natural = _rating(answers, f"{prefix}-like"), _rating(answers, f"{prefix}-natural")
-            for question, value in (("like", like), ("natural", natural)):
-                if value is not None:
-                    ratings[voice][question].append(value)
-            if like is not None and natural is not None:
-                per_item[item][voice] = like + natural
+            combined = _rate_clip(answers, prefix, ratings[voice])
+            if combined is not None:
+                per_item[item][voice] = combined
             garbled[voice] += answers.get(f"{prefix}-garbled") is True
         chosen = answers.get(f"i{item}-best")
         if isinstance(chosen, str) and chosen in labels:
@@ -207,7 +218,9 @@ def score(
 
 def summary(scores: Sequence[VoiceScore], tests: Sequence[PairTest]) -> str:
     def show(mean: float | None, ci: float | None) -> str:
-        return "—" if mean is None else f"{mean:.2f}" + (f" ± {ci:.2f}" if ci is not None else "")
+        if mean is None:
+            return "—"
+        return f"{mean:.2f}" + (f" ± {ci:.2f}" if ci is not None else "")
 
     lines = ["voice  likeness      naturalness   best  garbled  rated"]
     for s in sorted(scores, key=lambda s: -(s.like or 0) - (s.natural or 0)):

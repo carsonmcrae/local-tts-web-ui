@@ -5,19 +5,23 @@
  * Purpose: Prove the whole update path works between two real builds, including its failures.
  * Scope: Makes a throwaway update key, builds version A and a newer version B that trust it and look
  *   for updates on a local server, installs A, and drives its window through WebView2's debugging
- *   port: the update notice appears with B's notes; an update whose signature doesn't match and one
- *   whose download breaks off are refused with an explanation and A keeps running; then a good update
+ *   port: the update notice appears with B's notes; an update whose signature doesn't match (A's own
+ *   signature, then B signed with a second throwaway key) and one whose download breaks off are
+ *   refused with an explanation and A keeps running; then a good update
  *   downloads, verifies, installs B and reopens it, with the user's document still there. Finally B is
  *   uninstalled. CI only (it installs software for the current user); never uses the release key.
- *   Usage: `node scripts/desktop/update-test.mjs`.
+ *   Usage: no arguments does it all. CI builds A and B at the same time: `--make-key <dir>`, then
+ *   `--build old|new --key <dir> --out <dir>` for each, then `--test <dir>` on what the builds left.
  * Does NOT belong: The installer smoke test (smoke-test.mjs) or release builds (build.mjs).
  */
 import { execFileSync, spawnSync } from 'node:child_process';
-import { copyFileSync, mkdtempSync, readFileSync } from 'node:fs';
+import { randomBytes } from 'node:crypto';
+import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
+import { parseArgs } from 'node:util';
 import { repoRoot } from '../lib/paths.mjs';
 import {
   appPage,
@@ -35,7 +39,6 @@ const NOTES =
   'An update made by the update test.\n\n## Fixed\n\n- The update test can see these notes.';
 const local = process.env.LOCALAPPDATA ?? '';
 const installDir = path.join(local, 'TTSNative');
-const work = mkdtempSync(path.join(tmpdir(), 'ttsnative-update-'));
 const system32 = path.join(process.env.SystemRoot ?? 'C:/Windows', 'System32');
 const REG = path.join(system32, 'reg.exe');
 const KEY = String.raw`HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\TTSNative`;
@@ -56,28 +59,69 @@ function node(args, env = {}) {
   if (result.status !== 0) throw new Error(`FAILED: ${args.join(' ')}`);
 }
 
-function updateKey() {
-  const password = 'update-test-only';
-  const file = path.join(work, 'update.key');
+const TAURI_CLI = path.join(repoRoot, 'node_modules', '@tauri-apps', 'cli', 'tauri.js');
+
+/**
+ * Writes a new throwaway update key into `dir`: update.key, update.key.pub and the random password
+ * it was made with (update.key.password), which goes wherever the key goes and nowhere else.
+ */
+function makeKey(/** @type {string} */ dir) {
+  mkdirSync(dir, { recursive: true });
+  const password = randomBytes(24).toString('hex');
+  writeFileSync(path.join(dir, 'update.key.password'), password);
   node([
-    path.join(repoRoot, 'node_modules', '@tauri-apps', 'cli', 'tauri.js'),
+    TAURI_CLI,
     'signer',
     'generate',
     '--ci',
     '-w',
-    file,
+    path.join(dir, 'update.key'),
     '-p',
     password,
   ]);
-  return {
+  return password;
+}
+
+/**
+ * B's bytes signed by a key the app has never seen: a copy of `installer` in a folder of its own,
+ * signed with a second throwaway key made there. Returns that signature (the app must refuse it).
+ */
+function signWithAnotherKey(/** @type {string} */ installer) {
+  const dir = mkdtempSync(path.join(tmpdir(), 'ttsnative-other-key-'));
+  const password = makeKey(dir);
+  const copy = path.join(dir, path.basename(installer));
+  copyFileSync(installer, copy);
+  // Bound to B's version like a real signature, so the only thing wrong with it is the key.
+  node([
+    TAURI_CLI,
+    'signer',
+    'sign',
+    '-f',
+    path.join(dir, 'update.key'),
+    '-p',
     password,
+    '--app-version',
+    NEW,
+    copy,
+  ]);
+  return readFileSync(`${copy}.sig`, 'utf8');
+}
+
+function readKey(/** @type {string} */ dir) {
+  const file = path.join(dir, 'update.key');
+  return {
+    password: readFileSync(`${file}.password`, 'utf8'),
     privateKey: readFileSync(file, 'utf8'),
     publicKey: readFileSync(`${file}.pub`, 'utf8').trim(),
   };
 }
 
-/** @param {string} version @param {ReturnType<typeof updateKey>} key */
-function build(version, key) {
+/** Builds `version` trusting `key`; its installer and signature land in `out` as `<version>.exe(.sig)`. */
+function build(
+  /** @type {string} */ version,
+  /** @type {ReturnType<typeof readKey>} */ key,
+  /** @type {string} */ out,
+) {
   const config = {
     plugins: {
       updater: {
@@ -95,20 +139,25 @@ function build(version, key) {
     TAURI_SIGNING_PRIVATE_KEY_PASSWORD: key.password,
   });
   const built = path.join(repoRoot, 'dist', 'desktop', `TTSNative-Setup-${version}.exe`);
-  const target = path.join(work, `${version}.exe`);
+  const target = path.join(out, `${version}.exe`);
+  mkdirSync(out, { recursive: true });
   copyFileSync(built, target);
   copyFileSync(`${built}.sig`, `${target}.sig`);
   return target;
 }
 
-/** Serves latest.json and the new installer; `mode` decides what a check finds. */
-function updateServer(/** @type {string} */ installer, /** @type {string} */ wrongSignature) {
+/**
+ * Serves latest.json and the new installer; `mode` decides what a check finds: a signature that is
+ * not B's (`wrongSignatures` by mode), a download that breaks off, or the good update.
+ * @param {string} installer
+ * @param {Record<string, string>} wrongSignatures
+ */
+function updateServer(installer, wrongSignatures) {
   const bytes = readFileSync(installer);
   const state = { mode: 'bad-signature' };
   const server = createServer((request, response) => {
     if (request.url === '/latest.json') {
-      const signature =
-        state.mode === 'bad-signature' ? wrongSignature : readFileSync(`${installer}.sig`, 'utf8');
+      const signature = wrongSignatures[state.mode] ?? readFileSync(`${installer}.sig`, 'utf8');
       const file = state.mode === 'broken-download' ? 'broken.exe' : 'update.exe';
       response.setHeader('content-type', 'application/json');
       response.end(
@@ -139,11 +188,31 @@ const installedVersion = () =>
     execFileSync(REG, ['query', KEY], { encoding: 'utf8' }),
   )?.[1];
 
-async function main() {
-  const key = updateKey();
-  const older = build(OLD, key);
-  const newer = build(NEW, key);
-  const server = updateServer(newer, readFileSync(`${older}.sig`, 'utf8'));
+/**
+ * Tries the update again in the dialog and expects it refused, with A still installed and running.
+ * @param {import('@playwright/test').Page} page
+ * @param {import('@playwright/test').Locator} dialog
+ * @param {string} what
+ */
+async function retryRefused(page, dialog, what) {
+  await dialog.getByRole('button', { name: 'Try again' }).click();
+  await page.waitForTimeout(3000);
+  await dialog
+    .getByRole('alert')
+    .getByText(/couldn.t be downloaded and verified/)
+    .waitFor({ timeout: 120_000 });
+  check(isRunning() && installedVersion() === OLD, `${what} is refused; the app keeps running`);
+}
+
+/**
+ * Installs A, refuses a wrong signature (A's own, then one from a key the app doesn't know) and a
+ * broken download, then updates to B.
+ */
+async function verify(/** @type {string} */ older, /** @type {string} */ newer) {
+  const server = updateServer(newer, {
+    'bad-signature': readFileSync(`${older}.sig`, 'utf8'),
+    'other-key': signWithAnotherKey(newer),
+  });
   try {
     check(spawnSync(older, ['/S'], { stdio: 'inherit' }).status === 0, `installed ${OLD}`);
     const origin = await launchForDebugging(path.join(installDir, 'TTSNative.exe'), DEBUG_PORT);
@@ -177,17 +246,10 @@ async function main() {
       isRunning() && installedVersion() === OLD,
       'an update with a wrong signature is refused; the app keeps running',
     );
+    server.state.mode = 'other-key';
+    await retryRefused(page, dialog, 'an update signed with a different key');
     server.state.mode = 'broken-download';
-    await dialog.getByRole('button', { name: 'Try again' }).click();
-    await page.waitForTimeout(3000);
-    await dialog
-      .getByRole('alert')
-      .getByText(/couldn.t be downloaded and verified/)
-      .waitFor({ timeout: 120_000 });
-    check(
-      isRunning() && installedVersion() === OLD,
-      'an interrupted download is refused; the app keeps running',
-    );
+    await retryRefused(page, dialog, 'an interrupted download');
     server.state.mode = 'good';
     await dialog
       .getByRole('button', { name: 'Try again' })
@@ -211,10 +273,47 @@ async function main() {
   }
 }
 
-try {
-  await main();
+/** Runs the update test on two installers, then uninstalls what it installed. */
+async function test(/** @type {string} */ older, /** @type {string} */ newer) {
+  await verify(older, newer);
   await sleep(3000);
   spawnSync(path.join(installDir, 'uninstall.exe'), ['/S'], { stdio: 'inherit' });
+}
+
+async function main() {
+  const { values } = parseArgs({
+    options: {
+      'make-key': { type: 'string' },
+      build: { type: 'string' },
+      key: { type: 'string' },
+      out: { type: 'string' },
+      test: { type: 'string' },
+    },
+  });
+  const versions = new Map([
+    ['old', OLD],
+    ['new', NEW],
+  ]);
+  if (values['make-key']) {
+    makeKey(values['make-key']);
+  } else if (values.build) {
+    const version = versions.get(values.build);
+    if (!version || !values.key || !values.out) {
+      throw new Error('Usage: --build old|new --key <key dir> --out <installer dir>');
+    }
+    build(version, readKey(values.key), values.out);
+  } else if (values.test) {
+    await test(path.join(values.test, `${OLD}.exe`), path.join(values.test, `${NEW}.exe`));
+  } else {
+    const work = mkdtempSync(path.join(tmpdir(), 'ttsnative-update-'));
+    makeKey(work);
+    const key = readKey(work);
+    await test(build(OLD, key, work), build(NEW, key, work));
+  }
+}
+
+try {
+  await main();
 } catch (error) {
   console.error(error instanceof Error ? error.message : error);
   process.exit(1);

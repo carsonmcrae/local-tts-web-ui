@@ -31,8 +31,14 @@ export function placementLabel(effect: SfxEffect): string {
   return where;
 }
 
+const OWNER_LABELS: Record<SfxEffect['origin'], string> = {
+  suggested: 'Suggested',
+  manual: 'Added by you',
+  preset: 'From the reading experience',
+};
+
 export function ownerLabel(effect: SfxEffect): string {
-  return effect.origin === 'manual' ? 'Added by you' : 'Suggested';
+  return OWNER_LABELS[effect.origin];
 }
 
 interface CardProps {
@@ -66,7 +72,9 @@ function EffectCard({
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1 px-2.5 pt-1">
         <span className="text-sm font-medium">{soundName}</span>
         <span className="text-xs text-muted">{placementLabel(effect)}</span>
-        <Badge tone={effect.origin === 'manual' ? 'accent' : 'neutral'}>{ownerLabel(effect)}</Badge>
+        <Badge tone={effect.origin === 'suggested' ? 'neutral' : 'accent'}>
+          {ownerLabel(effect)}
+        </Badge>
       </div>
       {effect.stale ? (
         <p className="px-2.5 pt-1 text-xs font-medium text-warning">

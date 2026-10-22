@@ -121,13 +121,17 @@ test('studio session records lossless takes with the microphone', async ({
     wizard.getByRole('alert').or(wizard.getByText('Your microphone sounds good')).first(),
   ).toBeVisible();
   await wizard.getByRole('button', { name: /Continue/ }).click();
-  await expect(wizard.getByText(/Passage 1 of 48/)).toBeVisible();
+  // A session opens on the foundation passage, the one to record first; the passage list marks it.
+  await wizard.getByText(/^All passages/).click();
+  const current = wizard.getByRole('list', { name: 'Passages' }).locator('[aria-current="step"]');
+  await expect(current).toHaveAccessibleName('Foundation passage, not recorded');
   await wizard.getByRole('button', { name: 'Record', exact: true }).click();
   await expect(wizard.getByRole('button', { name: 'Stop' })).toBeVisible();
   await page.waitForTimeout(4000);
   await wizard.getByRole('button', { name: 'Stop' }).click();
   // The take is saved (the fake tone fails the checks, so it stays on this passage to record again).
   await expect(wizard.getByRole('button', { name: 'Record again' })).toBeVisible();
+  await expect(current).toHaveAccessibleName('Foundation passage, needs another take');
   const sessions = (await (
     await request.get('/api/voice-sessions', { headers: { 'X-LTTS-Client': 'web' } })
   ).json()) as {
@@ -136,7 +140,17 @@ test('studio session records lossless takes with the microphone', async ({
   }[];
   expect(sessions).toHaveLength(1);
   expect(sessions[0]?.takes).toHaveLength(1);
-  expect(sessions[0]?.takes[0]?.durationS).toBeGreaterThan(0);
+  const take = sessions[0]?.takes[0];
+  expect(take?.durationS).toBeGreaterThan(2);
+  // The saved take plays back: a WAV as long as the recording.
+  const audio = await request.get(
+    `/api/voice-sessions/${sessions[0]?.id}/takes/${take?.number}/audio`,
+    { headers: { 'X-LTTS-Client': 'web' } },
+  );
+  expect(audio.ok()).toBe(true);
+  const wav = await audio.body();
+  expect(wav.toString('ascii', 0, 4)).toBe('RIFF');
+  expect((wav.length - 44) / wav.readUInt32LE(28)).toBeCloseTo(take?.durationS ?? 0, 1);
   await request.delete(`/api/voice-sessions/${sessions[0]?.id}`, {
     headers: { 'X-LTTS-Client': 'web' },
   });

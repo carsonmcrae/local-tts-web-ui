@@ -96,22 +96,32 @@ def _end(text: str) -> str:
     return text.rstrip(_CLOSERS)[-1:]
 
 
+def _tag(parts: Sequence[Part], position: int) -> re.Match[str] | None:
+    """A dialogue tag in the unquoted part at ``position``: after the quote before it, else before the next."""
+    text = parts[position].text
+    if position > 0 and parts[position - 1].quoted and (match := _TAG_AFTER.search(text)):
+        return match
+    if position + 1 < len(parts) and parts[position + 1].quoted:
+        return _TAG_BEFORE.search(text)
+    return None
+
+
+def _named(tag: re.Match[str]) -> tuple[str | None, str | None]:
+    """The character a dialogue tag names (never a pronoun or a common word) and its speech verb."""
+    name = next((group for group in tag.groups() if group), None)
+    verb = re.search(_SPEECH, tag.group(0))
+    said = verb.group(0) if verb else None
+    if name and name.split()[0] not in _NOT_NAMES:
+        return name, said
+    return None, said
+
+
 def _speaker(parts: Sequence[Part]) -> tuple[str | None, str | None]:
     """The name and speech verb of a dialogue tag next to the quoted speech, if there is one."""
     for position, part in enumerate(parts):
-        if part.quoted:
-            continue
-        before_quote = position + 1 < len(parts) and parts[position + 1].quoted
-        after_quote = position > 0 and parts[position - 1].quoted
-        match = (_TAG_AFTER.search(part.text) if after_quote else None) or (
-            _TAG_BEFORE.search(part.text) if before_quote else None
-        )
-        if match:
-            name = next((group for group in match.groups() if group), None)
-            verb = re.search(_SPEECH, match.group(0))
-            if name and name.split()[0] not in _NOT_NAMES:
-                return name, verb.group(0) if verb else None
-            return None, verb.group(0) if verb else None
+        tag = None if part.quoted else _tag(parts, position)
+        if tag:
+            return _named(tag)
     return None, None
 
 

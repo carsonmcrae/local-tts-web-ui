@@ -28,6 +28,7 @@ describe('effect labels', () => {
     );
     expect(ownerLabel(effect())).toBe('Suggested');
     expect(ownerLabel(effect({ origin: 'manual' }))).toBe('Added by you');
+    expect(ownerLabel(effect({ origin: 'preset' }))).toBe('From the reading experience');
   });
 
   it('shows a placed effect that is turned off, with a button to turn it on', () => {

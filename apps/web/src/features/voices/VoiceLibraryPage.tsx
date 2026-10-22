@@ -5,7 +5,7 @@
  * Scope: Search and filters (language, gender, built-in/custom), a shared comparison passage so
  *   every preview says the same thing, voice cards with previews, and setting the reading voice
  *   (applied to the player immediately and saved as the default); blending built-in voices into a
- *   new one (BlendVoices).
+ *   new one (BlendVoices); the full credits of every voice source, once (VoiceCredits).
  * Does NOT belong: Creating custom voices (Voice Studio).
  */
 import { AudioLines, Mic, Search } from 'lucide-react';
@@ -25,6 +25,7 @@ import { useReadingVoice } from '@/features/player/useReadingVoice';
 import { BlendVoices } from './BlendVoices';
 import { useVoicePreview } from './useVoicePreview';
 import { VoiceCard } from './VoiceCard';
+import { VoiceCredits } from './VoiceCredits';
 
 export interface VoiceFilters {
   query: string;
@@ -53,7 +54,10 @@ function VoiceResults({
 }: Readonly<{ voices: ReturnType<typeof useVoices>; shown: number; children: ReactNode }>) {
   if (voices.isPending) {
     return (
-      <StatusRegion label="Loading voices" className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+      <StatusRegion
+        label="Loading voices"
+        className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3"
+      >
         {[0, 1, 2, 3, 4, 5].map((key) => (
           <Skeleton key={key} className="h-40" />
         ))}
@@ -205,7 +209,8 @@ export default function VoiceLibraryPage() {
           Showing {shown.length} of {all.length} voices. Grades are the upstream model's own quality
           ratings (A is best).
         </p>
-        <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        {/* grid-cols-1, not the implicit auto column, so a card's no-wrap line can't widen it past a 320 px screen */}
+        <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {shown.map((voice) => (
             <VoiceCard
               key={voice.id}
@@ -222,6 +227,7 @@ export default function VoiceLibraryPage() {
           ))}
         </ul>
       </VoiceResults>
+      <VoiceCredits voices={all} />
     </div>
   );
 }

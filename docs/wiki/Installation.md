@@ -1,7 +1,16 @@
 # Installation
 
-On Windows 11 you can install the [Windows app](Windows-App) instead, with no developer tools. This
-page covers running TTSNative from its source code (Windows, macOS and Linux).
+On Windows 11 you'll be able to install the [Windows app](Windows-App) instead, with no developer
+tools: it comes with version 2.1.0, which isn't published yet. This page covers running TTSNative from
+its source code (Windows, macOS and Linux), which is how you run it today and how you develop it.
+
+| You get                     | Windows app                                 | From source                                     |
+| --------------------------- | ------------------------------------------- | ----------------------------------------------- |
+| Python, server, voice model | Included in the installer                   | Downloaded by the first `npm run dev`           |
+| Updates                     | Offered in the app, signature-checked       | `git pull`                                      |
+| Your data                   | `%LOCALAPPDATA%\com.ttsnative.desktop\data` | `data/` in the project folder                   |
+| Usual port                  | 8770 (up to 8789 if busy)                   | 8765 for the app, 5173 for `npm run dev`'s page |
+| Phones (LAN mode)           | Yes                                         | With `npm run start`, not `npm run dev`         |
 
 ## Requirements
 
@@ -15,8 +24,9 @@ run installs everything else inside the project folder.
 | GPU     | Not needed                | Recommended (NVIDIA or Apple Silicon); CPU works but is slower than real time |
 | Network | First run only            | One-time download from Settings                                               |
 
-Windows 11 is fully tested. On macOS and Linux the server's tests run in CI, but the full app hasn't
-been tested by hand; see the [FAQ](FAQ#which-operating-systems-and-browsers-are-supported).
+CI runs the server's tests on Windows, macOS and Linux, and the web and browser tests on Linux. The
+full app hasn't been tested by hand on macOS or Linux; see the
+[FAQ](FAQ#which-operating-systems-and-browsers-are-supported).
 
 ## Install
 
@@ -65,6 +75,8 @@ Everything lives inside the project folder and is ignored by Git.
 
 **Settings → Storage** shows the data folder and how much space each part uses. To keep your data
 somewhere else, set `LTTS_DATA_DIR` (see [Settings and Models](Settings-and-Models#configuration)).
+To back it up, stop the app and copy `data/`. The Windows app keeps its data elsewhere; see
+[Where your data is](Windows-App#where-your-data-is).
 
 ## Production-style run
 

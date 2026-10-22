@@ -61,7 +61,7 @@ def scale_cover(ffmpeg: str, original: bytes, out: Path) -> None:
     with tempfile.TemporaryDirectory() as folder:
         source = Path(folder) / "cover.jpg"
         source.write_bytes(original)
-        subprocess.run(  # noqa: S603 - fixed arguments, a tool we looked up by name
+        subprocess.run(  # noqa: S603 - fixed arguments; a tool we looked up by name
             [ffmpeg, "-y", "-v", "error", "-i", str(source), "-vf", f"scale={COVER_WIDTH}:-2", "-q:v", "5",
              "-map_metadata", "-1", str(out)],
             check=True,

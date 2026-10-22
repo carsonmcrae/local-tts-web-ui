@@ -38,7 +38,7 @@ export interface SourceLike extends NodeLike {
   loop: boolean;
   loopStart: number;
   loopEnd: number;
-  start(when: number, offset: number): void;
+  start(when: number, offset: number, duration?: number): void;
   stop(when: number): void;
   addEventListener(type: 'ended', listener: () => void): void;
 }

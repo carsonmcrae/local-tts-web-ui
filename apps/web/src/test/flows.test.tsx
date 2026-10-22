@@ -8,7 +8,7 @@
  *   not-found route.
  * Does NOT belong: Unit tests of pure helpers (lib.test.ts).
  */
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { JobOut } from '@/api/types';
@@ -308,13 +308,20 @@ describe('App shell', () => {
   });
 
   it('reports an offline server', async () => {
-    mockApi({
-      'GET /api/engines': json({ error: { code: 'network_error', message: 'offline' } }, 500),
-      'GET /api/preferences': preferences,
-      'GET /api/documents': [],
-    });
-    window.history.pushState({}, '', '/library');
-    render(<App />);
-    expect(await screen.findByText('Server offline', {}, { timeout: 4000 })).toBeInTheDocument();
+    // The engine check is retried twice, 1 s and then 2 s apart: move the clock past that, don't wait it out.
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      mockApi({
+        'GET /api/engines': json({ error: { code: 'network_error', message: 'offline' } }, 500),
+        'GET /api/preferences': preferences,
+        'GET /api/documents': [],
+      });
+      window.history.pushState({}, '', '/library');
+      render(<App />);
+      await act(() => vi.advanceTimersByTimeAsync(3_000));
+      expect(await screen.findByText('Server offline')).toBeInTheDocument();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

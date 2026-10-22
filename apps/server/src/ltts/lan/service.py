@@ -33,7 +33,7 @@ from ltts.lan import network
 from ltts.lan.devices import DEVICE_TTL, DeviceOut, DeviceStore, PairingCodes, PairingOut, Recognised
 from ltts.lan.listener import LanListener
 from ltts.lan.network import NetworkAddress
-from ltts.lan.policy import WorkBudget
+from ltts.lan.policy import BRIEF_PER_WINDOW, WorkBudget
 from ltts.lan.trust import Category, Check, NetworkTrust
 
 COOKIE = "ltts_device"
@@ -64,7 +64,8 @@ class LanService:
     def __init__(self, db: Database):
         self.devices = DeviceStore(db)
         self.codes = PairingCodes()
-        self.budget = WorkBudget()
+        self.budget = WorkBudget()  # exports and uploads
+        self.previews = WorkBudget(BRIEF_PER_WINDOW)  # voice previews and sentence takes
         self._app: Any = None
         self.listener = LanListener(lambda: self._app)
         self.interface: str | None = None
@@ -174,17 +175,23 @@ class LanService:
             if slept or not await asyncio.to_thread(self._still_here):
                 reason = "network_changed"
             elif self.trust.check == "category" and (checks := checks + 1) % CATEGORY_EVERY == 0:
-                reading = await asyncio.to_thread(self.trust.read, self.interface or "")
-                misses = 0 if reading in ("private", "domain") else misses + 1
-                if reading == "public":
-                    reason = "network_public"
-                elif misses >= CATEGORY_MISSES:
-                    reason = "network_unknown"
+                reason, misses = await self._read_category(misses)
             if reason:
                 self.turned_off, self._watch = reason, None
                 log.warning("LAN mode turned itself off: %s", reason)
                 await self._turn_off()
                 return
+
+    async def _read_category(self, misses: int) -> tuple[TurnedOff | None, int]:
+        """Read what Windows calls the network: why LAN mode must turn off (it is public, or unreadable too many
+        times running), if it must, and how many readings running were unreadable."""
+        reading = await asyncio.to_thread(self.trust.read, self.interface or "")
+        misses = 0 if reading in ("private", "domain") else misses + 1
+        if reading == "public":
+            return "network_public", misses
+        if misses >= CATEGORY_MISSES:
+            return "network_unknown", misses
+        return None, misses
 
     # -- pairing -------------------------------------------------------------
     def new_code(self) -> PairingOut:

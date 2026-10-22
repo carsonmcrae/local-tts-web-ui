@@ -100,15 +100,20 @@ export function readReleases(root = repoRoot) {
 }
 
 /**
+ * A `## Title` section with its entries as a Markdown list.
+ * @param {{ title: string, items: string[] }} section
+ */
+function sectionMarkdown(section) {
+  const list = section.items.map((item) => `- ${item}`).join('\n');
+  return `## ${section.title}\n\n${list}`;
+}
+
+/**
  * Markdown for a GitHub Release body or the updater's `notes`.
  * @param {Release} release
  */
 export function renderRelease(release) {
-  const parts = [release.summary];
-  for (const section of release.sections) {
-    parts.push(`## ${section.title}\n\n${section.items.map((item) => `- ${item}`).join('\n')}`);
-  }
-  return parts.join('\n\n');
+  return [release.summary, ...release.sections.map(sectionMarkdown)].join('\n\n');
 }
 
 /**
@@ -168,8 +173,6 @@ export function draftNotes(version, date, sections) {
     `---\nversion: ${version}\ndate: ${date}\n---`,
     `${DRAFT_MARKER} rewrite this summary in two or three plain sentences, check every line below, then delete this line -->`,
     `TTSNative ${version}: ${counts.join(', ') || 'maintenance and reliability work'}.`,
-    ...user.map(
-      (section) => `## ${section.title}\n\n${section.items.map((item) => `- ${item}`).join('\n')}`,
-    ),
+    ...user.map(sectionMarkdown),
   ].join('\n\n');
 }

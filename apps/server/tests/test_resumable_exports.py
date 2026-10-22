@@ -171,6 +171,8 @@ def test_parts_are_atomic_and_keyed(tmp_path: Any, samples: np.ndarray) -> None:
     assert workspace.bytes_used() == used > 0
     workspace.folder = folder
     (workspace.parts_dir / "junk.txt").write_text("x")
+    other_digits = "\N{ARABIC-INDIC DIGIT EIGHT}" * 6  # digits, but not the ASCII ones this module writes
+    (workspace.parts_dir / f"{other_digits}-{'c' * 16}.flac").write_text("x")
     assert workspace.existing() == {7: "b" * 16}  # unrelated files are ignored
     workspace.remove()
     assert workspace.existing() == {} and workspace.bytes_used() == 0

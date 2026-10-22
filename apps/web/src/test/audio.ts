@@ -67,12 +67,12 @@ export class FakeSource extends FakeNode implements SourceLike {
   loop = false;
   loopStart = 0;
   loopEnd = 0;
-  started: { when: number; offset: number } | null = null;
+  started: { when: number; offset: number; duration?: number } | null = null;
   stoppedAt: number | null = null;
   hasEnded = false;
   private readonly ended: (() => void)[] = [];
-  start(when: number, offset: number) {
-    this.started = { when, offset };
+  start(when: number, offset: number, duration?: number) {
+    this.started = duration === undefined ? { when, offset } : { when, offset, duration };
   }
   stop(when: number) {
     if (this.stoppedAt !== null && this.context.strictStop)
@@ -81,6 +81,12 @@ export class FakeSource extends FakeNode implements SourceLike {
   }
   addEventListener(_type: 'ended', listener: () => void) {
     this.ended.push(listener);
+  }
+  /** Whether a stop() or the duration it was started for is due by `time`. */
+  endsBy(time: number): boolean {
+    const played = this.started?.duration;
+    const finish = played === undefined ? Infinity : (this.started?.when ?? 0) + played;
+    return Math.min(this.stoppedAt ?? Infinity, finish) <= time;
   }
   /** The scheduled stop time was reached. */
   end() {
@@ -157,11 +163,10 @@ export class FakeAudioContext implements SfxContextLike {
       (source) => source.started && source.stoppedAt === null && !source.hasEnded,
     );
   }
-  /** Let every scheduled stop up to `time` happen. */
+  /** Let every scheduled stop up to `time` happen, whether by stop() or a start() with a duration. */
   advance(seconds: number) {
     this.currentTime += seconds;
-    for (const source of this.sources)
-      if (source.stoppedAt !== null && source.stoppedAt <= this.currentTime) source.end();
+    for (const source of this.sources) if (source.endsBy(this.currentTime)) source.end();
   }
 }
 

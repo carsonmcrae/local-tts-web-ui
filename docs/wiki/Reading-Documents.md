@@ -316,16 +316,21 @@ Six of the included books come with a curated cast. In the reader, **Reading exp
   Lestrade; Elizabeth, Jane and Darcy…) and a few lines the analysis can't attribute given to their
   speaker, such as the Raven's "Nevermore". Only voices installed on this computer are used; a
   character whose voice isn't installed is listed as such and keeps the dialogue voice.
-- **Immersive**: voices plus sound effects and background music. This appears once sound effects
-  exist in your version; until then the panel says so.
+- **Immersive**: the voices, the book's sound effects placed in the Sounds panel, and the
+  recommended music track chosen for this device. The panel says how many effects it placed; sound
+  effects and music still stay off until you turn them on in the player.
 
 Choosing **Standard** again takes out exactly what the experience set; voices you gave characters
-yourself and your own sentence styling stay. **Use this voice** hands the suggested reading voice
+yourself, your own sentence styling and the sound effects you placed, accepted or adjusted stay (an
+effect the experience placed becomes yours once you adjust it; one you removed stays gone until you
+choose the experience again). **Use this voice** hands the suggested reading voice
 to the player. **Use this track** makes the recommended background music track, at its suggested
 level, this device's choice in the player (Immersive does the same); music still stays off until you
 turn it on there, and never starts on its own.
 
 ## Deleting a document
 
-Use the bin icon on a document's card in the Library and confirm. The document, its reading
-progress and its bookmarks are permanently removed from your computer.
+Open the document's menu on its card in the Library, choose **Delete…** and confirm; with several
+documents selected, **Delete** in the selection bar removes them together. The document, its reading
+progress, bookmarks and every choice made for it (voices, sentence styling, sound effects) are
+permanently removed from your computer. An included book can be opened again from Explore.

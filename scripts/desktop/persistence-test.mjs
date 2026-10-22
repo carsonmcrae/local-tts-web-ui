@@ -7,27 +7,22 @@
  *   pronunciation rule, preferences, an MP3 export and the window's display settings; files a document in
  *   a folder and a collection with its type, genres and tags; opens an included book offline, applies its
  *   reading preset, chooses a character's voice over it, and hides another book. Closes normally, reopens
- *   and compares everything; ends it abruptly (crash or power cut), reopens and compares again. Reads the
- *   window's storage through WebView2's debugging port. Usage: `node scripts/desktop/persistence-test.mjs`
+ *   and compares everything; ends it abruptly (crash or power cut), reopens and compares again. After
+ *   each close or crash, no process of the app (server, WebView2, an engine's worker) may be left. Reads
+ *   the window's storage through WebView2's debugging port. Usage: `node scripts/desktop/persistence-test.mjs`
  *   against the installed app (test documents stay), or `--install <installer>` on a disposable machine.
  * Does NOT belong: The installer checks or updating (smoke-test.mjs, update-test.mjs).
  */
-import { execFileSync, spawnSync } from 'node:child_process';
+import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { repoRoot } from '../lib/paths.mjs';
+import { describe, leftoverProcesses, powershell } from './processes.mjs';
 import { appPage, launchForDebugging } from './webview-debugging.mjs';
 
 const exe = path.join(process.env.LOCALAPPDATA ?? '', 'TTSNative', 'TTSNative.exe');
 const DEBUG_PORT = 9334;
-const POWERSHELL = path.join(
-  process.env.SystemRoot ?? 'C:/Windows',
-  'System32',
-  'WindowsPowerShell',
-  'v1.0',
-  'powershell.exe',
-);
 const HEADERS = { 'x-ltts-client': 'persistence-test' };
 const STORAGE = {
   'ltts.theme': 'dark',
@@ -41,17 +36,12 @@ function check(condition, message) {
   console.log(`✓ ${message}`);
 }
 
-/** @param {string} script */
-const powershell = (script) =>
-  execFileSync(POWERSHELL, ['-NoProfile', '-NonInteractive', '-Command', script], {
-    encoding: 'utf8',
-  }).trim();
 const running = (/** @type {string} */ name) =>
   Number(powershell(`@(Get-Process -Name '${name}' -ErrorAction SilentlyContinue).Count`));
 
 /** @param {string} url @param {RequestInit} [init] @returns {Promise<any>} */
 async function api(url, init = {}) {
-  const response = await fetch(url, { ...init, headers: { ...HEADERS, ...(init.headers ?? {}) } });
+  const response = await fetch(url, { ...init, headers: { ...HEADERS, ...init.headers } });
   if (!response.ok)
     throw new Error(`FAILED: ${init.method ?? 'GET'} ${url} answered ${response.status}`);
   return response.status === 204 ? null : response.json();
@@ -127,7 +117,7 @@ async function snapshot(origin) {
     await api(`${origin}/api/library/works`)
   );
   return {
-    documents: details.sort((a, b) => a.id.localeCompare(b.id)),
+    documents: details.toSorted((a, b) => a.id.localeCompare(b.id)),
     library: {
       folders: await api(`${origin}/api/library/folders`),
       collections: await api(`${origin}/api/library/collections`),
@@ -156,6 +146,9 @@ async function stop(/** @type {'close' | 'crash'} */ how) {
     !running('TTSNative') && !running('ttsnative-backend'),
     `the app and its server ended (${how})`,
   );
+  const leftovers = await leftoverProcesses();
+  const detail = leftovers.length ? `: ${describe(leftovers)}` : '';
+  check(leftovers.length === 0, `nothing of TTSNative is left running (${how})${detail}`);
 }
 
 async function main() {
@@ -221,15 +214,18 @@ async function main() {
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ add: [pdf.id, docx.id] }),
   });
-  // An included book, opened from the catalog without any network, its preset applied, and the
-  // person's own choice of voice for one character over the preset's; another book hidden.
+  // An included book, opened from the catalog without any network, its whole reading experience
+  // applied (voices, speaker lines, sound effects placed in the Sounds panel, the music choice
+  // recorded), and the person's own choice of voice for one character over the preset's; another
+  // book hidden.
   const carol = await api(`${origin}/api/library/works/a-christmas-carol/open`, { method: 'POST' });
   check(carol.bundledWorkId === 'a-christmas-carol', 'an included book opened from the catalog');
-  await api(`${origin}/api/documents/${carol.id}/preset/apply`, {
+  const experience = await api(`${origin}/api/documents/${carol.id}/preset/apply`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ components: ['characters', 'speakers'] }),
+    body: JSON.stringify({ components: ['characters', 'speakers', 'effects', 'music'] }),
   });
+  check(experience.effectsPlaced > 0, 'the reading experience placed sound effects');
   await api(`${origin}/api/documents/${carol.id}/characters`, {
     method: 'PUT',
     headers: { 'content-type': 'application/json' },

@@ -115,7 +115,7 @@ async function main() {
     await page.goto(`${BASE}/read/${alice.id}`);
     const experience = page.getByRole('region', { name: 'Reading experience' });
     const applied = page.waitForResponse((response) => response.url().endsWith('/preset/apply'));
-    await experience.getByText('Multi-voice', { exact: true }).click(); // the radio's label
+    await experience.getByText('Immersive', { exact: true }).click(); // the radio's label
     await applied;
     await page.waitForLoadState('networkidle');
     await page

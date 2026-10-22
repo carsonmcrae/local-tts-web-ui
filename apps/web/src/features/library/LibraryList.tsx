@@ -14,6 +14,7 @@ import type { Collection, DocumentSummary, Folder } from '@/api/types';
 import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/Feedback';
 import { DocumentCard } from './DocumentCard';
+import type { Filters } from './LibraryFilters';
 import { applyFilters, defaultFilters, hasNarrowing, LibraryFilterBar } from './LibraryFilters';
 import type { OrganizeAction } from './OrganizeDialogs';
 import { OrganizeDialog } from './OrganizeDialogs';
@@ -81,6 +82,19 @@ function BulkBar({
   );
 }
 
+/** What a view says when its search or filters leave nothing to show, with a way back. */
+function NoMatches({ filters, onClear }: Readonly<{ filters: Filters; onClear: () => void }>) {
+  const query = filters.query.trim();
+  return (
+    <div className="flex flex-col items-center gap-3 rounded-[var(--radius-lg)] border border-dashed border-line-strong p-8 text-center text-sm text-muted">
+      <p>{query ? `No documents match “${query}”.` : 'No documents match these filters.'}</p>
+      <Button size="sm" onClick={onClear}>
+        Clear {hasNarrowing(filters) ? 'filters' : 'search'}
+      </Button>
+    </div>
+  );
+}
+
 export function LibraryList({ documents, view, folders, collections, total }: Readonly<ListProps>) {
   const [filters, setFilters] = useState(defaultFilters);
   const [selecting, setSelecting] = useState(false);
@@ -91,6 +105,7 @@ export function LibraryList({ documents, view, folders, collections, total }: Re
   } | null>(null);
   const shown = applyFilters(documents, filters);
   const chosen = documents.filter((doc) => selected.has(doc.id));
+  const nothingMatches = documents.length > 0 && shown.length === 0; // searched or filtered away
   const tools = total > 1;
   const title = viewTitle(view, folders, collections);
   const stopSelecting = () => {
@@ -140,18 +155,14 @@ export function LibraryList({ documents, view, folders, collections, total }: Re
         <EmptyState icon={<CheckSquare size={24} />} title={emptyCopy(view).title}>
           {emptyCopy(view).hint}
         </EmptyState>
-      ) : shown.length === 0 ? (
-        <div className="flex flex-col items-center gap-3 rounded-[var(--radius-lg)] border border-dashed border-line-strong p-8 text-center text-sm text-muted">
-          <p>
-            {filters.query.trim()
-              ? `No documents match “${filters.query.trim()}”.`
-              : 'No documents match these filters.'}
-          </p>
-          <Button size="sm" onClick={() => setFilters({ ...defaultFilters(), sort: filters.sort })}>
-            Clear {hasNarrowing(filters) ? 'filters' : 'search'}
-          </Button>
-        </div>
-      ) : (
+      ) : null}
+      {nothingMatches ? (
+        <NoMatches
+          filters={filters}
+          onClear={() => setFilters({ ...defaultFilters(), sort: filters.sort })}
+        />
+      ) : null}
+      {shown.length > 0 ? (
         <ul className="grid grid-cols-1 gap-3 lg:grid-cols-2">
           {shown.map((doc) => (
             <DocumentCard
@@ -164,7 +175,7 @@ export function LibraryList({ documents, view, folders, collections, total }: Re
             />
           ))}
         </ul>
-      )}
+      ) : null}
       {dialog ? (
         <OrganizeDialog
           action={dialog.action}

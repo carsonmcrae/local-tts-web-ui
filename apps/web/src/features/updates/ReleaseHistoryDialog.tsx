@@ -13,6 +13,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
 import { Badge } from '@/components/ui/Feedback';
+import { WebLink } from '@/components/ui/WebLink';
 import { cn } from '@/lib/cn';
 import type { ReleaseNotes } from '@/lib/releaseHistory';
 import { RELEASES_URL } from '@/lib/releaseHistory';
@@ -84,15 +85,7 @@ function NoNotes() {
   return (
     <p className="text-sm text-muted">
       This copy of TTSNative was built without release notes. They are on{' '}
-      <a
-        href={RELEASES_URL}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="font-medium text-accent-text underline-offset-2 hover:underline"
-      >
-        GitHub
-      </a>
-      .
+      <WebLink href={RELEASES_URL}>GitHub</WebLink>.
     </p>
   );
 }

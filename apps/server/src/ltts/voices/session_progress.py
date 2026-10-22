@@ -106,6 +106,17 @@ def _sources(style: str) -> list[str]:
     return found
 
 
+def _add_missing(style: StyleCoverage, done: set[str | None], wanted: list[str]) -> None:
+    """Add to ``wanted`` the passages that would give ``style`` the clean takes it still needs, while there is room."""
+    missing = style.needed - style.takes
+    for pid in _sources(style.style):
+        if missing <= 0 or len(wanted) >= SUGGESTIONS:
+            return
+        if pid not in done and pid not in wanted:
+            wanted.append(pid)
+            missing -= 1
+
+
 def suggestions(takes: Sequence[Recorded]) -> list[str]:
     """The passages (ids) that would add most to the voice next: the foundation, then missing style takes.
 
@@ -118,13 +129,7 @@ def suggestions(takes: Sequence[Recorded]) -> list[str]:
     done = {take.prompt_id for take in _clean(takes)}
     wanted: list[str] = [] if "foundation" in done and trouble is None else ["foundation"]
     for style in coverage(takes):
-        missing = style.needed - style.takes
-        for pid in _sources(style.style):
-            if missing <= 0 or len(wanted) >= SUGGESTIONS:
-                break
-            if pid not in done and pid not in wanted:
-                wanted.append(pid)
-                missing -= 1
+        _add_missing(style, done, wanted)
     if not settled(takes):  # a few more of anything clean steady the voice's sound
         wanted += [pid for pid in PASSAGE_IDS if pid not in done and pid not in wanted]
     return wanted[:SUGGESTIONS]

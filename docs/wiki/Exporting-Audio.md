@@ -91,8 +91,9 @@ are kept), and you can resume after installing it.
 - **macOS:** `brew install ffmpeg`.
 - **Linux:** your distribution's `ffmpeg` package.
 
-The app looks for `ffmpeg` on your `PATH`, or at the path in the `LTTS_FFMPEG` environment variable.
-Or export MP3 instead.
+The app looks for `ffmpeg` on your `PATH`, or at the path in the `LTTS_FFMPEG` environment variable
+(source installs only: the Windows app ignores `LTTS_*` variables, so it needs `ffmpeg` on the
+`PATH`). Or export MP3 instead.
 
 ## Send to Audiobookshelf
 
@@ -100,7 +101,8 @@ If you run an [Audiobookshelf](https://www.audiobookshelf.org/) server, set it u
 Audiobookshelf**: its address, an API key, then **Test connection** (nothing is saved until you press
 **Save**) and choose the library and folder. A finished single-file M4B, MP3 or WAV export then shows
 **Send to Audiobookshelf**, which uploads it with its title, author and cover to that folder. The key is
-stored on this computer (encrypted on Windows) and is never shown again; **Forget** removes it. Files go
+stored on this computer and is never shown again (encrypted for your Windows account; on macOS and Linux
+in a file only your user account can read, not encrypted); **Forget** removes it. Files go
 only to the server you set.
 
 ## File names
@@ -110,14 +112,19 @@ only to the server you set.
 | Single file          | One file named after the document, for example `My Book.mp3`, `My Book.m4b` or `My Book.epub`                        |
 | One file per chapter | `My Book (MP3 chapters).zip`, containing `01 - Chapter title.mp3`, `02 - …` and so on, plus a `My Book.m3u` playlist |
 
-Each audio file is tagged with a title (the chapter, or the document), the document as the album, a
-track number for chapter files, and a comment naming the app it was made with.
+Each MP3 or WAV file is tagged with a title (the chapter, or the document), the document as the album
+and, for chapter files, a track number. M4B audiobooks also carry the author, narrator, description and
+cover from **Audiobook details**. TTSNative adds no comment and no tag naming itself: the files describe
+your document only.
 
 ## Where exports go
 
-**Download** saves the file wherever your browser saves downloads. The app also keeps its own copy in
-`data/exports/`, one folder per export; **Settings → Storage** shows how much space they use. **Delete
-file** on the Exports page removes an export and its folder.
+**Download** saves the file like any other download, on the device you are using: a paired phone or
+tablet can download its exports too. The app also keeps its own copy, one folder per export, in the
+`exports` folder of its data folder: `data/exports/` in a source install, or
+`%LOCALAPPDATA%\com.ttsnative.desktop\data\exports` in the [Windows app](Windows-App).
+**Settings → Storage** shows how much space they use. **Delete file** on the Exports page removes an
+export and its folder (on the computer only; see [What Works Where](What-Works-Where)).
 
 ## Tips
 

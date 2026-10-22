@@ -147,7 +147,9 @@ def _clock(match: re.Match[str], part: str) -> str:
     hour, minute, meridiem = int(match[f"{part}h"]), match[f"{part}m"], match[f"{part}x"]
     after = f" {meridiem.strip().upper()}" if meridiem else ""
     if minute == "00":
-        return f"{hour}{after}" if meridiem else f"{hour} o'clock" if hour <= 12 else f"{hour} hundred"
+        if meridiem:
+            return f"{hour}{after}"
+        return f"{hour} o'clock" if hour <= 12 else f"{hour} hundred"
     return f"{hour} {'oh ' + minute[1] if minute[0] == '0' else minute}{after}"
 
 
@@ -231,7 +233,7 @@ _RULES: tuple[Rule, ...] = (
         _lookup(_AFTER_NAME),
     ),
     (
-        re.compile(r"\b(?P<abbr>Dr|St|Mt|Rev|Hon|Lt|Col|Capt|Sgt|Gen|Gov|Pres|Sen|Rep)\.(?=\s+[A-Z](?:[a-z']|\.))"),
+        re.compile(r"\b(?P<abbr>Dr|St|Mt|Rev|Hon|Lt|Col|Capt|Sgt|Gen|Gov|Pres|Sen|Rep)\.(?=\s+[A-Z][a-z'.])"),
         _lookup(_BEFORE_NAME),
     ),
     (re.compile(r"\b(?P<abbr>Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sept|Sep|Oct|Nov|Dec)\.(?=\s+\d)"), _lookup(_MONTHS)),

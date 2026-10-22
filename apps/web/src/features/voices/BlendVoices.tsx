@@ -20,8 +20,17 @@ import { Field, Input, Select } from '@/components/ui/Field';
 import { useToast } from '@/components/ui/Toast';
 
 interface Part {
+  /** Which row this is, so each row keeps its own controls when another is removed. Not sent. */
+  row: number;
   voiceId: string;
   weight: number; // 1-10, relative
+}
+
+let nextRow = 1;
+
+/** A new part for `voice`, at the middle share. */
+function newPart(voice: VoiceInfo): Part {
+  return { row: nextRow++, voiceId: voice.id, weight: 5 };
 }
 
 const percent = (weight: number, parts: readonly Part[]) =>
@@ -103,9 +112,8 @@ function BlendDialog({
 }>) {
   const create = useCreateBlend();
   const toast = useToast();
-  const part = (voice: VoiceInfo): Part => ({ voiceId: voice.id, weight: 5 });
   const [name, setName] = useState('');
-  const [parts, setParts] = useState<Part[]>(choices.slice(0, 2).map(part)); // always two here
+  const [parts, setParts] = useState<Part[]>(() => choices.slice(0, 2).map(newPart)); // always two here
   const repeated = new Set(parts.map((part) => part.voiceId)).size !== parts.length;
   const close = () => {
     onOpenChange(false);
@@ -113,7 +121,7 @@ function BlendDialog({
   };
   const save = () =>
     create.mutate(
-      { name: name.trim(), parts },
+      { name: name.trim(), parts: parts.map(({ voiceId, weight }) => ({ voiceId, weight })) },
       {
         onSuccess: (blend) => {
           toast.notify(
@@ -164,7 +172,7 @@ function BlendDialog({
         </Field>
         {parts.map((part, position) => (
           <PartRow
-            key={position}
+            key={part.row}
             part={part}
             position={position}
             choices={choices}
@@ -182,7 +190,7 @@ function BlendDialog({
             <Button
               size="sm"
               icon={<Plus size={14} />}
-              onClick={() => setParts([...parts, ...choices.slice(0, 1).map(part)])}
+              onClick={() => setParts([...parts, ...choices.slice(0, 1).map(newPart)])}
             >
               Add a voice
             </Button>

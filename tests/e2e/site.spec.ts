@@ -17,7 +17,21 @@ import { createReadStream, existsSync, statSync } from 'node:fs';
 import type { Server } from 'node:http';
 import { createServer } from 'node:http';
 import path from 'node:path';
+import { formatDate, readReleases } from '../../scripts/lib/releases.mjs';
 import { seriousViolations } from './helpers';
+
+/**
+ * A local build treats every finished notes file in docs/releases as released, newest first, so the
+ * expectations follow the notes rather than a version written into the test.
+ */
+const RELEASES = readReleases().releases.filter((release) => !release.draft);
+const [LATEST, OLDER] = RELEASES;
+const OLDEST = RELEASES.at(-1);
+if (!LATEST || !OLDER || !OLDEST)
+  throw new Error('the website spec needs at least two notes files');
+/** "TTSNative 2.1.0", or the name a version was released under ("Local TTS 2.0.0"). */
+const nameOf = (release: { version: string; publishedAs: string | null }) =>
+  `${release.publishedAs ?? 'TTSNative'} ${release.version}`;
 
 const OUT = path.join(process.cwd(), '.tools', 'site-e2e');
 const PORT = 8792;
@@ -223,40 +237,45 @@ test.describe('website @site @cross-browser', () => {
     await page.goto(`${BASE}/releases.html`);
     const versions = page.getByRole('navigation', { name: 'Versions' });
     expect((await versions.getByRole('link').allTextContents()).slice(0, 2)).toEqual([
-      'Local TTS 2.0.0 Latest',
-      'Local TTS 1.0.0',
+      `${nameOf(LATEST)} Latest`,
+      nameOf(OLDER),
     ]);
-    await expect(page.getByRole('heading', { level: 2, name: 'Local TTS 2.0.0' })).toBeVisible();
-    await expect(page.getByText('October 19, 2026 · released as Local TTS')).toBeVisible();
+    await expect(page.getByRole('heading', { level: 2, name: nameOf(LATEST) })).toBeVisible();
+    const releasedAs = LATEST.publishedAs ? ` · released as ${LATEST.publishedAs}` : '';
+    await expect(page.getByText(`${formatDate(LATEST.date)}${releasedAs}`).first()).toBeVisible();
     await expect(
       page.getByRole('link', { name: 'Release page and downloads on GitHub' }),
-    ).toHaveAttribute('href', 'https://github.com/carsonmcrae/ttsnative/releases/tag/v2.0.0');
+    ).toHaveAttribute(
+      'href',
+      `https://github.com/carsonmcrae/ttsnative/releases/tag/v${LATEST.version}`,
+    );
     await expect(page.getByText('This is the latest release')).toBeVisible();
     // No installer is published in a local build, so none is offered.
     await expect(page.getByRole('link', { name: /Download TTSNative/ })).toHaveCount(0);
     expect(await seriousViolations(page)).toEqual([]);
-    await page.getByRole('link', { name: 'Older: Local TTS 1.0.0' }).click();
-    await expect(page).toHaveURL(`${BASE}/releases/1.0.0/`);
-    await expect(page).toHaveTitle('Local TTS 1.0.0 · Release history · TTSNative');
-    await expect(page.getByRole('heading', { level: 2, name: 'Local TTS 1.0.0' })).toBeVisible();
-    await expect(page.getByText('No older releases')).toBeVisible();
-    await expect(versions.getByRole('link', { name: 'Local TTS 1.0.0' })).toHaveAttribute(
+    await page.getByRole('link', { name: `Older: ${nameOf(OLDER)}` }).click();
+    await expect(page).toHaveURL(`${BASE}/releases/${OLDER.version}/`);
+    await expect(page).toHaveTitle(`${nameOf(OLDER)} · Release history · TTSNative`);
+    await expect(page.getByRole('heading', { level: 2, name: nameOf(OLDER) })).toBeVisible();
+    await expect(versions.getByRole('link', { name: nameOf(OLDER) })).toHaveAttribute(
       'aria-current',
       'page',
     );
-    await page.getByRole('link', { name: 'Newer: Local TTS 2.0.0' }).click();
-    await expect(page).toHaveURL(`${BASE}/releases/2.0.0/`);
-    await expect(page.getByRole('heading', { level: 2, name: 'Local TTS 2.0.0' })).toBeVisible();
+    await page.getByRole('link', { name: `Newer: ${nameOf(LATEST)}` }).click();
+    await expect(page).toHaveURL(`${BASE}/releases/${LATEST.version}/`);
+    await expect(page.getByRole('heading', { level: 2, name: nameOf(LATEST) })).toBeVisible();
+    await page.goto(`${BASE}/releases/${OLDEST.version}/`);
+    await expect(page.getByText('No older releases')).toBeVisible();
   });
 
   test('the home page names the latest version and links to its notes', async ({ page }) => {
     await page.goto(`${BASE}/`);
     await expect(
-      page.getByRole('contentinfo').getByRole('link', { name: 'Version 2.0.0' }),
-    ).toHaveAttribute('href', `${BASE}/releases/2.0.0/`);
+      page.getByRole('contentinfo').getByRole('link', { name: `Version ${LATEST.version}` }),
+    ).toHaveAttribute('href', `${BASE}/releases/${LATEST.version}/`);
     // A shortened address still shows the latest release.
     await page.goto(`${BASE}/releases/`);
-    await expect(page.getByRole('heading', { level: 2, name: 'Local TTS 2.0.0' })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 2, name: nameOf(LATEST) })).toBeVisible();
   });
 
   test('the permanent download address says plainly when no installer is published', async ({
@@ -285,7 +304,7 @@ test.describe('website @site @cross-browser', () => {
 test.describe('website on phones @mobile', () => {
   // The home page (its install commands scroll sideways, so keyboards must be able to reach them),
   // the release history and one version's own page.
-  for (const path of ['/', '/releases.html', '/releases/1.0.0/']) {
+  for (const path of ['/', '/releases.html', `/releases/${OLDEST.version}/`]) {
     test(`${path} fits the screen and passes axe`, async ({ page }) => {
       await page.goto(`${BASE}${path}`);
       const overflow = await page.evaluate(

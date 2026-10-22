@@ -32,6 +32,14 @@ a narration voice from a recording of yourself, with your consent built in.
 
 TTSNative is free and open source (MIT). It was called **Local TTS** until version 2.0.
 
+**Which version has what.** The newest published release is
+[2.0.0](https://github.com/carsonmcrae/ttsnative/releases/tag/v2.0.0), run from source: the reader
+(PDF, DOCX, EPUB, Markdown, TXT), the 54 built-in voices, quick custom voices and MP3 or WAV export.
+This page describes the code on `main`, which a source install runs today. Most of what it adds,
+including the Windows installer, arrives in a published release with **2.1.0**
+([its notes](docs/releases/2.1.0.md)); sound effects come with **2.2.0**. Each version's
+[release notes](docs/releases/) say exactly what it has.
+
 <p align="center">
   <a href="https://ttsnative.com/#overview"><img src="docs/media/ttsnative-promo-poster.webp" alt="TTSNative showcase video: any document, read aloud" width="860" /></a>
   <br />
@@ -57,7 +65,7 @@ TTSNative is free and open source (MIT). It was called **Local TTS** until versi
   announcement, a phone call or a radio broadcast, give each character a voice (reusable cast presets), or
   choose one voice for all dialogue while the narration keeps yours; exports sound the same. Blend built-in
   voices into new ones.
-- **Background music and an audio mixer** — eleven free tracks (ambient, fantasy, cinematic, lo-fi, focus and
+- **Background music and an audio mixer** — seventeen free tracks (ambient, fantasy, cinematic, lo-fi, focus and
   nature) play quietly under the narration when you turn them on, never by themselves; the narration and the
   music each have their own volume.
 - **Sound effects (optional, off by default)** — a Sounds tab suggests a few effects where a chapter
@@ -82,16 +90,20 @@ TTSNative is free and open source (MIT). It was called **Local TTS** until versi
 - **Private by design** — binds to `127.0.0.1`, works offline after setup, and never sends documents or
   recordings anywhere.
 - **Phones and tablets (optional)** — pair a phone on the same Wi-Fi to read and listen from it; the computer
-  does the reading.
+  does the reading, and voices are created on the computer
+  ([what works where](docs/wiki/What-Works-Where.md)).
 - Light and dark themes, high contrast, wider letter spacing, responsive layout for phones and tablets,
   accessible controls (WCAG 2.2 AA target, axe-checked).
 
 ## Quick start
 
 **Windows 11:** from version 2.1.0, releases include a Windows installer: no developer tools needed,
-updates arrive in the app, and your data stays in your user folder. Download it from
-**[ttsnative.com/download](https://ttsnative.com/download/)** (it always points at the newest
-installer once a release with it is out), and see the [Windows app guide](docs/wiki/Windows-App.md).
+the default voice is included, updates arrive in the app, and your data stays in your user folder.
+**It isn't published yet**: until 2.1.0 is released,
+**[ttsnative.com/download](https://ttsnative.com/download/)** says so and points to the source install;
+afterwards it always points at the newest installer. The installer isn't code-signed yet, so Windows
+SmartScreen warns before it runs; updates are checked against the project's own update signature. See
+the [Windows app guide](docs/wiki/Windows-App.md).
 
 **From source** (Windows, macOS, Linux, and for development): you need **Node.js 22.22 or newer** and Git. That's all — the first run installs everything else inside
 this folder.
@@ -112,12 +124,12 @@ Nothing is installed system-wide. To remove everything, delete the folder.
 
 ## Requirements
 
-|         | Basic reader (Kokoro)     | Voice cloning (Chatterbox, optional)                                          |
-| ------- | ------------------------- | ----------------------------------------------------------------------------- |
-| Disk    | ~0.7 GB (runtime + model) | +8 GB with NVIDIA CUDA (measured); about +4.5 GB CPU-only (estimated)         |
-| Memory  | ~1 GB while speaking      | 4 GB+ RAM; 4 GB+ VRAM with a GPU                                              |
-| GPU     | Not needed                | Recommended (NVIDIA or Apple Silicon); CPU works but is slower than real time |
-| Network | First run only            | One-time download from Settings                                               |
+|         | Basic reader (Kokoro)                                                                                    | Voice cloning (Chatterbox, optional)                                          |
+| ------- | -------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| Disk    | ~0.7 GB from source (runtime + model); Windows app: about 1.5 GB free to install, about 600 MB installed | +8 GB with NVIDIA CUDA (measured); about +4.5 GB CPU-only (estimated)         |
+| Memory  | ~1 GB while speaking                                                                                     | 4 GB+ RAM; 4 GB+ VRAM with a GPU                                              |
+| GPU     | Not needed                                                                                               | Recommended (NVIDIA or Apple Silicon); CPU works but is slower than real time |
+| Network | First run from source only; none for the Windows app                                                     | One-time download from Settings                                               |
 
 ## Supported formats
 
@@ -135,13 +147,13 @@ Limits (configurable): 25 MB per file, 2 million characters, 2,000 PDF pages.
 
 ## Platforms
 
-| Platform               | Status                                                                                                                                                        |
-| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Windows 11             | ✅ Fully tested: setup, unit/integration tests, real inference, Playwright (Chromium, Firefox, WebKit, mobile emulation)                                      |
-| macOS, Linux           | Server unit and API tests run in CI on Ubuntu 24.04, Windows 2025 and macOS 15 (web tests on Ubuntu). The full app was not manually tested on macOS or Linux. |
-| Chrome / Edge, Firefox | ✅ End-to-end tested                                                                                                                                          |
-| Safari                 | Tested with Playwright's WebKit build (Windows); not verified on real Apple hardware                                                                          |
-| Phones                 | Layout and playback tested with Pixel 7 and iPhone 13 emulation; see [LAN access](docs/guides/lan-access.md) to try it on a real phone                        |
+| Platform                | Status                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Windows 11, Windows app | Not published yet (first in 2.1.0). Every change to it is built and tested by CI on GitHub's Windows Server 2025 runners: an installer smoke test (silent install, real speech, an MP3 export, every page), data kept across a close and a crash, and the update path (a bad signature or broken download refused, a verified update installed). The interactive installer and SmartScreen prompt still need a check by hand ([details](docs/guides/windows-app-testing.md)). |
+| Windows, macOS, Linux   | From source. Server unit and API tests run in CI on Ubuntu 24.04, Windows Server 2025 and macOS 15; web tests and the Playwright journeys on Ubuntu. The full app was not manually tested on macOS or Linux.                                                                                                                                                                                                                                                                  |
+| Chrome / Edge, Firefox  | ✅ End-to-end tested                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| Safari                  | Tested with Playwright's WebKit build; not verified on real Apple hardware                                                                                                                                                                                                                                                                                                                                                                                                    |
+| Phones                  | Layout and playback tested with Pixel 7 and iPhone 13 emulation; see [LAN access](docs/guides/lan-access.md) to try it on a real phone and [what works where](docs/wiki/What-Works-Where.md)                                                                                                                                                                                                                                                                                  |
 
 ## Voices and models
 
@@ -167,8 +179,9 @@ watermark.
 
 ## Documentation
 
-- **[User guide (wiki)](https://github.com/carsonmcrae/ttsnative/wiki)**: installation, reading documents, voices, Voice Studio, exporting,
-  settings, keyboard shortcuts, troubleshooting and FAQ.
+- **[User guide (wiki)](https://github.com/carsonmcrae/ttsnative/wiki)**: installation, the Windows app, reading documents, voices, Voice
+  Studio, exporting, settings, phones, [what works where](docs/wiki/What-Works-Where.md), keyboard shortcuts,
+  troubleshooting and FAQ.
 - **Reference ([docs/](docs/))**: [architecture](docs/architecture/overview.md),
   [configuration](docs/guides/configuration.md), [security](docs/security/threat-model.md),
   [testing](docs/guides/testing.md), [releases](docs/guides/release-process.md), the
@@ -182,7 +195,8 @@ watermark.
 ## Privacy
 
 No telemetry, analytics or accounts (ONNX Runtime's default telemetry is switched off). Documents,
-recordings and generated audio stay in the `data/` folder. The only network requests are the downloads
+recordings and generated audio stay in the `data/` folder (in the Windows app,
+`%LOCALAPPDATA%\com.ttsnative.desktop\data`). The only network requests are the downloads
 you start (setup and optional engines) from GitHub, PyPI, npm and Hugging Face, using pinned URLs with
 checksums (like any download, those hosts see your IP address), a web page you choose to import, an
 export you choose to send to your own Audiobookshelf server and, in the Windows app, a check of GitHub
@@ -203,7 +217,9 @@ Releases for a new official version at most twice a day (you can turn it off). A
 
 A React + TypeScript app talks to one local FastAPI service. Documents are parsed in a sandboxed
 subprocess and split into sentences; each sentence is synthesised on demand, cached by content hash and
-streamed to the browser, which plays it and highlights the matching text. Details:
+streamed to the browser, which plays it and highlights the matching text. The Windows app is a small
+window around the same UI and server, with its own Python and the default voice model bundled; paired
+phones use the same server over the home network. Details:
 [architecture](docs/architecture/overview.md) · [decisions](docs/architecture/decisions.md) ·
 [open-source evaluation](docs/research/open-source-evaluation.md) · [legacy audit](docs/architecture/legacy-audit.md).
 
@@ -220,9 +236,10 @@ streamed to the browser, which plays it and highlights the matching text. Detail
 | `npm run media:demo` · `media:promo`           | Re-record the demo video · re-render the showcase video   |
 | `npm run change -- <bump>`                     | Start the change file every pull request needs            |
 | `npm run release:status` · `release:prepare`   | Next version from the change files · prepare a release    |
+| `npm run release:gate -- X.Y.Z`                | Whether a commit passes the release readiness gate        |
 | `npm run desktop:build`                        | Build the Windows installer (needs Rust + MSVC)           |
 
-See [CONTRIBUTING.md](CONTRIBUTING.md), [testing](docs/guides/testing.md),
+See [CONTRIBUTING.md](CONTRIBUTING.md), [AGENTS.md](AGENTS.md), [testing](docs/guides/testing.md),
 [configuration](docs/guides/configuration.md), [performance](docs/guides/performance.md) and
 [troubleshooting](docs/guides/troubleshooting.md).
 

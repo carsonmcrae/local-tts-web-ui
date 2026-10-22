@@ -55,6 +55,27 @@ If anything fails, nothing is published; fix the cause and run the workflow agai
 (**Actions → Release → Run workflow**). A published version is never replaced or reused, and tags
 matching `v*` are protected.
 
+## Readiness gate
+
+Pull requests passing one by one doesn't prove the combined `main` works, so from 2.2.0 the Release
+workflow refuses a tag whose commit hasn't passed its own gate (`npm run release:gate -- X.Y.Z` shows the
+same result locally before you tag):
+
+| Requirement                                                                      | Evidence the gate reads                                                                                                                            |
+| -------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Every change declared its effect on each surface; surfaces and docs were updated | The change files' surface declarations, checked against each pull request (`check-changes.mjs`)                                                    |
+| Version, change files and finished notes agree                                   | `check-version.mjs`, `check-changes.mjs`                                                                                                           |
+| Tests, 100 % coverage, no duplication, security audits, the website build        | The **CI** workflow passed on the release commit                                                                                                   |
+| The installer is built from these assets and works once installed                | The **Desktop** workflow passed on the commit: smoke test (the same web build at every page), persistence, update path                             |
+| Static analysis                                                                  | The **CodeQL** workflow passed on the commit                                                                                                       |
+| Real voices and the browser journeys (desktop and phone sizes)                   | The **Inference & E2E** workflow passed on the commit: run it by hand (**Actions → Inference & E2E → Run workflow** on `main`)                     |
+| SonarQube's quality gate                                                         | `docs/readiness/X.Y.Z/quality.json`, written by `npm run sonar:evidence` after a local scan of that commit                                         |
+| Manual checks identified and done; no open blocker                               | `docs/readiness/X.Y.Z/acceptance.md`: every `- [ ]` under **Manual checks** ticked, or `- [~] … waived: <reason>`; nothing open under **Blockers** |
+
+A workflow cancelled by a later merge counts as not passed: run it again on that commit. Recording the
+SonarQube result or ticking the acceptance list in a follow-up commit is fine: the gate accepts SonarQube
+evidence for a commit that differs from the release commit only under `docs/readiness/X.Y.Z/`.
+
 ### A pull request lands after the release branch was cut
 
 Its change file is still pending on `main` when the release pull request merges, so its change would
@@ -77,8 +98,8 @@ instead (`release:prepare`).
 
 These need the repository owner; none of them is in the repository.
 
-1. **Updater signing key.** A key pair was generated for this project on the maintainer's computer
-   (`C:\Users\wcars\.ttsnative-release\updater.key`, one line of base64 as Tauri writes it, with its
+1. **Updater signing key.** A key pair was generated for this project on the maintainer's computer, in
+   a folder outside the repository (`updater.key`, one line of base64 as Tauri writes it, with its
    password in `updater.key.password`); its public key is already in
    `apps/desktop/src-tauri/tauri.conf.json`, and the key id in both matches. Do not regenerate or rotate
    it without a reason (step 3 says when). _If you'd rather create your own key_, run
@@ -105,10 +126,10 @@ These need the repository owner; none of them is in the repository.
      somewhere offline (an encrypted drive). GitHub's environment secret is write-only and is not a
      backup. Keep the password apart from the key.
    - Check a backup before trusting it, without the key ever appearing on screen or in a history file.
-     In a fresh PowerShell window, from the repository:
+     In a fresh PowerShell window, from the repository, with `$keys` set to the folder holding the key:
      ```powershell
-     $env:TAURI_SIGNING_PRIVATE_KEY = (Get-Content -Raw C:\Users\wcars\.ttsnative-release\updater.key).Trim()
-     $env:TAURI_SIGNING_PRIVATE_KEY_PASSWORD = (Get-Content -Raw C:\Users\wcars\.ttsnative-release\updater.key.password).Trim()
+     $env:TAURI_SIGNING_PRIVATE_KEY = (Get-Content -Raw "$keys\updater.key").Trim()
+     $env:TAURI_SIGNING_PRIVATE_KEY_PASSWORD = (Get-Content -Raw "$keys\updater.key.password").Trim()
      Set-Content -Path "$env:TEMP\sign-check.txt" -Value "sign check"
      npx tauri signer sign "$env:TEMP\sign-check.txt"
      node scripts/release/verify-update-signature.mjs "$env:TEMP\sign-check.txt"

@@ -71,6 +71,30 @@ def strip_trailing_entries(record: bytes, flags: int) -> bytes:
     return record[:end]
 
 
+def _copy_literal(source: bytes, index: int, count: int, out: bytearray) -> int:
+    """Copy the ``count`` bytes at ``index`` to ``out`` as they are; returns the index after them."""
+    if index + count > len(source):
+        raise damaged()
+    out.extend(source[index : index + count])
+    return index + count
+
+
+def _copy_back(source: bytes, index: int, byte: int, out: bytearray) -> int:
+    """Repeat earlier output: ``byte`` and the byte at ``index`` hold 11 bits of distance and 3 of length.
+
+    Returns the index after the pair."""
+    if index >= len(source):
+        raise damaged()
+    pair = (byte << 8) | source[index]
+    distance, length = (pair >> 3) & 0x7FF, (pair & 7) + 3
+    if distance == 0 or distance > len(out):
+        raise damaged()
+    start = len(out) - distance
+    for offset in range(length):  # the copy may overlap the bytes it produces
+        out.append(out[start + offset])
+    return index + 1
+
+
 def decompress(source: bytes, limit: int) -> bytes:
     """Expand PalmDOC LZ77 data, refusing output longer than ``limit`` bytes."""
     out = bytearray()
@@ -80,26 +104,14 @@ def decompress(source: bytes, limit: int) -> bytes:
         byte = source[index]
         index += 1
         if 1 <= byte <= 8:  # copy the next 1 to 8 bytes literally
-            if index + byte > size:
-                raise damaged()
-            out += source[index : index + byte]
-            index += byte
+            index = _copy_literal(source, index, byte, out)
         elif byte < 0x80:  # a literal byte
             out.append(byte)
         elif byte >= 0xC0:  # a space followed by an ASCII character
             out += b" "
             out.append(byte ^ 0x80)
-        else:  # a back-reference: 11 bits of distance, 3 bits of length
-            if index >= size:
-                raise damaged()
-            pair = (byte << 8) | source[index]
-            index += 1
-            distance, length = (pair >> 3) & 0x7FF, (pair & 7) + 3
-            if distance == 0 or distance > len(out):
-                raise damaged()
-            start = len(out) - distance
-            for offset in range(length):  # the copy may overlap the bytes it produces
-                out.append(out[start + offset])
+        else:  # a back-reference
+            index = _copy_back(source, index, byte, out)
         if len(out) > limit:
             raise DocumentExtractionError("The book is too large once decompressed.", code="archive_limits")
     return bytes(out)

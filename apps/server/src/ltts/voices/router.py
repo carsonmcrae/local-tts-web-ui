@@ -36,6 +36,7 @@ from ltts.voices.tuning import SAMPLE_TEXTS, Arm
 router = APIRouter(prefix="/api/voice-profiles", tags=["voice studio"])
 ProfileId = Annotated[str, Path(pattern=r"^[0-9a-f]{32}$")]
 MAX_REFERENCE_BYTES = 20 * MB
+WAV_MEDIA_TYPE = "audio/wav"  # recordings and samples played back in the studio
 
 
 class ProfileUpdate(ApiModel):
@@ -101,7 +102,7 @@ async def analyze_recording(request: Request, services: ServicesDep) -> Recordin
         target.unlink(missing_ok=True)
 
 
-@router.post("/cleanup-preview", response_class=Response, responses={200: {"content": {"audio/wav": {}}}})
+@router.post("/cleanup-preview", response_class=Response, responses={200: {"content": {WAV_MEDIA_TYPE: {}}}})
 async def preview_cleanup(request: Request, services: ServicesDep, cleanup: CleanupDep) -> Response:
     """A recording with a cleanup applied, as WAV, to compare with the original."""
     target = await receive_upload(request, services)
@@ -109,7 +110,7 @@ async def preview_cleanup(request: Request, services: ServicesDep, cleanup: Clea
         audio = await run_in_threadpool(services.voices.cleanup_preview, target, cleanup)
     finally:
         target.unlink(missing_ok=True)
-    return Response(content=audio, media_type="audio/wav")
+    return Response(content=audio, media_type=WAV_MEDIA_TYPE)
 
 
 @router.post("", status_code=201)
@@ -190,7 +191,7 @@ def tuning_sample(
     services: ServicesDep,
 ) -> FileResponse:
     """A comparison sentence read by the voice as it is (``current``) or with the waiting fine-tune (``tuned``)."""
-    return FileResponse(services.tuning.sample_path(profile_id, arm, index), media_type="audio/wav")
+    return FileResponse(services.tuning.sample_path(profile_id, arm, index), media_type=WAV_MEDIA_TYPE)
 
 
 @router.post("/{profile_id}/tuning/keep")
@@ -228,7 +229,7 @@ def export_voice(profile_id: ProfileId, services: ServicesDep, confirm: Annotate
 @router.get("/{profile_id}/reference", response_class=FileResponse)
 def reference_audio(profile_id: ProfileId, services: ServicesDep) -> FileResponse:
     services.voices.get(profile_id)
-    return FileResponse(services.voices.reference_path(profile_id), media_type="audio/wav")
+    return FileResponse(services.voices.reference_path(profile_id), media_type=WAV_MEDIA_TYPE)
 
 
 @router.delete("/{profile_id}", status_code=204)

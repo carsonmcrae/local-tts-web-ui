@@ -136,7 +136,7 @@ def compare(
 ) -> list[dict[str, float | str | None]]:
     """Write a blind comparison of ``voices`` (A, B) into ``folder``; returns each clip's measurements."""
     folder.mkdir(parents=True, exist_ok=True)
-    shuffle = random.Random(seed)  # noqa: S311 - only hides which voice is X, for listening
+    shuffle = random.Random(seed)  # noqa: S311 - only hides which voice is X from the listener
     clips: list[Clip] = []
     key: dict[str, dict[str, str]] = {}
     for pair, text in enumerate(sentences, start=1):

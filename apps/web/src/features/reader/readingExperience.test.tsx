@@ -6,8 +6,9 @@
  *   suggested voice (given to the player on request), music recommendation (named from the music
  *   library, chosen for this device by "Use this track" or by Immersive, never turned on, and a track
  *   this version lacks is said so) and characters with the voice each gets or "not installed";
- *   Immersive offered only once effects are available; choosing Multi-voice applies the voice
- *   components, choosing Standard removes them; an error is shown and the choice can be made again.
+ *   Immersive offered only once every component is available; the effects line before and after
+ *   placing; choosing Multi-voice applies the voice components, choosing Standard removes them; an
+ *   error is shown and the choice can be made again.
  * Does NOT belong: The server's preset logic or the reader page around it (reader.test.tsx).
  */
 import { screen, waitFor, within } from '@testing-library/react';
@@ -44,6 +45,7 @@ const report = (applied: string[] = [], available = false): ReadingPreset => ({
   speakersResolved: 8,
   speakersUnresolved: 0,
   effects: 5,
+  effectsPlaced: applied.includes('effects') ? 4 : 0,
   music: { trackId: 'gymnopedie-1', volume: 10, note: 'Light piano.' },
   editionMatches: true,
   components: [
@@ -117,6 +119,7 @@ describe('Reading experience', () => {
       ...report([], true),
       narrator: null,
       music: null,
+      effects: 0,
       characters: [],
       editionMatches: false,
     };
@@ -133,6 +136,7 @@ describe('Reading experience', () => {
     expect(within(chooser).queryByText('Suggested reading voice')).not.toBeInTheDocument();
     expect(within(chooser).getByText(/different edition/)).toBeInTheDocument();
     expect(within(chooser).queryByText(/is recommended/)).not.toBeInTheDocument();
+    expect(within(chooser).queryByText(/Sounds panel/)).not.toBeInTheDocument();
     expect(within(chooser).queryByRole('list')).not.toBeInTheDocument();
     await user.click(within(chooser).getByRole('radio', { name: /Immersive/ }));
     await user.click(within(chooser).getByRole('radio', { name: /Multi-voice/ })); // while the first is pending
@@ -162,6 +166,11 @@ describe('Reading experience', () => {
     ).toBeInTheDocument();
     expect(
       within(chooser).getByText('Light piano. Music stays off until you turn it on in the player.'),
+    ).toBeInTheDocument();
+    expect(
+      within(chooser).getByText(
+        '5 for the Sounds panel. They stay off until you turn them on in the player.',
+      ),
     ).toBeInTheDocument();
     const characters = within(chooser).getByRole('list', { name: 'Characters in this experience' });
     expect(
@@ -200,6 +209,9 @@ describe('Reading experience', () => {
     const { user, onChanged } = renderChooser();
     const chooser = await region();
     expect(within(chooser).getByRole('radio', { name: /Immersive/ })).toBeChecked();
+    expect(within(chooser).getByText(/4 of 5 placed in the Sounds panel/)).toHaveTextContent(
+      /The others were left out, for example where a sentence already has your own effect or the sound is still experimental/,
+    );
     expect(within(chooser).getAllByText(/not installed here/)).toHaveLength(2); // narrator and Rabbit
     expect(
       within(chooser).queryByRole('button', { name: 'Use this voice' }),

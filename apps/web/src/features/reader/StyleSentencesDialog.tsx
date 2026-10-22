@@ -36,11 +36,27 @@ import { TakePicker } from './TakePicker';
 const KEEP = '__keep__';
 const NONE = '__none__';
 type Shared = 'voiceId' | 'effect' | 'sound' | 'style' | 'pauseMs';
+type Choices = Readonly<Record<Shared, string>>;
 
 /** The value all ``styles`` share for ``field`` (NONE when unset), or KEEP when they differ. */
 function shared(styles: SentenceStyle[], field: Shared): string {
   const values = new Set(styles.map((style) => (style[field] ?? NONE).toString()));
   return values.size === 1 ? [...values][0]! : KEEP;
+}
+
+/** Only what the reader changed is sent, so nothing else about these sentences is touched. */
+function changes(values: Choices, initial: Choices): Omit<SentenceStyleChange, 'indexes'> {
+  const chosen = (value: string) => (value === NONE ? null : value);
+  const changed = (field: Shared) => values[field] !== KEEP && values[field] !== initial[field];
+  return {
+    ...(changed('voiceId') ? { voiceId: chosen(values.voiceId) } : {}),
+    ...(changed('effect') ? { effect: chosen(values.effect) as SoundEffect | null } : {}),
+    ...(changed('sound') ? { sound: chosen(values.sound) as VoiceSound | null } : {}),
+    ...(changed('style') ? { style: chosen(values.style) as SpeakingStyle | null } : {}),
+    ...(changed('pauseMs')
+      ? { pauseMs: values.pauseMs === NONE ? null : Number(values.pauseMs) }
+      : {}),
+  };
 }
 
 export function voiceLabel(voice: VoiceInfo): string {
@@ -138,18 +154,6 @@ export function StyleSentencesDialog({
         },
       },
     );
-  const chosen = (value: string) => (value === NONE ? null : value);
-  // Only what the reader changed is sent, so nothing else about these sentences is touched.
-  const changed = (field: Shared) => values[field] !== KEEP && values[field] !== initial[field];
-  const change = {
-    ...(changed('voiceId') ? { voiceId: chosen(values.voiceId) } : {}),
-    ...(changed('effect') ? { effect: chosen(values.effect) as SoundEffect | null } : {}),
-    ...(changed('sound') ? { sound: chosen(values.sound) as VoiceSound | null } : {}),
-    ...(changed('style') ? { style: chosen(values.style) as SpeakingStyle | null } : {}),
-    ...(changed('pauseMs')
-      ? { pauseMs: values.pauseMs === NONE ? null : Number(values.pauseMs) }
-      : {}),
-  };
   const cleared = {
     voiceId: null,
     effect: null,
@@ -191,7 +195,11 @@ export function StyleSentencesDialog({
             <Button variant="ghost" onClick={onClose}>
               Cancel
             </Button>
-            <Button variant="primary" loading={save.isPending} onClick={() => apply(change)}>
+            <Button
+              variant="primary"
+              loading={save.isPending}
+              onClick={() => apply(changes(values, initial))}
+            >
               Apply
             </Button>
           </div>

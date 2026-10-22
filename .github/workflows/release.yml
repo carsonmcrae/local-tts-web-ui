@@ -1,7 +1,9 @@
 # Purpose: Publish a verified GitHub Release when the maintainer pushes a version tag (vX.Y.Z).
 # Scope: Refuses a tag that isn't on main, doesn't match the version files, has unconsumed change files,
-#   lacks finished user-facing notes (docs/releases/X.Y.Z.md) or a dated CHANGELOG entry, or was already
-#   published; runs the full check suite; builds the Windows installer signed for updates (and with
+#   lacks finished user-facing notes (docs/releases/X.Y.Z.md) or a dated CHANGELOG entry, was already
+#   published, or whose commit fails the readiness gate (scripts/release/gate.mjs: CI, Desktop, CodeQL
+#   and the browser journeys passed on it, SonarQube's gate recorded for it, every manual check done
+#   and no blocker open); runs the full check suite; builds the Windows installer signed for updates (and with
 #   Authenticode when its secrets exist), proves the update signature matches the app's public key and
 #   smoke-tests the installer on a clean runner; packages the source, the prebuilt web UI, the
 #   corresponding source of the installer's GPL/LGPL parts, SBOMs and
@@ -45,6 +47,9 @@ jobs:
   verify:
     name: Verify, check and package
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      actions: read # the readiness gate reads which workflows passed on the release commit
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -75,6 +80,11 @@ jobs:
             || { echo "::error::The 'release' environment is missing or unreadable (Settings → Environments); see docs/guides/release-process.md"; exit 1; }
           echo "$rules" | grep -q required_reviewers \
             || { echo "::error::The 'release' environment has no required reviewer, so a release build would start without a person approving it"; exit 1; }
+      - name: The release commit passed its own readiness gate (workflows, SonarQube, acceptance)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        # Individual pull requests passing isn't enough: the combined commit must pass as a whole.
+        run: node scripts/release/gate.mjs "${TAG#v}" --commit "$(git rev-list -n 1 "$TAG")"
       - name: Bootstrap (verified uv download, Python 3.12, locked deps)
         run: node scripts/setup.mjs
       - run: npm run check
@@ -116,7 +126,8 @@ jobs:
       - uses: ./.github/actions/rust
         with:
           cache-name: release
-          runtime-cache: 'true'
+          # A release downloads and verifies the bundled Python and models afresh, never from a cache.
+          runtime-cache: 'false'
       - name: Build the installer
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
@@ -200,4 +211,4 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
-        run: gh workflow run pages.yml --ref main
+        run: gh workflow run pages.yml --ref main -f expect_installer="${TAG#v}"

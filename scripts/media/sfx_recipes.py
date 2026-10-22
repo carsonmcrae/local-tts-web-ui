@@ -435,3 +435,17 @@ SOUNDS: list[tuple[str, Callable[[], Signal], str, str, str, list[str], list[str
     ("city-distant", city_distant, "A city in the distance", "ambience", "Far-off traffic and a horn.", ["city", "traffic", "street", "town", "night"], ["city-distant"], True, 0.35),
     ("machine-hum", machine_hum, "Humming machinery", "mechanical", "A steady electrical hum with a faint tick.", ["machine", "engine", "hum", "generator", "factory"], ["machine-hum"], True, 0.35),
 ]  # fmt: skip
+
+# Sounds the synthesis cannot make credible yet (organic sources: animals, voices, glass, steel). They stay
+# in the library for a reader to add by hand, marked experimental, and are never suggested. To promote one
+# after listening (docs/research/sound-effects-listening.html), delete its line here and rebuild.
+EXPERIMENTAL: dict[str, str] = {
+    "dog-bark": "A filtered burst stands in for a bark; a real dog's formants and texture are not synthesised.",
+    "owl": "Two tones with vibrato; a real hoot has breath and resonance this lacks.",
+    "wolf-howl": "A sliding tone over noise; a real howl's timbre is not synthesised.",
+    "horse-hooves": "Clicks on a rhythm; real hooves on ground have a body this lacks.",
+    "birdsong": "Chirped sine phrases; real birdsong is richer and less regular.",
+    "crowd-murmur": "Modulated noise with no voices in it, so it reads as a wash rather than people.",
+    "glass-break": "A noise burst with ringing partials; real glass has sharper, denser shards.",
+    "sword-clash": "Ringing metallic partials; real steel on steel is brighter and more complex.",
+}

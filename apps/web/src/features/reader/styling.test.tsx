@@ -5,15 +5,16 @@
  * Scope: Styled sentences are marked and described; selecting text offers "Voice & effect" (floating
  *   beside the selection), whose dialog sends the choices for the selected sentences, keeps what
  *   differs, clears choices one by one or all at once, asks for takes in the chosen voice, marks the
- *   kept take and reports refusals; a click on selected text doesn't start playback; the pure
- *   selection helper finds the sentences a selection touches.
+ *   kept take and reports refusals; "Sound effect" places a picked sound at the first selected
+ *   sentence (a loop across all of them) and reports a refusal; a click on selected text doesn't
+ *   start playback; the pure selection helper finds the sentences a selection touches.
  * Does NOT belong: The cast dialog (cast.test.tsx), reading, bookmarks or search (reader.test.tsx,
  *   search.test.tsx).
  */
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { mockReaderApi, renderWithApp } from '@/test/render';
+import { mockReaderApi, renderWithApp, soundLibrary } from '@/test/render';
 import {
   openStyledReader,
   refused,
@@ -152,6 +153,76 @@ async function moreOptionsForSentence2() {
   await user.click(within(dialog).getByText('More options'));
   return { user, dialog };
 }
+
+describe('A sound effect for the selection', () => {
+  const EFFECTS = `/api/documents/${doc.id}/sound-effects`;
+  /** Selects sentences 2 to `last`, opens the sound library from the floating button and picks `name`. */
+  async function pickSound(last: string, name: string, extra: Record<string, unknown> = {}) {
+    const api = openStyledReader(styles(), {
+      [`POST ${EFFECTS}`]: () => ({}),
+      ...extra,
+    });
+    const user = userEvent.setup();
+    await screen.findByText('Sentence 2.', { selector: '.reader-seg' });
+    selectSentences(sentence('Sentence 2.'), sentence(last));
+    await user.click(await screen.findByRole('button', { name: 'Sound effect' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Add a sound effect' });
+    const row = (await within(dialog).findByText(name)).closest('li') as HTMLElement;
+    // What the library said before the pick: a placed sound closes it.
+    const said = dialog.textContent;
+    await user.click(within(row).getByRole('button', { name: 'Use' }));
+    return { ...api, dialog, said };
+  }
+  const placed = (calls: { method: string; path: string; body?: unknown }[]) =>
+    JSON.parse(String(calls.find((call) => call.method === 'POST' && call.path === EFFECTS)?.body));
+
+  it('places a one-off sound at the first selected sentence', async () => {
+    const { calls, said } = await pickSound('Sentence 3.', 'A heavy thud');
+    expect(said).toMatch(/at the start of the first selected sentence.*in the audio mixer/);
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    expect(placed(calls)).toEqual({
+      segmentIndex: 1,
+      soundId: 'thud',
+      position: 0,
+      offsetMs: 0,
+      untilSegment: null,
+    });
+  });
+
+  it('marks a sound that is experimental, and says why', async () => {
+    const experimental = {
+      ...soundLibrary,
+      sounds: soundLibrary.sounds.map((sound) =>
+        sound.id === 'thud'
+          ? { ...sound, experimental: true, qualityNote: 'Synthesised; nobody has listened yet.' }
+          : sound,
+      ),
+    };
+    const { said } = await pickSound('Sentence 2.', 'Light rain', {
+      'GET /api/sound-effects/library': experimental,
+    });
+    expect(said).toMatch(/A heavy thudExperimental.*Synthesised; nobody has listened yet\./);
+    expect(said).not.toMatch(/Light rainLoopsExperimental/);
+  });
+
+  it('lets a looping sound play across the whole selection', async () => {
+    const { calls } = await pickSound('Sentence 4.', 'Light rain');
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    expect(placed(calls)).toMatchObject({
+      segmentIndex: 1,
+      soundId: 'rain-light',
+      untilSegment: 3,
+    });
+  });
+
+  it('keeps the library open and says why a sound could not be placed', async () => {
+    const { dialog, said } = await pickSound('Sentence 2.', 'A heavy thud', {
+      [`POST ${EFFECTS}`]: refused('This document is being exported.'),
+    });
+    expect(said).toMatch(/at the start of this sentence/);
+    expect(await within(dialog).findByText('This document is being exported.')).toBeInTheDocument();
+  });
+});
 
 describe('More ways to shape a sentence', () => {
   it('sets a speaking style and a pause under More options', async () => {

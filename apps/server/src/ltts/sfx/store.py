@@ -4,14 +4,14 @@
 
 Scope: Rows in ``sound_effects`` (deleted with the document): a sentence and a position inside it,
 an offset, for ambience the sentence it lasts to, the event, the chosen sound and volume, who placed
-it (``suggested`` or ``manual``), its status (``suggested``, ``accepted``, ``dismissed``), whether it is
-enabled, the detector's confidence and a short hash of the sentence's text. Listing joins each effect
-to its sentence now and marks it stale when the text no longer matches. Adding and changing check the
-sound exists, the sentences exist, an ambience runs forward a bounded number of sentences, and the
-document's count. Analysing a section runs the detector, the validation gate and the intensity's
-restraint against what the document already has, replaces that section's unreviewed suggestions
-and records the analysis; accepted, dismissed and manual effects are never touched by it. Removing
-a suggestion keeps it as dismissed, so it does not come back.
+it (``suggested``, ``manual``, or ``preset`` for a reading experience), its status (``suggested``,
+``accepted``, ``dismissed``), whether it is enabled, the detector's confidence (or the experience's
+identity) and a short hash of the sentence's text (a listing marks an effect stale when it changed).
+Adding and changing check the sound and sentences exist, an ambience runs forward a bounded number
+of sentences, and the document's count. Analysing a section runs the detector, the gate and the
+intensity's restraint, replaces that section's unreviewed suggestions and records the analysis, and
+never touches accepted, dismissed, manual or preset effects. Removing a suggestion keeps it dismissed.
+An experience places its rows in one go, replacing its own and skipping occupied sentences.
 Does NOT belong: Detection (``detect.py``), the gate (``proposals.py``), sounds (``catalogue.py``), HTTP.
 """
 
@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import hashlib
 import sqlite3
+from collections.abc import Sequence
 from typing import Annotated, Any, Literal
 
 from pydantic import ConfigDict, Field
@@ -28,6 +29,7 @@ from ltts.db import Database
 from ltts.errors import AppError, ConflictError, NotFoundError
 from ltts.sfx import catalogue
 from ltts.sfx.detect import DETECTOR_VERSION, Sentence, detect
+from ltts.sfx.events import EVENT_IDS
 from ltts.sfx.proposals import LIMITS, Intensity, Placed, Proposal, choose, validate
 
 MAX_EFFECTS = 2_000  # per document
@@ -36,7 +38,7 @@ MAX_SPAN = 60  # sentences an ambience placed by hand may last
 MAX_REVIEW = 300  # effects accepted or dismissed in one request
 MIN_OFFSET_MS, MAX_OFFSET_MS = -1_500, 5_000
 MAX_VOLUME = 150
-Origin = Literal["suggested", "manual"]
+Origin = Literal["suggested", "manual", "preset"]
 Status = Literal["suggested", "accepted", "dismissed"]
 Id = Annotated[str, Field(pattern=r"^[0-9a-f]{32}$")]
 _COLUMNS = (
@@ -80,6 +82,26 @@ class EffectUpdate(ApiModel):
     until_segment: int | None = Field(default=None, ge=0)
     volume: int | None = Field(default=None, ge=0, le=MAX_VOLUME)
     enabled: bool | None = None
+
+
+class PresetEffectIn(ApiModel):
+    """One effect a reading experience places; its anchor is already resolved to a sentence of this document."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    segment_index: int = Field(ge=0)
+    event: str = Field(max_length=40)
+    sound_id: str | None = Field(default=None, pattern=catalogue.SOUND_ID)  # None: the event's default sound
+    position: float = Field(default=0.0, ge=0, le=1)
+    offset_ms: int = Field(default=0, ge=MIN_OFFSET_MS, le=MAX_OFFSET_MS)
+    until_segment: int | None = Field(default=None, ge=0)
+    volume: int = Field(ge=0, le=MAX_VOLUME)  # % of the effects volume, mapped from the preset's level already
+    loop: bool = False
+
+
+class PresetPlacement(ApiModel):
+    placed: list[str]  # the new rows' ids, in the order given
+    skipped: dict[str, int]  # rows not placed, by reason: occupied, experimental, invalid, limit
 
 
 class EffectOut(ApiModel):
@@ -182,6 +204,12 @@ def _sentence(conn: sqlite3.Connection, document_id: str, index: int) -> sqlite3
     return row
 
 
+def _require_end(sound: catalogue.SoundOut | None, until: int | None) -> None:
+    """An ambience (a looping sound) always has the sentence it lasts to; without one it would never stop."""
+    if sound is not None and sound.loop and until is None:
+        raise AppError("An ambience needs the sentence it lasts to.", code="effect_span")
+
+
 def _check_until(conn: sqlite3.Connection, document_id: str, index: int, until: int | None) -> None:
     if until is None:
         return
@@ -195,6 +223,31 @@ def _sound(sound_id: str) -> catalogue.SoundOut:
     if found is None:
         raise NotFoundError("That sound isn't in the library.", code="sound_not_found")
     return found
+
+
+def _preset_sound(row: PresetEffectIn) -> catalogue.SoundOut | None:
+    """The sound a preset row plays: its event must be known, and the sound must serve it and loop as the row says."""
+    if row.event not in EVENT_IDS:
+        return None
+    sound = catalogue.sound(row.sound_id) if row.sound_id else catalogue.default_sound(row.event)
+    if sound is None or row.event not in sound.events or sound.loop != row.loop:
+        return None
+    return sound
+
+
+def _preset_place(
+    conn: sqlite3.Connection, document_id: str, row: PresetEffectIn, sound: catalogue.SoundOut | None
+) -> tuple[sqlite3.Row | None, int | None]:
+    """The row's sentence and the sentence its ambience lasts to; (None, None) for a row the store would refuse."""
+    if sound is None or (sound.loop and row.until_segment is None):  # a loop needs an end, or it never stops
+        return None, None
+    try:
+        sentence = _sentence(conn, document_id, row.segment_index)
+        until = row.until_segment if sound.loop else None
+        _check_until(conn, document_id, row.segment_index, until)
+    except AppError:
+        return None, None
+    return sentence, until
 
 
 class SoundEffectStore:
@@ -212,6 +265,7 @@ class SoundEffectStore:
 
     def add(self, document_id: str, effect: EffectIn) -> EffectOut:
         sound = _sound(effect.sound_id)
+        _require_end(sound, effect.until_segment)
         with self._db.connect() as conn:
             _ensure_document(conn, document_id)
             sentence = _sentence(conn, document_id, effect.segment_index)
@@ -232,15 +286,22 @@ class SoundEffectStore:
         fields: dict[str, Any] = change.model_dump(exclude_unset=True, by_alias=False)
         with self._db.connect() as conn:
             row = self._row(conn, document_id, effect_id)
-            if "sound_id" in fields:
-                sound = _sound(fields["sound_id"])
-                if row["origin"] == "manual":
+            sound = _sound(fields["sound_id"]) if "sound_id" in fields else catalogue.sound(row["sound_id"])
+            if "sound_id" in fields and sound is not None:
+                if row["origin"] != "suggested":  # placed by hand or by an experience: the event follows the sound
                     fields["event"] = sound.events[0]
                 if not sound.loop:
                     fields["until_segment"] = None
+            if "sound_id" in fields or "until_segment" in fields:
+                # Only a change of sound or end is checked, so an older ambience saved without an end can still
+                # have its volume or position adjusted.
+                _require_end(sound, fields.get("until_segment", row["until_idx"]))
             if "until_segment" in fields:
                 _check_until(conn, document_id, row["segment_idx"], fields["until_segment"])
-            columns = {**_UPDATABLE, "event": "event"}
+            if row["origin"] == "preset":  # the reader's change makes the row theirs; the experience leaves it alone
+                fields["origin"] = "manual"
+                fields["detector"] = None
+            columns = {**_UPDATABLE, "event": "event", "origin": "origin", "detector": "detector"}
             assignments = [f"{columns[name]} = ?" for name in fields]
             values = [int(value) if isinstance(value, bool) else value for value in fields.values()]
             status = "accepted" if row["status"] == "suggested" else row["status"]
@@ -260,6 +321,59 @@ class SoundEffectStore:
                 )
             else:
                 conn.execute("DELETE FROM sound_effects WHERE id = ?", (effect_id,))
+
+    def apply_preset(
+        self, document_id: str, preset_id: str, version: int, rows: Sequence[PresetEffectIn]
+    ) -> PresetPlacement:
+        """Replace the document's preset rows with ``rows`` in one go.
+
+        The earlier preset rows go first, so two versions never mix. The reader's rows stay: manual ones,
+        accepted and dismissed suggestions, and preset rows they edited, which are manual by then. A sentence
+        that already carries an accepted row keeps it, and the preset's row for it is skipped.
+        """
+        placed: list[str] = []
+        skipped = {"occupied": 0, "experimental": 0, "invalid": 0, "limit": 0}
+        with self._db.connect() as conn:
+            _ensure_document(conn, document_id)
+            conn.execute("DELETE FROM sound_effects WHERE document_id = ? AND origin = 'preset'", (document_id,))
+            taken = {  # accepted rows only: an unreviewed suggestion on the sentence does not block the row
+                int(r["segment_idx"])
+                for r in conn.execute(
+                    "SELECT segment_idx FROM sound_effects WHERE document_id = ? AND status = 'accepted'",
+                    (document_id,),
+                )
+            }
+            room = MAX_EFFECTS - self._count(conn, document_id)
+            now = utc_now()
+            for row in rows:
+                sound = _preset_sound(row)
+                sentence, until = _preset_place(conn, document_id, row, sound)
+                if sound is None or sentence is None:
+                    skipped["invalid"] += 1
+                elif sound.experimental:  # left to the reader's own hand, never placed by an experience
+                    skipped["experimental"] += 1
+                elif row.segment_index in taken:
+                    skipped["occupied"] += 1
+                elif len(placed) >= room:
+                    skipped["limit"] += 1
+                else:
+                    effect_id = new_id()
+                    conn.execute(_INSERT, (
+                        effect_id, document_id, row.segment_index, row.position, row.offset_ms, until, row.event,
+                        sound.id, row.volume, "preset", "accepted", 1, None, text_hash(sentence["text"]),
+                        f"preset:{preset_id}@{version}", now, now,
+                    ))  # fmt: skip
+                    taken.add(row.segment_index)
+                    placed.append(effect_id)
+        return PresetPlacement(placed=placed, skipped=skipped)
+
+    def remove_preset(self, document_id: str) -> int:
+        """Delete the rows a reading experience placed and nothing else; a row the reader edited is manual by then."""
+        with self._db.connect() as conn:
+            deleted: int = conn.execute(
+                "DELETE FROM sound_effects WHERE document_id = ? AND origin = 'preset'", (document_id,)
+            ).rowcount
+        return deleted
 
     def review(self, document_id: str, review: ReviewIn) -> DocumentEffectsOut:
         now = utc_now()
@@ -287,7 +401,11 @@ class SoundEffectStore:
             rows = rows[:MAX_ANALYSED]
             first, last = rows[0]["idx"], rows[-1]["idx"]
             sentences = [Sentence(r["idx"], r["paragraph_idx"], r["kind"] == "heading", r["text"]) for r in rows]
-            found = validate(detect(sentences, limits.loop_sentences), first, last)
+            found = [
+                p
+                for p in validate(detect(sentences, limits.loop_sentences), first, last)
+                if catalogue.suggestable(p.event)
+            ]
             existing = [
                 Placed(r["segment_idx"], r["event"], r["until_idx"], r["status"] == "dismissed")
                 for r in conn.execute(

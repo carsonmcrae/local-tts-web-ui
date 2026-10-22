@@ -44,7 +44,10 @@ export function escapeHtml(text) {
 export function applyConditions(html, flags) {
   return html.replace(
     / *<!-- if:([a-z0-9.-]+) -->([\s\S]*?)<!-- \/if:\1 -->\n?/g,
-    (whole, name, body) => (name in flags ? (flags[name] ? body : '') : whole),
+    (whole, name, body) => {
+      if (!(name in flags)) return whole; // undecided here: left for a later pass
+      return flags[name] ? body : '';
+    },
   );
 }
 
@@ -78,6 +81,42 @@ export function dropUnreleased(html) {
  */
 export function keepUnreleased(html) {
   return html.replace(/<!-- if:(released-[0-9.]+) -->([\s\S]*?)<!-- \/if:\1 -->/g, '$2');
+}
+
+const HEAD_MARK = '<!-- head:shared -->';
+
+/**
+ * The partial without the header comment it opens with (its Purpose and Scope, like every file here).
+ * Only that first comment is cut, by position, so the rest of the partial goes in exactly as written.
+ * @param {string} shared
+ */
+function partialBody(shared) {
+  const text = shared.trimStart();
+  if (!text.startsWith('<!--')) return text;
+  const end = text.indexOf('-->');
+  if (end === -1) throw new Error('site/partials/head.html: the header comment is never closed.');
+  return text.slice(end + '-->'.length);
+}
+
+/**
+ * Puts the head every page shares (site/partials/head.html: social image, card type, theme colours,
+ * icons, stylesheets) where a page says `<!-- head:shared -->`, indented like the mark, with `%ROOT%`
+ * pointing at the site root from that page's folder so a local build opens from disk at any depth.
+ * A page without the mark (404.html) is left alone.
+ * @param {string} html
+ * @param {string} shared the partial
+ * @param {string} page the page's path in the site, e.g. releases/2.0.0/index.html
+ */
+export function fillHead(html, shared, page) {
+  const at = html.indexOf(HEAD_MARK);
+  if (at === -1) return html;
+  const indent = /[ \t]*$/.exec(html.slice(0, at))?.[0] ?? '';
+  const root = '../'.repeat(page.split('/').length - 1);
+  const lines = partialBody(shared)
+    .trim()
+    .split('\n')
+    .map((line) => line.replaceAll('%ROOT%', root));
+  return html.replace(HEAD_MARK, lines.join(`\n${indent}`));
 }
 
 /**

@@ -174,7 +174,7 @@ export function FolderDialog({
         {
           id: folder.id,
           name: trimmed,
-          ...(target !== folder.parentId ? { parentId: target } : {}),
+          ...(target === folder.parentId ? {} : { parentId: target }),
         },
         { onSuccess: onClose },
       );

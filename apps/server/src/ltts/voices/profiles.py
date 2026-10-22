@@ -35,6 +35,7 @@ from ltts.common import ApiModel, new_id, utc_now
 from ltts.config import Settings
 from ltts.db import Database
 from ltts.engines.base import Delivery, VoiceInfo, VoiceSpec
+from ltts.engines.credits import CLONED
 from ltts.errors import AppError, ConflictError, NotFoundError, UnsupportedDocumentError
 from ltts.voices.adapters import TuningCandidate, kept_adapter, replace_adapter, waiting_candidate
 from ltts.voices.cleanup import Cleanup, RecordingCheck, apply_cleanup, suggest_cleanup
@@ -64,6 +65,7 @@ _STORES: dict[str, str] = {
     "shared": "A voice someone shared with you: its built voice and a short reference recording.",
 }
 SHARED = "shared"
+REFERENCE_FILE = "reference.wav"  # the playable reference recording in every profile's folder
 _COLUMNS = (
     "id",
     "name",
@@ -175,7 +177,7 @@ class VoiceProfileService:
         return self._settings.path("voices")
 
     def reference_path(self, profile_id: str) -> Path:
-        return self.root / profile_id / "reference.wav"
+        return self.root / profile_id / REFERENCE_FILE
 
     def takes_dir(self, profile_id: str) -> Path:
         return self.root / profile_id / "takes"
@@ -257,7 +259,7 @@ class VoiceProfileService:
         profile_id = new_id()
         folder = self.root / profile_id
         folder.mkdir(parents=True)
-        sf.write(str(folder / "reference.wav"), clip, rate, subtype="PCM_16")
+        sf.write(str(folder / REFERENCE_FILE), clip, rate, subtype="PCM_16")
         return profile_id, folder, clip
 
     def create(
@@ -288,8 +290,7 @@ class VoiceProfileService:
                 "delivery": "natural",
             }
         )
-        log.info("voice profile created", extra={"profile_id": profile_id, "source": source})
-        return self.get(profile_id)
+        return self._created(profile_id, source)
 
     def create_studio(self, voice: StudioVoice, consent: bool) -> VoiceProfileOut:
         """Turn a finished session into a profile; the session's files move under the profile's folder."""
@@ -314,8 +315,7 @@ class VoiceProfileService:
                 "voice_file": voice_file,
             }
         )
-        log.info("voice profile created", extra={"profile_id": profile_id, "source": "studio"})
-        return self.get(profile_id)
+        return self._created(profile_id, "studio")
 
     def create_shared(self, voice: SharedVoice, consent: bool) -> VoiceProfileOut:
         """Save a checked voice package as a new profile, under the importer's own consent."""
@@ -343,7 +343,10 @@ class VoiceProfileService:
                 "voice_file": voice_file,
             }
         )
-        log.info("voice profile created", extra={"profile_id": profile_id, "source": SHARED})
+        return self._created(profile_id, SHARED)
+
+    def _created(self, profile_id: str, source: str) -> VoiceProfileOut:
+        log.info("voice profile created", extra={"profile_id": profile_id, "source": source})
         return self.get(profile_id)
 
     def shareable_files(self, profile_id: str) -> tuple[VoiceProfileOut, str, dict[str, Path]]:
@@ -353,7 +356,7 @@ class VoiceProfileService:
             row = conn.execute(
                 "SELECT consent_statement, voice_file FROM voice_profiles WHERE id = ?", (profile_id,)
             ).fetchone()
-        files = {"reference.wav": self.reference_path(profile_id)}
+        files = {REFERENCE_FILE: self.reference_path(profile_id)}
         if row["voice_file"]:
             files["voice.safetensors"] = self.root / profile_id / row["voice_file"]
             files |= {
@@ -366,7 +369,6 @@ class VoiceProfileService:
     def _row(self, r: sqlite3.Row) -> VoiceProfileOut:
         has_takes = r["kind"] == "studio" and self.takes_dir(r["id"]).is_dir()
         tuned = bool(r["voice_file"]) and self.adapter_path(r["id"]) is not None
-        stores = SHARED if r["source"] == SHARED else "tuned" if tuned else r["kind"]
         return VoiceProfileOut(
             id=r["id"],
             voice_id=f"custom:{r['id']}",
@@ -380,7 +382,7 @@ class VoiceProfileService:
             created_at=r["created_at"],
             kind=r["kind"],
             delivery=r["delivery"],
-            stores=_STORES[stores],
+            stores=_STORES[_stored(r["source"], r["kind"], tuned=tuned)],
             styles=list(styles_in(self.styles_dir(r["id"]))),
             can_refine=has_takes,
             has_previous_styles=self.previous_styles_dir(r["id"]).is_dir(),
@@ -471,13 +473,18 @@ class VoiceProfileService:
                 category="custom",
                 description=_describe(p),
                 available=ready,
-                attribution=(
-                    "Synthetic speech from Chatterbox Turbo (MIT, Resemble AI), conditioned on a recording made with "
-                    "the speaker's consent; it is not that recording. Every clip carries an inaudible watermark."
-                ),
+                credit=CLONED.short,
+                attribution=CLONED.full,
             )
             for p in self.list_all()
         ]
+
+
+def _stored(source: str, kind: str, *, tuned: bool) -> str:
+    """Which description of what is kept on this computer (``_STORES``) fits a profile."""
+    if source == SHARED:
+        return SHARED
+    return "tuned" if tuned else kind
 
 
 def _describe(profile: VoiceProfileOut) -> str:

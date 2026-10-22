@@ -3,7 +3,8 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "lib": ["ES2023", "DOM"],
-    "types": ["node"]
+    "types": ["node"],
+    "allowJs": true
   },
   "include": ["./**/*.ts", "../../playwright.config.ts"]
 }

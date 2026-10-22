@@ -15,6 +15,7 @@ import path from 'node:path';
 import { test } from 'node:test';
 import {
   combineSections,
+  declarationProblems,
   isExpectedNext,
   nextVersion,
   parseChange,
@@ -22,9 +23,24 @@ import {
 } from './changes.mjs';
 import { parseNotes, technicalWording } from './notes-format.mjs';
 
+/** The five surfaces, in front-matter order. */
+const surfaces = (
+  desktop = 'changed',
+  browser = desktop,
+  phone = desktop,
+  website = 'unchanged',
+  docs = 'changed',
+) =>
+  `desktop: ${desktop}\nbrowser: ${browser}\nphone: ${phone}\nwebsite: ${website}\ndocs: ${docs}`;
+/** Surfaces that fit `bump`: the app changes everywhere unless nothing users get changes. */
+const fitting = (/** @type {string} */ bump) =>
+  bump === 'none'
+    ? surfaces('unchanged', 'unchanged', 'unchanged', 'unchanged', 'unchanged')
+    : surfaces();
+
 /** @param {string} bump @param {string} body */
-const change = (bump, body, file = '.changes/x.md') =>
-  parseChange(file, `---\nbump: ${bump}\n---\n\n${body}\n`);
+const change = (bump, body, file = '.changes/x.md', declared = fitting(bump)) =>
+  parseChange(file, `---\nbump: ${bump}\n${declared}\n---\n\n${body}\n`);
 
 test('a valid change file has a bump and plain-language entries', () => {
   const parsed = change(
@@ -102,11 +118,104 @@ test('placeholders, stray text, unknown sections and very long entries are refus
   assert.match(parseChange('.changes/c.md', '---\nbump: patch\n').problems.join(), /not closed/);
 });
 
+test('every change file says how it reaches each surface, consistently', () => {
+  const fix = '## Fixed\n\n- A fix.';
+  const problems = (/** @type {string} */ declared, bump = 'patch', body = fix) =>
+    change(bump, body, '.changes/s.md', declared).problems.join('\n');
+  // Missing, unreadable, or a limit without its reason.
+  assert.match(problems('desktop: changed'), /needs "browser: changed\|unchanged\|limited: <why>"/);
+  assert.match(problems(surfaces('changed', 'changed', 'limited')), /needs "phone: /);
+  assert.match(
+    problems(surfaces('changed', 'changed', 'changed', 'limited: soon')),
+    /needs "website: changed\|unchanged\|pending-release"/,
+  );
+  assert.match(
+    problems(surfaces('changed', 'changed', 'changed', 'unchanged', 'maybe')),
+    /needs "docs: changed\|unchanged"/,
+  );
+  // The Windows app, the browser and phones run the same web app.
+  assert.match(
+    problems(surfaces('changed', 'changed', 'unchanged')),
+    /"phone: unchanged"; the Windows app, the browser and phones/,
+  );
+  const limited = change(
+    'patch',
+    fix,
+    '.changes/s.md',
+    surfaces('changed', 'changed', 'limited: status only'),
+  );
+  assert.deepEqual(limited.problems, []);
+  assert.deepEqual(limited.surfaces.phone, { verdict: 'limited', reason: 'status only' });
+  // "none" leaves the app alone; anything else reaches a surface.
+  assert.match(
+    problems(surfaces(), 'none', '## Technical\n\n- CI.'),
+    /"bump: none" but changes the app/,
+  );
+  assert.equal(
+    problems(
+      surfaces('unchanged', 'unchanged', 'unchanged', 'unchanged'),
+      'none',
+      '## Technical\n\n- Docs.',
+    ),
+    '',
+  );
+  assert.match(
+    problems(surfaces('unchanged', 'unchanged', 'unchanged', 'unchanged', 'unchanged')),
+    /every surface says "unchanged"/,
+  );
+  assert.equal(
+    problems(surfaces('unchanged', 'unchanged', 'unchanged', 'pending-release', 'unchanged')),
+    '',
+  );
+  // New features are documented.
+  assert.match(
+    problems(
+      surfaces('changed', 'changed', 'changed', 'unchanged', 'unchanged'),
+      'minor',
+      '## New\n\n- A feature.',
+    ),
+    /document them and say "docs: changed"/,
+  );
+});
+
+test('a pull request declares the website and the docs the way its files changed', () => {
+  const declaring = (/** @type {string} */ website, /** @type {string} */ docs) =>
+    change(
+      'patch',
+      '## Fixed\n\n- A fix.',
+      '.changes/d.md',
+      surfaces('changed', 'changed', 'changed', website, docs),
+    );
+  const quiet = declaring('unchanged', 'unchanged');
+  assert.deepEqual(declarationProblems([quiet], ['apps/web/src/a.ts']), []);
+  assert.match(declarationProblems([quiet], ['site/index.html']).join(), /changes site\//);
+  assert.match(declarationProblems([quiet], ['docs/wiki/Home.md']).join(), /changes documentation/);
+  assert.match(declarationProblems([quiet], ['README.md']).join(), /changes documentation/);
+  assert.match(
+    declarationProblems([declaring('changed', 'unchanged')], ['a.ts']).join(),
+    /nothing under site\//,
+  );
+  assert.match(
+    declarationProblems([declaring('unchanged', 'changed')], ['a.ts']).join(),
+    /no documentation did/,
+  );
+  assert.deepEqual(
+    declarationProblems(
+      [quiet, declaring('pending-release', 'changed')],
+      ['site/index.html', 'docs/wiki/Home.md'],
+    ),
+    [],
+  );
+});
+
 test('section headings accept common names', () => {
   const doc = parseNotes(
     '---\nbump: minor\n---\n## New features\n- a\n## Bug fixes\n- b\n## Improvements\n- c\n## Security\n- d\n',
   );
-  assert.deepEqual(Object.keys(doc.sections).sort(), ['fixed', 'improved', 'new', 'security']);
+  assert.deepEqual(
+    Object.keys(doc.sections).toSorted((a, b) => a.localeCompare(b)),
+    ['fixed', 'improved', 'new', 'security'],
+  );
 });
 
 test('concurrent pull requests never collide: the strongest bump decides, in any merge order', () => {
@@ -154,16 +263,19 @@ test('combined sections keep the section order, strongest changes first, without
   );
 });
 
-test('reads pending change files from a folder, ignoring the README', () => {
+test('reads pending change files from a folder in code-unit order, ignoring the README', () => {
   const root = mkdtempSync(path.join(tmpdir(), 'changes-'));
   assert.deepEqual(readChanges(root), []);
   mkdirSync(path.join(root, '.changes'));
   writeFileSync(path.join(root, '.changes', 'README.md'), '# Not a change');
   writeFileSync(path.join(root, '.changes', 'b.md'), '---\nbump: patch\n---\n## Fixed\n- B.\n');
   writeFileSync(path.join(root, '.changes', 'a.md'), '---\nbump: none\n---\n## Technical\n- A.\n');
+  writeFileSync(path.join(root, '.changes', 'C.md'), '---\nbump: minor\n---\n## New\n- C.\n');
+  // Capitals first, as sort() always had them; a locale's order would put C.md last.
   assert.deepEqual(
     readChanges(root).map((item) => [item.file, item.bump]),
     [
+      ['.changes/C.md', 'minor'],
       ['.changes/a.md', 'none'],
       ['.changes/b.md', 'patch'],
     ],

@@ -108,44 +108,62 @@ async function advisories(name, version) {
   return Boolean(result.vulns?.length);
 }
 
+/**
+ * How Cargo names one locked version (`name@version`).
+ * @param {{ name: string, version: string }} krate
+ */
+const crateId = (krate) => `${krate.name}@${krate.version}`;
+
+/** The locked crates published inside the cool-down. */
+async function recentCrates() {
+  const recent = [];
+  for (const krate of lockedCrates()) if (await tooNew(krate)) recent.push(krate);
+  return recent;
+}
+
+/**
+ * Moves one crate to its newest compatible version outside the cool-down.
+ * @param {{ name: string, version: string }} krate
+ * @returns {Promise<string | null>} why it stays, or null when Cargo moved it
+ */
+async function moveCrate(krate) {
+  const target = await olderTarget(krate);
+  if (!target) return 'no older compatible version';
+  if (await advisories(krate.name, target)) return `${target} has known advisories`;
+  const result = spawnSync(CARGO, ['update', '-p', crateId(krate), '--precise', target], {
+    cwd: crateDir,
+    encoding: 'utf8',
+  });
+  if (result.status === 0) {
+    console.log(`${krate.name} ${krate.version} -> ${target}`);
+    return null;
+  }
+  const stderr = String(result.stderr);
+  const error = stderr.split('\n').find((line) => line.includes('error')) ?? stderr;
+  return error.trim().slice(0, 160);
+}
+
+/** Lists the crates still inside the cool-down, and fails the run when there are any. */
+function reportRecent(/** @type {{ name: string, version: string }[]} */ recent) {
+  for (const krate of recent)
+    console.log(`${krate.name} ${krate.version} is newer than ${days} days`);
+  process.exitCode = recent.length ? 1 : 0;
+}
+
 async function main() {
   const stuck = new Set();
   for (let round = 0; round < 6; round += 1) {
-    const recent = [];
-    for (const krate of lockedCrates()) if (await tooNew(krate)) recent.push(krate);
-    const movable = recent.filter((krate) => !stuck.has(`${krate.name}@${krate.version}`));
+    const recent = await recentCrates();
+    const movable = recent.filter((krate) => !stuck.has(crateId(krate)));
     if (process.argv.includes('--check') || !movable.length) {
-      for (const krate of recent)
-        console.log(`${krate.name} ${krate.version} is newer than ${days} days`);
-      process.exitCode = recent.length ? 1 : 0;
+      reportRecent(recent);
       return;
     }
     for (const krate of movable) {
-      const target = await olderTarget(krate);
-      if (target && (await advisories(krate.name, target))) {
-        stuck.add(`${krate.name}@${krate.version}`);
-        console.log(`${krate.name} ${krate.version} stays: ${target} has known advisories`);
-        continue;
-      }
-      const result = target
-        ? spawnSync(
-            CARGO,
-            ['update', '-p', `${krate.name}@${krate.version}`, '--precise', target],
-            {
-              cwd: crateDir,
-              encoding: 'utf8',
-            },
-          )
-        : { status: 1, stderr: 'no older compatible version' };
-      if (result.status === 0) console.log(`${krate.name} ${krate.version} -> ${target}`);
-      else {
-        stuck.add(`${krate.name}@${krate.version}`);
-        const reason =
-          String(result.stderr)
-            .split('\n')
-            .find((line) => line.includes('error')) ?? result.stderr;
-        console.log(`${krate.name} ${krate.version} stays: ${String(reason).trim().slice(0, 160)}`);
-      }
+      const reason = await moveCrate(krate);
+      if (reason === null) continue;
+      stuck.add(crateId(krate));
+      console.log(`${krate.name} ${krate.version} stays: ${reason}`);
     }
   }
 }

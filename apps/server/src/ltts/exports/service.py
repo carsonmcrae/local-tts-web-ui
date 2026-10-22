@@ -230,12 +230,10 @@ class ExportService:
             if job is None or job.kind != KIND or job.status == JobStatus.CANCELED:
                 workspace.remove()
                 removed += 1
-            elif job.status == JobStatus.SUCCEEDED:
-                workspace.clear_parts()
-            else:
-                workspace.clear_unfinished()
-                if capacity.is_stale(job):
-                    stale, stale_bytes = stale + 1, stale_bytes + workspace.bytes_used()
+                continue
+            workspace.tidy(finished=job.status == JobStatus.SUCCEEDED)
+            if capacity.is_stale(job):  # only a stopped export can be
+                stale, stale_bytes = stale + 1, stale_bytes + workspace.bytes_used()
         if stale:
             log.warning("stopped exports kept for a resume", extra={"exports": stale, "bytes": stale_bytes})
         return removed

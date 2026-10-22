@@ -7,6 +7,20 @@
 <!-- Every pull request adds a change file: `npm run change -- <major|minor|patch|none>`. -->
 
 - [ ] `.changes/…md` says the bump and, in plain language, what changes for people
+- [ ] It declares every surface (`desktop`, `browser`, `phone`, `website`, `docs`); CI checks the
+      declaration against this pull request
+
+## Surfaces
+
+<!-- One line each: what changed, or why it didn't, or the limitation and why. -->
+
+| Surface                   | Impact |
+| ------------------------- | ------ |
+| Windows app               |        |
+| Browser on the computer   |        |
+| Phone on the home network |        |
+| ttsnative.com             |        |
+| README, wiki and guides   |        |
 
 ## How it was verified
 

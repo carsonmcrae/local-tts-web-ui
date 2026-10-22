@@ -40,6 +40,45 @@ function describe(profile: VoiceProfile): string {
   return `${profile.durationS.toFixed(0)} s ${profile.source === 'import' ? 'imported clip' : 'recording'}`;
 }
 
+/** Plays the voice's stored recording, or stops it. */
+function RecordingButton({ profileId }: Readonly<{ profileId: string }>) {
+  const reference = useClipPlayer();
+  const url = `/api/voice-profiles/${profileId}/reference`;
+  const playing = reference.playing === url;
+  return (
+    <Button
+      size="sm"
+      icon={
+        playing ? <Square size={13} fill="currentColor" /> : <Play size={13} fill="currentColor" />
+      }
+      onClick={() => reference.toggle(url)}
+    >
+      {playing ? 'Stop' : 'Play recording'}
+    </Button>
+  );
+}
+
+/** Makes this the reading voice, or says that it is. */
+function ReadingVoiceButton({
+  voiceId,
+  isDefault,
+  engineReady,
+}: Readonly<{ voiceId: string; isDefault: boolean; engineReady: boolean }>) {
+  const reading = useReadingVoice();
+  return (
+    <Button
+      size="sm"
+      variant={isDefault ? 'subtle' : 'ghost'}
+      icon={isDefault ? <Check size={14} /> : undefined}
+      disabled={isDefault || !engineReady}
+      title={engineReady ? undefined : 'Install the cloning engine to use this voice'}
+      onClick={() => reading.choose(voiceId)}
+    >
+      {isDefault ? 'Used for reading' : 'Use for reading'}
+    </Button>
+  );
+}
+
 export function ProfileCard({
   profile,
   engineReady,
@@ -50,14 +89,9 @@ export function ProfileCard({
   const save = useSavePreferences();
   const toast = useToast();
   const { controller, state } = usePlayer();
-  const reading = useReadingVoice();
   const [confirm, setConfirm] = useState(false);
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(profile.name);
-  const referenceUrl = `/api/voice-profiles/${profile.id}/reference`;
-  const reference = useClipPlayer();
-  const playing = reference.playing === referenceUrl;
-  const toggleReference = () => reference.toggle(referenceUrl);
   const isDefault = preferences.data?.defaultVoiceId === profile.voiceId;
   const here = onThisComputer(); // a paired phone may only choose the voice for reading
 
@@ -121,31 +155,13 @@ export function ProfileCard({
       {engineReady && here ? <VoiceStyles profile={profile} /> : null}
       {engineReady ? <VoiceTuning profile={profile} /> : null}
       <div className="flex flex-wrap gap-2">
-        {here ? ( // a voice's recording never travels to a phone over the network
-          <Button
-            size="sm"
-            icon={
-              playing ? (
-                <Square size={13} fill="currentColor" />
-              ) : (
-                <Play size={13} fill="currentColor" />
-              )
-            }
-            onClick={toggleReference}
-          >
-            {playing ? 'Stop' : 'Play recording'}
-          </Button>
-        ) : null}
-        <Button
-          size="sm"
-          variant={isDefault ? 'subtle' : 'ghost'}
-          icon={isDefault ? <Check size={14} /> : undefined}
-          disabled={isDefault || !engineReady}
-          title={engineReady ? undefined : 'Install the cloning engine to use this voice'}
-          onClick={() => reading.choose(profile.voiceId)}
-        >
-          {isDefault ? 'Used for reading' : 'Use for reading'}
-        </Button>
+        {/* A voice's recording never travels to a phone over the network. */}
+        {here ? <RecordingButton profileId={profile.id} /> : null}
+        <ReadingVoiceButton
+          voiceId={profile.voiceId}
+          isDefault={isDefault}
+          engineReady={engineReady}
+        />
         {here ? <ShareVoiceButton profile={profile} /> : null}
       </div>
       <ConfirmDialog

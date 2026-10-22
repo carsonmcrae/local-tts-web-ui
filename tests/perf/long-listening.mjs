@@ -230,12 +230,15 @@ writeFileSync(
   ].join('\n') + '\n',
 );
 const playing = rows.filter((row) => row.label.startsWith('min'));
-const slope = (from, to) =>
-  (to.renderer - from.renderer) /
-  (Number(to.label.split(' ')[1]) - Number(from.label.split(' ')[1]));
-const lastTen = playing.slice(-11);
+const minuteOf = (row) => Number(row.label.split(' ')[1]);
+// The rate over the last ten minutes, or over every minute a shorter run has.
+const recent = playing.slice(-11);
+const span = recent.length > 1 ? minuteOf(recent.at(-1)) - minuteOf(recent[0]) : 0;
+const rate = span
+  ? `last ${span} minute${span === 1 ? '' : 's'} ${((recent.at(-1).renderer - recent[0].renderer) / span).toFixed(1)} MB/min`
+  : 'no rate (under two minutes)';
 console.log(
-  `renderer: start ${rows[0].renderer.toFixed(0)} MB, peak ${Math.max(...playing.map((r) => r.renderer)).toFixed(0)} MB, end ${playing.at(-1)?.renderer.toFixed(0)} MB; last ten minutes ${lastTen.length > 1 ? slope(lastTen[0], lastTen.at(-1)).toFixed(1) : 'n/a'} MB/min`,
+  `renderer: start ${rows[0].renderer.toFixed(0)} MB, peak ${Math.max(...playing.map((r) => r.renderer)).toFixed(0)} MB, end ${playing.at(-1)?.renderer.toFixed(0)} MB; ${rate}`,
 );
 console.log('page errors:', errors.length ? errors.join(' | ') : 'none');
 await browser.close();

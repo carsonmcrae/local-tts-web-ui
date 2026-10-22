@@ -16,15 +16,17 @@ bump: minor
 - Poems and other verse keep their lines: a line break is read with a short pause and shown as a
   line break, not as a new paragraph.
 - Explore: 25 public-domain books come with TTSNative (Alice, Frankenstein, Pride and Prejudice,
-  Sherlock Holmes, Poe, Dickinson, Whitman, Douglass, Thoreau and more), grouped by kind, with a
-  cover, a description, content notes and where each book's rights stand. Open one and it joins
-  your library like any other document; hide the ones you don't want to see. The credits name every
-  edition and source.
+  Sherlock Holmes, Poe, Dickinson, Whitman, Douglass, Thoreau and more), grouped by kind, each with
+  a cover, a description and content notes.
+- Every included book says where it is public domain: always the United States, and elsewhere by
+  its author's death year, naming the countries where a longer term still runs.
+- Open an included book and it joins your library like any other document; hide the ones you don't
+  want to see. The credits name every edition, cover artist and source.
 - Reading experiences: six of the included books come with a curated cast. In the reader, choose
-  **Multi-voice** to give Alice, Scrooge, Holmes, Elizabeth Bennet and the rest their own voices
-  (from the voices installed on this computer) and to hand untagged lines such as the Raven's
-  "Nevermore" to their speaker; **Standard** takes it all out again. Sound effects and music are
-  described but arrive with a later version, and nothing starts playing on its own.
+  **Multi-voice** to give Alice, Scrooge, Holmes, Elizabeth Bennet and the rest their own voices and
+  to hand untagged lines such as the Raven's "Nevermore" to their speaker.
+- **Standard** takes an experience out again and keeps every voice you chose yourself. Sound effects
+  and music are described but arrive with a later version; nothing starts playing on its own.
 
 ## Technical
 
@@ -35,7 +37,11 @@ bump: minor
   and `shelf`; paired LAN devices may use `/api/library`.
 - Verse: the `line` boundary (`structures.Boundary`, `audio.PAUSE_SECONDS`, `SegmentOut`), set by
   `html_text.BlockBuilder` for `<br>` inside a paragraph and carried by the HTML page extractor, the
-  segmenter and the read-along EPUB export (`<br/>`).
+  segmenter and the read-along EPUB export (`<br/>`). It applies to documents imported from now on;
+  existing documents keep their sentence numbering, so bookmarks, styling and progress are untouched.
+- Migrations 14–16 belong to this branch (1–13 are main's); the sound-effects branch takes 17 next
+  (`docs/architecture/literary-library.md` section 2). `tests/test_db_migrations.py` upgrades databases
+  at versions 1, 5 and 13.
 - Web: `api/libraryQueries.ts`, `features/library/{LibraryRail,LibraryFilters,OrganizeDialogs,RailDialogs,views,vocabulary}`,
   the reader draws `<br>` after a `line` boundary. ADR-24 and ADR-25; `docs/architecture/literary-library.md`.
 - Catalog: package data in `ltts/library/` (`catalog.json`, 25 text-only EPUBs, 22 covers,

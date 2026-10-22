@@ -27,8 +27,20 @@ there). Research and licensing evidence: [../research/literary-catalog.md](../re
 ## 2. Storage
 
 All new tables are additive and deleted with their document by foreign key. Migrations use
-`CREATE TABLE IF NOT EXISTS` so that branches adding migrations in parallel merge in either order
-(the migration list is positional: `PRAGMA user_version`).
+`CREATE TABLE IF NOT EXISTS`, but that alone does not make two branches' migrations safe: the list is
+positional (`PRAGMA user_version` counts entries), so a database that ran one branch's entry 14 would
+skip the other's once the lists are merged. Numbers are therefore agreed before a branch merges:
+
+| Numbers | Owner                                         | State on 2026-10-21                                                          |
+| ------- | --------------------------------------------- | ---------------------------------------------------------------------------- |
+| 1–13    | `main`                                        | shipped (1 in v2.0.0; 2–13 on main through PRs #37 and #38)                  |
+| 14–16   | `feat/literary-library` (this document)       | this pull request                                                            |
+| 17      | `feat/sound-effects` (ADR-22)                 | agreed with that workstream; renumbered from 14 when it merges after this PR |
+| none    | `feat/background-music`, `feat/voice-library` | no migrations                                                                |
+
+`apps/server/tests/test_db_migrations.py` pins the registry length, the tables each of 14–16 creates,
+and upgrades from databases at versions 1, 5 and 13 with their rows intact; the next owner updates the
+length when their migration lands.
 
 ### Migration 14: organisation (ADR-24)
 

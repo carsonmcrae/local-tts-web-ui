@@ -85,7 +85,19 @@ function signWithAnotherKey(/** @type {string} */ installer) {
   makeKey(dir);
   const copy = path.join(dir, path.basename(installer));
   copyFileSync(installer, copy);
-  node([TAURI_CLI, 'signer', 'sign', '-f', path.join(dir, 'update.key'), '-p', KEY_PASSWORD, copy]);
+  // Bound to B's version like a real signature, so the only thing wrong with it is the key.
+  node([
+    TAURI_CLI,
+    'signer',
+    'sign',
+    '-f',
+    path.join(dir, 'update.key'),
+    '-p',
+    KEY_PASSWORD,
+    '--app-version',
+    NEW,
+    copy,
+  ]);
   return readFileSync(`${copy}.sig`, 'utf8');
 }
 

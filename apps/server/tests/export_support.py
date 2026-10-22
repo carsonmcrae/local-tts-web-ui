@@ -3,23 +3,27 @@
 """Purpose: Shared helpers for the export tests.
 
 Scope: A two-chapter document to export, an export request for it, a hook that runs inside every
-synthesis of a fake engine (to pause, block, fail or count), an export that pauses itself part-way
-and waiting for a condition to hold.
+synthesis of a fake engine (to block, fail or count), a pause once a given number of sentences are
+saved (so exactly that many are kept: a pause from inside the engine would race with the sentence in
+flight), an export that pauses itself part-way, and waiting for a condition to hold.
 Does NOT belong: Assertions (test_resumable_exports.py, test_export_limits.py) or the shared
 fixtures (conftest.py).
 """
 
 from __future__ import annotations
 
+import threading
 import time
 from collections.abc import Callable
 from typing import Any
 
+import pytest
 from fastapi.testclient import TestClient
 
 from conftest import FakeEngine, wait_job
 from ltts.container import Services
 from ltts.engines.base import AudioClip, VoiceSpec
+from ltts.exports.workspace import ExportWorkspace
 
 TEXT = "\n\n".join(
     [
@@ -53,13 +57,37 @@ def hook(engine: FakeEngine, on_call: Callable[[int, str], None]) -> None:
     engine.synthesize = synthesize  # type: ignore[method-assign]
 
 
-def paused_export(client: TestClient, services: Services, engine: FakeEngine, after: int) -> tuple[str, str]:
-    """Start an export that pauses itself after ``after`` sentences; returns (document, job)."""
+def pause_after_saving(monkeypatch: pytest.MonkeyPatch, services: Services, after: int) -> Callable[[str], None]:
+    """Pause an export once its ``after``-th sentence is saved, so exactly that many are kept and the next
+    one never starts (a pause from inside the engine races with saving the sentence in flight). Returns a
+    function to call with the export's id once it is known."""
+    original = ExportWorkspace.save
+    known = threading.Event()
+    state: dict[str, Any] = {"saved": 0, "job": ""}
+
+    def save(self: ExportWorkspace, index: int, key: str, samples: Any, rate: int) -> None:
+        original(self, index, key, samples, rate)
+        state["saved"] += 1
+        if state["saved"] == after and known.wait(10):
+            services.exports.pause(state["job"])
+
+    monkeypatch.setattr(ExportWorkspace, "save", save)
+
+    def announce(job_id: str) -> None:
+        state["job"] = job_id
+        known.set()
+
+    return announce
+
+
+def paused_export(
+    client: TestClient, services: Services, monkeypatch: pytest.MonkeyPatch, after: int
+) -> tuple[str, str]:
+    """Start an export that pauses itself once ``after`` sentences are saved; returns (document, job)."""
     doc_id = document(client)
-    job_id: dict[str, str] = {}
-    hook(engine, lambda n, _t: services.exports.pause(job_id["id"]) if n == after else None)
+    announce = pause_after_saving(monkeypatch, services, after)
     started = client.post("/api/exports", json=request(doc_id)).json()
-    job_id["id"] = started["id"]
+    announce(started["id"])
     wait_job(client, started["id"])
     return doc_id, started["id"]
 

@@ -29,6 +29,7 @@ from fastapi.testclient import TestClient
 from conftest import FakeEngine, wait_job
 from export_support import document, hook, paused_export, request, until
 from lan_support import FakeListener, paired
+from ltts import jobs as jobs_module
 from ltts.common import MB
 from ltts.container import Services
 from ltts.errors import BusyError
@@ -70,8 +71,9 @@ def refused(response: Any, status: int, code: str) -> bool:
 
 # -- the export queue ---------------------------------------------------------------------------
 def test_exports_wait_their_turn_and_a_full_queue_refuses_more_from_anyone(
-    client: TestClient, services: Services, engines: dict[str, FakeEngine]
+    client: TestClient, services: Services, engines: dict[str, FakeEngine], monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    monkeypatch.setattr(jobs_module, "_TURN_CHECK_S", 0.01)  # it looks again often: also with its place unchanged
     doc_id = document(client)
     gate = threading.Event()
     hook(engines["kokoro"], lambda n, _t: gate.wait(10) if n == 1 else None)
@@ -254,9 +256,9 @@ def test_an_export_needs_room_on_the_disk_to_start_resume_and_carry_on(
 
 # -- startup after a crash --------------------------------------------------------------------------
 def test_startup_tidies_what_a_crash_left_and_keeps_resumable_work(
-    client: TestClient, services: Services, engines: dict[str, FakeEngine], caplog: pytest.LogCaptureFixture
+    client: TestClient, services: Services, caplog: pytest.LogCaptureFixture, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    _, job_id = paused_export(client, services, engines["kokoro"], after=4)
+    _, job_id = paused_export(client, services, monkeypatch, after=4)
     services.jobs.mark(job_id, JobStatus.INTERRUPTED, "Stopped when the app shut down.")
     weeks_ago = (datetime.now(UTC) - timedelta(days=30)).isoformat(timespec="seconds")
     with services.db.connect() as conn:
@@ -287,9 +289,13 @@ def test_startup_tidies_what_a_crash_left_and_keeps_resumable_work(
 
 
 def test_startup_leaves_running_and_recently_stopped_exports_alone(
-    client: TestClient, services: Services, engines: dict[str, FakeEngine], caplog: pytest.LogCaptureFixture
+    client: TestClient,
+    services: Services,
+    engines: dict[str, FakeEngine],
+    caplog: pytest.LogCaptureFixture,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    doc_id, paused = paused_export(client, services, engines["kokoro"], after=2)  # stopped just now: not stale
+    doc_id, paused = paused_export(client, services, monkeypatch, after=2)  # stopped just now: not stale
     root = services.settings.resolved_data_dir / "exports"
     (root / "notes.txt").write_text("not an export's folder", encoding="utf-8")
     release = threading.Event()

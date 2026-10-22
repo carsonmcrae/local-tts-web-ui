@@ -23,7 +23,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from conftest import SAMPLE_RATE, FakeEngine, wait_job
-from export_support import document, hook, paused_export, request
+from export_support import document, hook, pause_after_saving, paused_export, request
 from ltts.container import Services
 from ltts.engines.base import AudioClip, VoiceSpec
 from ltts.errors import NotFoundError
@@ -32,20 +32,12 @@ from ltts.jobs import JobStatus
 
 
 def test_a_paused_export_resumes_with_only_the_missing_sentences(
-    client: TestClient, services: Services, engines: dict[str, FakeEngine]
+    client: TestClient, services: Services, engines: dict[str, FakeEngine], monkeypatch: pytest.MonkeyPatch
 ) -> None:
     doc_id = document(client)
-    job_id: dict[str, str] = {}
-    known = threading.Event()  # the export can reach its third sentence before its id is known here
-
-    def pause_after_three(n: int, _text: str) -> None:
-        if n == 3 and known.wait(10):
-            services.exports.pause(job_id["id"])
-
-    hook(engines["kokoro"], pause_after_three)
+    announce = pause_after_saving(monkeypatch, services, 3)
     started = client.post("/api/exports", json=request(doc_id)).json()
-    job_id["id"] = started["id"]
-    known.set()
+    announce(started["id"])
     paused = wait_job(client, started["id"])
     assert paused["status"] == "paused"
     described = client.get(f"/api/exports/{started['id']}").json()
@@ -62,9 +54,9 @@ def test_a_paused_export_resumes_with_only_the_missing_sentences(
 
 
 def test_an_interrupted_export_resumes_after_a_restart(
-    client: TestClient, services: Services, engines: dict[str, FakeEngine]
+    client: TestClient, services: Services, engines: dict[str, FakeEngine], monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    _, job_id = paused_export(client, services, engines["kokoro"], after=4)
+    _, job_id = paused_export(client, services, monkeypatch, after=4)
     services.jobs.mark(job_id, JobStatus.INTERRUPTED, "Stopped when the app shut down.")  # as after a crash
     assert client.get("/api/exports").json()[0]["job"]["status"] == "interrupted"
     before = len(engines["kokoro"].calls)
@@ -74,9 +66,9 @@ def test_an_interrupted_export_resumes_after_a_restart(
 
 
 def test_a_restyled_sentence_is_generated_again_on_resume(
-    client: TestClient, services: Services, engines: dict[str, FakeEngine]
+    client: TestClient, services: Services, engines: dict[str, FakeEngine], monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    doc_id, job_id = paused_export(client, services, engines["kokoro"], after=3)
+    doc_id, job_id = paused_export(client, services, monkeypatch, after=3)
     client.put(f"/api/documents/{doc_id}/styles", json={"indexes": [1], "effect": "radio"})  # a saved sentence
     before = len(engines["kokoro"].calls)
     client.post(f"/api/exports/{job_id}/resume")

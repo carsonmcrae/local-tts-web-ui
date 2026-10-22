@@ -25,17 +25,33 @@ Two questions were answered for each work and recorded in `catalog.json` under `
 1. **United States**: every work was first published before 1930, so it is public domain in the
    United States in 2026 (the 95-year rule). This is what Standard Ebooks and Project Gutenberg
    verify before publishing, and it was re-checked against the first-publication year of each work.
-2. **Everywhere ("worldwide")**: a work is marked `worldwide` only when every named contributor
-   (author, and translator where there is one) died more than 70 years before 2026, that is in 1955
-   or earlier, which covers life-plus-70 jurisdictions. Pride and Prejudice is the one exception in
-   the list, not for Austen (d. 1817) but as a conservative reading of its edition's apparatus; it
-   carries the limit "Public domain in the United States; check the law where you are." Every
-   other work is `worldwide`.
+2. **Elsewhere**: being offered by Standard Ebooks or Project Gutenberg says nothing about other
+   countries, where copyright runs from the author's death. The catalog therefore states a
+   jurisdiction-qualified scope, computed by `_scope` in `scripts/library/build_catalog.py` from the
+   latest death year among the people whose work is in the shipped text (`rights.latest_death`):
+   - died in 1925 or earlier (`cleared_term_years: 100`): also public domain everywhere copyright
+     ends up to 100 years after death, the longest general term in force (Mexico). 17 works.
+   - died between 1926 and 1955 (`cleared_term_years: 70`): also public domain wherever the term is
+     70 years or less after death (the European Union, the United Kingdom, Brazil, Australia and most
+     other countries); the caveat names longer terms such as Mexico (100) and Colombia (80). 7 works:
+     The Time Machine and Six Stories (Wells, d. 1946), The Wind in the Willows (Grahame, d. 1932),
+     The Hound of the Baskervilles and The Adventures of Sherlock Holmes (Conan Doyle, d. 1930), The
+     Innocence of Father Brown (Chesterton, d. 1936), and Poems (Dickinson's editor Mabel Loomis
+     Todd, d. 1932).
+   - died after 1955 (`cleared_term_years: null`): the United States only, with the caveat naming the
+     person. 1 work: Pride and Prejudice follows R. W. Chapman's 1923 Oxford text (Chapman died 1960),
+     so his corrections may be protected until 2031 where the term is 70 years after death, while
+     Austen's own text (d. 1817) is beyond every term.
+   - contributors without recorded dates count only if their work is in the shipped text
+     (`affects_text`); the 1904 arrangement of Poe's poems is not reproduced, so it does not.
 
-Contributor death years come from the Standard Ebooks metadata (`dc:contributor` with dates) and,
-for Dickinson's editors Mabel Loomis Todd (d. 1932) and T. W. Higginson (d. 1911), from the
-Gutenberg front matter and standard references. The `verified_on` date and the `evidence` string
-for each work are in the catalog so a later check can see what was looked at.
+The statement each work carries is `rights.scope` with `rights.caveat`; Explore shows them on every
+card and `CREDITS.md` repeats them. Nothing is marked "public domain everywhere" without the
+100-year rule being met. Contributor death years come from the Standard Ebooks metadata
+(`dc:contributor` with dates) and, for Dickinson's editors Mabel Loomis Todd (d. 1932) and T. W.
+Higginson (d. 1911), from the Gutenberg front matter and standard references. The `verified_on`
+date and the `evidence` list for each work are in the catalog so a later check can see what was
+looked at.
 
 ## 3. Selection
 

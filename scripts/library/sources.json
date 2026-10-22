@@ -57,7 +57,7 @@
       "cover": { "use": true, "artwork": "Amanita (1879), Ivan Shishkin", "artist_died": 1898 },
       "featured": {
         "preset_id": "alices-adventures-in-wonderland-immersive",
-        "blurb": "Alice, the Rabbit, the Hatter and the Queen in their own voices, with a few quiet sounds."
+        "blurb": "Alice, the Rabbit, the Hatter, the Cheshire Cat and the Queen in their own voices."
       }
     },
     {
@@ -234,7 +234,7 @@
       },
       "featured": {
         "preset_id": "a-christmas-carol-immersive",
-        "blurb": "Scrooge, Marley and the three spirits, with chains, bells and a crackling fire."
+        "blurb": "Scrooge, Marley, Fred and the Cratchits in their own voices."
       }
     },
     {
@@ -467,7 +467,7 @@
       },
       "featured": {
         "preset_id": "poe-selected-stories-immersive",
-        "blurb": "The Tell-Tale Heart with a heartbeat you can almost hear."
+        "blurb": "A low, too-calm voice for Poe's narrators, and Dupin in his own."
       }
     },
     {
@@ -510,7 +510,8 @@
           "role": "editor",
           "name": "P. F. Collier and Son (1904 edition)",
           "died": null,
-          "note": "The edition's arrangement; the poems are Poe's."
+          "affects_text": false,
+          "note": "The 1904 edition's arrangement, which is not reproduced: the poems ship in this catalog's own selection and order, and their text is Poe's."
         }
       ],
       "first_published": 1845,
@@ -521,7 +522,7 @@
       "cover": { "use": true, "artwork": "Melancholy (1876), Odilon Redon", "artist_died": 1916 },
       "featured": {
         "preset_id": "poe-selected-poems-immersive",
-        "blurb": "The Raven: a tapping at the chamber door, wind at the window."
+        "blurb": "The Raven's one word, in a deeper voice than the poet's."
       }
     },
     {

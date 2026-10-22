@@ -4,7 +4,8 @@
  * Purpose: One of the books that ship with the app, as Explore shows it.
  * Scope: Cover (or a plain cover drawn from the title and author), title, author and year, type and
  *   genres, chapters and listening time, the description, a content note where the catalog has one,
- *   a rights note where the work is public domain in the United States only, and the actions: Read
+ *   where the work is known to be public domain (always the United States; elsewhere by the author's
+ *   death year, with the countries that keep it unresolved), and the actions: Read
  *   (opens the book, adding it to the library the first time), Continue when it is already there,
  *   Hide, and Show again for a hidden work.
  * Does NOT belong: Fetching (api/catalogQueries.ts) or the page's grouping (ExplorePage.tsx).
@@ -99,9 +100,10 @@ export function WorkCard({ work }: Readonly<{ work: BundledWork }>) {
             {note}
           </p>
         ))}
-        {!work.rightsWorldwide && work.rightsLimits ? (
-          <p className="mt-2 text-[13px] text-muted">{work.rightsLimits}</p>
-        ) : null}
+        <p className="mt-2 text-[13px] text-muted">
+          {work.rightsScope}
+          {work.rightsCaveat ? ` ${work.rightsCaveat}` : ''}
+        </p>
         {open.isError ? (
           <p role="alert" className="mt-2 text-[13px] font-medium text-danger">
             {describeError(open.error)}

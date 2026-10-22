@@ -49,7 +49,17 @@ def test_the_catalog_is_complete_and_every_file_matches() -> None:
         assert Path(work.file).name in shipped
         assert work.authors and work.title and work.sort_title and work.first_published < 1930
         assert work.rights.evidence and re.fullmatch(r"\d{4}-\d{2}-\d{2}", work.rights.verified_on)
-        assert work.rights.worldwide or work.rights.limits
+        rights = work.rights
+        assert rights.scope.startswith("Public domain in the United States") and "95 years" in rights.us_basis
+        deaths = [p.died for p in [*work.authors, *work.contributors] if p.died]
+        if rights.cleared_term_years == 100:  # clear of the longest term in force: nothing left unresolved
+            assert rights.latest_death == max(deaths) and rights.latest_death + 100 < 2026 and rights.caveat is None
+        elif rights.cleared_term_years == 70:  # clear of the common term: longer ones are named
+            assert rights.latest_death == max(deaths) and rights.latest_death + 70 < 2026 and "Mexico" in rights.caveat
+        else:  # someone died too recently or has no dates: the United States only, and it says why
+            assert rights.scope == "Public domain in the United States." and rights.caveat
+        if work.cover:
+            assert work.cover["rights"] and ("died" in work.cover["rights"] or "unknown artist" in work.cover["rights"])
         assert work.edition["source_url"].startswith("https://") and work.edition["source_sha256"]
         if work.cover:
             assert PACKAGE.joinpath(*work.cover["file"].split("/")).read_bytes()[:3] == b"\xff\xd8\xff"

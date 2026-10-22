@@ -1,6 +1,8 @@
 # Credits for the bundled books
 
-Every work here is in the public domain in the United States; each entry says where its text came
+Every work here is in the public domain in the United States (first published before 1930). Where
+else it is free depends on when its author and contributors died; each entry says so, with the
+countries where the term is longer. Each entry also says where its text came
 from, what changed, and whose painting is on the cover. Standard Ebooks and Project Gutenberg are
 credited as sources out of courtesy; neither name is used as a publisher of these files, and their
 own pages, logos and licences were removed from what ships. The changes and this file are
@@ -11,8 +13,8 @@ dedicated to the public domain (CC0 1.0).
 - Source: Standard Ebooks, https://standardebooks.org/ebooks/arthur-conan-doyle/the-adventures-of-sherlock-holmes (revision 60f53b2).
 - Transcription: https://www.gutenberg.org/ebooks/1661
 - Transcription: https://archive.org/details/adventuresofsher001892doyl
-- Cover: Music (1904), Thomas Eakins; public domain. Standard Ebooks cover composition (CC0), scaled for the library.
-- Rights: First published 1892. Arthur Conan Doyle died 1930. Every known contributor died more than 70 years ago.
+- Cover: Music (1904), Thomas Eakins. The painter died 1916: public domain everywhere (terms run up to 100 years after death). Standard Ebooks cover composition (CC0), scaled for the library.
+- Rights: First published 1892. Arthur Conan Doyle died 1930. Public domain in the United States, and wherever copyright ends 70 years or less after death: the last contributor died 1930. Not yet free where the term is longer, such as Mexico (100 years) or Colombia (80 years).
 
 ## Alice’s Adventures in Wonderland — Lewis Carroll (1865)
 
@@ -20,16 +22,16 @@ dedicated to the public domain (CC0 1.0).
 - Transcription: https://www.gutenberg.org/ebooks/11
 - Transcription: https://archive.org/details/adventuresalices00carrrich
 - Illustrator: John Tenniel (The 42 illustrations of the source edition are omitted.)
-- Cover: Amanita (1879), Ivan Shishkin; public domain. Standard Ebooks cover composition (CC0), scaled for the library.
-- Rights: First published 1865. Lewis Carroll died 1898; John Tenniel died 1914. Every known contributor died more than 70 years ago.
+- Cover: Amanita (1879), Ivan Shishkin. The painter died 1898: public domain everywhere (terms run up to 100 years after death). Standard Ebooks cover composition (CC0), scaled for the library.
+- Rights: First published 1865. Lewis Carroll died 1898; John Tenniel died 1914. Public domain in the United States, and everywhere copyright ends up to 100 years after death, the longest term in force: the last contributor died 1914.
 
 ## A Christmas Carol — Charles Dickens (1843)
 
 - Source: Standard Ebooks, https://standardebooks.org/ebooks/charles-dickens/a-christmas-carol (revision d5a9e58).
 - Transcription: https://www.gutenberg.org/ebooks/24022
 - Transcription: https://archive.org/details/christmascarol00dick2
-- Cover: The New Bonnet (1876), Eastman Johnson; public domain. Standard Ebooks cover composition (CC0), scaled for the library.
-- Rights: First published 1843. Charles Dickens died 1870. Every known contributor died more than 70 years ago.
+- Cover: The New Bonnet (1876), Eastman Johnson. The painter died 1906: public domain everywhere (terms run up to 100 years after death). Standard Ebooks cover composition (CC0), scaled for the library.
+- Rights: First published 1843. Charles Dickens died 1870. Public domain in the United States, and everywhere copyright ends up to 100 years after death, the longest term in force: the last contributor died 1870.
 
 ## Civil Disobedience and Other Essays — Henry David Thoreau (1849)
 
@@ -71,8 +73,8 @@ dedicated to the public domain (CC0 1.0).
 - Transcription: https://archive.org/details/the-liberator-1860-7-27
 - Transcription: https://archive.org/details/excursionhenry00thorrich
 - Transcription: https://archive.org/details/yankeeincanadawi00thor
-- Cover: West Wind, Algonquin Park (1917), Tom Thomson; public domain. Standard Ebooks cover composition (CC0), scaled for the library.
-- Rights: First published 1849. Henry David Thoreau died 1862. Every known contributor died more than 70 years ago.
+- Cover: West Wind, Algonquin Park (1917), Tom Thomson. The painter died 1917: public domain everywhere (terms run up to 100 years after death). Standard Ebooks cover composition (CC0), scaled for the library.
+- Rights: First published 1849. Henry David Thoreau died 1862. Public domain in the United States, and everywhere copyright ends up to 100 years after death, the longest term in force: the last contributor died 1862.
 
 ## Eight Tales — Edgar Allan Poe (1839)
 
@@ -82,8 +84,8 @@ dedicated to the public domain (CC0 1.0).
 - Transcription: https://archive.org/details/worksofedgaralla02poeeuoft
 - Transcription: https://archive.org/details/worksofedgaralla03poeeuoft
 - Transcription: https://archive.org/details/worksofedgaralla04poeeuoft
-- Cover: Saint-Séverin (1909), Robert Delaunay; public domain. Standard Ebooks cover composition (CC0), scaled for the library.
-- Rights: First published 1839. Edgar Allan Poe died 1849. Every known contributor died more than 70 years ago.
+- Cover: Saint-Séverin (1909), Robert Delaunay. The painter died 1941: public domain in the United States and wherever copyright ends 70 years or less after death; not yet free where the term is longer, such as Mexico (100 years) or Colombia (80 years). Standard Ebooks cover composition (CC0), scaled for the library.
+- Rights: First published 1839. Edgar Allan Poe died 1849. Public domain in the United States, and everywhere copyright ends up to 100 years after death, the longest term in force: the last contributor died 1849.
 
 ## Frankenstein — Mary Shelley (1818)
 
@@ -91,8 +93,8 @@ dedicated to the public domain (CC0 1.0).
 - Transcription: https://www.gutenberg.org/ebooks/42324
 - Transcription: https://archive.org/details/frankensteinormo00shel_9
 - Writer of preface: Percy Bysshe Shelley
-- Cover: Portrait of Adam (1578), Giuseppe Arcimboldo; public domain. Standard Ebooks cover composition (CC0), scaled for the library.
-- Rights: First published 1818. Mary Shelley died 1851; Percy Bysshe Shelley died 1822. Every known contributor died more than 70 years ago.
+- Cover: Portrait of Adam (1578), Giuseppe Arcimboldo. The painter died 1593: public domain everywhere (terms run up to 100 years after death). Standard Ebooks cover composition (CC0), scaled for the library.
+- Rights: First published 1818. Mary Shelley died 1851; Percy Bysshe Shelley died 1822. Public domain in the United States, and everywhere copyright ends up to 100 years after death, the longest term in force: the last contributor died 1851.
 
 ## The Gift of the Magi and Other Stories — O. Henry (1905)
 
@@ -128,32 +130,32 @@ dedicated to the public domain (CC0 1.0).
 - Transcription: https://archive.org/details/ohenryanaseveno00presgoog
 - Transcription: https://archive.org/details/postscripts00henr
 - Transcription: https://catalog.hathitrust.org/Record/007926272
-- Cover: The Soul of the Soulless City (1920), C. R. W. Nevinson; public domain. Standard Ebooks cover composition (CC0), scaled for the library.
-- Rights: First published 1905. O. Henry died 1910. Every known contributor died more than 70 years ago.
+- Cover: The Soul of the Soulless City (1920), C. R. W. Nevinson. The painter died 1946: public domain in the United States and wherever copyright ends 70 years or less after death; not yet free where the term is longer, such as Mexico (100 years) or Colombia (80 years). Standard Ebooks cover composition (CC0), scaled for the library.
+- Rights: First published 1905. O. Henry died 1910. Public domain in the United States, and everywhere copyright ends up to 100 years after death, the longest term in force: the last contributor died 1910.
 
 ## The Hound of the Baskervilles — Arthur Conan Doyle (1902)
 
 - Source: Standard Ebooks, https://standardebooks.org/ebooks/arthur-conan-doyle/the-hound-of-the-baskervilles (revision 4f080d1).
 - Transcription: https://www.gutenberg.org/ebooks/2852
 - Transcription: https://archive.org/details/houndofbaskervil00doyluoft
-- Cover: Riesengebirgslandschaft mit aufsteigendem Nebel (1820), Caspar David Friedrich; public domain. Standard Ebooks cover composition (CC0), scaled for the library.
-- Rights: First published 1902. Arthur Conan Doyle died 1930. Every known contributor died more than 70 years ago.
+- Cover: Riesengebirgslandschaft mit aufsteigendem Nebel (1820), Caspar David Friedrich. The painter died 1840: public domain everywhere (terms run up to 100 years after death). Standard Ebooks cover composition (CC0), scaled for the library.
+- Rights: First published 1902. Arthur Conan Doyle died 1930. Public domain in the United States, and wherever copyright ends 70 years or less after death: the last contributor died 1930. Not yet free where the term is longer, such as Mexico (100 years) or Colombia (80 years).
 
 ## The Innocence of Father Brown — G. K. Chesterton (1911)
 
 - Source: Standard Ebooks, https://standardebooks.org/ebooks/g-k-chesterton/the-innocence-of-father-brown (revision 6ab1146).
 - Transcription: https://www.gutenberg.org/ebooks/204
 - Transcription: https://catalog.hathitrust.org/Record/000663081
-- Cover: Marissal, Path to the Front of the Church (1866), Jean-Baptiste-Camille Corot; public domain. Standard Ebooks cover composition (CC0), scaled for the library.
-- Rights: First published 1911. G. K. Chesterton died 1936. Every known contributor died more than 70 years ago.
+- Cover: Marissal, Path to the Front of the Church (1866), Jean-Baptiste-Camille Corot. The painter died 1875: public domain everywhere (terms run up to 100 years after death). Standard Ebooks cover composition (CC0), scaled for the library.
+- Rights: First published 1911. G. K. Chesterton died 1936. Public domain in the United States, and wherever copyright ends 70 years or less after death: the last contributor died 1936. Not yet free where the term is longer, such as Mexico (100 years) or Colombia (80 years).
 
 ## The Legend of Sleepy Hollow and Rip Van Winkle — Washington Irving (1820)
 
 - Source: Standard Ebooks, https://standardebooks.org/ebooks/washington-irving/the-sketchbook-of-geoffrey-crayon-gent (revision 5a61d30).
 - Transcription: https://www.gutenberg.org/ebooks/2048
 - Transcription: https://books.google.com/books?id=BX5NAAAAYAAJ
-- Cover: The Headless Horseman Pursuing Ichabod Crane (1858), John Quidor; public domain. Standard Ebooks cover composition (CC0), scaled for the library.
-- Rights: First published 1820. Washington Irving died 1859. Every known contributor died more than 70 years ago.
+- Cover: The Headless Horseman Pursuing Ichabod Crane (1858), John Quidor. The painter died 1881: public domain everywhere (terms run up to 100 years after death). Standard Ebooks cover composition (CC0), scaled for the library.
+- Rights: First published 1820. Washington Irving died 1859. Public domain in the United States, and everywhere copyright ends up to 100 years after death, the longest term in force: the last contributor died 1859.
 
 ## Meditations — Marcus Aurelius (1862)
 
@@ -161,8 +163,8 @@ dedicated to the public domain (CC0 1.0).
 - Transcription: http://classics.mit.edu/Antoninus/meditations.html
 - Transcription: http://books.google.com/books?id=i9iUswYUMmUC
 - Translator: George Long (The 1862 English translation.)
-- Cover: After the Audience (1879), Sir Lawrence Alma-Tadema; public domain. Standard Ebooks cover composition (CC0), scaled for the library.
-- Rights: First published 1862. Marcus Aurelius died 180; George Long died 1879. Every known contributor died more than 70 years ago.
+- Cover: After the Audience (1879), Sir Lawrence Alma-Tadema. The painter died 1912: public domain everywhere (terms run up to 100 years after death). Standard Ebooks cover composition (CC0), scaled for the library.
+- Rights: First published 1862. Marcus Aurelius died 180; George Long died 1879. Public domain in the United States, and everywhere copyright ends up to 100 years after death, the longest term in force: the last contributor died 1879.
 
 ## Narrative of the Life of Frederick Douglass — Frederick Douglass (1845)
 
@@ -171,16 +173,16 @@ dedicated to the public domain (CC0 1.0).
 - Transcription: https://catalog.hathitrust.org/Record/009260192
 - Writer of preface: William Lloyd Garrison
 - Writer of introductory letter: Wendell Phillips
-- Cover: Frederick Douglass (c. 1844), unknown artist; public domain. Standard Ebooks cover composition (CC0), scaled for the library.
-- Rights: First published 1845. Frederick Douglass died 1895; William Lloyd Garrison died 1879; Wendell Phillips died 1884. Every known contributor died more than 70 years ago.
+- Cover: Frederick Douglass (c. 1844), unknown artist. By an unknown artist, about 1844: beyond every copyright term. Standard Ebooks cover composition (CC0), scaled for the library.
+- Rights: First published 1845. Frederick Douglass died 1895; William Lloyd Garrison died 1879; Wendell Phillips died 1884. Public domain in the United States, and everywhere copyright ends up to 100 years after death, the longest term in force: the last contributor died 1895.
 
 ## The Picture of Dorian Gray — Oscar Wilde (1890)
 
 - Source: Standard Ebooks, https://standardebooks.org/ebooks/oscar-wilde/the-picture-of-dorian-gray (revision c6b6877).
 - Transcription: https://www.gutenberg.org/ebooks/174
 - Transcription: https://archive.org/details/pictureofdoriang00wildiala
-- Cover: The Garden (1899), John Collier; public domain. Standard Ebooks cover composition (CC0), scaled for the library.
-- Rights: First published 1890. Oscar Wilde died 1900. Every known contributor died more than 70 years ago.
+- Cover: The Garden (1899), John Collier. The painter died 1934: public domain in the United States and wherever copyright ends 70 years or less after death; not yet free where the term is longer, such as Mexico (100 years) or Colombia (80 years). Standard Ebooks cover composition (CC0), scaled for the library.
+- Rights: First published 1890. Oscar Wilde died 1900. Public domain in the United States, and everywhere copyright ends up to 100 years after death, the longest term in force: the last contributor died 1900.
 
 ## Poems — Emily Dickinson (1890)
 
@@ -189,7 +191,7 @@ dedicated to the public domain (CC0 1.0).
 - Editor: Mabel Loomis Todd (With T. W. Higginson, edited the three series (1890, 1891, 1896) and gave many poems their titles.)
 - Editor: Thomas Wentworth Higginson
 - Cover: none. The text source has no cover; a plain cover is shown.
-- Rights: First published 1890. Emily Dickinson died 1886; Mabel Loomis Todd died 1932; Thomas Wentworth Higginson died 1911. Every known contributor died more than 70 years ago.
+- Rights: First published 1890. Emily Dickinson died 1886; Mabel Loomis Todd died 1932; Thomas Wentworth Higginson died 1911. Public domain in the United States, and wherever copyright ends 70 years or less after death: the last contributor died 1932. Not yet free where the term is longer, such as Mexico (100 years) or Colombia (80 years).
 
 ## Pride and Prejudice — Jane Austen (1813)
 
@@ -197,8 +199,8 @@ dedicated to the public domain (CC0 1.0).
 - Transcription: https://www.gutenberg.org/ebooks/42671
 - Transcription: https://catalog.hathitrust.org/Record/000429470
 - Editor: R. W. Chapman (The edition follows Chapman's 1923 Oxford text. Austen's novel is public domain everywhere; the editor's corrections to it are treated as part of the public-domain text in the United States.)
-- Cover: A Wet Sunday Morning (1896), Edmund Blair Leighton; public domain. Standard Ebooks cover composition (CC0), scaled for the library.
-- Rights: First published 1813. Jane Austen died 1817; R. W. Chapman died 1960. Public domain in the United States; check the law where you are.
+- Cover: A Wet Sunday Morning (1896), Edmund Blair Leighton. The painter died 1922: public domain everywhere (terms run up to 100 years after death). Standard Ebooks cover composition (CC0), scaled for the library.
+- Rights: First published 1813. Jane Austen died 1817; R. W. Chapman died 1960. Public domain in the United States. Outside the United States, the work of R. W. Chapman (editor, died 1960) may be protected until 2031 where copyright lasts 70 years after death. The author's own text is beyond every term: Jane Austen (died 1817).
 
 ## The Raven and Other Poems — Edgar Allan Poe (1845)
 
@@ -210,9 +212,9 @@ dedicated to the public domain (CC0 1.0).
 - Transcription: https://archive.org/details/worksedgarallan00unkngoog
 - Transcription: https://archive.org/details/cu31924019520810
 - Transcription: https://archive.org/details/jstor-2915307
-- Editor: P. F. Collier and Son (1904 edition) (The edition's arrangement; the poems are Poe's.)
-- Cover: Melancholy (1876), Odilon Redon; public domain. Standard Ebooks cover composition (CC0), scaled for the library.
-- Rights: First published 1845. Edgar Allan Poe died 1849; P. F. Collier and Son (1904 edition): dates not recorded. Every known contributor died more than 70 years ago.
+- Editor: P. F. Collier and Son (1904 edition) (The 1904 edition's arrangement, which is not reproduced: the poems ship in this catalog's own selection and order, and their text is Poe's.)
+- Cover: Melancholy (1876), Odilon Redon. The painter died 1916: public domain everywhere (terms run up to 100 years after death). Standard Ebooks cover composition (CC0), scaled for the library.
+- Rights: First published 1845. Edgar Allan Poe died 1849; P. F. Collier and Son (1904 edition): dates not recorded. Public domain in the United States, and everywhere copyright ends up to 100 years after death, the longest term in force: the last contributor died 1849.
 
 ## Self-Reliance and Other Essays — Ralph Waldo Emerson (1841)
 
@@ -220,8 +222,8 @@ dedicated to the public domain (CC0 1.0).
 - Transcription: https://www.gutenberg.org/ebooks/2944
 - Transcription: https://www.gutenberg.org/ebooks/2945
 - Transcription: https://archive.org/details/essaysseries00emerrich
-- Cover: New England Scenery (1839), Thomas Cole; public domain. Standard Ebooks cover composition (CC0), scaled for the library.
-- Rights: First published 1841. Ralph Waldo Emerson died 1882. Every known contributor died more than 70 years ago.
+- Cover: New England Scenery (1839), Thomas Cole. The painter died 1848: public domain everywhere (terms run up to 100 years after death). Standard Ebooks cover composition (CC0), scaled for the library.
+- Rights: First published 1841. Ralph Waldo Emerson died 1882. Public domain in the United States, and everywhere copyright ends up to 100 years after death, the longest term in force: the last contributor died 1882.
 
 ## Six Stories — H. G. Wells (1894)
 
@@ -240,8 +242,8 @@ dedicated to the public domain (CC0 1.0).
 - Transcription: https://archive.org/details/stolenbacillusan00welluoft
 - Transcription: https://archive.org/details/sim_strand-magazine_1903-12_26_156
 - Transcription: https://catalog.hathitrust.org/Record/000642318
-- Cover: In the Laboratory (c. 1856), Henry Alexander; public domain. Standard Ebooks cover composition (CC0), scaled for the library.
-- Rights: First published 1894. H. G. Wells died 1946. Every known contributor died more than 70 years ago.
+- Cover: In the Laboratory (c. 1856), Henry Alexander. The painter died 1894: public domain everywhere (terms run up to 100 years after death). Standard Ebooks cover composition (CC0), scaled for the library.
+- Rights: First published 1894. H. G. Wells died 1946. Public domain in the United States, and wherever copyright ends 70 years or less after death: the last contributor died 1946. Not yet free where the term is longer, such as Mexico (100 years) or Colombia (80 years).
 
 ## Song of Myself and Other Poems — Walt Whitman (1855)
 
@@ -249,31 +251,31 @@ dedicated to the public domain (CC0 1.0).
 - Transcription: https://www.gutenberg.org/ebooks/1322
 - Transcription: https://archive.org/details/leavesgrass03whitgoog
 - Cover: none. The illustrator's dates could not be confirmed, so the painting's status outside the United States is unknown; a plain cover is shown instead.
-- Rights: First published 1855. Walt Whitman died 1892. Every known contributor died more than 70 years ago.
+- Rights: First published 1855. Walt Whitman died 1892. Public domain in the United States, and everywhere copyright ends up to 100 years after death, the longest term in force: the last contributor died 1892.
 
 ## The Strange Case of Dr. Jekyll and Mr. Hyde — Robert Louis Stevenson (1886)
 
 - Source: Standard Ebooks, https://standardebooks.org/ebooks/robert-louis-stevenson/the-strange-case-of-dr-jekyll-and-mr-hyde (revision c155a03).
 - Transcription: https://www.gutenberg.org/ebooks/43
 - Transcription: https://catalog.hathitrust.org/Record/100586776
-- Cover: Double Portrait of Marées and Lenbach (1863), Hans von Marées; public domain. Standard Ebooks cover composition (CC0), scaled for the library.
-- Rights: First published 1886. Robert Louis Stevenson died 1894. Every known contributor died more than 70 years ago.
+- Cover: Double Portrait of Marées and Lenbach (1863), Hans von Marées. The painter died 1887: public domain everywhere (terms run up to 100 years after death). Standard Ebooks cover composition (CC0), scaled for the library.
+- Rights: First published 1886. Robert Louis Stevenson died 1894. Public domain in the United States, and everywhere copyright ends up to 100 years after death, the longest term in force: the last contributor died 1894.
 
 ## The Time Machine — H. G. Wells (1895)
 
 - Source: Standard Ebooks, https://standardebooks.org/ebooks/h-g-wells/the-time-machine (revision 9fd22d6).
 - Transcription: https://www.gutenberg.org/ebooks/35
 - Transcription: https://books.google.com/books?id=Y0pAAQAAIAAJ
-- Cover: The Black Marble Clock (c. 1870), Paul Cézanne; public domain. Standard Ebooks cover composition (CC0), scaled for the library.
-- Rights: First published 1895. H. G. Wells died 1946. Every known contributor died more than 70 years ago.
+- Cover: The Black Marble Clock (c. 1870), Paul Cézanne. The painter died 1906: public domain everywhere (terms run up to 100 years after death). Standard Ebooks cover composition (CC0), scaled for the library.
+- Rights: First published 1895. H. G. Wells died 1946. Public domain in the United States, and wherever copyright ends 70 years or less after death: the last contributor died 1946. Not yet free where the term is longer, such as Mexico (100 years) or Colombia (80 years).
 
 ## Treasure Island — Robert Louis Stevenson (1883)
 
 - Source: Standard Ebooks, https://standardebooks.org/ebooks/robert-louis-stevenson/treasure-island (revision c7fd6b4).
 - Transcription: https://www.gutenberg.org/ebooks/27780
 - Transcription: https://archive.org/details/treasislandyork00stev
-- Cover: One More Step, Mr. Hands (1911), N. C. Wyeth; public domain. Standard Ebooks cover composition (CC0), scaled for the library.
-- Rights: First published 1883. Robert Louis Stevenson died 1894. Every known contributor died more than 70 years ago.
+- Cover: One More Step, Mr. Hands (1911), N. C. Wyeth. The painter died 1945: public domain in the United States and wherever copyright ends 70 years or less after death; not yet free where the term is longer, such as Mexico (100 years) or Colombia (80 years). Standard Ebooks cover composition (CC0), scaled for the library.
+- Rights: First published 1883. Robert Louis Stevenson died 1894. Public domain in the United States, and everywhere copyright ends up to 100 years after death, the longest term in force: the last contributor died 1894.
 
 ## Up from Slavery — Booker T. Washington (1901)
 
@@ -281,8 +283,8 @@ dedicated to the public domain (CC0 1.0).
 - Transcription: https://www.gutenberg.org/ebooks/2376
 - Transcription: https://archive.org/details/upfromslaveryan06washgoog
 - Writer of introduction: Walter H. Page
-- Cover: The Power of Music (1847), William Sidney Mount; public domain. Standard Ebooks cover composition (CC0), scaled for the library.
-- Rights: First published 1901. Booker T. Washington died 1915; Walter H. Page died 1918. Every known contributor died more than 70 years ago.
+- Cover: The Power of Music (1847), William Sidney Mount. The painter died 1868: public domain everywhere (terms run up to 100 years after death). Standard Ebooks cover composition (CC0), scaled for the library.
+- Rights: First published 1901. Booker T. Washington died 1915; Walter H. Page died 1918. Public domain in the United States, and everywhere copyright ends up to 100 years after death, the longest term in force: the last contributor died 1918.
 
 ## The Wind in the Willows — Kenneth Grahame (1908)
 
@@ -290,13 +292,13 @@ dedicated to the public domain (CC0 1.0).
 - Transcription: https://www.gutenberg.org/ebooks/27805
 - Transcription: https://catalog.hathitrust.org/Record/100654169
 - Cover: none. Public domain in the United States, but the artist died in 1979, so the painting is still protected elsewhere; a plain cover is shown instead.
-- Rights: First published 1908. Kenneth Grahame died 1932. Every known contributor died more than 70 years ago.
+- Rights: First published 1908. Kenneth Grahame died 1932. Public domain in the United States, and wherever copyright ends 70 years or less after death: the last contributor died 1932. Not yet free where the term is longer, such as Mexico (100 years) or Colombia (80 years).
 
 ## The Wonderful Wizard of Oz — L. Frank Baum (1900)
 
 - Source: Standard Ebooks, https://standardebooks.org/ebooks/l-frank-baum/the-wonderful-wizard-of-oz (revision 2874632).
 - Transcription: https://www.gutenberg.org/ebooks/55
 - Transcription: https://archive.org/details/wonderfulwizardo00baumiala
-- Cover: Heroic Landscape with Rainbow (1824), Joseph Anton Koch; public domain. Standard Ebooks cover composition (CC0), scaled for the library.
-- Rights: First published 1900. L. Frank Baum died 1919. Every known contributor died more than 70 years ago.
+- Cover: Heroic Landscape with Rainbow (1824), Joseph Anton Koch. The painter died 1839: public domain everywhere (terms run up to 100 years after death). Standard Ebooks cover composition (CC0), scaled for the library.
+- Rights: First published 1900. L. Frank Baum died 1919. Public domain in the United States, and everywhere copyright ends up to 100 years after death, the longest term in force: the last contributor died 1919.
 

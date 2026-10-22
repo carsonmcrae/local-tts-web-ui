@@ -6,7 +6,7 @@
   "edition_id": "standardebooks:edgar-allan-poe/poetry@a6565f2",
   "text_version": 1,
   "title": "The Raven, and others",
-  "summary": "A low voice for the poems and a deeper one for the Raven's single word, with a tapping at the chamber door, wind at the window, the tolling of the bells and the sea beside Annabel Lee.",
+  "summary": "A low voice for the poems and a deeper one for the Raven's single word, each of its five Nevermores handed to the bird.",
   "narrator": {
     "voice": { "preferred": "kokoro:bm_fable", "fallbacks": ["kokoro:bm_george"] },
     "note": "Slow, with room for the rhymes."

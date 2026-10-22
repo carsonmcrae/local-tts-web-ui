@@ -17,6 +17,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import re
 import shutil
 import subprocess
 import sys
@@ -89,8 +90,15 @@ def _edition(entry: dict[str, Any], config: dict[str, Any], source_meta: dict[st
             "source_sha256": source["sha256"],
             "source_bytes": len(raw),
             "transcription": source_meta["transcriptions"],
-            "changes": base["changes"] + ([f"Only part of the collection ships: {', '.join(entry['selection'])}."] if entry.get("selection") else []),
-            "selection": {"from": source_meta["title"], "items": entry["selection"]} if entry.get("selection") else None,
+            "changes": base["changes"]
+            + (
+                [f"Only part of the collection ships: {', '.join(entry['selection'])}."]
+                if entry.get("selection")
+                else []
+            ),
+            "selection": {"from": source_meta["title"], "items": entry["selection"]}
+            if entry.get("selection")
+            else None,
         }
     return {
         "edition_id": f"gutenberg:{source['number']}@{source['sha256'][:12]}",
@@ -107,10 +115,82 @@ def _edition(entry: dict[str, Any], config: dict[str, Any], source_meta: dict[st
     }
 
 
+LONGEST_TERM = 100  # years after death: Mexico, the longest general term in force
+COMMON_TERM = 70  # the European Union, the United Kingdom, Brazil, Australia and most other countries
+LONGER_TERMS = "Mexico (100 years) or Colombia (80 years)"
+
+
+def _scope(year: int, people: list[dict[str, Any]], built_for: str) -> dict[str, Any]:
+    """Where the text is known to be public domain, from the year it appeared and when its contributors died.
+
+    United States: anything first published before 1930 (more than 95 years ago). Elsewhere copyright
+    runs from an author's death, so the latest death among the people whose work is in the shipped text
+    decides: 100 years clear covers the longest term in force, 70 years the common one, and anyone who
+    died later, or whose dates are unknown, leaves other countries unresolved.
+    """
+    counted = [p for p in people if p.get("affects_text", True)]
+    undated = [p["name"] for p in counted if not p.get("died")]
+    latest = max((p["died"] for p in counted if p.get("died")), default=None)
+    this_year = int(built_for[:4])
+    scope = "Public domain in the United States."
+    caveat: str | None = None
+    cleared: int | None = None
+    if undated:
+        caveat = f"Rights elsewhere depend on {', '.join(undated)}, whose dates are not recorded."
+    elif latest is not None and latest + LONGEST_TERM < this_year:
+        cleared = LONGEST_TERM
+        scope = (
+            "Public domain in the United States, and everywhere copyright ends up to 100 years after death, "
+            f"the longest term in force: the last contributor died {latest}."
+        )
+    elif latest is not None and latest + COMMON_TERM < this_year:
+        cleared = COMMON_TERM
+        scope = (
+            "Public domain in the United States, and wherever copyright ends 70 years or less after death: "
+            f"the last contributor died {latest}."
+        )
+        caveat = f"Not yet free where the term is longer, such as {LONGER_TERMS}."
+    elif latest is not None:
+        late = [p for p in counted if p.get("died") == latest]
+        who = " and ".join(f"{p['name']} ({p.get('role', 'author')}, died {p['died']})" for p in late)
+        caveat = (
+            f"Outside the United States, the work of {who} may be protected until {latest + COMMON_TERM + 1} "
+            "where copyright lasts 70 years after death."
+        )
+        authors = [p for p in counted if p not in late and p.get("died")]
+        if authors and all(p["died"] + LONGEST_TERM < this_year for p in authors):
+            names = ", ".join(f"{p['name']} (died {p['died']})" for p in authors)
+            caveat += f" The author's own text is beyond every term: {names}."
+    return {
+        "us_basis": f"First published {year}, more than 95 years ago, so public domain in the United States.",
+        "latest_death": latest,
+        "cleared_term_years": cleared,
+        "scope": scope,
+        "caveat": caveat,
+    }
+
+
+def _cover_rights(cover: dict[str, Any], built_for: str) -> str:
+    """Where the cover painting is known to be public domain (same rules as the text)."""
+    died = cover.get("artist_died")
+    this_year = int(built_for[:4])
+    if died is None:
+        match = re.search(r"\((?:c\. )?(\d{4})\)", cover["artwork"])
+        if "unknown artist" not in cover["artwork"] or not match or int(match.group(1)) + 120 > this_year:
+            raise SystemExit(f"cover {cover['artwork']!r}: record the artist's death year or leave the cover out")
+        return f"By an unknown artist, about {match.group(1)}: beyond every copyright term."
+    if died + LONGEST_TERM < this_year:
+        return f"The painter died {died}: public domain everywhere (terms run up to 100 years after death)."
+    if died + COMMON_TERM < this_year:
+        return (
+            f"The painter died {died}: public domain in the United States and wherever copyright ends 70 years or "
+            f"less after death; not yet free where the term is longer, such as {LONGER_TERMS}."
+        )
+    raise SystemExit(f"cover {cover['artwork']!r}: the painter died {died}, too recently to ship")
+
+
 def _rights(entry: dict[str, Any], config: dict[str, Any]) -> dict[str, Any]:
     people = [*entry["authors"], *entry["contributors"]]
-    known = [p["died"] for p in people if p.get("died")]
-    worldwide = all(year <= 1955 for year in known)
     base = config["standard_ebooks"]["licence"] if entry["source"]["kind"] == "standardebooks" else None
     evidence = base["evidence"] if base else entry["rights_evidence"]
     basis = "; ".join(
@@ -118,11 +198,11 @@ def _rights(entry: dict[str, Any], config: dict[str, Any]) -> dict[str, Any]:
     )
     return {
         "status": "public-domain-us",
-        "worldwide": worldwide,
-        "basis": f"First published {entry['first_published']}. {basis}. Every known contributor died more than 70 years ago."
-        if worldwide
-        else f"First published {entry['first_published']}. {basis}.",
-        "licence": base["name"] if base else "Public domain (United States); Project Gutenberg text with its licence removed",
+        **_scope(entry["first_published"], people, config["built_for"]),
+        "basis": f"First published {entry['first_published']}. {basis}.",
+        "licence": base["name"]
+        if base
+        else "Public domain (United States); Project Gutenberg text with its licence removed",
         "licence_url": base["url"] if base else "https://www.gutenberg.org/policy/license.html",
         "evidence": evidence,
         "verified_on": config["built_for"],
@@ -134,7 +214,6 @@ def _rights(entry: dict[str, Any], config: dict[str, Any]) -> dict[str, Any]:
         "trademark_note": "The publisher's name and logo do not appear in the shipped file; see CREDITS.md."
         if base
         else "The Project Gutenberg name and licence were removed as its licence allows for stripped text.",
-        "limits": None if worldwide else "Public domain in the United States; check the law where you are.",
     }
 
 
@@ -146,7 +225,12 @@ def build_work(entry: dict[str, Any], config: dict[str, Any], sources: Path, ffm
         chapters = choose_chapters(source, entry.get("selection"))
         title = entry.get("title") or source.title
         description = entry.get("description") or source.abstract
-        source_meta = {"revision": source.revision, "modified": source.modified, "transcriptions": source.transcriptions, "title": source.title}
+        source_meta = {
+            "revision": source.revision,
+            "modified": source.modified,
+            "transcriptions": source.transcriptions,
+            "title": source.title,
+        }
         language = source.language
         cover_bytes = source_cover(source) if entry["cover"]["use"] else None
     else:
@@ -175,6 +259,7 @@ def build_work(entry: dict[str, Any], config: dict[str, Any], sources: Path, ffm
         scale_cover(ffmpeg, cover_bytes, cover_path)
         cover = {"file": f"covers/{work_id}.jpg", "bytes": cover_path.stat().st_size, "sha256": sha256(cover_path.read_bytes()),
                  "artwork": entry["cover"]["artwork"], "artist_died": entry["cover"].get("artist_died"),
+                 "rights": _cover_rights(entry["cover"], config["built_for"]),
                  "design": "Standard Ebooks cover composition (CC0), scaled for the library"}  # fmt: skip
     record = {
         "work_id": work_id, "title": title, "sort_title": entry["sort_title"], "authors": entry["authors"],
@@ -189,7 +274,10 @@ def build_work(entry: dict[str, Any], config: dict[str, Any], sources: Path, ffm
     }  # fmt: skip
     if len(read_chapters) != len(chapters):
         raise SystemExit(f"{work_id}: wrote {len(chapters)} chapters but the extractor read {len(read_chapters)}")
-    print(f"  {work_id}: {len(chapters)} chapters, {words:,} words, {len(epub) / 1024:.0f} KB" + (f", cover {cover['bytes'] / 1024:.0f} KB" if cover else ""))
+    print(
+        f"  {work_id}: {len(chapters)} chapters, {words:,} words, {len(epub) / 1024:.0f} KB"
+        + (f", cover {cover['bytes'] / 1024:.0f} KB" if cover else "")
+    )
     return record
 
 
@@ -197,7 +285,9 @@ def credits(records: list[dict[str, Any]]) -> str:
     lines = [
         "# Credits for the bundled books",
         "",
-        "Every work here is in the public domain in the United States; each entry says where its text came",
+        "Every work here is in the public domain in the United States (first published before 1930). Where",
+        "else it is free depends on when its author and contributors died; each entry says so, with the",
+        "countries where the term is longer. Each entry also says where its text came",
         "from, what changed, and whose painting is on the cover. Standard Ebooks and Project Gutenberg are",
         "credited as sources out of courtesy; neither name is used as a publisher of these files, and their",
         "own pages, logos and licences were removed from what ships. The changes and this file are",
@@ -207,16 +297,21 @@ def credits(records: list[dict[str, Any]]) -> str:
     for r in sorted(records, key=lambda r: r["sort_title"]):
         authors = ", ".join(a["name"] for a in r["authors"])
         lines += [f"## {r['title']} — {authors} ({r['first_published']})", ""]
-        lines.append(f"- Source: {r['edition']['source']}, {r['edition']['source_url']} (revision {r['edition']['source_revision']}).")
+        lines.append(
+            f"- Source: {r['edition']['source']}, {r['edition']['source_url']} (revision {r['edition']['source_revision']})."
+        )
         for url in r["edition"]["transcription"]:
             lines.append(f"- Transcription: {url}")
         for c in r["contributors"]:
             lines.append(f"- {c['role'].capitalize()}: {c['name']}" + (f" ({c['note']})" if c.get("note") else ""))
         if r["cover"]:
-            lines.append(f"- Cover: {r['cover']['artwork']}; public domain. {r['cover']['design']}.")
+            lines.append(f"- Cover: {r['cover']['artwork']}. {r['cover']['rights']} {r['cover']['design']}.")
         elif r.get("cover_note"):
             lines.append(f"- Cover: none. {r['cover_note']}")
-        lines.append(f"- Rights: {r['rights']['basis']}" + ("" if r["rights"]["worldwide"] else f" {r['rights']['limits']}"))
+        rights = r["rights"]
+        lines.append(
+            f"- Rights: {rights['basis']} {rights['scope']}" + (f" {rights['caveat']}" if rights["caveat"] else "")
+        )
         lines.append("")
     return "\n".join(lines)
 

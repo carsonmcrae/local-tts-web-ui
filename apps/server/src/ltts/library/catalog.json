@@ -121,13 +121,18 @@
         "sha256": "6ac4e09b0d67a5422cb91e4d30169e8f6b7b1732037b4a67c26eb9e445cd0372",
         "artwork": "Amanita (1879), Ivan Shishkin",
         "artist_died": 1898,
+        "rights": "The painter died 1898: public domain everywhere (terms run up to 100 years after death).",
         "design": "Standard Ebooks cover composition (CC0), scaled for the library"
       },
       "cover_note": null,
       "rights": {
         "status": "public-domain-us",
-        "worldwide": true,
-        "basis": "First published 1865. Lewis Carroll died 1898; John Tenniel died 1914. Every known contributor died more than 70 years ago.",
+        "us_basis": "First published 1865, more than 95 years ago, so public domain in the United States.",
+        "latest_death": 1914,
+        "cleared_term_years": 100,
+        "scope": "Public domain in the United States, and everywhere copyright ends up to 100 years after death, the longest term in force: the last contributor died 1914.",
+        "caveat": null,
+        "basis": "First published 1865. Lewis Carroll died 1898; John Tenniel died 1914.",
         "licence": "CC0 1.0 (edition) / public domain in the United States (text)",
         "licence_url": "https://creativecommons.org/publicdomain/zero/1.0/",
         "evidence": [
@@ -144,12 +149,11 @@
         },
         "attribution_required": false,
         "attribution": "Edition prepared by Standard Ebooks volunteers (a courtesy credit, not a requirement).",
-        "trademark_note": "The publisher's name and logo do not appear in the shipped file; see CREDITS.md.",
-        "limits": null
+        "trademark_note": "The publisher's name and logo do not appear in the shipped file; see CREDITS.md."
       },
       "featured": {
         "preset_id": "alices-adventures-in-wonderland-immersive",
-        "blurb": "Alice, the Rabbit, the Hatter and the Queen in their own voices, with a few quiet sounds."
+        "blurb": "Alice, the Rabbit, the Hatter, the Cheshire Cat and the Queen in their own voices."
       },
       "preset_version": null
     },
@@ -313,13 +317,18 @@
         "sha256": "8f4ca14e35ab1e8500e47fadd3c3138a45e42c657781fb080e226b2d0ff394e9",
         "artwork": "Heroic Landscape with Rainbow (1824), Joseph Anton Koch",
         "artist_died": 1839,
+        "rights": "The painter died 1839: public domain everywhere (terms run up to 100 years after death).",
         "design": "Standard Ebooks cover composition (CC0), scaled for the library"
       },
       "cover_note": null,
       "rights": {
         "status": "public-domain-us",
-        "worldwide": true,
-        "basis": "First published 1900. L. Frank Baum died 1919. Every known contributor died more than 70 years ago.",
+        "us_basis": "First published 1900, more than 95 years ago, so public domain in the United States.",
+        "latest_death": 1919,
+        "cleared_term_years": 100,
+        "scope": "Public domain in the United States, and everywhere copyright ends up to 100 years after death, the longest term in force: the last contributor died 1919.",
+        "caveat": null,
+        "basis": "First published 1900. L. Frank Baum died 1919.",
         "licence": "CC0 1.0 (edition) / public domain in the United States (text)",
         "licence_url": "https://creativecommons.org/publicdomain/zero/1.0/",
         "evidence": [
@@ -336,8 +345,7 @@
         },
         "attribution_required": false,
         "attribution": "Edition prepared by Standard Ebooks volunteers (a courtesy credit, not a requirement).",
-        "trademark_note": "The publisher's name and logo do not appear in the shipped file; see CREDITS.md.",
-        "limits": null
+        "trademark_note": "The publisher's name and logo do not appear in the shipped file; see CREDITS.md."
       },
       "featured": null,
       "preset_version": null
@@ -452,13 +460,18 @@
         "sha256": "d8b7b572e7f4e00c541c82727d393ea111545f1a22814125e259c1ab91d08536",
         "artwork": "The Black Marble Clock (c. 1870), Paul Cézanne",
         "artist_died": 1906,
+        "rights": "The painter died 1906: public domain everywhere (terms run up to 100 years after death).",
         "design": "Standard Ebooks cover composition (CC0), scaled for the library"
       },
       "cover_note": null,
       "rights": {
         "status": "public-domain-us",
-        "worldwide": true,
-        "basis": "First published 1895. H. G. Wells died 1946. Every known contributor died more than 70 years ago.",
+        "us_basis": "First published 1895, more than 95 years ago, so public domain in the United States.",
+        "latest_death": 1946,
+        "cleared_term_years": 70,
+        "scope": "Public domain in the United States, and wherever copyright ends 70 years or less after death: the last contributor died 1946.",
+        "caveat": "Not yet free where the term is longer, such as Mexico (100 years) or Colombia (80 years).",
+        "basis": "First published 1895. H. G. Wells died 1946.",
         "licence": "CC0 1.0 (edition) / public domain in the United States (text)",
         "licence_url": "https://creativecommons.org/publicdomain/zero/1.0/",
         "evidence": [
@@ -475,8 +488,7 @@
         },
         "attribution_required": false,
         "attribution": "Edition prepared by Standard Ebooks volunteers (a courtesy credit, not a requirement).",
-        "trademark_note": "The publisher's name and logo do not appear in the shipped file; see CREDITS.md.",
-        "limits": null
+        "trademark_note": "The publisher's name and logo do not appear in the shipped file; see CREDITS.md."
       },
       "featured": null,
       "preset_version": null
@@ -587,13 +599,18 @@
         "sha256": "707ad38c27247ff13a0043915f9e76e564c357450c72099cdff4660590959007",
         "artwork": "In the Laboratory (c. 1856), Henry Alexander",
         "artist_died": 1894,
+        "rights": "The painter died 1894: public domain everywhere (terms run up to 100 years after death).",
         "design": "Standard Ebooks cover composition (CC0), scaled for the library"
       },
       "cover_note": null,
       "rights": {
         "status": "public-domain-us",
-        "worldwide": true,
-        "basis": "First published 1894. H. G. Wells died 1946. Every known contributor died more than 70 years ago.",
+        "us_basis": "First published 1894, more than 95 years ago, so public domain in the United States.",
+        "latest_death": 1946,
+        "cleared_term_years": 70,
+        "scope": "Public domain in the United States, and wherever copyright ends 70 years or less after death: the last contributor died 1946.",
+        "caveat": "Not yet free where the term is longer, such as Mexico (100 years) or Colombia (80 years).",
+        "basis": "First published 1894. H. G. Wells died 1946.",
         "licence": "CC0 1.0 (edition) / public domain in the United States (text)",
         "licence_url": "https://creativecommons.org/publicdomain/zero/1.0/",
         "evidence": [
@@ -610,8 +627,7 @@
         },
         "attribution_required": false,
         "attribution": "Edition prepared by Standard Ebooks volunteers (a courtesy credit, not a requirement).",
-        "trademark_note": "The publisher's name and logo do not appear in the shipped file; see CREDITS.md.",
-        "limits": null
+        "trademark_note": "The publisher's name and logo do not appear in the shipped file; see CREDITS.md."
       },
       "featured": null,
       "preset_version": null
@@ -926,12 +942,17 @@
         "sha256": "fc11d68c1ccd6864beab01e0085ed81356b50f8770916c7ab841060ca24bfa84",
         "artwork": "A Wet Sunday Morning (1896), Edmund Blair Leighton",
         "artist_died": 1922,
+        "rights": "The painter died 1922: public domain everywhere (terms run up to 100 years after death).",
         "design": "Standard Ebooks cover composition (CC0), scaled for the library"
       },
       "cover_note": null,
       "rights": {
         "status": "public-domain-us",
-        "worldwide": false,
+        "us_basis": "First published 1813, more than 95 years ago, so public domain in the United States.",
+        "latest_death": 1960,
+        "cleared_term_years": null,
+        "scope": "Public domain in the United States.",
+        "caveat": "Outside the United States, the work of R. W. Chapman (editor, died 1960) may be protected until 2031 where copyright lasts 70 years after death. The author's own text is beyond every term: Jane Austen (died 1817).",
         "basis": "First published 1813. Jane Austen died 1817; R. W. Chapman died 1960.",
         "licence": "CC0 1.0 (edition) / public domain in the United States (text)",
         "licence_url": "https://creativecommons.org/publicdomain/zero/1.0/",
@@ -949,8 +970,7 @@
         },
         "attribution_required": false,
         "attribution": "Edition prepared by Standard Ebooks volunteers (a courtesy credit, not a requirement).",
-        "trademark_note": "The publisher's name and logo do not appear in the shipped file; see CREDITS.md.",
-        "limits": "Public domain in the United States; check the law where you are."
+        "trademark_note": "The publisher's name and logo do not appear in the shipped file; see CREDITS.md."
       },
       "featured": {
         "preset_id": "pride-and-prejudice-voices",
@@ -1041,13 +1061,18 @@
         "sha256": "a9126955c65803069a5c21b0a99803ee95ee871a4b851f0be7c94bdb4af1b64d",
         "artwork": "The New Bonnet (1876), Eastman Johnson",
         "artist_died": 1906,
+        "rights": "The painter died 1906: public domain everywhere (terms run up to 100 years after death).",
         "design": "Standard Ebooks cover composition (CC0), scaled for the library"
       },
       "cover_note": null,
       "rights": {
         "status": "public-domain-us",
-        "worldwide": true,
-        "basis": "First published 1843. Charles Dickens died 1870. Every known contributor died more than 70 years ago.",
+        "us_basis": "First published 1843, more than 95 years ago, so public domain in the United States.",
+        "latest_death": 1870,
+        "cleared_term_years": 100,
+        "scope": "Public domain in the United States, and everywhere copyright ends up to 100 years after death, the longest term in force: the last contributor died 1870.",
+        "caveat": null,
+        "basis": "First published 1843. Charles Dickens died 1870.",
         "licence": "CC0 1.0 (edition) / public domain in the United States (text)",
         "licence_url": "https://creativecommons.org/publicdomain/zero/1.0/",
         "evidence": [
@@ -1064,12 +1089,11 @@
         },
         "attribution_required": false,
         "attribution": "Edition prepared by Standard Ebooks volunteers (a courtesy credit, not a requirement).",
-        "trademark_note": "The publisher's name and logo do not appear in the shipped file; see CREDITS.md.",
-        "limits": null
+        "trademark_note": "The publisher's name and logo do not appear in the shipped file; see CREDITS.md."
       },
       "featured": {
         "preset_id": "a-christmas-carol-immersive",
-        "blurb": "Scrooge, Marley and the three spirits, with chains, bells and a crackling fire."
+        "blurb": "Scrooge, Marley, Fred and the Cratchits in their own voices."
       },
       "preset_version": null
     },
@@ -1172,13 +1196,18 @@
         "sha256": "7cc1556d962a4bf31b72df018b50c78e2d5deae28c9f4aeb3e53a23f28601e17",
         "artwork": "Double Portrait of Marées and Lenbach (1863), Hans von Marées",
         "artist_died": 1887,
+        "rights": "The painter died 1887: public domain everywhere (terms run up to 100 years after death).",
         "design": "Standard Ebooks cover composition (CC0), scaled for the library"
       },
       "cover_note": null,
       "rights": {
         "status": "public-domain-us",
-        "worldwide": true,
-        "basis": "First published 1886. Robert Louis Stevenson died 1894. Every known contributor died more than 70 years ago.",
+        "us_basis": "First published 1886, more than 95 years ago, so public domain in the United States.",
+        "latest_death": 1894,
+        "cleared_term_years": 100,
+        "scope": "Public domain in the United States, and everywhere copyright ends up to 100 years after death, the longest term in force: the last contributor died 1894.",
+        "caveat": null,
+        "basis": "First published 1886. Robert Louis Stevenson died 1894.",
         "licence": "CC0 1.0 (edition) / public domain in the United States (text)",
         "licence_url": "https://creativecommons.org/publicdomain/zero/1.0/",
         "evidence": [
@@ -1195,8 +1224,7 @@
         },
         "attribution_required": false,
         "attribution": "Edition prepared by Standard Ebooks volunteers (a courtesy credit, not a requirement).",
-        "trademark_note": "The publisher's name and logo do not appear in the shipped file; see CREDITS.md.",
-        "limits": null
+        "trademark_note": "The publisher's name and logo do not appear in the shipped file; see CREDITS.md."
       },
       "featured": null,
       "preset_version": null
@@ -1428,13 +1456,18 @@
         "sha256": "7636f91666777d643506370b8481da6bd6fb5b63365db5bf0a6641b778f8c0b1",
         "artwork": "One More Step, Mr. Hands (1911), N. C. Wyeth",
         "artist_died": 1945,
+        "rights": "The painter died 1945: public domain in the United States and wherever copyright ends 70 years or less after death; not yet free where the term is longer, such as Mexico (100 years) or Colombia (80 years).",
         "design": "Standard Ebooks cover composition (CC0), scaled for the library"
       },
       "cover_note": null,
       "rights": {
         "status": "public-domain-us",
-        "worldwide": true,
-        "basis": "First published 1883. Robert Louis Stevenson died 1894. Every known contributor died more than 70 years ago.",
+        "us_basis": "First published 1883, more than 95 years ago, so public domain in the United States.",
+        "latest_death": 1894,
+        "cleared_term_years": 100,
+        "scope": "Public domain in the United States, and everywhere copyright ends up to 100 years after death, the longest term in force: the last contributor died 1894.",
+        "caveat": null,
+        "basis": "First published 1883. Robert Louis Stevenson died 1894.",
         "licence": "CC0 1.0 (edition) / public domain in the United States (text)",
         "licence_url": "https://creativecommons.org/publicdomain/zero/1.0/",
         "evidence": [
@@ -1451,8 +1484,7 @@
         },
         "attribution_required": false,
         "attribution": "Edition prepared by Standard Ebooks volunteers (a courtesy credit, not a requirement).",
-        "trademark_note": "The publisher's name and logo do not appear in the shipped file; see CREDITS.md.",
-        "limits": null
+        "trademark_note": "The publisher's name and logo do not appear in the shipped file; see CREDITS.md."
       },
       "featured": null,
       "preset_version": null
@@ -1562,8 +1594,12 @@
       "cover_note": "Public domain in the United States, but the artist died in 1979, so the painting is still protected elsewhere; a plain cover is shown instead.",
       "rights": {
         "status": "public-domain-us",
-        "worldwide": true,
-        "basis": "First published 1908. Kenneth Grahame died 1932. Every known contributor died more than 70 years ago.",
+        "us_basis": "First published 1908, more than 95 years ago, so public domain in the United States.",
+        "latest_death": 1932,
+        "cleared_term_years": 70,
+        "scope": "Public domain in the United States, and wherever copyright ends 70 years or less after death: the last contributor died 1932.",
+        "caveat": "Not yet free where the term is longer, such as Mexico (100 years) or Colombia (80 years).",
+        "basis": "First published 1908. Kenneth Grahame died 1932.",
         "licence": "CC0 1.0 (edition) / public domain in the United States (text)",
         "licence_url": "https://creativecommons.org/publicdomain/zero/1.0/",
         "evidence": [
@@ -1580,8 +1616,7 @@
         },
         "attribution_required": false,
         "attribution": "Edition prepared by Standard Ebooks volunteers (a courtesy credit, not a requirement).",
-        "trademark_note": "The publisher's name and logo do not appear in the shipped file; see CREDITS.md.",
-        "limits": null
+        "trademark_note": "The publisher's name and logo do not appear in the shipped file; see CREDITS.md."
       },
       "featured": null,
       "preset_version": null
@@ -1709,13 +1744,18 @@
         "sha256": "23f21135ed33bf109438b220ec33a385f6bbf86e3c12e7825267c4d3baf5f573",
         "artwork": "Riesengebirgslandschaft mit aufsteigendem Nebel (1820), Caspar David Friedrich",
         "artist_died": 1840,
+        "rights": "The painter died 1840: public domain everywhere (terms run up to 100 years after death).",
         "design": "Standard Ebooks cover composition (CC0), scaled for the library"
       },
       "cover_note": null,
       "rights": {
         "status": "public-domain-us",
-        "worldwide": true,
-        "basis": "First published 1902. Arthur Conan Doyle died 1930. Every known contributor died more than 70 years ago.",
+        "us_basis": "First published 1902, more than 95 years ago, so public domain in the United States.",
+        "latest_death": 1930,
+        "cleared_term_years": 70,
+        "scope": "Public domain in the United States, and wherever copyright ends 70 years or less after death: the last contributor died 1930.",
+        "caveat": "Not yet free where the term is longer, such as Mexico (100 years) or Colombia (80 years).",
+        "basis": "First published 1902. Arthur Conan Doyle died 1930.",
         "licence": "CC0 1.0 (edition) / public domain in the United States (text)",
         "licence_url": "https://creativecommons.org/publicdomain/zero/1.0/",
         "evidence": [
@@ -1732,8 +1772,7 @@
         },
         "attribution_required": false,
         "attribution": "Edition prepared by Standard Ebooks volunteers (a courtesy credit, not a requirement).",
-        "trademark_note": "The publisher's name and logo do not appear in the shipped file; see CREDITS.md.",
-        "limits": null
+        "trademark_note": "The publisher's name and logo do not appear in the shipped file; see CREDITS.md."
       },
       "featured": null,
       "preset_version": null
@@ -1844,13 +1883,18 @@
         "sha256": "94a1904c83458766761d8441e66cac77c24471dd6132ceccf916fa51eb85bb39",
         "artwork": "Music (1904), Thomas Eakins",
         "artist_died": 1916,
+        "rights": "The painter died 1916: public domain everywhere (terms run up to 100 years after death).",
         "design": "Standard Ebooks cover composition (CC0), scaled for the library"
       },
       "cover_note": null,
       "rights": {
         "status": "public-domain-us",
-        "worldwide": true,
-        "basis": "First published 1892. Arthur Conan Doyle died 1930. Every known contributor died more than 70 years ago.",
+        "us_basis": "First published 1892, more than 95 years ago, so public domain in the United States.",
+        "latest_death": 1930,
+        "cleared_term_years": 70,
+        "scope": "Public domain in the United States, and wherever copyright ends 70 years or less after death: the last contributor died 1930.",
+        "caveat": "Not yet free where the term is longer, such as Mexico (100 years) or Colombia (80 years).",
+        "basis": "First published 1892. Arthur Conan Doyle died 1930.",
         "licence": "CC0 1.0 (edition) / public domain in the United States (text)",
         "licence_url": "https://creativecommons.org/publicdomain/zero/1.0/",
         "evidence": [
@@ -1867,8 +1911,7 @@
         },
         "attribution_required": false,
         "attribution": "Edition prepared by Standard Ebooks volunteers (a courtesy credit, not a requirement).",
-        "trademark_note": "The publisher's name and logo do not appear in the shipped file; see CREDITS.md.",
-        "limits": null
+        "trademark_note": "The publisher's name and logo do not appear in the shipped file; see CREDITS.md."
       },
       "featured": {
         "preset_id": "the-adventures-of-sherlock-holmes-voices",
@@ -2070,13 +2113,18 @@
         "sha256": "f08411fd155fa06fb40e9fbf541865af6d947c41494d3bd61c601eefe422b095",
         "artwork": "Portrait of Adam (1578), Giuseppe Arcimboldo",
         "artist_died": 1593,
+        "rights": "The painter died 1593: public domain everywhere (terms run up to 100 years after death).",
         "design": "Standard Ebooks cover composition (CC0), scaled for the library"
       },
       "cover_note": null,
       "rights": {
         "status": "public-domain-us",
-        "worldwide": true,
-        "basis": "First published 1818. Mary Shelley died 1851; Percy Bysshe Shelley died 1822. Every known contributor died more than 70 years ago.",
+        "us_basis": "First published 1818, more than 95 years ago, so public domain in the United States.",
+        "latest_death": 1851,
+        "cleared_term_years": 100,
+        "scope": "Public domain in the United States, and everywhere copyright ends up to 100 years after death, the longest term in force: the last contributor died 1851.",
+        "caveat": null,
+        "basis": "First published 1818. Mary Shelley died 1851; Percy Bysshe Shelley died 1822.",
         "licence": "CC0 1.0 (edition) / public domain in the United States (text)",
         "licence_url": "https://creativecommons.org/publicdomain/zero/1.0/",
         "evidence": [
@@ -2093,8 +2141,7 @@
         },
         "attribution_required": false,
         "attribution": "Edition prepared by Standard Ebooks volunteers (a courtesy credit, not a requirement).",
-        "trademark_note": "The publisher's name and logo do not appear in the shipped file; see CREDITS.md.",
-        "limits": null
+        "trademark_note": "The publisher's name and logo do not appear in the shipped file; see CREDITS.md."
       },
       "featured": null,
       "preset_version": null
@@ -2208,13 +2255,18 @@
         "sha256": "9c07aec722718ffcd6b4b1df56d20add2a0cce59dcaa16782eba00aedc3af876",
         "artwork": "Saint-Séverin (1909), Robert Delaunay",
         "artist_died": 1941,
+        "rights": "The painter died 1941: public domain in the United States and wherever copyright ends 70 years or less after death; not yet free where the term is longer, such as Mexico (100 years) or Colombia (80 years).",
         "design": "Standard Ebooks cover composition (CC0), scaled for the library"
       },
       "cover_note": null,
       "rights": {
         "status": "public-domain-us",
-        "worldwide": true,
-        "basis": "First published 1839. Edgar Allan Poe died 1849. Every known contributor died more than 70 years ago.",
+        "us_basis": "First published 1839, more than 95 years ago, so public domain in the United States.",
+        "latest_death": 1849,
+        "cleared_term_years": 100,
+        "scope": "Public domain in the United States, and everywhere copyright ends up to 100 years after death, the longest term in force: the last contributor died 1849.",
+        "caveat": null,
+        "basis": "First published 1839. Edgar Allan Poe died 1849.",
         "licence": "CC0 1.0 (edition) / public domain in the United States (text)",
         "licence_url": "https://creativecommons.org/publicdomain/zero/1.0/",
         "evidence": [
@@ -2231,12 +2283,11 @@
         },
         "attribution_required": false,
         "attribution": "Edition prepared by Standard Ebooks volunteers (a courtesy credit, not a requirement).",
-        "trademark_note": "The publisher's name and logo do not appear in the shipped file; see CREDITS.md.",
-        "limits": null
+        "trademark_note": "The publisher's name and logo do not appear in the shipped file; see CREDITS.md."
       },
       "featured": {
         "preset_id": "poe-selected-stories-immersive",
-        "blurb": "The Tell-Tale Heart with a heartbeat you can almost hear."
+        "blurb": "A low, too-calm voice for Poe's narrators, and Dupin in his own."
       },
       "preset_version": null
     },
@@ -2258,7 +2309,8 @@
           "role": "editor",
           "name": "P. F. Collier and Son (1904 edition)",
           "died": null,
-          "note": "The edition's arrangement; the poems are Poe's."
+          "affects_text": false,
+          "note": "The 1904 edition's arrangement, which is not reproduced: the poems ship in this catalog's own selection and order, and their text is Poe's."
         }
       ],
       "first_published": 1845,
@@ -2386,13 +2438,18 @@
         "sha256": "a3aad1dbc12c9598b420199091de4b6b7c6421930060171587a9d78f3c25ea6c",
         "artwork": "Melancholy (1876), Odilon Redon",
         "artist_died": 1916,
+        "rights": "The painter died 1916: public domain everywhere (terms run up to 100 years after death).",
         "design": "Standard Ebooks cover composition (CC0), scaled for the library"
       },
       "cover_note": null,
       "rights": {
         "status": "public-domain-us",
-        "worldwide": true,
-        "basis": "First published 1845. Edgar Allan Poe died 1849; P. F. Collier and Son (1904 edition): dates not recorded. Every known contributor died more than 70 years ago.",
+        "us_basis": "First published 1845, more than 95 years ago, so public domain in the United States.",
+        "latest_death": 1849,
+        "cleared_term_years": 100,
+        "scope": "Public domain in the United States, and everywhere copyright ends up to 100 years after death, the longest term in force: the last contributor died 1849.",
+        "caveat": null,
+        "basis": "First published 1845. Edgar Allan Poe died 1849; P. F. Collier and Son (1904 edition): dates not recorded.",
         "licence": "CC0 1.0 (edition) / public domain in the United States (text)",
         "licence_url": "https://creativecommons.org/publicdomain/zero/1.0/",
         "evidence": [
@@ -2409,12 +2466,11 @@
         },
         "attribution_required": false,
         "attribution": "Edition prepared by Standard Ebooks volunteers (a courtesy credit, not a requirement).",
-        "trademark_note": "The publisher's name and logo do not appear in the shipped file; see CREDITS.md.",
-        "limits": null
+        "trademark_note": "The publisher's name and logo do not appear in the shipped file; see CREDITS.md."
       },
       "featured": {
         "preset_id": "poe-selected-poems-immersive",
-        "blurb": "The Raven: a tapping at the chamber door, wind at the window."
+        "blurb": "The Raven's one word, in a deeper voice than the poet's."
       },
       "preset_version": null
     },
@@ -2550,13 +2606,18 @@
         "sha256": "8c29af6eb8f503a38282c6085f990ed56bf4e16f114790cf215ab4d8c57b3832",
         "artwork": "The Soul of the Soulless City (1920), C. R. W. Nevinson",
         "artist_died": 1946,
+        "rights": "The painter died 1946: public domain in the United States and wherever copyright ends 70 years or less after death; not yet free where the term is longer, such as Mexico (100 years) or Colombia (80 years).",
         "design": "Standard Ebooks cover composition (CC0), scaled for the library"
       },
       "cover_note": null,
       "rights": {
         "status": "public-domain-us",
-        "worldwide": true,
-        "basis": "First published 1905. O. Henry died 1910. Every known contributor died more than 70 years ago.",
+        "us_basis": "First published 1905, more than 95 years ago, so public domain in the United States.",
+        "latest_death": 1910,
+        "cleared_term_years": 100,
+        "scope": "Public domain in the United States, and everywhere copyright ends up to 100 years after death, the longest term in force: the last contributor died 1910.",
+        "caveat": null,
+        "basis": "First published 1905. O. Henry died 1910.",
         "licence": "CC0 1.0 (edition) / public domain in the United States (text)",
         "licence_url": "https://creativecommons.org/publicdomain/zero/1.0/",
         "evidence": [
@@ -2573,8 +2634,7 @@
         },
         "attribution_required": false,
         "attribution": "Edition prepared by Standard Ebooks volunteers (a courtesy credit, not a requirement).",
-        "trademark_note": "The publisher's name and logo do not appear in the shipped file; see CREDITS.md.",
-        "limits": null
+        "trademark_note": "The publisher's name and logo do not appear in the shipped file; see CREDITS.md."
       },
       "featured": null,
       "preset_version": null
@@ -2658,13 +2718,18 @@
         "sha256": "75389338a64b7873c766b38798279f536420ac0668061d3fd2fb4b3c82045181",
         "artwork": "The Headless Horseman Pursuing Ichabod Crane (1858), John Quidor",
         "artist_died": 1881,
+        "rights": "The painter died 1881: public domain everywhere (terms run up to 100 years after death).",
         "design": "Standard Ebooks cover composition (CC0), scaled for the library"
       },
       "cover_note": null,
       "rights": {
         "status": "public-domain-us",
-        "worldwide": true,
-        "basis": "First published 1820. Washington Irving died 1859. Every known contributor died more than 70 years ago.",
+        "us_basis": "First published 1820, more than 95 years ago, so public domain in the United States.",
+        "latest_death": 1859,
+        "cleared_term_years": 100,
+        "scope": "Public domain in the United States, and everywhere copyright ends up to 100 years after death, the longest term in force: the last contributor died 1859.",
+        "caveat": null,
+        "basis": "First published 1820. Washington Irving died 1859.",
         "licence": "CC0 1.0 (edition) / public domain in the United States (text)",
         "licence_url": "https://creativecommons.org/publicdomain/zero/1.0/",
         "evidence": [
@@ -2681,8 +2746,7 @@
         },
         "attribution_required": false,
         "attribution": "Edition prepared by Standard Ebooks volunteers (a courtesy credit, not a requirement).",
-        "trademark_note": "The publisher's name and logo do not appear in the shipped file; see CREDITS.md.",
-        "limits": null
+        "trademark_note": "The publisher's name and logo do not appear in the shipped file; see CREDITS.md."
       },
       "featured": null,
       "preset_version": null
@@ -2799,13 +2863,18 @@
         "sha256": "600ede1c07fc30c500e894e2e0289292b0b2649308f7612b5ce9a80bb05384d8",
         "artwork": "Marissal, Path to the Front of the Church (1866), Jean-Baptiste-Camille Corot",
         "artist_died": 1875,
+        "rights": "The painter died 1875: public domain everywhere (terms run up to 100 years after death).",
         "design": "Standard Ebooks cover composition (CC0), scaled for the library"
       },
       "cover_note": null,
       "rights": {
         "status": "public-domain-us",
-        "worldwide": true,
-        "basis": "First published 1911. G. K. Chesterton died 1936. Every known contributor died more than 70 years ago.",
+        "us_basis": "First published 1911, more than 95 years ago, so public domain in the United States.",
+        "latest_death": 1936,
+        "cleared_term_years": 70,
+        "scope": "Public domain in the United States, and wherever copyright ends 70 years or less after death: the last contributor died 1936.",
+        "caveat": "Not yet free where the term is longer, such as Mexico (100 years) or Colombia (80 years).",
+        "basis": "First published 1911. G. K. Chesterton died 1936.",
         "licence": "CC0 1.0 (edition) / public domain in the United States (text)",
         "licence_url": "https://creativecommons.org/publicdomain/zero/1.0/",
         "evidence": [
@@ -2822,8 +2891,7 @@
         },
         "attribution_required": false,
         "attribution": "Edition prepared by Standard Ebooks volunteers (a courtesy credit, not a requirement).",
-        "trademark_note": "The publisher's name and logo do not appear in the shipped file; see CREDITS.md.",
-        "limits": null
+        "trademark_note": "The publisher's name and logo do not appear in the shipped file; see CREDITS.md."
       },
       "featured": null,
       "preset_version": null
@@ -2929,8 +2997,12 @@
       "cover_note": "The illustrator's dates could not be confirmed, so the painting's status outside the United States is unknown; a plain cover is shown instead.",
       "rights": {
         "status": "public-domain-us",
-        "worldwide": true,
-        "basis": "First published 1855. Walt Whitman died 1892. Every known contributor died more than 70 years ago.",
+        "us_basis": "First published 1855, more than 95 years ago, so public domain in the United States.",
+        "latest_death": 1892,
+        "cleared_term_years": 100,
+        "scope": "Public domain in the United States, and everywhere copyright ends up to 100 years after death, the longest term in force: the last contributor died 1892.",
+        "caveat": null,
+        "basis": "First published 1855. Walt Whitman died 1892.",
         "licence": "CC0 1.0 (edition) / public domain in the United States (text)",
         "licence_url": "https://creativecommons.org/publicdomain/zero/1.0/",
         "evidence": [
@@ -2947,8 +3019,7 @@
         },
         "attribution_required": false,
         "attribution": "Edition prepared by Standard Ebooks volunteers (a courtesy credit, not a requirement).",
-        "trademark_note": "The publisher's name and logo do not appear in the shipped file; see CREDITS.md.",
-        "limits": null
+        "trademark_note": "The publisher's name and logo do not appear in the shipped file; see CREDITS.md."
       },
       "featured": null,
       "preset_version": null
@@ -3067,13 +3138,18 @@
         "sha256": "ccab8c2678df8ddcca3abb5d7571ea5316821f0d94051ab1977cc18d43cfb3a9",
         "artwork": "West Wind, Algonquin Park (1917), Tom Thomson",
         "artist_died": 1917,
+        "rights": "The painter died 1917: public domain everywhere (terms run up to 100 years after death).",
         "design": "Standard Ebooks cover composition (CC0), scaled for the library"
       },
       "cover_note": null,
       "rights": {
         "status": "public-domain-us",
-        "worldwide": true,
-        "basis": "First published 1849. Henry David Thoreau died 1862. Every known contributor died more than 70 years ago.",
+        "us_basis": "First published 1849, more than 95 years ago, so public domain in the United States.",
+        "latest_death": 1862,
+        "cleared_term_years": 100,
+        "scope": "Public domain in the United States, and everywhere copyright ends up to 100 years after death, the longest term in force: the last contributor died 1862.",
+        "caveat": null,
+        "basis": "First published 1849. Henry David Thoreau died 1862.",
         "licence": "CC0 1.0 (edition) / public domain in the United States (text)",
         "licence_url": "https://creativecommons.org/publicdomain/zero/1.0/",
         "evidence": [
@@ -3090,8 +3166,7 @@
         },
         "attribution_required": false,
         "attribution": "Edition prepared by Standard Ebooks volunteers (a courtesy credit, not a requirement).",
-        "trademark_note": "The publisher's name and logo do not appear in the shipped file; see CREDITS.md.",
-        "limits": null
+        "trademark_note": "The publisher's name and logo do not appear in the shipped file; see CREDITS.md."
       },
       "featured": null,
       "preset_version": null
@@ -3180,13 +3255,18 @@
         "sha256": "1f3224895d0b192e02b86204ca0ebd152fe8a76dca7ef855341eb9348745f14c",
         "artwork": "New England Scenery (1839), Thomas Cole",
         "artist_died": 1848,
+        "rights": "The painter died 1848: public domain everywhere (terms run up to 100 years after death).",
         "design": "Standard Ebooks cover composition (CC0), scaled for the library"
       },
       "cover_note": null,
       "rights": {
         "status": "public-domain-us",
-        "worldwide": true,
-        "basis": "First published 1841. Ralph Waldo Emerson died 1882. Every known contributor died more than 70 years ago.",
+        "us_basis": "First published 1841, more than 95 years ago, so public domain in the United States.",
+        "latest_death": 1882,
+        "cleared_term_years": 100,
+        "scope": "Public domain in the United States, and everywhere copyright ends up to 100 years after death, the longest term in force: the last contributor died 1882.",
+        "caveat": null,
+        "basis": "First published 1841. Ralph Waldo Emerson died 1882.",
         "licence": "CC0 1.0 (edition) / public domain in the United States (text)",
         "licence_url": "https://creativecommons.org/publicdomain/zero/1.0/",
         "evidence": [
@@ -3203,8 +3283,7 @@
         },
         "attribution_required": false,
         "attribution": "Edition prepared by Standard Ebooks volunteers (a courtesy credit, not a requirement).",
-        "trademark_note": "The publisher's name and logo do not appear in the shipped file; see CREDITS.md.",
-        "limits": null
+        "trademark_note": "The publisher's name and logo do not appear in the shipped file; see CREDITS.md."
       },
       "featured": null,
       "preset_version": null
@@ -3322,13 +3401,18 @@
         "sha256": "af0e6c42ad027cdf597cafc2f76d57aa20b01a74a089b8f7c27deb07486b4611",
         "artwork": "After the Audience (1879), Sir Lawrence Alma-Tadema",
         "artist_died": 1912,
+        "rights": "The painter died 1912: public domain everywhere (terms run up to 100 years after death).",
         "design": "Standard Ebooks cover composition (CC0), scaled for the library"
       },
       "cover_note": null,
       "rights": {
         "status": "public-domain-us",
-        "worldwide": true,
-        "basis": "First published 1862. Marcus Aurelius died 180; George Long died 1879. Every known contributor died more than 70 years ago.",
+        "us_basis": "First published 1862, more than 95 years ago, so public domain in the United States.",
+        "latest_death": 1879,
+        "cleared_term_years": 100,
+        "scope": "Public domain in the United States, and everywhere copyright ends up to 100 years after death, the longest term in force: the last contributor died 1879.",
+        "caveat": null,
+        "basis": "First published 1862. Marcus Aurelius died 180; George Long died 1879.",
         "licence": "CC0 1.0 (edition) / public domain in the United States (text)",
         "licence_url": "https://creativecommons.org/publicdomain/zero/1.0/",
         "evidence": [
@@ -3345,8 +3429,7 @@
         },
         "attribution_required": false,
         "attribution": "Edition prepared by Standard Ebooks volunteers (a courtesy credit, not a requirement).",
-        "trademark_note": "The publisher's name and logo do not appear in the shipped file; see CREDITS.md.",
-        "limits": null
+        "trademark_note": "The publisher's name and logo do not appear in the shipped file; see CREDITS.md."
       },
       "featured": null,
       "preset_version": null
@@ -3482,13 +3565,18 @@
         "sha256": "99737f579e528d7c0a7990ab25191c81f0d997a270d6dee5c0bb35e3ec7bd027",
         "artwork": "Frederick Douglass (c. 1844), unknown artist",
         "artist_died": null,
+        "rights": "By an unknown artist, about 1844: beyond every copyright term.",
         "design": "Standard Ebooks cover composition (CC0), scaled for the library"
       },
       "cover_note": null,
       "rights": {
         "status": "public-domain-us",
-        "worldwide": true,
-        "basis": "First published 1845. Frederick Douglass died 1895; William Lloyd Garrison died 1879; Wendell Phillips died 1884. Every known contributor died more than 70 years ago.",
+        "us_basis": "First published 1845, more than 95 years ago, so public domain in the United States.",
+        "latest_death": 1895,
+        "cleared_term_years": 100,
+        "scope": "Public domain in the United States, and everywhere copyright ends up to 100 years after death, the longest term in force: the last contributor died 1895.",
+        "caveat": null,
+        "basis": "First published 1845. Frederick Douglass died 1895; William Lloyd Garrison died 1879; Wendell Phillips died 1884.",
         "licence": "CC0 1.0 (edition) / public domain in the United States (text)",
         "licence_url": "https://creativecommons.org/publicdomain/zero/1.0/",
         "evidence": [
@@ -3505,8 +3593,7 @@
         },
         "attribution_required": false,
         "attribution": "Edition prepared by Standard Ebooks volunteers (a courtesy credit, not a requirement).",
-        "trademark_note": "The publisher's name and logo do not appear in the shipped file; see CREDITS.md.",
-        "limits": null
+        "trademark_note": "The publisher's name and logo do not appear in the shipped file; see CREDITS.md."
       },
       "featured": null,
       "preset_version": null
@@ -3659,13 +3746,18 @@
         "sha256": "b23bbc77eff6e9524be6b0f6e36b3305a4205666ea712c5454d0be49ff390bbb",
         "artwork": "The Power of Music (1847), William Sidney Mount",
         "artist_died": 1868,
+        "rights": "The painter died 1868: public domain everywhere (terms run up to 100 years after death).",
         "design": "Standard Ebooks cover composition (CC0), scaled for the library"
       },
       "cover_note": null,
       "rights": {
         "status": "public-domain-us",
-        "worldwide": true,
-        "basis": "First published 1901. Booker T. Washington died 1915; Walter H. Page died 1918. Every known contributor died more than 70 years ago.",
+        "us_basis": "First published 1901, more than 95 years ago, so public domain in the United States.",
+        "latest_death": 1918,
+        "cleared_term_years": 100,
+        "scope": "Public domain in the United States, and everywhere copyright ends up to 100 years after death, the longest term in force: the last contributor died 1918.",
+        "caveat": null,
+        "basis": "First published 1901. Booker T. Washington died 1915; Walter H. Page died 1918.",
         "licence": "CC0 1.0 (edition) / public domain in the United States (text)",
         "licence_url": "https://creativecommons.org/publicdomain/zero/1.0/",
         "evidence": [
@@ -3682,8 +3774,7 @@
         },
         "attribution_required": false,
         "attribution": "Edition prepared by Standard Ebooks volunteers (a courtesy credit, not a requirement).",
-        "trademark_note": "The publisher's name and logo do not appear in the shipped file; see CREDITS.md.",
-        "limits": null
+        "trademark_note": "The publisher's name and logo do not appear in the shipped file; see CREDITS.md."
       },
       "featured": null,
       "preset_version": null
@@ -3831,13 +3922,18 @@
         "sha256": "45de085ac8db9997be7c69a582bd8d89d688c9bc2f88befe774830fac54bec95",
         "artwork": "The Garden (1899), John Collier",
         "artist_died": 1934,
+        "rights": "The painter died 1934: public domain in the United States and wherever copyright ends 70 years or less after death; not yet free where the term is longer, such as Mexico (100 years) or Colombia (80 years).",
         "design": "Standard Ebooks cover composition (CC0), scaled for the library"
       },
       "cover_note": null,
       "rights": {
         "status": "public-domain-us",
-        "worldwide": true,
-        "basis": "First published 1890. Oscar Wilde died 1900. Every known contributor died more than 70 years ago.",
+        "us_basis": "First published 1890, more than 95 years ago, so public domain in the United States.",
+        "latest_death": 1900,
+        "cleared_term_years": 100,
+        "scope": "Public domain in the United States, and everywhere copyright ends up to 100 years after death, the longest term in force: the last contributor died 1900.",
+        "caveat": null,
+        "basis": "First published 1890. Oscar Wilde died 1900.",
         "licence": "CC0 1.0 (edition) / public domain in the United States (text)",
         "licence_url": "https://creativecommons.org/publicdomain/zero/1.0/",
         "evidence": [
@@ -3854,8 +3950,7 @@
         },
         "attribution_required": false,
         "attribution": "Edition prepared by Standard Ebooks volunteers (a courtesy credit, not a requirement).",
-        "trademark_note": "The publisher's name and logo do not appear in the shipped file; see CREDITS.md.",
-        "limits": null
+        "trademark_note": "The publisher's name and logo do not appear in the shipped file; see CREDITS.md."
       },
       "featured": null,
       "preset_version": null
@@ -3985,8 +4080,12 @@
       "cover_note": "The text source has no cover; a plain cover is shown.",
       "rights": {
         "status": "public-domain-us",
-        "worldwide": true,
-        "basis": "First published 1890. Emily Dickinson died 1886; Mabel Loomis Todd died 1932; Thomas Wentworth Higginson died 1911. Every known contributor died more than 70 years ago.",
+        "us_basis": "First published 1890, more than 95 years ago, so public domain in the United States.",
+        "latest_death": 1932,
+        "cleared_term_years": 70,
+        "scope": "Public domain in the United States, and wherever copyright ends 70 years or less after death: the last contributor died 1932.",
+        "caveat": "Not yet free where the term is longer, such as Mexico (100 years) or Colombia (80 years).",
+        "basis": "First published 1890. Emily Dickinson died 1886; Mabel Loomis Todd died 1932; Thomas Wentworth Higginson died 1911.",
         "licence": "Public domain (United States); Project Gutenberg text with its licence removed",
         "licence_url": "https://www.gutenberg.org/policy/license.html",
         "evidence": [
@@ -4003,8 +4102,7 @@
         },
         "attribution_required": false,
         "attribution": "Transcription from Project Gutenberg (a courtesy credit; the trademark is not used).",
-        "trademark_note": "The Project Gutenberg name and licence were removed as its licence allows for stripped text.",
-        "limits": null
+        "trademark_note": "The Project Gutenberg name and licence were removed as its licence allows for stripped text."
       },
       "featured": null,
       "preset_version": null

@@ -6,7 +6,7 @@
   "edition_id": "standardebooks:lewis-carroll/alices-adventures-in-wonderland/john-tenniel@9ecdf2f",
   "text_version": 1,
   "title": "Wonderland, in voices",
-  "summary": "Alice, the White Rabbit, the Hatter, the Cheshire Cat and the Queen each read their own lines, with a few quiet sounds: the fall, the Rabbit's hurrying feet, a ticking tea-party clock.",
+  "summary": "Alice, the White Rabbit, the Hatter, the Cheshire Cat and the Queen each read their own lines, and the Rabbit's untagged cries go to him.",
   "narrator": {
     "voice": { "preferred": "kokoro:af_heart", "fallbacks": ["kokoro:bf_emma"] },
     "note": "A warm, unhurried storyteller."

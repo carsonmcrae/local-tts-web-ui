@@ -65,7 +65,11 @@ class Rights(ApiModel):
     model_config = ConfigDict(extra="allow")
 
     status: Literal["public-domain-us"]
-    worldwide: bool
+    us_basis: str
+    latest_death: int | None = None  # of the people whose work is in the shipped text
+    cleared_term_years: Literal[70, 100] | None = None  # the longest life-plus term the text is known to be clear of
+    scope: str  # where the text is known to be public domain, as Explore shows it
+    caveat: str | None = None  # countries or contributors that keep it unresolved elsewhere
     basis: str
     licence: str
     licence_url: str
@@ -73,7 +77,6 @@ class Rights(ApiModel):
     verified_on: str
     attribution: str
     trademark_note: str
-    limits: str | None = None
 
 
 class Featured(ApiModel):
@@ -130,8 +133,8 @@ class WorkOut(ApiModel):
     cover_note: str | None
     edition_source: str
     edition_source_url: str
-    rights_worldwide: bool
-    rights_limits: str | None
+    rights_scope: str
+    rights_caveat: str | None
     featured: Featured | None
     document_id: str | None  # the document this work became, if it was opened
     hidden: bool
@@ -219,7 +222,7 @@ class Catalog:
             estimated_seconds=round(work.word_count * CHARS_PER_WORD / CHARS_PER_SECOND),
             has_cover=work.cover is not None, cover_note=work.cover_note,
             edition_source=str(work.edition["source"]), edition_source_url=str(work.edition["source_url"]),
-            rights_worldwide=work.rights.worldwide, rights_limits=work.rights.limits, featured=work.featured,
+            rights_scope=work.rights.scope, rights_caveat=work.rights.caveat, featured=work.featured,
             document_id=document_id, hidden=hidden,
         )  # fmt: skip
 

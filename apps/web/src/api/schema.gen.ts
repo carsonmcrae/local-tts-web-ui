@@ -2990,6 +2990,8 @@ export type components = {
       characters: components['schemas']['PresetCharacterOut'][];
       /** Components */
       components: components['schemas']['PresetComponentOut'][];
+      /** Editionmatches */
+      editionMatches: boolean;
       /** Effects */
       effects: number;
       /** Musictrackid */
@@ -3791,10 +3793,10 @@ export type components = {
       hasCover: boolean;
       /** Hidden */
       hidden: boolean;
-      /** Rightslimits */
-      rightsLimits: string | null;
-      /** Rightsworldwide */
-      rightsWorldwide: boolean;
+      /** Rightscaveat */
+      rightsCaveat: string | null;
+      /** Rightsscope */
+      rightsScope: string;
       /** Sorttitle */
       sortTitle: string;
       /** Title */

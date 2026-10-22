@@ -6,7 +6,7 @@
   "edition_id": "standardebooks:charles-dickens/a-christmas-carol@d5a9e58",
   "text_version": 1,
   "title": "A Christmas Carol, in voices",
-  "summary": "Scrooge, Marley, Bob Cratchit, Fred and Tiny Tim in their own voices, with a church bell, a creaking door, chiming clocks and a crackling fire.",
+  "summary": "Scrooge, Marley, Bob Cratchit, Fred, Tiny Tim and old Fezziwig in their own voices, with Marley's and Fred's untagged lines given to them.",
   "narrator": {
     "voice": { "preferred": "kokoro:bm_george", "fallbacks": ["kokoro:bm_fable"] },
     "note": "A fireside storyteller."

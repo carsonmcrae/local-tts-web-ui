@@ -67,7 +67,7 @@ function CreditsDialog({
       open={open}
       onOpenChange={onOpenChange}
       title="Where these books come from"
-      description="Every book is in the public domain; this is the record of each edition and cover."
+      description="Every book is public domain in the United States; this is the record of each edition, its cover, and where else it is known to be free."
       size="lg"
     >
       {credits.isPending ? <Skeleton className="h-40" /> : null}

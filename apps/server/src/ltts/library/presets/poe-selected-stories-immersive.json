@@ -6,7 +6,7 @@
   "edition_id": "standardebooks:edgar-allan-poe/short-fiction@f0a5168",
   "text_version": 1,
   "title": "Poe, after dark",
-  "summary": "A low voice for Poe's narrators and Dupin in his own, with a muffled ticking under The Tell-Tale Heart, footsteps in the catacombs, and the storm about the House of Usher.",
+  "summary": "A low, too-calm voice for Poe's narrators, and Dupin in his own.",
   "narrator": {
     "voice": { "preferred": "kokoro:bm_fable", "fallbacks": ["kokoro:bm_george"] },
     "note": "Low, deliberate, a little too calm."

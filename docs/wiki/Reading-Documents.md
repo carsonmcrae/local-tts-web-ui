@@ -299,7 +299,8 @@ several documents at once.
 
 **Browse the included books** (from the Library) opens **Explore**: 25 public-domain works that come
 with TTSNative, grouped by kind, each with its cover, description, content notes and where its
-rights stand (public domain in the United States; most are public domain everywhere). **Read**
+rights stand: every book is public domain in the United States, and each card says where else it is
+known to be free from the author's death year, naming the countries where a longer term still runs. **Read**
 adds a book to your library, where it behaves like any other document (progress, bookmarks, voices,
 export); **Continue** opens it again. **Hide** removes a book from Explore without touching your
 library, and **Show hidden books** brings it back. Nothing is added to your library on its own, and

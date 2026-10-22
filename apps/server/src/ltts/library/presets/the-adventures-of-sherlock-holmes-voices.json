@@ -6,7 +6,7 @@
   "edition_id": "standardebooks:arthur-conan-doyle/the-adventures-of-sherlock-holmes@60f53b2",
   "text_version": 1,
   "title": "Holmes and Watson, told apart",
-  "summary": "Watson tells the stories; Holmes, Lestrade and the clients answer in their own voices. One sound: the horses' hoofs that bring the King of Bohemia to Baker Street.",
+  "summary": "Watson tells the stories; Holmes, Lestrade and the clients answer in their own voices.",
   "narrator": {
     "voice": { "preferred": "kokoro:bm_george", "fallbacks": ["kokoro:bm_daniel"] },
     "note": "Dr. Watson tells these stories."

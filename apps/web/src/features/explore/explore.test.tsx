@@ -35,8 +35,9 @@ const work = (overrides: Partial<BundledWork>): BundledWork => ({
   coverNote: null,
   editionSource: 'Standard Ebooks',
   editionSourceUrl: 'https://standardebooks.org/ebooks/h-g-wells/the-time-machine',
-  rightsWorldwide: true,
-  rightsLimits: null,
+  rightsScope:
+    'Public domain in the United States, and wherever copyright ends 70 years or less after death.',
+  rightsCaveat: null,
   featured: null,
   documentId: null,
   hidden: false,
@@ -62,8 +63,8 @@ const poems = work({
   hasCover: false,
   coverNote: 'No cover ships.',
   contentNotes: ['Tales of terror.'],
-  rightsWorldwide: false,
-  rightsLimits: 'Public domain in the United States; check the law where you are.',
+  rightsScope: 'Public domain in the United States.',
+  rightsCaveat: 'Rights elsewhere depend on the editor, whose dates are not recorded.',
   documentId: 'd'.repeat(32),
 });
 const hiddenWork = work({
@@ -99,7 +100,8 @@ describe('Explore', () => {
       screen.getByText(/Novella · Science fiction · 13 chapters · ~3 h 20 min listen/),
     ).toBeInTheDocument();
     expect(screen.getByText('Tales of terror.')).toBeInTheDocument();
-    expect(screen.getByText(/check the law where you are/)).toBeInTheDocument();
+    expect(screen.getByText(/whose dates are not recorded/)).toBeInTheDocument();
+    expect(screen.getAllByText(/Public domain in the United States/)).toHaveLength(4); // every card says where (Alice is shown twice)
     expect(screen.getByText('In your library')).toBeInTheDocument();
     expect(screen.queryByText('Up from Slavery')).not.toBeInTheDocument(); // hidden
     const covers = screen

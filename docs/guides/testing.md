@@ -9,6 +9,7 @@
 | `npm run check`                                                                                                                                | Format, lint, type-check, API-contract check, unit tests, build                                                                                   | No                                | Yes                      |
 | `node scripts/uv-run.mjs --cwd apps/server run --frozen python ../../tests/perf/benchmark.py`                                                  | Performance measurements                                                                                                                          | Yes                               | No                       |
 | `node scripts/uv-run.mjs --cwd apps/server run --frozen python ../../tests/perf/narration_benchmark.py --out FOLDER --voice kokoro:af_heart …` | Reads thirteen held-out passages with the voices you name, measures each, and writes blind listening packs (docs/research/voice-library.md)       | Yes                               | No                       |
+| `npm run perf:listening -- --url URL --document ID --minutes 60 [--music]`                                                                     | A long listening session in Chromium: memory per browser process each minute, paused and under pressure (docs/guides/performance.md)              | Yes                               | No                       |
 
 ## Layout
 

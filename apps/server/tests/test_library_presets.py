@@ -242,3 +242,36 @@ def test_speaker_scopes_confidence_and_unresolved_anchors(client: TestClient, se
     services.presets.remove(doc)
     assert services.styling.get(doc).segments == [] and services.casting.voices(doc) == {}
     services.presets.remove(doc)  # nothing left to take out
+
+
+def test_anchors_trust_quotes_only_for_the_presets_own_edition(client: TestClient, services: Services) -> None:
+    doc = client.post(f"/api/library/works/{ALICE}/open").json()["id"]
+    assert client.get(f"/api/documents/{doc}/preset").json()["editionMatches"] is True
+    late = next(s for s in services.document_repo.segments_detail(doc) if s.text.endswith("I shall be late!”"))
+    moved = Anchor(
+        chapter="chapter-1", hash="0" * 16, quote="I shall be late!”", occurrence=1
+    )  # text changed, quote left
+    speakers = [{"anchor": moved.model_dump(), "speaker": "ann"}]
+    preset = Preset.model_validate(_preset(speakers=speakers, edition_id=PRESETS[ALICE].edition_id))
+    assert services.presets.report(doc, preset).speakers_resolved == 1  # the same edition: the quote stands in
+    with services.db.connect() as conn:
+        conn.execute(
+            "UPDATE bundled_documents SET edition_id = 'standardebooks:other@0000000' WHERE document_id = ?", (doc,)
+        )
+    report = client.get(f"/api/documents/{doc}/preset").json()
+    assert report["editionMatches"] is False and report["speakersResolved"] == 8  # every shipped hash still matches
+    assert services.presets.report(doc, preset).speakers_resolved == 0  # another edition: a quote proves nothing
+    services.presets.apply(doc, preset, ["speakers"])
+    assert services.styling.get(doc).segments == [] and late.index not in services.styling._rows(doc)
+
+
+def test_organising_and_presets_never_touch_the_shipped_books(client: TestClient, services: Services) -> None:
+    doc = client.post(f"/api/library/works/{ALICE}/open").json()["id"]
+    folder = client.post("/api/library/folders", json={"name": "Classics"}).json()
+    client.put(f"/api/documents/{doc}/shelf", json={"folderId": folder["id"], "tags": ["read-aloud"], "favorite": True})
+    services.presets.apply(doc, PRESETS[ALICE], ["characters"])
+    client.delete(f"/api/library/folders/{folder['id']}")
+    assert client.get(f"/api/documents/{doc}").status_code == 200  # the document outlives its folder
+    version, works = catalog_module.load_catalog()  # every shipped file still matches its recorded hash
+    assert version >= 1 and len(works) == 25
+    assert not list((services.settings.resolved_data_dir / "tmp").glob("*.upload"))  # and no copy was left behind

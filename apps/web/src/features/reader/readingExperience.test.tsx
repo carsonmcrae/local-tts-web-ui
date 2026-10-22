@@ -38,6 +38,7 @@ const report = (applied: string[] = [], available = false): ReadingPreset => ({
   speakersUnresolved: 0,
   effects: 5,
   musicTrackId: 'gymnopedie-1',
+  editionMatches: true,
   components: [
     { name: 'narrator', available: true, note: 'A voice.', applied: applied.includes('narrator') },
     {
@@ -105,7 +106,13 @@ describe('Reading experience', () => {
   });
 
   it('shows a bare preset plainly, applies everything for immersive, and takes one choice at a time', async () => {
-    const bare = { ...report([], true), narrator: null, musicTrackId: null, characters: [] };
+    const bare = {
+      ...report([], true),
+      narrator: null,
+      musicTrackId: null,
+      characters: [],
+      editionMatches: false,
+    };
     let release: (() => void) | undefined;
     const { calls } = mockApi({
       'GET /api/documents/': bare, // and no voices answer yet
@@ -118,6 +125,7 @@ describe('Reading experience', () => {
     const { user, onChanged } = renderChooser();
     const chooser = await region();
     expect(within(chooser).queryByText('Suggested reading voice')).not.toBeInTheDocument();
+    expect(within(chooser).getByText(/different edition/)).toBeInTheDocument();
     expect(within(chooser).queryByText(/is recommended/)).not.toBeInTheDocument();
     expect(within(chooser).queryByRole('list')).not.toBeInTheDocument();
     await user.click(within(chooser).getByRole('radio', { name: /Immersive/ }));

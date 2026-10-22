@@ -238,11 +238,17 @@ def load_presets(package: Traversable | None = None) -> dict[str, Preset]:
 Sentences = Sequence[tuple[int, str]]  # (segment index, stored text)
 
 
-def resolve(anchor: Anchor, sentences: Sentences) -> int | None:
-    """The segment index an anchor names: the n-th sentence with its hash, else the n-th starting with its quote."""
+def resolve(anchor: Anchor, sentences: Sentences, *, quotes: bool = True) -> int | None:
+    """The segment index an anchor names: the n-th sentence with its hash, else the n-th starting with its quote.
+
+    The quote is only trusted (``quotes``) for the edition the preset was written against; another
+    edition's sentence may begin the same way and mean something else.
+    """
     by_hash = [index for index, text in sentences if sentence_hash(text) == anchor.hash]
     if len(by_hash) >= anchor.occurrence:
         return by_hash[anchor.occurrence - 1]
+    if not quotes:
+        return None
     quote = " ".join(anchor.quote.split())
     by_quote = [index for index, text in sentences if " ".join(text.split()).startswith(quote)]
     if len(by_quote) >= anchor.occurrence:
@@ -289,6 +295,7 @@ class ReadingPresetOut(ApiModel):
     speakers_unresolved: int
     effects: int
     music_track_id: str | None
+    edition_matches: bool  # the document is the edition and text version the preset was written for
     components: list[PresetComponentOut]
     applied_at: str | None
     applied_version: int | None
@@ -336,6 +343,18 @@ class PresetService:
             raise NotFoundError("This document has no reading preset.", code="preset_not_found")
         return preset
 
+    def _edition_matches(self, document_id: str, preset: Preset) -> bool:
+        """Whether the document was opened from the edition and text version the preset's anchors were made for."""
+        with self._db.connect() as conn:
+            row = conn.execute(
+                "SELECT edition_id, text_version FROM bundled_documents WHERE document_id = ?", (document_id,)
+            ).fetchone()
+        return bool(row) and row["edition_id"] == preset.edition_id and row["text_version"] == preset.text_version
+
+    def _sentences_for(self, document_id: str, preset: Preset) -> tuple[Sentences, bool]:
+        """The document's sentences and whether quotes may stand in for hashes (only for the preset's own edition)."""
+        return self._sentences(document_id), self._edition_matches(document_id, preset)
+
     def _choose(self, voice: VoiceRef) -> PresetVoiceOut:
         chosen = next((candidate for candidate in voice.candidates if self._available(candidate)), None)
         return PresetVoiceOut(preferred=voice.preferred, chosen=chosen)
@@ -352,8 +371,10 @@ class PresetService:
         return written, row["applied_at"], row["preset_version"]
 
     def report(self, document_id: str, preset: Preset) -> ReadingPresetOut:
-        sentences = self._sentences(document_id)
-        resolved = sum(1 for speaker in preset.speakers if resolve(speaker.anchor, sentences) is not None)
+        sentences, same_edition = self._sentences_for(document_id, preset)
+        resolved = sum(
+            1 for speaker in preset.speakers if resolve(speaker.anchor, sentences, quotes=same_edition) is not None
+        )
         lines = {character.name: character.lines for character in self._casting.list_for(document_id)}
         record = self._record(document_id)
         written = record[0] if record else {}
@@ -378,6 +399,7 @@ class PresetService:
             speakers_unresolved=len(preset.speakers) - resolved,
             effects=len(preset.effects),
             music_track_id=preset.music.recommendation.track_id if preset.music else None,
+            edition_matches=same_edition,
             components=[
                 PresetComponentOut(name=name, available=name not in NOT_YET, note=NOTES[name], applied=name in written)
                 for name in preset.components
@@ -423,12 +445,12 @@ class PresetService:
     def _apply_speakers(self, document_id: str, preset: Preset, voices: dict[str, str | None]) -> list[list[Any]]:
         """Speaker annotations as rows: a quoted line names its speaker, a whole sentence takes the voice."""
         names = {c.id: c.name for c in preset.characters}
-        sentences = self._sentences(document_id)
+        sentences, same_edition = self._sentences_for(document_id, preset)
         rows: list[list[Any]] = []
         for speaker in preset.speakers:
             if speaker.confidence == "uncertain":
                 continue
-            index = resolve(speaker.anchor, sentences)
+            index = resolve(speaker.anchor, sentences, quotes=same_edition)
             if index is None:
                 continue
             if speaker.scope == "quoted":

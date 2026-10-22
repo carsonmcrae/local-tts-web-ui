@@ -152,6 +152,12 @@ export function ReadingExperience({
           ))}
         </ul>
       ) : null}
+      {report.editionMatches ? null : (
+        <p className="mt-2 text-xs text-subtle">
+          This copy is a different edition from the one the experience was made for, so only
+          sentences that match it exactly are used.
+        </p>
+      )}
       {offered
         .filter((c) => !c.available)
         .map((c) => (

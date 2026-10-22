@@ -208,7 +208,17 @@ Kokoro 82M v1.0 (Apache-2.0): licenses\\kokoro\\README.txt and licenses\\Apache-
 Bundled JavaScript packages and fonts: web\\THIRD-PARTY-LICENSES.md and web\\FONT-LICENSES.txt.
 Background music (CC0 and public-domain recordings, credited anyway): web\\music\\CREDITS.md.
 
-7. TTSNative.exe (Rust crates compiled into the desktop shell for Windows: ${rust.count})
+7. INCLUDED BOOKS
+25 public-domain works ship inside the server package (python\\Lib\\site-packages\\ltts\\library\\): 24
+Standard Ebooks editions, whose texts are public domain in the United States and whose editorial work is
+dedicated to the public domain (CC0 1.0), and one Project Gutenberg transcription (Emily Dickinson's
+Poems) with the Project Gutenberg licence and trademark removed as that licence allows. Cover art is a
+public-domain painting per book. Each work's sources, editors, cover artist and the countries where it
+is known to be public domain are listed in ltts\\library\\CREDITS.md; the catalog's rights records are
+in ltts\\library\\catalog.json. Standard Ebooks and Project Gutenberg are credited as sources only;
+their names and logos are not used in the shipped files.
+
+8. TTSNative.exe (Rust crates compiled into the desktop shell for Windows: ${rust.count})
 Each crate's source is at the address shown. The Microsoft WebView2 loader (WebView2LoaderStatic.lib
 from the Microsoft.Web.WebView2 SDK, BSD-3-Clause, Copyright (C) Microsoft Corporation) is linked
 through webview2-com-sys; its licence and notices are in licenses\\webview2\\.

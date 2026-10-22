@@ -68,7 +68,7 @@
   "devDependencies": {
     "@axe-core/playwright": "4.13.0",
     "@eslint/js": "10.0.1",
-    "@playwright/test": "1.63.0",
+    "@playwright/test": "1.64.0",
     "@tauri-apps/cli": "2.12.1",
     "@types/node": "24.19.2",
     "eslint": "10.12.0",
@@ -77,7 +77,7 @@
     "eslint-plugin-react-refresh": "0.5.7",
     "globals": "17.13.0",
     "jscpd": "5.4.0",
-    "knip": "6.39.0",
+    "knip": "6.40.0",
     "openapi-typescript": "7.13.0",
     "prettier": "3.9.9",
     "prettier-plugin-tailwindcss": "0.8.1",

@@ -19,7 +19,7 @@ export const GATED_FROM = '2.2.0';
  * coverage, duplication, audits, the website build), the Windows app (installer, persistence and
  * update path), CodeQL, and the real-model and browser journeys (run by hand on the commit).
  */
-export const REQUIRED_WORKFLOWS = ['CI', 'Desktop', 'CodeQL', 'Inference & E2E'];
+const REQUIRED_WORKFLOWS = ['CI', 'Desktop', 'CodeQL', 'Inference & E2E'];
 /** Where a version's readiness evidence lives. */
 export const readinessDir = (/** @type {string} */ version) => `docs/readiness/${version}`;
 

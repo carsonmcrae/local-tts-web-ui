@@ -35,6 +35,8 @@ import {
   releasePages,
   releasePath,
   releasedFlags,
+  dropUnreleased,
+  keepUnreleased,
 } from './releases.mjs';
 
 /** @param {string} name */
@@ -85,13 +87,14 @@ async function releaseInfo() {
   const finished = readReleases().releases.filter((release) => !release.draft);
   const known = finished.map((release) => release.version);
   if (!process.argv.includes('--releases') || option('--releases') !== 'github') {
-    return { releases: finished, installer: null, known };
+    return { releases: finished, installer: null, known, github: false };
   }
   const { published, installer } = await githubReleases();
   return {
     releases: finished.filter((release) => published.has(release.version)),
     installer,
     known,
+    github: true,
   };
 }
 
@@ -124,15 +127,19 @@ async function main() {
     copyFileSync(path.join(repoRoot, 'docs', 'images', file), path.join(out, 'images', file));
   }
 
-  const { releases, installer, known } = await releaseInfo();
+  const { releases, installer, known, github } = await releaseInfo();
   const latest = releases[0] ?? null;
   const released = releasedFlags(
     known,
     releases.map((release) => release.version),
   );
+  // A version that has no notes yet (the next release, before release:prepare) gets no flag at all. The
+  // published site drops such blocks (it never shows an unreleased card); a local build keeps them so
+  // the layout can be checked.
+  const undecided = github ? dropUnreleased : keepUnreleased;
   const fill = (/** @type {string} */ html) =>
     fillLatest(
-      fillDownload(applyConditions(applyRequirements(html, out), released), installer),
+      fillDownload(undecided(applyConditions(applyRequirements(html, out), released)), installer),
       latest,
     ).replaceAll('%BASE_URL%', () => base);
   const pages = ['index.html', 'download/index.html', '404.html'].map((page) => ({

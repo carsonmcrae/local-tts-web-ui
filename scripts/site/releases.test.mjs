@@ -21,6 +21,8 @@ import {
   githubReleases,
   releasePages,
   releasedFlags,
+  dropUnreleased,
+  keepUnreleased,
   renderHistory,
 } from './releases.mjs';
 
@@ -161,6 +163,18 @@ test('the download section is filled in, or replaced by the source install', () 
     'oldnew',
   );
   assert.deepEqual(releasedFlags(['2.1.0'], []), { 'released-2.1.0': false });
+  // A version without notes yet has no flag; its block must still be dropped, and only such blocks.
+  const undecided =
+    '<!-- if:released-2.2.0 -->later<!-- /if:released-2.2.0 --><!-- if:release -->x<!-- /if:release -->';
+  assert.equal(
+    dropUnreleased(applyConditions(undecided, releasedFlags(['2.0.0'], ['2.0.0']))),
+    '<!-- if:release -->x<!-- /if:release -->',
+  );
+  assert.equal(dropUnreleased(applyConditions(cards, releasedFlags(['2.0.0'], ['2.0.0']))), 'old');
+  assert.equal(
+    keepUnreleased(applyConditions(cards, releasedFlags(['2.0.0'], ['2.0.0']))),
+    'oldnew',
+  );
 });
 
 test('the history shows one version with its date, every version listed, and the way around', () => {

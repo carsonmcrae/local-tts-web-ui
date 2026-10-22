@@ -62,6 +62,25 @@ export function releasedFlags(known, released) {
 }
 
 /**
+ * Drops every `<!-- if:released-X.Y.Z -->` block that is still undecided: a version with no notes yet
+ * (the next release, before `release:prepare`) is by definition not released, so its blocks must go
+ * rather than stay for "a later pass". Run after `applyConditions` with `releasedFlags`.
+ * @param {string} html
+ */
+export function dropUnreleased(html) {
+  return html.replace(/ *<!-- if:(released-[0-9.]+) -->[\s\S]*?<!-- \/if:\1 -->\n?/g, '');
+}
+
+/**
+ * The opposite, for local builds: keeps the undecided blocks (markers removed) so a card for the
+ * next version can be checked for layout before its notes exist.
+ * @param {string} html
+ */
+export function keepUnreleased(html) {
+  return html.replace(/<!-- if:(released-[0-9.]+) -->([\s\S]*?)<!-- \/if:\1 -->/g, '$2');
+}
+
+/**
  * @param {string} html
  * @param {Installer | null} installer
  */

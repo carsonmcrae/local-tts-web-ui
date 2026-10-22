@@ -27,4 +27,6 @@ docs: changed
   `update-test.mjs` also signs B with a second throwaway key and proves that signature is refused.
   `scripts/desktop/processes.mjs` lists every process under the install or data folder (server,
   WebView2, uv, the Chatterbox worker `python.exe`); the persistence test requires none after a close or
-  a crash.
+  a crash. `build.mjs` takes the `TTSNATIVE_TAURI_CONFIG` overlay only for a test build
+  (`TTSNATIVE_TEST_HOOKS=1`) and only for `plugins.updater`; a release build refuses it
+  (`build-config.mjs`, with tests).

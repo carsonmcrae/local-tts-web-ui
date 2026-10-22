@@ -9,6 +9,8 @@
  *   Without TAURI_SIGNING_PRIVATE_KEY the installer has no updater signature: fine for testing, but
  *   such a build can never be offered as an update. TTSNATIVE_WINDOWS_SIGN_COMMAND (for example Azure
  *   Artifact Signing) adds Authenticode signatures to the app and installer (`%1` is the file).
+ *   TTSNATIVE_TAURI_CONFIG (the update test's throwaway key and local address) is taken only by a
+ *   test build (TTSNATIVE_TEST_HOOKS=1) and may change nothing but the updater section.
  *   Windows only; needs Rust and the MSVC build tools.
  * Does NOT belong: What goes into the runtime (build-runtime.mjs) or publishing (release.yml).
  */
@@ -28,6 +30,7 @@ import path from 'node:path';
 import { buildVersion } from '../lib/build-version.mjs';
 import { BootstrapError, ok, printFailure, step, warn } from '../lib/log.mjs';
 import { repoRoot } from '../lib/paths.mjs';
+import { overrideArgs } from './build-config.mjs';
 import { checkTestHooks } from './check-test-hooks.mjs';
 
 const desktopDir = path.join(repoRoot, 'apps', 'desktop');
@@ -81,10 +84,9 @@ function tauriBuild(version, env) {
       '--config',
       JSON.stringify(override),
       ...(testHooks ? ['--features', 'test-hooks'] : []),
-      // Test builds only (update-test.mjs): another update key and a local update address.
-      ...(process.env.TTSNATIVE_TAURI_CONFIG
-        ? ['--config', process.env.TTSNATIVE_TAURI_CONFIG]
-        : []),
+      // Test builds only (update-test.mjs): another update key and a local update address. Any other
+      // build refuses the overlay (build-config.mjs).
+      ...overrideArgs({ testHooks, override: process.env.TTSNATIVE_TAURI_CONFIG }),
     ],
     { cwd: desktopDir, env },
   );

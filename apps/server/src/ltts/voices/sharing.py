@@ -21,7 +21,6 @@ import json
 import logging
 import re
 import shutil
-import unicodedata
 import zipfile
 from pathlib import Path
 from typing import Any, Literal
@@ -29,7 +28,7 @@ from typing import Any, Literal
 from pydantic import Field, ValidationError, field_validator
 
 from ltts import __version__
-from ltts.common import MB, ApiModel, new_id, utc_now
+from ltts.common import MAX_VOICE_PACKAGE_BYTES, MB, ApiModel, new_id, plain_text, utc_now
 from ltts.config import Settings
 from ltts.engines.base import Delivery
 from ltts.errors import ConflictError, UnsupportedDocumentError
@@ -46,7 +45,7 @@ from ltts.voices.styles import STYLE_SOURCES
 
 log = logging.getLogger("ltts.voices.sharing")
 EXTENSION = ".ttsvoice"
-MAX_PACKAGE_BYTES = 40 * MB
+MAX_PACKAGE_BYTES = MAX_VOICE_PACKAGE_BYTES  # the security middleware allows this much on the import routes
 _MANIFEST = "manifest.json"
 _REFERENCE = "reference.wav"
 _VOICE = "voice.safetensors"
@@ -60,11 +59,6 @@ FORMAT = "ttsnative-voice"
 FORMAT_VERSION = 1  # optional fields may be added within a version; anything else is a new version
 _SHA256 = re.compile("^[0-9a-f]{64}$")
 _UNSAFE_NAME = re.compile("[^A-Za-z0-9 _-]+")
-
-
-def _plain(text: str) -> str:
-    """Text without control or invisible formatting characters (such as ones that reverse its direction)."""
-    return "".join(char for char in text if unicodedata.category(char) not in ("Cc", "Cf", "Co", "Cs")).strip()
 
 
 class SharedVoiceManifest(ApiModel):
@@ -88,7 +82,7 @@ class SharedVoiceManifest(ApiModel):
     @field_validator("name", "description", "creator", "consent_statement")
     @classmethod
     def _shown_plainly(cls, value: str | None) -> str | None:
-        return _plain(value) if value is not None else None
+        return plain_text(value) if value is not None else None
 
 
 class VoicePreview(ApiModel):
@@ -223,7 +217,7 @@ class VoiceSharing:
             styles = staging / "styles"
             return self._profiles.create_shared(
                 SharedVoice(
-                    name=self._unused_name(_plain(name or "")[:60] or manifest.name),
+                    name=self._unused_name(plain_text(name or "")[:60] or manifest.name),
                     kind=manifest.kind,
                     delivery=manifest.delivery,
                     duration_s=manifest.duration_s,

@@ -19,7 +19,7 @@ from fastapi import APIRouter, Body, Path, Query, Request, Response
 from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import FileResponse
 
-from ltts.common import MB, ApiModel
+from ltts.common import MAX_RECORDING_IMPORT_BYTES, MB, ApiModel
 from ltts.container import ServicesDep
 from ltts.jobs import JobOut
 from ltts.voices.cleanup import Cleanup, RecordingCheck
@@ -33,7 +33,7 @@ SessionId = Annotated[str, Path(pattern=r"^[0-9a-f]{32}$")]
 TakeNumber = Annotated[int, Path(ge=1, le=999)]
 MAX_TAKE_BYTES = 20 * MB
 MAX_PASSAGE_CHARS = 1_200
-MAX_IMPORT_BYTES = 600 * MB  # 30 minutes of 48 kHz, 24-bit stereo WAV fits
+MAX_IMPORT_BYTES = MAX_RECORDING_IMPORT_BYTES  # the security middleware allows this much on these routes only
 
 
 class SessionCreate(ApiModel):

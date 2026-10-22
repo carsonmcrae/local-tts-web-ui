@@ -59,17 +59,36 @@ def test_upload_errors_are_specific(client: TestClient) -> None:
     assert scanned.status_code == 422 and scanned.json()["error"]["code"] == "scanned_pdf"
 
 
-def test_upload_size_limit_is_enforced_server_side(settings: Settings, engines: dict[str, FakeEngine]) -> None:
+def with_upload_limit(settings: Settings, engines: dict[str, FakeEngine], megabytes: int) -> TestClient:
+    """A client for an app whose general upload limit is ``megabytes`` (the default is 25)."""
     from ltts.app import create_app
     from ltts.container import build_services
 
-    small = settings.model_copy(update={"max_upload_mb": 1})
+    small = settings.model_copy(update={"max_upload_mb": megabytes})
     services = build_services(small, isolate_extraction=False, engine_factory=lambda _s, _m: list(engines.values()))
-    with TestClient(create_app(small, services=services), headers={"X-LTTS-Client": "web"}) as client:
+    return TestClient(create_app(small, services=services), headers={"X-LTTS-Client": "web"})
+
+
+def test_upload_size_limit_is_enforced_server_side(settings: Settings, engines: dict[str, FakeEngine]) -> None:
+    with with_upload_limit(settings, engines, 1) as client:
         response = upload(client, "big.txt", b"a" * (1024 * 1024 + 10))
     assert response.status_code == 413
     assert response.json()["error"]["code"] == "payload_too_large"
     assert not list((settings.resolved_data_dir / "tmp").glob("*.upload"))
+
+
+def test_bigger_bodies_are_allowed_only_where_a_route_takes_them(
+    settings: Settings, engines: dict[str, FakeEngine]
+) -> None:
+    with with_upload_limit(settings, engines, 1) as client:
+        session_id = client.post("/api/voice-sessions").json()["id"]
+        two_mb = 2 * 1024 * 1024
+        # A studio recording import has its own, much larger limit: the general cap doesn't cut it off.
+        recording = client.post(f"/api/voice-sessions/{session_id}/import", content=b"RIFF" + b"0" * two_mb)
+        assert recording.status_code not in (413, 500), recording.text
+        # Any other body over the cap is answered as too large, not as a server error.
+        pasted = client.post("/api/documents/text", json={"text": "a" * two_mb})
+        assert pasted.status_code == 413 and pasted.json()["error"]["code"] == "payload_too_large"
 
 
 def test_paste_progress_and_delete(client: TestClient) -> None:

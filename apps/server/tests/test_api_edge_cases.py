@@ -26,7 +26,7 @@ from ltts.app import create_app
 from ltts.config import Settings
 from ltts.container import Services, build_services
 from ltts.engines.registry import EngineRegistry
-from ltts.errors import NotFoundError
+from ltts.errors import BODY_TOO_LARGE, NotFoundError
 from ltts.jobs import JobCanceledError, JobContext
 from ltts.security import _is_loopback, _limited
 from ltts.synthesis.service import ClientGoneError
@@ -209,8 +209,11 @@ def test_request_bodies_over_the_limit_are_cut_off() -> None:
     async def receive() -> dict[str, Any]:
         return next(messages)
 
+    state: dict[str, Any] = {}
+
     async def drain() -> list[str]:
-        limited = _limited(receive, 15)
+        limited = _limited(receive, 15, state)
         return [(await limited())["type"] for _ in range(3)]
 
     assert asyncio.run(drain()) == ["http.request", "http.disconnect", "http.disconnect"]
+    assert state == {BODY_TOO_LARGE: 15}  # set only by the cut, not by the client's own disconnect

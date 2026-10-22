@@ -8,7 +8,8 @@ from a loopback address under a loopback name (and with a loopback ``Origin`` fo
 cross-site requests and changes without the app's header (CSRF; no CORS ever); requires the access
 token from other addresses in network mode (``/v1`` checks its own token and network permission);
 in LAN mode, applies the LAN listener's Host, Origin and pairing rules, ``lan/policy.py`` and the
-per-device limits; caps request bodies (a few kilobytes before pairing); and adds security headers
+per-device limits; caps request bodies (a few kilobytes before pairing; a route's own larger cap only
+where it takes recordings or voice files); and adds security headers
 with a strict Content-Security-Policy. Proxies are unsupported (docs/guides/lan-access.md).
 Does NOT belong: Upload content validation (documents/voices) or authentication of local users —
 on loopback the machine's user is trusted.
@@ -23,7 +24,9 @@ from collections.abc import Awaitable, Callable, Iterable, MutableMapping
 from typing import Any
 from urllib.parse import parse_qs
 
+from ltts.common import MAX_RECORDING_IMPORT_BYTES, MAX_VOICE_PACKAGE_BYTES
 from ltts.config import LOOPBACK_HOSTS, Settings
+from ltts.errors import BODY_TOO_LARGE
 from ltts.lan.devices import Recognised
 from ltts.lan.policy import LOCAL_ONLY, costly, open_to_unpaired, refused_remotely
 from ltts.lan.service import COOKIE, LanService
@@ -40,7 +43,13 @@ CLIENT_HEADER = b"x-ltts-client"
 SPEECH_API_PREFIX = "/v1/"  # speech_api/router.py: its own bearer token and network permission
 SAFE_METHODS = {"GET", "HEAD", "OPTIONS"}
 UNPAIRED_MAX_BODY = 4096  # a pairing request is a few dozen bytes
+# Routes that take bigger bodies than the general upload limit (each also enforces its own cap).
+ROUTE_BODY_CAPS: tuple[tuple[str, int], ...] = (
+    ("/api/voice-sessions/", MAX_RECORDING_IMPORT_BYTES),
+    ("/api/voice-profiles/", MAX_VOICE_PACKAGE_BYTES),
+)
 TEST_HOST = "testserver"  # Starlette's TestClient: stands for this computer only when LTTS_ENV=test
+TEST_CLIENT = "testclient"  # its client address, likewise
 # What proxies, tunnels and CDNs add to a request they pass on. Browsers never send these themselves.
 FORWARDING_HEADERS = frozenset(
     {b"forwarded", b"via", b"x-real-ip", b"x-client-ip", b"true-client-ip", b"x-cluster-client-ip",
@@ -144,7 +153,6 @@ class SecurityMiddleware:
             # so DNS rebinding stays blocked for browsers on this machine.
             allowed |= {*_local_addresses(), settings.host}
         self.allowed_hosts = {name.lower() for name in allowed}
-        self.max_body = settings.max_upload_bytes + 64 * 1024
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         if scope["type"] != "http":
@@ -155,15 +163,20 @@ class SecurityMiddleware:
         if problem:
             await _reject(send, *problem)
             return
-        max_body = self.max_body
-        state = scope.get("state") or {}
+        state = scope.setdefault("state", {})
+        max_body = self._body_cap(scope["path"])
         if "lan_device" in state and state["lan_device"] is None:  # on the LAN listener, not paired
             max_body = UNPAIRED_MAX_BODY
             if _content_length(headers) > max_body:
                 await _reject(send, 413, "payload_too_large", "Pair this device first.")
                 return
         wrapped = _with_headers(send, scope["path"], self._login_cookie(scope))
-        await self.app(scope, _limited(receive, max_body), wrapped)
+        await self.app(scope, _limited(receive, max_body, state), wrapped)
+
+    def _body_cap(self, path: str) -> int:
+        """The general upload limit, or a route's own larger one, with room for headers and framing."""
+        caps = [cap for prefix, cap in ROUTE_BODY_CAPS if path.startswith(prefix)]
+        return max([self.settings.max_upload_bytes, *caps]) + 64 * 1024
 
     def _login_cookie(self, scope: Scope) -> bytes | None:
         """Turn a valid ``?token=`` on a network client's first visit into an HttpOnly cookie."""
@@ -200,7 +213,11 @@ class SecurityMiddleware:
         """A request on the main address: this computer's own user, a device in network mode, or refused."""
         path: str = scope["path"]
         client = scope.get("client")
-        local = _is_loopback(client[0] if client else None)
+        address = client[0] if client else None
+        local = _is_loopback(address) or (address == TEST_CLIENT and self.settings.env == "test")
+        if not local and not self.settings.allow_network and not path.startswith(SPEECH_API_PREFIX):
+            # Other devices come in through the LAN listener (``/v1`` applies its own network permission).
+            return 403, "not_local", "Only this computer may use its own address; a phone or tablet uses LAN mode."
         if local and host not in self.own_names:
             return 403, "proxy_not_supported", OWN_NAME
         if self.settings.allow_network and not local:
@@ -271,7 +288,8 @@ async def _reject(send: Send, status: int, code: str, message: str) -> None:
     await send({"type": "http.response.body", "body": body})
 
 
-def _limited(receive: Receive, max_body: int) -> Receive:
+def _limited(receive: Receive, max_body: int, state: MutableMapping[str, Any]) -> Receive:
+    """Stop reading past ``max_body``: the app sees a disconnect, and the flag turns it into a 413."""
     received = 0
 
     async def wrapped() -> Message:
@@ -280,6 +298,7 @@ def _limited(receive: Receive, max_body: int) -> Receive:
         if message["type"] == "http.request":
             received += len(message.get("body", b""))
             if received > max_body:
+                state[BODY_TOO_LARGE] = max_body
                 return {"type": "http.disconnect"}
         return message
 

@@ -146,7 +146,9 @@ def test_only_this_computer_may_import(
     with local_client(settings, services, host) as test_client:
         response = test_client.post("/api/documents/url", json={"url": "https://example.com/article"})
     assert response.status_code == (201 if allowed else 403)
-    assert allowed or response.json()["error"]["code"] == "local_only"
+    # Another device on the computer's own address is refused by the middleware, before the route's own guard
+    # (test_a_client_without_an_address_is_refused covers that guard).
+    assert allowed or response.json()["error"]["code"] == "not_local"
 
 
 def test_a_client_without_an_address_is_refused(client: TestClient, web: FakeWeb) -> None:

@@ -18,7 +18,7 @@ from typing import Annotated
 from fastapi import APIRouter, Path, Request, Response
 from pydantic import Field
 
-from ltts.common import ApiModel
+from ltts.common import ApiModel, plain_text
 from ltts.container import ServicesDep
 from ltts.errors import ConflictError
 from ltts.lan.devices import DeviceOut, PairingOut, Refusal
@@ -96,7 +96,9 @@ def pair_device(body: PairRequest, request: Request, response: Response, service
     if not services.lan.serving(request.scope):
         raise ConflictError("Pair from the phone or tablet, using the address shown on the computer.", code="not_lan")
     address = request.client.host if request.client else "unknown"
-    device, token = services.lan.pair(body.code, body.name.strip(), address, request.cookies.get(COOKIE))
+    device, token = services.lan.pair(
+        body.code, plain_text(body.name) or "Phone or tablet", address, request.cookies.get(COOKIE)
+    )
     response.set_cookie(COOKIE, token, max_age=COOKIE_MAX_AGE_S, path="/", httponly=True, samesite="strict")
     return device
 

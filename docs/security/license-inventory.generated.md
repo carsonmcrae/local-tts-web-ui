@@ -125,7 +125,7 @@ Runtime dependencies only (development tooling is not distributed). Model weight
 | mdurl==0.1.2 | MIT License |  |
 | numpy==2.5.3 | BSD-3-Clause AND 0BSD AND MIT AND Zlib AND CC0-1.0 |  |
 | onnxruntime==1.30.0 | MIT License |  |
-| opentelemetry-api==1.45.0 | Apache-2.0 |  |
+| opentelemetry-api==1.45.1 | Apache-2.0 |  |
 | packaging==26.3 | Apache-2.0 OR BSD-2-Clause |  |
 | phonemizer==3.4.0 | GNU General Public License v3 or later (GPLv3+) | GPL-3.0 phonemiser used by kokoro-onnx; the Windows installer ships it with its licence and a source offer. |
 | protobuf==7.36.2 | 3-Clause BSD License |  |

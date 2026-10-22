@@ -24,6 +24,22 @@ suppression comments, excluded files or lowered thresholds; two of them were rea
 dialog keyed its rows by position, and the update test used a fixed password for its throwaway keys).
 The other 12 are the reviewed exceptions below.
 
+## Policy
+
+For the measured code (the web app and the server, below), the project requires 100 % line and branch
+coverage, no duplicated lines or blocks, no bug, vulnerability or code smell, and every security hotspot
+reviewed. Two things enforce it:
+
+- **The SonarQube server** judges the project by a quality gate named "TTSNative" with those thresholds
+  on new code and on the whole project. `npm run sonar:gate` creates or restores it. Until 2026-10-22 the
+  server used SonarQube's default gate (80 % coverage and up to 3 % duplication on new code), which the
+  analyses passed with room to spare but which allowed far less than the policy.
+- **The release gate** checks the measures recorded in [quality.json](quality.json) against the same
+  policy, so a server reset to a looser gate can't let a release through.
+
+The test suites enforce coverage first: Vitest and pytest fail below 100 % line and branch coverage, and
+jscpd fails on any duplicated block, in every CI run.
+
 ## What the analysis covers
 
 - **Sources:** `apps/web/src`, `apps/server/src`, `apps/chatterbox-worker/src`, `scripts`, `.github`,

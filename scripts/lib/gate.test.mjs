@@ -4,8 +4,10 @@
 /**
  * Purpose: Tests for the release-readiness gate's judgements.
  * Scope: Which versions are gated; the newest run of each required workflow decides; SonarQube evidence
- *   counts only for this commit or one that differs by the evidence itself; manual checks need to be
- *   done or waived with a reason, and blockers resolved.
+ *   counts only for this commit or one that differs by the evidence itself, and only at the project's
+ *   policy; checks before release need a "verified:" note or a waiver with a reason (never for a
+ *   required one), checks after publishing can't be marked early and block the next release, blockers
+ *   are resolved, and the previous release is published from a release commit.
  * Does NOT belong: Fetching runs or files (scripts/release/gate.mjs).
  */
 import assert from 'node:assert/strict';
@@ -13,10 +15,24 @@ import { test } from 'node:test';
 import {
   acceptanceVerdicts,
   isGated,
+  previousAcceptanceVerdict,
+  previousReleaseVerdict,
   qualityEvidence,
   qualityVerdict,
   workflowVerdicts,
 } from './gate.mjs';
+
+/** Measures that meet the project's policy. */
+const MEASURES = {
+  line_coverage: '100.0',
+  branch_coverage: '100.0',
+  duplicated_lines_density: '0.0',
+  duplicated_blocks: '0',
+  bugs: '0',
+  vulnerabilities: '0',
+  code_smells: '0',
+  security_hotspots: '0',
+};
 
 /** @param {string} name @param {string} conclusion @param {string} created_at */
 const run = (name, conclusion, created_at = '2026-10-22T10:00:00Z', status = 'completed') => ({
@@ -64,12 +80,38 @@ test('SonarQube evidence counts only for this commit, or one that differs by the
     detail: 'gate ERROR on aaaaaaa',
   });
   assert.equal(
-    qualityVerdict({ commit, gate: 'OK' }, ['docs/readiness/2.2.0/quality.json'], '2.2.0').ok,
+    qualityVerdict(
+      { commit, gate: 'OK', measures: MEASURES },
+      ['docs/readiness/2.2.0/quality.json'],
+      '2.2.0',
+    ).ok,
     true,
   );
-  const stale = qualityVerdict({ commit, gate: 'OK' }, ['apps/web/src/a.ts'], '2.2.0');
+  const stale = qualityVerdict(
+    { commit, gate: 'OK', measures: MEASURES },
+    ['apps/web/src/a.ts'],
+    '2.2.0',
+  );
   assert.equal(stale.ok, false);
   assert.match(stale.detail, /1 file\(s\) changed since \(apps\/web\/src\/a\.ts\)/);
+});
+
+test("a passing SonarQube gate still has to meet the project's policy", () => {
+  const commit = 'a'.repeat(40);
+  const loose = { ...MEASURES, line_coverage: '99.8', duplicated_lines_density: '0.4' };
+  assert.deepEqual(qualityVerdict({ commit, gate: 'OK', measures: loose }, [], '2.2.0'), {
+    item: 'SonarQube quality gate passed',
+    ok: false,
+    detail: "below the project's policy: line_coverage 99.8, duplicated_lines_density 0.4",
+  });
+  const unrecorded = Object.fromEntries(
+    Object.entries(MEASURES).filter(([metric]) => metric !== 'bugs'),
+  );
+  assert.match(
+    qualityVerdict({ commit, gate: 'OK', measures: unrecorded }, [], '2.2.0').detail,
+    /bugs missing/,
+  );
+  assert.match(qualityVerdict({ commit, gate: 'OK' }, [], '2.2.0').detail, /line_coverage missing/);
 });
 
 test('SonarQube evidence records the analysed commit, the gate and the measures', () => {
@@ -101,37 +143,118 @@ test('SonarQube evidence records the analysed commit, the gate and the measures'
   assert.throws(() => qualityEvidence('2.2.0', { date: 'd' }, { status: 'OK' }, []), /no commit/);
 });
 
-test('manual checks are done or waived with a reason, and no blocker is open', () => {
-  const text = (/** @type {string} */ checks, /** @type {string} */ blockers) =>
-    `# Acceptance\n\n## Manual checks\n\n${checks}\n\n## Blockers\n\n${blockers}\n`;
-  const [checks, blockers] = acceptanceVerdicts(
-    text(
-      '- [x] Installed on Windows 11\n- [~] Real iPhone — waived: no device; emulated only',
-      'None.',
+/** An acceptance list with its three sections. */
+const acceptance = (
+  /** @type {string} */ before,
+  /** @type {string} */ after,
+  /** @type {string} */ blockers,
+) =>
+  `# Acceptance\n\n## Before release\n\n${before}\n\n## After publishing\n\n${after}\n\n## Blockers\n\n${blockers}\n`;
+
+test('checks before release need a "verified:" note, or a reason to waive one that is not required', () => {
+  const [before, after, blockers] = acceptanceVerdicts(
+    acceptance(
+      '- [x] (required) Clean Windows 11 install — verified: 2026-10-24, a fresh VM\n- [~] Real iPhone — waived: no device',
+      '- [ ] (required) The published update installs',
+      '- [x] Signing secrets exist — verified: 2026-10-24',
     ),
     '2.2.0',
   );
-  assert.deepEqual([checks?.ok, checks?.detail], [true, '2 done or waived with a reason']);
+  assert.deepEqual([before?.ok, before?.detail], [true, '2 done or waived with a reason']);
+  assert.deepEqual([after?.ok, after?.detail], [true, '1 for after 2.2.0 is published']);
   assert.deepEqual([blockers?.ok, blockers?.detail], [true, 'none open']);
   const open = acceptanceVerdicts(
-    text(
-      '- [x] Done\n- [ ] Listen to the music\n- [~] Waived without a reason',
-      '- [ ] Signing key missing\n- [x] Fixed',
+    acceptance(
+      '- [x] Ticked with nothing to show\n- [ ] Listen to the music\n- [~] (required) Real update — waived: later\n- [~] No reason given',
+      '- [ ] Later',
+      '- [x] Signing key exists\n- [ ] Not yet',
     ),
     '2.2.0',
   );
   assert.deepEqual(
     open.map((verdict) => [verdict.ok, verdict.detail]),
     [
-      [false, '2 of 3 open, e.g. "Listen to the music"'],
-      [false, '1 open, e.g. "Signing key missing"'],
+      [false, '4 of 4 not done, e.g. "Ticked with nothing to show" (ticked without "verified:")'],
+      [true, '1 for after 2.2.0 is published'],
+      [false, '2 open, e.g. "Signing key exists"'],
     ],
   );
+  const required = acceptanceVerdicts(
+    acceptance('- [~] (required) Real update — waived: later', '- [ ] Later', ''),
+    '2.2.0',
+  );
+  assert.match(required[0]?.detail ?? '', /required, so it can't be waived/);
+  const unreasoned = acceptanceVerdicts(acceptance('- [~] Phones', '- [ ] Later', ''), '2.2.0');
+  assert.match(unreasoned[0]?.detail ?? '', /waived without a reason/);
+});
+
+test('checks after publishing must be listed and stay unmarked until the release exists', () => {
+  const early = acceptanceVerdicts(
+    acceptance('- [x] Done — verified: today', '- [x] The download works — verified: hoped so', ''),
+    '2.2.0',
+  )[1];
+  assert.deepEqual(
+    [early?.ok, early?.detail],
+    [false, '1 marked before 2.2.0 is published, e.g. "The download works — verified: hoped so"'],
+  );
+  const unlisted = acceptanceVerdicts(acceptance('- [x] Done — verified: today', '', ''), '2.2.0');
+  assert.match(unlisted[1]?.detail ?? '', /lists no "## After publishing"/);
   assert.match(
     acceptanceVerdicts(null, '2.2.0')[0]?.detail ?? '',
     /no docs\/readiness\/2\.2\.0\/acceptance\.md/,
   );
   const missing = acceptanceVerdicts('# Acceptance\n', '2.2.0');
-  assert.match(missing[0]?.detail ?? '', /lists no "## Manual checks"/);
-  assert.match(missing[1]?.detail ?? '', /has no "## Blockers" section/);
+  assert.match(missing[0]?.detail ?? '', /lists no "## Before release"/);
+  assert.match(missing[2]?.detail ?? '', /has no "## Blockers" section/);
+});
+
+test("the previous release's checks after publishing block the next release until done", () => {
+  assert.deepEqual(previousAcceptanceVerdict(null), {
+    item: 'Previous release checked after publishing',
+    ok: true,
+    detail: 'no earlier gated release',
+  });
+  const done = acceptance('', '- [x] (required) The update installs — verified: 2026-11-02', '');
+  assert.equal(
+    previousAcceptanceVerdict({ version: '2.2.0', text: done }).detail,
+    '2.2.0: 1 done or waived with a reason',
+  );
+  const open = acceptance('', '- [ ] (required) The update installs', '');
+  const verdict = previousAcceptanceVerdict({ version: '2.2.0', text: open });
+  assert.equal(verdict.ok, false);
+  assert.match(verdict.detail, /^2\.2\.0: 1 of 1 not done/);
+  assert.match(
+    previousAcceptanceVerdict({ version: '2.2.0', text: null }).detail,
+    /docs\/readiness\/2\.2\.0\/acceptance\.md lists no "## After publishing"/,
+  );
+});
+
+test('the previous release is published from its own release commit, not from main', () => {
+  const check = (
+    /** @type {string | null} */ previous,
+    /** @type {{ draft: boolean } | null} */ release,
+    /** @type {{ version: string | null, pending: number } | null} */ tagged,
+  ) => {
+    const verdict = previousReleaseVerdict(previous, release, tagged);
+    return [verdict.ok, verdict.detail];
+  };
+  assert.deepEqual(check(null, null, null), [true, 'no earlier release']);
+  assert.deepEqual(check('2.1.0', null, null), [false, "v2.1.0 isn't published on GitHub"]);
+  assert.deepEqual(check('2.1.0', { draft: true }, null), [false, 'v2.1.0 is still a draft']);
+  assert.deepEqual(check('2.1.0', { draft: false }, null), [
+    false,
+    "v2.1.0's tag points at a commit whose version files say nothing",
+  ]);
+  assert.deepEqual(check('2.1.0', { draft: false }, { version: '2.2.0', pending: 0 }), [
+    false,
+    "v2.1.0's tag points at a commit whose version files say 2.2.0",
+  ]);
+  assert.deepEqual(check('2.1.0', { draft: false }, { version: '2.1.0', pending: 25 }), [
+    false,
+    "v2.1.0's tag points at a commit with 25 pending change file(s), not a release commit",
+  ]);
+  assert.deepEqual(check('2.1.0', { draft: false }, { version: '2.1.0', pending: 0 }), [
+    true,
+    'v2.1.0 published from its release commit',
+  ]);
 });

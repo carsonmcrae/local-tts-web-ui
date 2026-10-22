@@ -4,21 +4,24 @@
 /**
  * Purpose: `npm run release:gate -- <X.Y.Z> [--commit <sha>]` — is this exact commit ready to ship?
  * Scope: Runs the in-repository checks (version files; change files, their surfaces and the notes),
- *   asks GitHub (`gh`) which workflows passed on the commit, reads the version's SonarQube evidence
- *   and acceptance checklist under docs/readiness/X.Y.Z/, prints every requirement with its evidence
- *   and fails if one is unmet. release.yml runs it before anything is built. Versions before 2.2.0
+ *   asks GitHub (`gh`) which workflows passed on the commit and whether the previous release is
+ *   published from its release commit, reads the version's SonarQube evidence and acceptance checklist
+ *   under docs/readiness/X.Y.Z/ (and the previous gated version's checks after publishing), prints
+ *   every requirement with its evidence and fails if one is unmet. release.yml runs it before anything is built. Versions before 2.2.0
  *   predate the gate.
  * Does NOT belong: The judgements themselves (lib/gate.mjs) or recording SonarQube's result
  *   (sonar-evidence.mjs).
  */
 import { execFileSync, spawnSync } from 'node:child_process';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { stripVTControlCharacters } from 'node:util';
 import {
   GATED_FROM,
   acceptanceVerdicts,
   isGated,
+  previousAcceptanceVerdict,
+  previousReleaseVerdict,
   qualityVerdict,
   readinessDir,
   workflowVerdicts,
@@ -26,6 +29,8 @@ import {
 import { git } from '../lib/git.mjs';
 import { color, ok } from '../lib/log.mjs';
 import { repoRoot } from '../lib/paths.mjs';
+import { readReleases } from '../lib/releases.mjs';
+import { compareVersions } from '../lib/semver.mjs';
 
 const version = (process.argv[2] ?? '').replace(/^v/, '');
 const commitIndex = process.argv.indexOf('--commit');
@@ -74,6 +79,67 @@ function workflowRuns() {
   return JSON.parse(out);
 }
 
+/**
+ * An answer from GitHub's API as JSON, or null when GitHub has none (a release or file that doesn't
+ * exist answers 404).
+ * @param {string} endpoint @param {string[]} [fields]
+ */
+function gitHub(endpoint, fields = []) {
+  const result = spawnSync(
+    'gh',
+    ['api', '-X', 'GET', endpoint, ...fields.flatMap((f) => ['-f', f])],
+    {
+      encoding: 'utf8',
+    },
+  );
+  return result.status === 0 ? JSON.parse(result.stdout) : null;
+}
+
+/** The newest released version before this one in the release history, or null. */
+function previousVersion() {
+  const earlier = readReleases().releases.filter(
+    (release) => !release.draft && compareVersions(release.version, version) < 0,
+  );
+  return earlier[0]?.version ?? null;
+}
+
+/** The previous release on GitHub and what its tag's commit holds (version files, pending changes). */
+function previousRelease() {
+  const previous = previousVersion();
+  if (!previous) return previousReleaseVerdict(null, null, null);
+  const tag = `v${previous}`;
+  const release = gitHub(`repos/${repo}/releases/tags/${tag}`);
+  const manifest = gitHub(`repos/${repo}/contents/package.json`, [`ref=${tag}`]);
+  const changes = gitHub(`repos/${repo}/contents/.changes`, [`ref=${tag}`]);
+  const tagged = manifest
+    ? {
+        version:
+          JSON.parse(Buffer.from(manifest.content, 'base64').toString('utf8')).version ?? null,
+        pending: (changes ?? []).filter(
+          (/** @type {{ name: string }} */ file) => file.name !== 'README.md',
+        ).length,
+      }
+    : null;
+  return previousReleaseVerdict(
+    previous,
+    release ? { draft: Boolean(release.draft) } : null,
+    tagged,
+  );
+}
+
+/** The newest gated version before this one that has readiness records, with its acceptance list. */
+function previousGated() {
+  const dir = path.join(repoRoot, 'docs', 'readiness');
+  const earlier = (existsSync(dir) ? readdirSync(dir) : [])
+    .filter((name) => /^\d+\.\d+\.\d+$/.test(name) && isGated(name))
+    .filter((name) => compareVersions(name, version) < 0)
+    .sort(compareVersions);
+  const previous = earlier.at(-1);
+  return previous
+    ? { version: previous, text: read(`${readinessDir(previous)}/acceptance.md`) }
+    : null;
+}
+
 function main() {
   if (!/^\d+\.\d+\.\d+$/.test(version) || !/^[0-9a-f]{40}$/.test(commit)) {
     console.error('Usage: npm run release:gate -- <X.Y.Z> [--commit <sha>]');
@@ -94,6 +160,8 @@ function main() {
     scriptVerdict('Change files, their surfaces and the notes are valid', 'check-changes.mjs'),
     ...workflowVerdicts(workflowRuns()),
     qualityVerdict(evidence, changedSince, version),
+    previousRelease(),
+    previousAcceptanceVerdict(previousGated()),
     ...acceptanceVerdicts(read(`${dir}/acceptance.md`), version),
   ];
   console.log(`Release-readiness gate for ${version} at ${commit.slice(0, 7)}:`);

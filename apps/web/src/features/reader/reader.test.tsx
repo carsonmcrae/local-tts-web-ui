@@ -365,7 +365,7 @@ describe('Reader states', () => {
         presetId: 'alice', presetVersion: 1, workId: 'alices-adventures-in-wonderland',
         title: 'Wonderland, in voices', summary: 'Alice in her own voice.',
         narrator: { preferred: 'kokoro:af_sarah', chosen: 'kokoro:af_sarah' },
-        characters: [], speakersResolved: 0, speakersUnresolved: 0, effects: 0, musicTrackId: null,
+        characters: [], speakersResolved: 0, speakersUnresolved: 0, effects: 0, music: null,
         components: [{ name: 'narrator', available: true, note: 'A voice.', applied: false }],
         appliedAt: null, appliedVersion: null,
       }, // prettier-ignore

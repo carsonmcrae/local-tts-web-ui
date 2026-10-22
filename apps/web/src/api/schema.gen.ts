@@ -3096,6 +3096,15 @@ export type components = {
       /** Note */
       note: string;
     };
+    /** PresetMusicOut */
+    PresetMusicOut: {
+      /** Note */
+      note: string | null;
+      /** Trackid */
+      trackId: string;
+      /** Volume */
+      volume: number;
+    };
     /** PresetVoiceOut */
     PresetVoiceOut: {
       /** Chosen */
@@ -3257,8 +3266,7 @@ export type components = {
       editionMatches: boolean;
       /** Effects */
       effects: number;
-      /** Musictrackid */
-      musicTrackId: string | null;
+      music: components['schemas']['PresetMusicOut'] | null;
       narrator: components['schemas']['PresetVoiceOut'] | null;
       /** Presetid */
       presetId: string;

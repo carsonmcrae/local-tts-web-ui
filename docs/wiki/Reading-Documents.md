@@ -316,12 +316,14 @@ Six of the included books come with a curated cast. In the reader, **Reading exp
   Lestrade; Elizabeth, Jane and Darcy…) and a few lines the analysis can't attribute given to their
   speaker, such as the Raven's "Nevermore". Only voices installed on this computer are used; a
   character whose voice isn't installed is listed as such and keeps the dialogue voice.
-- **Immersive**: voices plus sound effects and background music. This appears once those features
+- **Immersive**: voices plus sound effects and background music. This appears once sound effects
   exist in your version; until then the panel says so.
 
 Choosing **Standard** again takes out exactly what the experience set; voices you gave characters
 yourself and your own sentence styling stay. **Use this voice** hands the suggested reading voice
-to the player. A music recommendation is only named: music never starts on its own.
+to the player. **Use this track** makes the recommended background music track, at its suggested
+level, this device's choice in the player (Immersive does the same); music still stays off until you
+turn it on there, and never starts on its own.
 
 ## Deleting a document
 

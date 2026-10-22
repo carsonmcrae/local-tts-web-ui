@@ -255,4 +255,12 @@ test('the shared head goes where a page asks, relative to the page folder', () =
     /href="\.\.\/\.\.\/styles\.css"/,
   );
   assert.equal(fillHead('<head></head>', shared, 'index.html'), '<head></head>');
+  assert.equal(
+    fillHead('<!-- head:shared -->', '<meta name="b" />\n', 'index.html'),
+    '<meta name="b" />',
+  );
+  assert.throws(
+    () => fillHead('<!-- head:shared -->', '<!--\n  Purpose: shared.\n<meta />', 'index.html'),
+    /never closed/,
+  );
 });

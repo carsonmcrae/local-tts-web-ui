@@ -83,6 +83,19 @@ export function keepUnreleased(html) {
 const HEAD_MARK = '<!-- head:shared -->';
 
 /**
+ * The partial without the header comment it opens with (its Purpose and Scope, like every file here).
+ * Only that first comment is cut, by position, so the rest of the partial goes in exactly as written.
+ * @param {string} shared
+ */
+function partialBody(shared) {
+  const text = shared.trimStart();
+  if (!text.startsWith('<!--')) return text;
+  const end = text.indexOf('-->');
+  if (end === -1) throw new Error('site/partials/head.html: the header comment is never closed.');
+  return text.slice(end + '-->'.length);
+}
+
+/**
  * Puts the head every page shares (site/partials/head.html: social image, card type, theme colours,
  * icons, stylesheets) where a page says `<!-- head:shared -->`, indented like the mark, with `%ROOT%`
  * pointing at the site root from that page's folder so a local build opens from disk at any depth.
@@ -96,8 +109,7 @@ export function fillHead(html, shared, page) {
   if (at === -1) return html;
   const indent = /[ \t]*$/.exec(html.slice(0, at))?.[0] ?? '';
   const root = '../'.repeat(page.split('/').length - 1);
-  const lines = shared
-    .replace(/<!--[\s\S]*?-->\s*/, '')
+  const lines = partialBody(shared)
     .trim()
     .split('\n')
     .map((line) => line.replaceAll('%ROOT%', root));

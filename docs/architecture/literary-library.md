@@ -13,16 +13,16 @@ there). Research and licensing evidence: [../research/literary-catalog.md](../re
 
 ## 1. Pieces
 
-| Area                   | Location                                                        | Role                                                                                                   |
-| ---------------------- | --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| Organisation storage   | `apps/server/src/ltts/documents/shelf.py`                       | Folders, collections, genres, types, tags, favourites; the facets the library listing carries.         |
-| Organisation API       | `apps/server/src/ltts/documents/shelf_router.py`                | `/api/library/folders`, `/api/library/collections`, `/api/library/tags`, `/api/library/organize`, `PUT /api/documents/{id}/shelf`. |
-| Catalog data           | `apps/server/src/ltts/library/` (`catalog.json`, `works/`, `covers/`, `presets/`, `CREDITS.md`) | The bundled works, their rights and their presets. Built by `scripts/library/build_catalog.py`.      |
-| Catalog service        | `apps/server/src/ltts/library/catalog.py`, `library/router.py`  | Lists works, opens one as a document (through `DocumentService`), hides works, serves covers and presets. |
-| Presets                | `apps/server/src/ltts/library/presets.py`                       | Validates presets, resolves anchors against a document, applies chosen components, records them.     |
-| Web: organisation      | `apps/web/src/features/library/`                                | Sidebar (All, Continue, Favourites, Recent, Collections, Folders), filters, cards, bulk actions.       |
-| Web: Explore           | `apps/web/src/features/explore/`                                | Included books by category, featured experiences, open/hide.                                           |
-| Web: experience        | `apps/web/src/features/reader/ReadingExperience.tsx`            | Standard / Multi-voice / Immersive chooser for a bundled book with a preset.                           |
+| Area                 | Location                                                                                        | Role                                                                                                                               |
+| -------------------- | ----------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| Organisation storage | `apps/server/src/ltts/documents/shelf.py`                                                       | Folders, collections, genres, types, tags, favourites; the facets the library listing carries.                                     |
+| Organisation API     | `apps/server/src/ltts/documents/shelf_router.py`                                                | `/api/library/folders`, `/api/library/collections`, `/api/library/tags`, `/api/library/organize`, `PUT /api/documents/{id}/shelf`. |
+| Catalog data         | `apps/server/src/ltts/library/` (`catalog.json`, `works/`, `covers/`, `presets/`, `CREDITS.md`) | The bundled works, their rights and their presets. Built by `scripts/library/build_catalog.py`.                                    |
+| Catalog service      | `apps/server/src/ltts/library/catalog.py`, `library/router.py`                                  | Lists works, opens one as a document (through `DocumentService`), hides works, serves covers and presets.                          |
+| Presets              | `apps/server/src/ltts/library/presets.py`                                                       | Validates presets, resolves anchors against a document, applies chosen components, records them.                                   |
+| Web: organisation    | `apps/web/src/features/library/`                                                                | Sidebar (All, Continue, Favourites, Recent, Collections, Folders), filters, cards, bulk actions.                                   |
+| Web: Explore         | `apps/web/src/features/explore/`                                                                | Included books by category, featured experiences, open/hide.                                                                       |
+| Web: experience      | `apps/web/src/features/reader/ReadingExperience.tsx`                                            | Standard / Multi-voice / Immersive chooser for a bundled book with a preset.                                                       |
 
 ## 2. Storage
 
@@ -72,22 +72,22 @@ the reader can go back to the preset or see what they changed.
 `catalog.json` (`"schema": "ttsnative.literary-catalog/1"`) carries `catalog_version` (an integer
 bumped on every content change) and a list of works. Per work:
 
-| Field                           | Meaning                                                                                                                                                                         |
-| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `work_id`                       | Canonical slug (`alices-adventures-in-wonderland`); never changes once shipped.                                                                                                  |
-| `title`, `sort_title`           | Display title (typographic apostrophes kept) and the title to sort by.                                                                                                          |
-| `authors[]`                     | `name`, `sort_name`, `born`, `died`, `wikipedia`.                                                                                                                               |
-| `contributors[]`                | Translators, editors, illustrators: `role`, `name`, `died`, `note` (for example "illustrations omitted").                                                                        |
-| `first_published`, `language`   | Year of first publication; BCP 47 language of the text.                                                                                                                         |
-| `document_type`, `genres[]`     | From the vocabularies in ADR-24.                                                                                                                                                |
-| `description`, `content_notes[]`| One or two sentences; notes for difficult or dated material, shown before opening, never altering the text.                                                                      |
-| `word_count`, `chapters[]`      | Words in what ships; `chapters` is `{id, title}` in reading order (`id` is the edition's file stem, `chapter-1`).                                                                 |
-| `edition`                       | `edition_id`, `source`, `source_url`, `source_revision`, `source_released`, `source_file`, `source_sha256`, `source_bytes`, `transcription[]`, `changes[]`, `selection` (null, or `{from, items[]}` when only some pieces of a collection ship, each item its file stem and title). |
-| `file`, `bytes`, `sha256`       | The shipped EPUB and its checksum. `text_version` increases when the shipped text changes.                                                                                      |
-| `cover`                         | `file`, `bytes`, `sha256`, `artwork` (painting, artist, year, status), `design` (who composed it, licence), or null.                                                              |
-| `rights`                        | `status` (`public-domain-us`), `worldwide` (true when every author and contributor died over 70 years ago), `basis`, `licence {name, url}`, `evidence[]`, `verified_on`, `permits {redistribution, modification, commercial, performance}`, `attribution_required`, `attribution`, `trademark_note`, `limits` (text shown when `worldwide` is false). |
-| `featured`                      | Null, or `{preset_id, blurb}` for a book shown under **Featured experiences**.                                                                                                   |
-| `preset_version`                | The included preset's version, or null.                                                                                                                                         |
+| Field                            | Meaning                                                                                                                                                                                                                                                                                                                                               |
+| -------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `work_id`                        | Canonical slug (`alices-adventures-in-wonderland`); never changes once shipped.                                                                                                                                                                                                                                                                       |
+| `title`, `sort_title`            | Display title (typographic apostrophes kept) and the title to sort by.                                                                                                                                                                                                                                                                                |
+| `authors[]`                      | `name`, `sort_name`, `born`, `died`, `wikipedia`.                                                                                                                                                                                                                                                                                                     |
+| `contributors[]`                 | Translators, editors, illustrators: `role`, `name`, `died`, `note` (for example "illustrations omitted").                                                                                                                                                                                                                                             |
+| `first_published`, `language`    | Year of first publication; BCP 47 language of the text.                                                                                                                                                                                                                                                                                               |
+| `document_type`, `genres[]`      | From the vocabularies in ADR-24.                                                                                                                                                                                                                                                                                                                      |
+| `description`, `content_notes[]` | One or two sentences; notes for difficult or dated material, shown before opening, never altering the text.                                                                                                                                                                                                                                           |
+| `word_count`, `chapters[]`       | Words in what ships; `chapters` is `{id, title}` in reading order (`id` is the edition's file stem, `chapter-1`).                                                                                                                                                                                                                                     |
+| `edition`                        | `edition_id`, `source`, `source_url`, `source_revision`, `source_released`, `source_file`, `source_sha256`, `source_bytes`, `transcription[]`, `changes[]`, `selection` (null, or `{from, items[]}` when only some pieces of a collection ship, each item its file stem and title).                                                                   |
+| `file`, `bytes`, `sha256`        | The shipped EPUB and its checksum. `text_version` increases when the shipped text changes.                                                                                                                                                                                                                                                            |
+| `cover`                          | `file`, `bytes`, `sha256`, `artwork` (painting, artist, year, status), `design` (who composed it, licence), or null.                                                                                                                                                                                                                                  |
+| `rights`                         | `status` (`public-domain-us`), `worldwide` (true when every author and contributor died over 70 years ago), `basis`, `licence {name, url}`, `evidence[]`, `verified_on`, `permits {redistribution, modification, commercial, performance}`, `attribution_required`, `attribution`, `trademark_note`, `limits` (text shown when `worldwide` is false). |
+| `featured`                       | Null, or `{preset_id, blurb}` for a book shown under **Featured experiences**.                                                                                                                                                                                                                                                                        |
+| `preset_version`                 | The included preset's version, or null.                                                                                                                                                                                                                                                                                                               |
 
 `edition_id` is `standardebooks:<path>@<revision>` or `gutenberg:<number>@<file-sha256-prefix>`.
 `CREDITS.md` lists every work with its source, transcription, cover artwork and the edition's
@@ -131,48 +131,83 @@ It is data about a book; nothing in it is executed, and it never changes the boo
 ```jsonc
 {
   "schema": "ttsnative.immersive-preset/1",
-  "preset_id": "alices-adventures-in-wonderland-immersive",   // ^[a-z0-9][a-z0-9-]{2,79}$
-  "preset_version": 1,                                        // bumped on every change
+  "preset_id": "alices-adventures-in-wonderland-immersive", // ^[a-z0-9][a-z0-9-]{2,79}$
+  "preset_version": 1, // bumped on every change
   "work_id": "alices-adventures-in-wonderland",
   "edition_id": "standardebooks:lewis-carroll/alices-adventures-in-wonderland/john-tenniel@9ecdf2f",
-  "text_version": 1,                                          // the catalog text the anchors were made against
+  "text_version": 1, // the catalog text the anchors were made against
   "title": "Wonderland, fully voiced",
   "summary": "Alice, the Rabbit, the Hatter and the Queen in their own voices, with a few quiet sounds.",
-  "narrator": { "voice": { "preferred": "kokoro:bf_emma", "fallbacks": ["kokoro:af_heart"] }, "note": "..." },
+  "narrator": {
+    "voice": { "preferred": "kokoro:bf_emma", "fallbacks": ["kokoro:af_heart"] },
+    "note": "...",
+  },
   "characters": [
-    { "id": "alice", "name": "Alice", "aliases": ["Alice"], "description": "The heroine, seven years old.",
-      "voice": { "preferred": "kokoro:af_bella", "fallbacks": ["kokoro:af_sarah"] } }
+    {
+      "id": "alice",
+      "name": "Alice",
+      "aliases": ["Alice"],
+      "description": "The heroine, seven years old.",
+      "voice": { "preferred": "kokoro:af_bella", "fallbacks": ["kokoro:af_sarah"] },
+    },
   ],
   "speakers": [
-    { "anchor": { "chapter": "chapter-1", "hash": "9f2c1a3b4d5e6f70", "quote": "“Oh dear! Oh dear! I shall be late!”", "occurrence": 1 },
-      "speaker": "white-rabbit", "scope": "quoted", "confidence": "verified", "provenance": "curated" }
+    {
+      "anchor": {
+        "chapter": "chapter-1",
+        "hash": "9f2c1a3b4d5e6f70",
+        "quote": "“Oh dear! Oh dear! I shall be late!”",
+        "occurrence": 1,
+      },
+      "speaker": "white-rabbit",
+      "scope": "quoted",
+      "confidence": "verified",
+      "provenance": "curated",
+    },
   ],
   "effects": [
-    { "id": "ch1-fall", "anchor": { "...": "as above" }, "end_anchor": null,
-      "event": "wind-rushing", "category": "ambience", "intent": "A faint rush of air while Alice falls.",
-      "sound_id": null, "position": 0.0, "offset_s": 0, "duration_s": 6, "volume": 30,
-      "fade": { "in_s": 1.0, "out_s": 2.0 }, "loop": false, "provenance": "curated", "review": "proposed" }
+    {
+      "id": "ch1-fall",
+      "anchor": { "...": "as above" },
+      "end_anchor": null,
+      "event": "wind-rushing",
+      "category": "ambience",
+      "intent": "A faint rush of air while Alice falls.",
+      "sound_id": null,
+      "position": 0.0,
+      "offset_s": 0,
+      "duration_s": 6,
+      "volume": 30,
+      "fade": { "in_s": 1.0, "out_s": 2.0 },
+      "loop": false,
+      "provenance": "curated",
+      "review": "proposed",
+    },
   ],
   "music": {
-    "recommendation": { "track_id": "contemplation", "volume": 10, "note": "Sparse and unhurried." },
-    "chapters": [ { "chapter": "chapter-7", "track_id": "waiting", "volume": 10 } ]
-  }
+    "recommendation": {
+      "track_id": "contemplation",
+      "volume": 10,
+      "note": "Sparse and unhurried.",
+    },
+    "chapters": [{ "chapter": "chapter-7", "track_id": "waiting", "volume": 10 }],
+  },
 }
 ```
 
 ### 5.1 Identifiers and who owns them
 
-| Identifier            | Format                                                        | Owner (branch)         | Notes                                                                                                     |
-| --------------------- | ------------------------------------------------------------- | ---------------------- | --------------------------------------------------------------------------------------------------------- |
-| `work_id`             | `^[a-z0-9][a-z0-9-]{2,79}$`                                   | literary library       | Canonical, never reused.                                                                                  |
-| `edition_id`          | `source:path@revision`                                        | literary library       | A new revision is a new edition; anchors are checked against `text_version`.                              |
-| chapter id            | File stem of the edition's spine item (`chapter-3`, `the-raven`) | literary library     | Informational in anchors (display and disambiguation); resolution is by sentence hash.                    |
-| character id          | `^[a-z0-9][a-z0-9-]{0,39}$`, unique within a preset           | literary library       | `name` is what the dialogue analysis (`documents/delivery.py`) must find for tag-based casting.          |
-| voice reference       | `{preferred: voice_id, fallbacks: [voice_id…]}`               | voice library          | `voice_id` matches `^[a-z]+:[A-Za-z0-9_\-]+$` (`kokoro:af_heart`). Only built-in, shipped voices appear in a preset; custom voices never do (a custom voice is personal and is deleted with its profile). Availability is checked with `VoiceInfo.available` / `EngineRegistry.resolve` before anything is written; if no voice in the list is available, the component is skipped and reported, never guessed. The voice library adds an additive `attribution` string to `VoiceInfo` and an English-only spoken-text rewrite after planning; neither changes stored text or anchors. |
-| `track_id`            | `^[a-z0-9][a-z0-9-]{0,39}$`, from `features/music/library.json` | background music     | Frozen on 2026-10-21: `contemplation`, `calm-ambient`, `rising-moon`, `warriors-lament`, `waiting`, `washed-up`, `currents`, `gymnopedie-1`, `vaporware`, `soft-rain`, `brook`. A preset only _recommends_; music stays off at the start of every narration (ADR-18) and only the player's Background music switch turns it on, so preset copy never says music "will play". Accepting a recommendation calls `useMusic().music.selectTrack(id)` and `setVolume(v)` (saves the device choice, starts nothing). Volume guidance: the files sit at −28 LUFS, 10 % is about 22 dB under the narration, 20–30 % still clearly under it, above 50 % competes. Unknown track: ignored with a notice. |
-| `sound_id`            | `^[a-z0-9][a-z0-9-]{0,39}$`, from the effects catalogue       | sound effects          | `null` until the catalogue exists; `event` and `category` describe the intended sound for mapping.      |
-| `event`               | `^[a-z0-9][a-z0-9-]{0,39}$`                                   | sound effects          | Free text here until the detector's vocabulary is published; then validated against it.                   |
-| `preset_id`, `preset_version` | slug, integer                                         | literary library       | A reader's changes are stored apart from the preset (`document_presets` and the ordinary tables), so an updated preset never overwrites them. |
+| Identifier                    | Format                                                           | Owner (branch)   | Notes                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| ----------------------------- | ---------------------------------------------------------------- | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `work_id`                     | `^[a-z0-9][a-z0-9-]{2,79}$`                                      | literary library | Canonical, never reused.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| `edition_id`                  | `source:path@revision`                                           | literary library | A new revision is a new edition; anchors are checked against `text_version`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| chapter id                    | File stem of the edition's spine item (`chapter-3`, `the-raven`) | literary library | Informational in anchors (display and disambiguation); resolution is by sentence hash.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| character id                  | `^[a-z0-9][a-z0-9-]{0,39}$`, unique within a preset              | literary library | `name` is what the dialogue analysis (`documents/delivery.py`) must find for tag-based casting.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| voice reference               | `{preferred: voice_id, fallbacks: [voice_id…]}`                  | voice library    | `voice_id` matches `^[a-z]+:[A-Za-z0-9_\-]+$` (`kokoro:af_heart`). Only built-in, shipped voices appear in a preset; custom voices never do (a custom voice is personal and is deleted with its profile). Availability is checked with `VoiceInfo.available` / `EngineRegistry.resolve` before anything is written; if no voice in the list is available, the component is skipped and reported, never guessed. The voice library adds an additive `attribution` string to `VoiceInfo` and an English-only spoken-text rewrite after planning; neither changes stored text or anchors.                                                                                                         |
+| `track_id`                    | `^[a-z0-9][a-z0-9-]{0,39}$`, from `features/music/library.json`  | background music | Frozen on 2026-10-21: `contemplation`, `calm-ambient`, `rising-moon`, `warriors-lament`, `waiting`, `washed-up`, `currents`, `gymnopedie-1`, `vaporware`, `soft-rain`, `brook`. A preset only _recommends_; music stays off at the start of every narration (ADR-18) and only the player's Background music switch turns it on, so preset copy never says music "will play". Accepting a recommendation calls `useMusic().music.selectTrack(id)` and `setVolume(v)` (saves the device choice, starts nothing). Volume guidance: the files sit at −28 LUFS, 10 % is about 22 dB under the narration, 20–30 % still clearly under it, above 50 % competes. Unknown track: ignored with a notice. |
+| `sound_id`                    | `^[a-z0-9][a-z0-9-]{0,39}$`, from the effects catalogue          | sound effects    | `null` until the catalogue exists; `event` and `category` describe the intended sound for mapping.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| `event`                       | `^[a-z0-9][a-z0-9-]{0,39}$`                                      | sound effects    | Free text here until the detector's vocabulary is published; then validated against it.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| `preset_id`, `preset_version` | slug, integer                                                    | literary library | A reader's changes are stored apart from the preset (`document_presets` and the ordinary tables), so an updated preset never overwrites them.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 
 ### 5.2 Durable text anchors
 
@@ -210,10 +245,18 @@ when the reader accepts it. Positions inside a sentence are estimates until word
 A speaker annotation gives one sentence to a character. `scope` is `quoted` (only the quoted
 speech, the narration keeps the narrator: ADR-13's `parts`) or `sentence` (the whole sentence).
 `confidence` is `verified` (a person checked it), `likely` or `uncertain`; only `verified` and
-`likely` are applied by default. Applying writes `document_characters` (character → voice) and, for
-sentences the dialogue analysis cannot attribute, a `voice` annotation in `segment_annotations`,
-the same row a reader's own **Voice & effect** choice writes. Removing the component deletes exactly
-the rows it wrote (recorded in `document_presets.components_json`).
+`likely` are applied. Applying the `characters` component writes `document_characters` (every name
+and alias of a character → the first of its voices that is installed here; a character with none
+installed is skipped and the report says so). Applying `speakers` writes `segment_annotations`: a
+`quoted` line gets a `speaker` row naming the character, which the planner (`styling.plan`) treats
+as a tagged dialogue line, so it is read in that character's voice and the narration around it keeps
+the reader's; a `sentence` line gets a `voice` row with the character's voice, the same row a
+reader's own **Voice & effect** choice writes. Removing the preset deletes exactly the rows it wrote
+(recorded in `document_presets.components_json`); applying again removes first, so there is never a
+mix of two versions. Over HTTP: `GET /api/documents/{id}/preset` (the report: voices found here,
+anchors that resolve, components with `available` and `applied`), `POST …/preset/apply`
+(`{"components": [...]}`; `effects` and `music` answer 409 `component_unavailable` until their
+players ship) and `DELETE …/preset`.
 
 ### 5.5 What applying a preset may and may not do
 
@@ -221,21 +264,22 @@ the rows it wrote (recorded in `document_presets.components_json`).
   set the narrator as the document's suggested reading voice for the session.
 - May not: start playback, turn on music or effects, change the text, change preferences, write
   outside the document's own rows, or touch another document.
-- Updates: a new `preset_version` is offered as "Update to the new preset"; nothing is applied
-  until the reader chooses, and their own changes are kept unless they choose to replace them.
+- Updates: the report carries the shipped `preset_version` and the `applied_version`; nothing is
+  applied until the reader chooses again, and choosing replaces what the earlier version wrote while
+  every row the reader wrote themselves stays.
 
 ## 6. Integration handoff
 
 Active work discovered on 2026-10-21 (worktrees under `.claude/worktrees/`):
 
-| Workstream              | Branch                     | State on 2026-10-21                                                  | Session reachable |
-| ----------------------- | -------------------------- | -------------------------------------------------------------------- | ----------------- |
-| Background music        | `feat/background-music`    | ADR-18, Web Audio bed, 11 CC0 tracks, `library.json` with track ids   | yes               |
-| Sound effects           | `feat/sound-effects`       | ADR-22 and design docs only; no code yet                             | yes               |
-| Voice library           | `feat/voice-library`       | Branched from `feat/studio-voice-plus`, no commits yet               | yes               |
-| Studio voice fine-tune  | `feat/voice-tune`          | ADR-16, merged into `feat/studio-voice-plus`                          | yes               |
-| Windows app and release | `feat/desktop-release`     | ADR-19 to 21, PR #37 (draft); change files in `.changes/`             | yes               |
-| Release navigation      | `feat/release-navigation`  | Stacked on `feat/desktop-release`, PR #39                             | yes               |
+| Workstream              | Branch                    | State on 2026-10-21                                                 | Session reachable |
+| ----------------------- | ------------------------- | ------------------------------------------------------------------- | ----------------- |
+| Background music        | `feat/background-music`   | ADR-18, Web Audio bed, 11 CC0 tracks, `library.json` with track ids | yes               |
+| Sound effects           | `feat/sound-effects`      | ADR-22 and design docs only; no code yet                            | yes               |
+| Voice library           | `feat/voice-library`      | Branched from `feat/studio-voice-plus`, no commits yet              | yes               |
+| Studio voice fine-tune  | `feat/voice-tune`         | ADR-16, merged into `feat/studio-voice-plus`                        | yes               |
+| Windows app and release | `feat/desktop-release`    | ADR-19 to 21, PR #37 (draft); change files in `.changes/`           | yes               |
+| Release navigation      | `feat/release-navigation` | Stacked on `feat/desktop-release`, PR #39                           | yes               |
 
 The desktop app sessions are reachable by session messaging in the Claude desktop app, which this
 branch used to deliver the requirements below; delivery status is recorded in section 6.6. Anything
@@ -289,6 +333,16 @@ existing document data: a work becomes a document only when opened, and it is li
 to its catalog entry. Please flag interface or persistence contracts that the library implementation
 must preserve. This branch adds `.changes/literary-library.md` for the release tooling.
 
+Follow-ups that need `scripts/desktop/` (on `main` since PR #37, not on this branch's base), to be
+made when the branches are reconciled: a line in `scripts/desktop/notices.mjs` after "6. WEB
+INTERFACE" naming the included books (24 Standard Ebooks editions, texts public domain in the United
+States and the editions' own work CC0 1.0, and one Project Gutenberg text) and pointing at
+`ltts/library/CREDITS.md`; and, in `scripts/desktop/persistence-test.mjs`, `snapshot()` extended
+with `/api/library/folders`, `/api/library/collections`, `/api/library/tags` and the works list
+(`workId`, `documentId`, `hidden`), with `main()` creating a folder and a collection, setting a
+document's shelf facets and opening one bundled work before the restart. The site's screenshots
+(`site/images/library.png`, the reader) predate the rail, Explore and the Reading experience panel.
+
 ### 6.5 Shared rules
 
 - Field ownership: section 5.1. A change to an owned format is announced in this document first.
@@ -304,13 +358,13 @@ must preserve. This branch adds `.changes/literary-library.md` for the release t
 Filled in by the branch as messages are sent; "not delivered" means a handoff that still needs a
 person to pass it on.
 
-| Recipient                          | Channel                               | Delivered        | Reply (2026-10-21)                                                                                                                                                                                                                                                                      |
-| ---------------------------------- | ------------------------------------- | ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Voice library expansion session    | Claude desktop session message        | yes, 2026-10-21  | Compatible; voice ids unchanged, `VoiceInfo.attribution` added, English spoken-text rewrite after planning; ADR-23 reserved for them; their benchmark can render a document through the real planner for the blind listening panel.                                               |
-| Sound effects system session       | Claude desktop session message        | yes, 2026-10-21  | Adopted the same 16-character sentence hash; tables use `IF NOT EXISTS`; vocabulary in `ltts/sfx/events.py`, catalogue in `ltts/sfx/library.json`; their stored shape (segment index, fraction, `offset_ms`, `until_segment`, volume as percent of the recommended level) is in 5.3. |
-| Background music library session   | Claude desktop session message        | yes, 2026-10-21  | Track ids frozen (5.1); `useMusic().music.selectTrack/setVolume` accept a recommendation without starting music; volume guidance; copy rule: never say music "will play".                                                                                                      |
-| Desktop installer and release session | Claude desktop session message     | yes, 2026-10-21  | Package data ships through the hatchling wheel (commit the files; nothing in build-runtime.mjs changes); add a line to `scripts/desktop/notices.mjs` for `ltts/library/CREDITS.md`; extend `scripts/desktop/persistence-test.mjs` `snapshot()` with the library endpoints; keep API shapes and `ltts.librarySort`; the document list must not grow by itself across restarts; update site, images and wiki in this PR. |
-| Studio voice fine-tune session     | Claude desktop session message        | yes, 2026-10-21  | No conflict; six contracts kept: built-in ids only in presets, audio keyed through `resolve()`, package data read with `importlib.resources` and never written, voice data stays under `data/voices/`, opening a work stays download-free, the worker interleaves.             |
+| Recipient                             | Channel                        | Delivered       | Reply (2026-10-21)                                                                                                                                                                                                                                                                                                                                                                                                     |
+| ------------------------------------- | ------------------------------ | --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Voice library expansion session       | Claude desktop session message | yes, 2026-10-21 | Compatible; voice ids unchanged, `VoiceInfo.attribution` added, English spoken-text rewrite after planning; ADR-23 reserved for them; their benchmark can render a document through the real planner for the blind listening panel.                                                                                                                                                                                    |
+| Sound effects system session          | Claude desktop session message | yes, 2026-10-21 | Adopted the same 16-character sentence hash; tables use `IF NOT EXISTS`; vocabulary in `ltts/sfx/events.py`, catalogue in `ltts/sfx/library.json`; their stored shape (segment index, fraction, `offset_ms`, `until_segment`, volume as percent of the recommended level) is in 5.3.                                                                                                                                   |
+| Background music library session      | Claude desktop session message | yes, 2026-10-21 | Track ids frozen (5.1); `useMusic().music.selectTrack/setVolume` accept a recommendation without starting music; volume guidance; copy rule: never say music "will play".                                                                                                                                                                                                                                              |
+| Desktop installer and release session | Claude desktop session message | yes, 2026-10-21 | Package data ships through the hatchling wheel (commit the files; nothing in build-runtime.mjs changes); add a line to `scripts/desktop/notices.mjs` for `ltts/library/CREDITS.md`; extend `scripts/desktop/persistence-test.mjs` `snapshot()` with the library endpoints; keep API shapes and `ltts.librarySort`; the document list must not grow by itself across restarts; update site, images and wiki in this PR. |
+| Studio voice fine-tune session        | Claude desktop session message | yes, 2026-10-21 | No conflict; six contracts kept: built-in ids only in presets, audio keyed through `resolve()`, package data read with `importlib.resources` and never written, voice data stays under `data/voices/`, opening a work stays download-free, the worker interleaves.                                                                                                                                                     |
 
 ## 7. Testing
 

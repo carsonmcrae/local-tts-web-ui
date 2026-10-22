@@ -1,0 +1,40 @@
+{
+  "schema": "ttsnative.immersive-preset/1",
+  "preset_id": "poe-selected-poems-immersive",
+  "preset_version": 1,
+  "work_id": "poe-selected-poems",
+  "edition_id": "standardebooks:edgar-allan-poe/poetry@a6565f2",
+  "text_version": 1,
+  "title": "The Raven, and others",
+  "summary": "A low voice for the poems and a deeper one for the Raven's single word, with a tapping at the chamber door, wind at the window, the tolling of the bells and the sea beside Annabel Lee.",
+  "narrator": {
+    "voice": { "preferred": "kokoro:bm_fable", "fallbacks": ["kokoro:bm_george"] },
+    "note": "Slow, with room for the rhymes."
+  },
+  "characters": [
+    { "id": "raven", "name": "Raven", "description": "Says one word.",
+      "voice": { "preferred": "kokoro:bm_lewis", "fallbacks": ["kokoro:am_onyx"] } }
+  ],
+  "speakers": [
+    { "anchor": { "chapter": "the-raven", "hash": "d0adb2c7cb94689b", "quote": "Quoth the Raven, “Nevermore.”", "occurrence": 1 }, "speaker": "raven" },
+    { "anchor": { "chapter": "the-raven", "hash": "d0adb2c7cb94689b", "quote": "Quoth the Raven, “Nevermore.”", "occurrence": 2 }, "speaker": "raven" },
+    { "anchor": { "chapter": "the-raven", "hash": "d0adb2c7cb94689b", "quote": "Quoth the Raven, “Nevermore.”", "occurrence": 3 }, "speaker": "raven" },
+    { "anchor": { "chapter": "the-raven", "hash": "d0adb2c7cb94689b", "quote": "Quoth the Raven, “Nevermore.”", "occurrence": 4 }, "speaker": "raven" },
+    { "anchor": { "chapter": "the-raven", "hash": "d0adb2c7cb94689b", "quote": "Quoth the Raven, “Nevermore.”", "occurrence": 5 }, "speaker": "raven" }
+  ],
+  "effects": [
+    { "id": "rapping", "anchor": { "chapter": "the-raven", "hash": "1d702e7022cc1931", "quote": "As of some one gently rapping—rapping at my chamber door.", "occurrence": 1 },
+      "event": "door-knock", "category": "doors", "intent": "A gentle rapping at the chamber door.", "volume": 50 },
+    { "id": "curtain", "anchor": { "chapter": "the-raven", "hash": "bae33a327abcd9f6", "quote": "And the silken sad uncertain rustling of each purple curtain", "occurrence": 1 },
+      "event": "wind-gust", "category": "weather", "intent": "The rustling of the purple curtain.", "volume": 35 },
+    { "id": "shutter", "anchor": { "chapter": "the-raven", "hash": "e2487e18a74e5084", "quote": "Open here I flung the shutter, when, with many a flirt and flutter,", "occurrence": 1 },
+      "event": "door-creak", "category": "doors", "intent": "The shutter flung open.", "volume": 55 },
+    { "id": "tolling", "anchor": { "chapter": "the-bells", "hash": "9f032ac7e9f88af5", "quote": "Hear the tolling of the bells—", "occurrence": 1 },
+      "event": "bell-toll", "category": "fantasy", "intent": "The tolling of the iron bells.", "volume": 60 },
+    { "id": "kingdom-by-the-sea", "anchor": { "chapter": "annabel-lee", "hash": "5f021f22557679e1", "quote": "In a kingdom by the sea,", "occurrence": 1 },
+      "event": "waves", "category": "nature", "intent": "The sea beside the kingdom.", "loop": true, "duration_s": 25, "volume": 35 }
+  ],
+  "music": {
+    "recommendation": { "track_id": "waiting", "volume": 10, "note": "Sparse, for the long lines." }
+  }
+}

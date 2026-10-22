@@ -1,0 +1,41 @@
+{
+  "schema": "ttsnative.immersive-preset/1",
+  "preset_id": "the-adventures-of-sherlock-holmes-voices",
+  "preset_version": 1,
+  "work_id": "the-adventures-of-sherlock-holmes",
+  "edition_id": "standardebooks:arthur-conan-doyle/the-adventures-of-sherlock-holmes@60f53b2",
+  "text_version": 1,
+  "title": "Holmes and Watson, told apart",
+  "summary": "Watson tells the stories; Holmes, Lestrade and the clients answer in their own voices. One sound: the horses' hoofs that bring the King of Bohemia to Baker Street.",
+  "narrator": {
+    "voice": { "preferred": "kokoro:bm_george", "fallbacks": ["kokoro:bm_daniel"] },
+    "note": "Dr. Watson tells these stories."
+  },
+  "characters": [
+    { "id": "holmes", "name": "Holmes", "aliases": ["Sherlock Holmes"],
+      "voice": { "preferred": "kokoro:bm_fable", "fallbacks": ["kokoro:bm_lewis"] } },
+    { "id": "lestrade", "name": "Lestrade", "description": "Of Scotland Yard.",
+      "voice": { "preferred": "kokoro:am_michael", "fallbacks": ["kokoro:am_fenrir"] } },
+    { "id": "jones", "name": "Jones", "description": "Peter Jones, the police agent of The Redheaded League.",
+      "voice": { "preferred": "kokoro:am_fenrir", "fallbacks": ["kokoro:am_echo"] } },
+    { "id": "bradstreet", "name": "Bradstreet", "aliases": ["Inspector Bradstreet"],
+      "voice": { "preferred": "kokoro:am_echo", "fallbacks": ["kokoro:am_puck"] } },
+    { "id": "john-openshaw", "name": "John Openshaw", "description": "The client of The Five Orange Pips.",
+      "voice": { "preferred": "kokoro:am_puck", "fallbacks": ["kokoro:am_michael"] } },
+    { "id": "jabez-wilson", "name": "Jabez Wilson", "description": "The red-headed pawnbroker.",
+      "voice": { "preferred": "kokoro:bm_lewis", "fallbacks": ["kokoro:bm_daniel"] } },
+    { "id": "hatherley", "name": "Hatherley", "description": "Victor Hatherley, the engineer.",
+      "voice": { "preferred": "kokoro:am_onyx", "fallbacks": ["kokoro:am_echo"] } },
+    { "id": "miss-hunter", "name": "Miss Hunter", "description": "Violet Hunter of The Copper Beeches.",
+      "voice": { "preferred": "kokoro:af_nicole", "fallbacks": ["kokoro:af_sarah"] } },
+    { "id": "miss-stoner", "name": "Miss Stoner", "description": "Helen Stoner of The Speckled Band.",
+      "voice": { "preferred": "kokoro:af_sarah", "fallbacks": ["kokoro:af_bella"] } }
+  ],
+  "effects": [
+    { "id": "hoofs", "anchor": { "chapter": "a-scandal-in-bohemia", "hash": "60494334d91b4113", "quote": "As he spoke there was the sharp sound of horses’ hoofs and grating wheels agains", "occurrence": 1 },
+      "event": "horse-hooves", "category": "animals", "intent": "Horses' hoofs and grating wheels against the curb.", "volume": 55 }
+  ],
+  "music": {
+    "recommendation": { "track_id": "currents", "volume": 10, "note": "Something to think by." }
+  }
+}

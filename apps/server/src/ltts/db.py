@@ -292,6 +292,17 @@ MIGRATIONS: tuple[str, ...] = (
         hidden_at TEXT NOT NULL
     );
     """,
+    # 16: which immersive preset a bundled document applied and exactly what it wrote (character voices
+    # and sentence annotations), so taking it out again leaves the reader's own choices alone.
+    """
+    CREATE TABLE IF NOT EXISTS document_presets (
+        document_id TEXT PRIMARY KEY REFERENCES documents(id) ON DELETE CASCADE,
+        preset_id TEXT NOT NULL,
+        preset_version INTEGER NOT NULL,
+        components_json TEXT NOT NULL,
+        applied_at TEXT NOT NULL
+    );
+    """,
 )
 
 

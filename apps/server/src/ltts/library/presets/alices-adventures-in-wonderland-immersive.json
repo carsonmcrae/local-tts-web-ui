@@ -1,0 +1,69 @@
+{
+  "schema": "ttsnative.immersive-preset/1",
+  "preset_id": "alices-adventures-in-wonderland-immersive",
+  "preset_version": 1,
+  "work_id": "alices-adventures-in-wonderland",
+  "edition_id": "standardebooks:lewis-carroll/alices-adventures-in-wonderland/john-tenniel@9ecdf2f",
+  "text_version": 1,
+  "title": "Wonderland, in voices",
+  "summary": "Alice, the White Rabbit, the Hatter, the Cheshire Cat and the Queen each read their own lines, with a few quiet sounds: the fall, the Rabbit's hurrying feet, a ticking tea-party clock.",
+  "narrator": {
+    "voice": { "preferred": "kokoro:af_heart", "fallbacks": ["kokoro:bf_emma"] },
+    "note": "A warm, unhurried storyteller."
+  },
+  "characters": [
+    { "id": "alice", "name": "Alice", "description": "Curious, polite, and quick to argue.",
+      "voice": { "preferred": "kokoro:bf_isabella", "fallbacks": ["kokoro:af_bella", "kokoro:af_heart"] } },
+    { "id": "white-rabbit", "name": "White Rabbit", "aliases": ["Rabbit"], "description": "Always late.",
+      "voice": { "preferred": "kokoro:am_puck", "fallbacks": ["kokoro:bm_fable"] } },
+    { "id": "hatter", "name": "Hatter", "description": "Host of the endless tea party.",
+      "voice": { "preferred": "kokoro:bm_george", "fallbacks": ["kokoro:bm_fable"] } },
+    { "id": "march-hare", "name": "March Hare",
+      "voice": { "preferred": "kokoro:am_echo", "fallbacks": ["kokoro:am_puck"] } },
+    { "id": "queen", "name": "Queen", "aliases": ["Queen of Hearts"], "description": "Off with their heads.",
+      "voice": { "preferred": "kokoro:bf_emma", "fallbacks": ["kokoro:af_kore"] } },
+    { "id": "cheshire-cat", "name": "Cheshire Cat", "aliases": ["Cat"], "description": "Grins, and vanishes.",
+      "voice": { "preferred": "kokoro:bm_fable", "fallbacks": ["kokoro:am_fenrir"] } },
+    { "id": "caterpillar", "name": "Caterpillar", "description": "Languid, on a mushroom.",
+      "voice": { "preferred": "kokoro:bm_lewis", "fallbacks": ["kokoro:bm_daniel"] } },
+    { "id": "mock-turtle", "name": "Mock Turtle", "description": "Sighs between every sentence.",
+      "voice": { "preferred": "kokoro:am_michael", "fallbacks": ["kokoro:am_echo"] } },
+    { "id": "gryphon", "name": "Gryphon",
+      "voice": { "preferred": "kokoro:am_fenrir", "fallbacks": ["kokoro:am_michael"] } },
+    { "id": "father-william", "name": "Father William", "description": "Alice's recitation, in an old man's voice.",
+      "voice": { "preferred": "kokoro:bm_daniel", "fallbacks": ["kokoro:bm_lewis"] } }
+  ],
+  "speakers": [
+    { "anchor": { "chapter": "chapter-1", "hash": "3aafeddc968f68b7", "quote": "I shall be late!”", "occurrence": 1 },
+      "speaker": "white-rabbit" },
+    { "anchor": { "chapter": "chapter-5", "hash": "fe2fb8e1cf768a37", "quote": "“Who are you?” said the Caterpillar.", "occurrence": 1 },
+      "speaker": "caterpillar" },
+    { "anchor": { "chapter": "chapter-5", "hash": "ad806282df696f36", "quote": "“Who are you?”", "occurrence": 1 },
+      "speaker": "caterpillar" },
+    { "anchor": { "chapter": "chapter-6", "hash": "f1ca99d21793af05", "quote": "“Oh, you can’t help that,” said the Cat: “we’re all mad here.", "occurrence": 1 },
+      "speaker": "cheshire-cat" },
+    { "anchor": { "chapter": "chapter-7", "hash": "4646915358718cdd", "quote": "No room!” they cried out when they saw Alice coming.", "occurrence": 1 },
+      "speaker": "march-hare", "confidence": "likely" },
+    { "anchor": { "chapter": "chapter-7", "hash": "71d23598c3eae09e", "quote": "‘Twinkle, twinkle, little bat!", "occurrence": 1 },
+      "speaker": "hatter" },
+    { "anchor": { "chapter": "chapter-12", "hash": "cd671ba229ad8d74", "quote": "“Sentence first—verdict afterwards.”", "occurrence": 1 },
+      "speaker": "queen" },
+    { "anchor": { "chapter": "chapter-12", "hash": "506da791d746bdb7", "quote": "“Off with her head!” the Queen shouted at the top of her voice.", "occurrence": 1 },
+      "speaker": "queen" }
+  ],
+  "effects": [
+    { "id": "the-fall", "anchor": { "chapter": "chapter-1", "hash": "11c0b12eb256c863", "quote": "Down, down, down.", "occurrence": 1 },
+      "event": "wind-gust", "category": "weather", "intent": "A rush of air as Alice falls down the well.", "volume": 70 },
+    { "id": "little-door", "anchor": { "chapter": "chapter-1", "hash": "1d7104a011a94f6b", "quote": "Alice opened the door and found that it led into a small passage, not much large", "occurrence": 1 },
+      "event": "door-creak", "category": "doors", "intent": "The fifteen-inch door opens.", "volume": 60 },
+    { "id": "rabbit-feet", "anchor": { "chapter": "chapter-2", "hash": "04f023450a3d4113", "quote": "After a time she heard a little pattering of feet in the distance, and she hasti", "occurrence": 1 },
+      "event": "footsteps-run", "category": "footsteps", "intent": "The White Rabbit's pattering feet.", "volume": 55 },
+    { "id": "tea-clock", "anchor": { "chapter": "chapter-7", "hash": "504e294f09838282", "quote": "It’s always six o’clock now.”", "occurrence": 1 },
+      "event": "clock-tick", "category": "household", "intent": "A clock that never moves on from six.", "loop": true, "duration_s": 20, "volume": 40 },
+    { "id": "croquet-crowd", "anchor": { "chapter": "chapter-8", "hash": "473b3ad7c7d5b2fd", "quote": "The players all played at once without waiting for turns, quarrelling all the wh", "occurrence": 1 },
+      "event": "crowd-murmur", "category": "ambience", "intent": "The quarrelling croquet players.", "loop": true, "duration_s": 25, "volume": 40 }
+  ],
+  "music": {
+    "recommendation": { "track_id": "gymnopedie-1", "volume": 10, "note": "Light piano for a long golden afternoon." }
+  }
+}

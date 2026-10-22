@@ -65,3 +65,5 @@ export type SpeechApiStatus = Schemas['SpeechApiStatus'];
 export type SpeechApiSettingsInput = Schemas['SpeechApiSettingsIn'];
 export type SpeechApiToken = Schemas['SpeechApiToken'];
 export type SpeechApiActivity = Schemas['SpeechApiActivity'];
+export type ReadingPreset = Schemas['ReadingPresetOut'];
+export type PresetComponent = Schemas['PresetApplyRequest']['components'][number];

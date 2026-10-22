@@ -34,6 +34,7 @@ from ltts.exports.service import ExportService
 from ltts.jobs import JobManager
 from ltts.lan.service import LanService
 from ltts.library.catalog import Catalog, LibraryStores
+from ltts.library.presets import PresetService, load_presets
 from ltts.modelstore.store import ModelStore
 from ltts.pronunciation.store import PronunciationStore
 from ltts.secrets import SecretStore
@@ -86,6 +87,7 @@ class Services:
     folders: FolderStore
     collections: CollectionStore
     catalog: Catalog
+    presets: PresetService
     audiobookshelf: Audiobookshelf
     speech_api: SpeechApi
 
@@ -162,6 +164,14 @@ def build_services(
         folders=FolderStore(db),
         collections=CollectionStore(db),
         catalog=Catalog(settings, db, LibraryStores(document_service, documents, details, shelf)),
+        presets=PresetService(
+            db,
+            styling,
+            casting,
+            lambda doc: [(s.index, s.text) for s in documents.segments_detail(doc)],
+            lambda voice_id: any(v.id == voice_id and v.available for v in registry.voices()),
+            load_presets(),
+        ),
         audiobookshelf=Audiobookshelf(db, SecretStore(settings.path("secrets"))),
         speech_api=SpeechApi(settings, speech_store, synthesis, registry),
     )

@@ -22,7 +22,7 @@ import shutil
 from collections.abc import Iterable
 from dataclasses import dataclass
 from importlib import resources
-from importlib.abc import Traversable
+from importlib.resources.abc import Traversable
 from pathlib import Path
 from typing import Any, Literal
 

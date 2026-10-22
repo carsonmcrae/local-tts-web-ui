@@ -1,0 +1,47 @@
+{
+  "schema": "ttsnative.immersive-preset/1",
+  "preset_id": "pride-and-prejudice-voices",
+  "preset_version": 1,
+  "work_id": "pride-and-prejudice",
+  "edition_id": "standardebooks:jane-austen/pride-and-prejudice@ed94a32",
+  "text_version": 1,
+  "title": "Pride and Prejudice, in voices",
+  "summary": "Elizabeth, Jane, Darcy, Bingley, Wickham, Lydia and the rest of Austen's cast, each in their own voice; no sounds, just the conversation.",
+  "narrator": {
+    "voice": { "preferred": "kokoro:af_heart", "fallbacks": ["kokoro:bf_emma"] },
+    "note": "Dry, amused, never hurried."
+  },
+  "characters": [
+    { "id": "elizabeth", "name": "Elizabeth", "description": "Elizabeth Bennet.",
+      "voice": { "preferred": "kokoro:af_bella", "fallbacks": ["kokoro:af_heart"] } },
+    { "id": "jane", "name": "Jane", "description": "Jane Bennet.",
+      "voice": { "preferred": "kokoro:af_sarah", "fallbacks": ["kokoro:af_aoede"] } },
+    { "id": "darcy", "name": "Darcy",
+      "voice": { "preferred": "kokoro:bm_george", "fallbacks": ["kokoro:bm_fable"] } },
+    { "id": "bingley", "name": "Bingley",
+      "voice": { "preferred": "kokoro:am_puck", "fallbacks": ["kokoro:am_michael"] } },
+    { "id": "wickham", "name": "Wickham",
+      "voice": { "preferred": "kokoro:am_fenrir", "fallbacks": ["kokoro:am_echo"] } },
+    { "id": "lydia", "name": "Lydia", "description": "The youngest Bennet.",
+      "voice": { "preferred": "kokoro:bf_lily", "fallbacks": ["kokoro:af_sky"] } },
+    { "id": "kitty", "name": "Kitty",
+      "voice": { "preferred": "kokoro:af_aoede", "fallbacks": ["kokoro:af_sarah"] } },
+    { "id": "charlotte", "name": "Charlotte", "aliases": ["Miss Lucas"], "description": "Charlotte Lucas.",
+      "voice": { "preferred": "kokoro:af_nicole", "fallbacks": ["kokoro:af_kore"] } },
+    { "id": "maria", "name": "Maria", "description": "Maria Lucas.",
+      "voice": { "preferred": "kokoro:af_kore", "fallbacks": ["kokoro:af_sky"] } },
+    { "id": "miss-bingley", "name": "Miss Bingley",
+      "voice": { "preferred": "kokoro:bf_isabella", "fallbacks": ["kokoro:bf_emma"] } },
+    { "id": "colonel-fitzwilliam", "name": "Colonel Fitzwilliam", "aliases": ["Fitzwilliam"],
+      "voice": { "preferred": "kokoro:am_michael", "fallbacks": ["kokoro:am_fenrir"] } },
+    { "id": "lady-catherine", "name": "Lady Catherine", "description": "Lady Catherine de Bourgh.",
+      "voice": { "preferred": "kokoro:bf_emma", "fallbacks": ["kokoro:bf_isabella"] } }
+  ],
+  "speakers": [
+    { "anchor": { "chapter": "chapter-34", "hash": "3e68920cd91f5d40", "quote": "“In vain have I struggled.", "occurrence": 1 },
+      "speaker": "darcy" }
+  ],
+  "music": {
+    "recommendation": { "track_id": "contemplation", "volume": 10, "note": "Unhurried piano for drawing rooms." }
+  }
+}

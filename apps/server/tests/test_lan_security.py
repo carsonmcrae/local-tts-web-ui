@@ -71,6 +71,8 @@ REACHABLE = {
     "POST /api/library/collections/{collection_id}/documents",
     "GET /api/library/works", "POST /api/library/works/{work_id}/open", "GET /api/library/works/{work_id}/cover",
     "PUT /api/library/works/{work_id}/hidden", "GET /api/library/works/credits",
+    "GET /api/documents/{document_id}/preset", "POST /api/documents/{document_id}/preset/apply",
+    "DELETE /api/documents/{document_id}/preset",
 }  # fmt: skip
 SAMPLES = {"voice_id": "kokoro:af_heart", "engine_id": "kokoro", "key": "a" * 64}
 

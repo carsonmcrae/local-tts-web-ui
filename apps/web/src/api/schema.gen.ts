@@ -305,6 +305,50 @@ export type paths = {
     patch?: never;
     trace?: never;
   };
+  '/api/documents/{document_id}/preset': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Document Preset
+     * @description What the book's reading preset offers this document: voices found here, anchors that resolve, what's applied.
+     */
+    get: operations['document_preset_api_documents__document_id__preset_get'];
+    put?: never;
+    post?: never;
+    /**
+     * Remove Preset
+     * @description Take out what the preset wrote; the reader's own voices and styling stay.
+     */
+    delete: operations['remove_preset_api_documents__document_id__preset_delete'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/documents/{document_id}/preset/apply': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Apply Preset
+     * @description Apply the chosen components (voices and speakers today); music and effects are never started here.
+     */
+    post: operations['apply_preset_api_documents__document_id__preset_apply_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/documents/{document_id}/progress': {
     parameters: {
       query?: never;
@@ -2758,6 +2802,44 @@ export type components = {
        */
       skipSeconds: number;
     };
+    /** PresetApplyRequest */
+    PresetApplyRequest: {
+      /** Components */
+      components: ('narrator' | 'characters' | 'speakers' | 'effects' | 'music')[];
+    };
+    /** PresetCharacterOut */
+    PresetCharacterOut: {
+      /** Description */
+      description: string | null;
+      /** Id */
+      id: string;
+      /** Lines */
+      lines: number;
+      /** Name */
+      name: string;
+      voice: components['schemas']['PresetVoiceOut'];
+    };
+    /** PresetComponentOut */
+    PresetComponentOut: {
+      /** Applied */
+      applied: boolean;
+      /** Available */
+      available: boolean;
+      /**
+       * Name
+       * @enum {string}
+       */
+      name: 'narrator' | 'characters' | 'speakers' | 'effects' | 'music';
+      /** Note */
+      note: string;
+    };
+    /** PresetVoiceOut */
+    PresetVoiceOut: {
+      /** Chosen */
+      chosen: string | null;
+      /** Preferred */
+      preferred: string;
+    };
     /** PreviewRequest */
     PreviewRequest: {
       /**
@@ -2897,6 +2979,36 @@ export type components = {
       syllablesExpected?: number | null;
       /** Syllablesheard */
       syllablesHeard?: number | null;
+    };
+    /** ReadingPresetOut */
+    ReadingPresetOut: {
+      /** Appliedat */
+      appliedAt: string | null;
+      /** Appliedversion */
+      appliedVersion: number | null;
+      /** Characters */
+      characters: components['schemas']['PresetCharacterOut'][];
+      /** Components */
+      components: components['schemas']['PresetComponentOut'][];
+      /** Effects */
+      effects: number;
+      /** Musictrackid */
+      musicTrackId: string | null;
+      narrator: components['schemas']['PresetVoiceOut'] | null;
+      /** Presetid */
+      presetId: string;
+      /** Presetversion */
+      presetVersion: number;
+      /** Speakersresolved */
+      speakersResolved: number;
+      /** Speakersunresolved */
+      speakersUnresolved: number;
+      /** Summary */
+      summary: string;
+      /** Title */
+      title: string;
+      /** Workid */
+      workId: string;
     };
     /** ReadingProgress */
     ReadingProgress: {
@@ -4394,6 +4506,101 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['DetailsOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  document_preset_api_documents__document_id__preset_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        document_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ReadingPresetOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  remove_preset_api_documents__document_id__preset_delete: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        document_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  apply_preset_api_documents__document_id__preset_apply_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        document_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['PresetApplyRequest'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ReadingPresetOut'];
         };
       };
       /** @description Validation Error */

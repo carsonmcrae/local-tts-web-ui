@@ -27,12 +27,14 @@ import path from 'node:path';
 import { repoRoot } from '../lib/paths.mjs';
 import { readReleases } from '../lib/releases.mjs';
 import {
+  applyConditions,
   fillDownload,
   fillLatest,
   fillReleasePage,
   githubReleases,
   releasePages,
   releasePath,
+  releasedFlags,
 } from './releases.mjs';
 
 /** @param {string} name */
@@ -81,11 +83,16 @@ export function brokenLinks(html, out, base = '') {
 /** Published release notes (drafts never) and the installer to advertise, if any. */
 async function releaseInfo() {
   const finished = readReleases().releases.filter((release) => !release.draft);
+  const known = finished.map((release) => release.version);
   if (!process.argv.includes('--releases') || option('--releases') !== 'github') {
-    return { releases: finished, installer: null };
+    return { releases: finished, installer: null, known };
   }
   const { published, installer } = await githubReleases();
-  return { releases: finished.filter((release) => published.has(release.version)), installer };
+  return {
+    releases: finished.filter((release) => published.has(release.version)),
+    installer,
+    known,
+  };
 }
 
 async function main() {
@@ -117,13 +124,17 @@ async function main() {
     copyFileSync(path.join(repoRoot, 'docs', 'images', file), path.join(out, 'images', file));
   }
 
-  const { releases, installer } = await releaseInfo();
+  const { releases, installer, known } = await releaseInfo();
   const latest = releases[0] ?? null;
+  const released = releasedFlags(
+    known,
+    releases.map((release) => release.version),
+  );
   const fill = (/** @type {string} */ html) =>
-    fillLatest(fillDownload(applyRequirements(html, out), installer), latest).replaceAll(
-      '%BASE_URL%',
-      () => base,
-    );
+    fillLatest(
+      fillDownload(applyConditions(applyRequirements(html, out), released), installer),
+      latest,
+    ).replaceAll('%BASE_URL%', () => base);
   const pages = ['index.html', 'download/index.html', '404.html'].map((page) => ({
     page,
     html: fill(readFileSync(path.join(out, page), 'utf8')),

@@ -107,6 +107,16 @@ These need the repository owner; none of them is in the repository.
    The build signs the app, the server's executables and the installer before the updater signature
    is computed. Until then the website's install steps explain the SmartScreen warning.
 
+## Website changes for a version that isn't out yet
+
+ttsnative.com is rebuilt from `main` on every push, so the site must never describe what the released
+app can't do yet. Put a new feature card, paragraph or screenshot caption inside
+`<!-- if:released-X.Y.Z --> … <!-- /if:released-X.Y.Z -->` in `site/index.html` (X.Y.Z being the version
+whose notes will carry it, usually the next release from `npm run release:status`). The build keeps the
+block only once GitHub lists that version as a published release, and drops it until then; a local
+build (`npm run site:build` without `--releases github`) shows it, so you can check the layout. Nothing
+needs doing on release day: the Pages refresh after the release makes the blocks appear.
+
 ## Changes that predate change files
 
 Everything merged after 2.0.0 and before change files existed is described for developers under

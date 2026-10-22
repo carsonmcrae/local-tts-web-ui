@@ -43,8 +43,21 @@ export function escapeHtml(text) {
  */
 export function applyConditions(html, flags) {
   return html.replace(
-    / *<!-- if:([a-z-]+) -->([\s\S]*?)<!-- \/if:\1 -->\n?/g,
+    / *<!-- if:([a-z0-9.-]+) -->([\s\S]*?)<!-- \/if:\1 -->\n?/g,
     (whole, name, body) => (name in flags ? (flags[name] ? body : '') : whole),
+  );
+}
+
+/**
+ * Flags for `<!-- if:released-X.Y.Z -->` blocks: a feature card for a version goes on the site only once
+ * that version is published, so the site never advertises what the released app lacks. `known` are
+ * every version with notes in docs/releases; `released` those published (all of them in a local build).
+ * @param {string[]} known
+ * @param {string[]} released
+ */
+export function releasedFlags(known, released) {
+  return Object.fromEntries(
+    known.map((version) => [`released-${version}`, released.includes(version)]),
   );
 }
 

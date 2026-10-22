@@ -20,6 +20,7 @@ import {
   fillReleasePage,
   githubReleases,
   releasePages,
+  releasedFlags,
   renderHistory,
 } from './releases.mjs';
 
@@ -151,6 +152,15 @@ test('the download section is filled in, or replaced by the source install', () 
   );
   // A block another pass decides is left alone.
   assert.equal(applyConditions('<!-- if:c -->C<!-- /if:c -->', {}), '<!-- if:c -->C<!-- /if:c -->');
+  // A feature card waits for its version to be published; local builds show every known version.
+  const cards =
+    '<!-- if:released-2.0.0 -->old<!-- /if:released-2.0.0 --><!-- if:released-2.1.0 -->new<!-- /if:released-2.1.0 -->';
+  assert.equal(applyConditions(cards, releasedFlags(['2.0.0', '2.1.0'], ['2.0.0'])), 'old');
+  assert.equal(
+    applyConditions(cards, releasedFlags(['2.0.0', '2.1.0'], ['2.0.0', '2.1.0'])),
+    'oldnew',
+  );
+  assert.deepEqual(releasedFlags(['2.1.0'], []), { 'released-2.1.0': false });
 });
 
 test('the history shows one version with its date, every version listed, and the way around', () => {

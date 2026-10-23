@@ -6,12 +6,10 @@
  * Scope: Stamps one build version (the release number, or a development identifier) into the web UI
  *   and the app, builds the web UI, assembles the bundled runtime, runs `tauri build` (per-user NSIS
  *   installer) and copies the installer, its updater signature and a SHA-256 line to dist/desktop/.
- *   Without TAURI_SIGNING_PRIVATE_KEY the installer has no updater signature: fine for testing, but
- *   such a build can never be offered as an update. TTSNATIVE_WINDOWS_SIGN_COMMAND (for example Azure
- *   Artifact Signing) adds Authenticode signatures to the app and installer (`%1` is the file).
- *   TTSNATIVE_TAURI_CONFIG (the update test's throwaway key and local address) is taken only by a
- *   test build (TTSNATIVE_TEST_HOOKS=1) and may change nothing but the updater section.
- *   Windows only; needs Rust and the MSVC build tools.
+ *   No TAURI_SIGNING_PRIVATE_KEY: no updater signature, so the build is never offered as an update.
+ *   TTSNATIVE_WINDOWS_SIGN_COMMAND adds Authenticode signatures (`%1` is the file). The update test's
+ *   TTSNATIVE_TAURI_CONFIG is taken only by test builds. `--store` (`npm run desktop:store`) makes
+ *   the Microsoft Store package instead (msix.mjs). Windows only; needs Rust and the MSVC tools.
  * Does NOT belong: What goes into the runtime (build-runtime.mjs) or publishing (release.yml).
  */
 import { spawnSync } from 'node:child_process';
@@ -32,6 +30,7 @@ import { BootstrapError, ok, printFailure, step, warn } from '../lib/log.mjs';
 import { repoRoot } from '../lib/paths.mjs';
 import { overrideArgs } from './build-config.mjs';
 import { checkTestHooks } from './check-test-hooks.mjs';
+import { packMsix } from './msix.mjs';
 
 const desktopDir = path.join(repoRoot, 'apps', 'desktop');
 const releaseDir = path.join(desktopDir, 'src-tauri', 'target', 'release');
@@ -39,6 +38,8 @@ const nsisDir = path.join(releaseDir, 'bundle', 'nsis');
 const outDir = path.join(repoRoot, 'dist', 'desktop');
 /** The automated installer tests need the `test-hooks` feature; a release version can never have it. */
 const testHooks = process.env.TTSNATIVE_TEST_HOOKS === '1';
+/** The Microsoft Store package rather than the direct-download installer (ADR-26). */
+const store = process.argv.includes('--store');
 
 /**
  * @param {string[]} args arguments for this Node.js
@@ -99,6 +100,41 @@ function tauriBuild(version, env) {
   ok(`TTSNative.exe: test hooks ${testHooks ? 'present (test build)' : 'absent'}`);
 }
 
+/**
+ * The Store build: the program alone (`--no-bundle`) with the `store` feature, packaged by msix.mjs.
+ * @param {string} version
+ * @param {NodeJS.ProcessEnv} env
+ */
+function storeBuild(version, env) {
+  node(
+    [
+      path.join(repoRoot, 'node_modules', '@tauri-apps', 'cli', 'tauri.js'),
+      'build',
+      '--ci',
+      '--no-bundle',
+      '--features',
+      'store',
+      '--config',
+      JSON.stringify({ version }),
+    ],
+    { cwd: desktopDir, env },
+  );
+  const exe = path.join(releaseDir, 'TTSNative.exe');
+  const problem = checkTestHooks(exe, 'absent');
+  if (problem) throw new BootstrapError(problem);
+  mkdirSync(outDir, { recursive: true });
+  const target = packMsix({ exe, runtime: path.join(desktopDir, 'runtime'), version, out: outDir });
+  const sha256 = createHash('sha256').update(readFileSync(target)).digest('hex');
+  writeFileSync(
+    `${target}.sha256`,
+    `${sha256}  ${path.basename(target)}
+`,
+  );
+  ok(
+    `${path.basename(target)}: ${(statSync(target).size / 1_048_576).toFixed(0)} MB, SHA-256 ${sha256}`,
+  );
+}
+
 function main() {
   if (process.platform !== 'win32')
     throw new BootstrapError('The Windows app is built on Windows.');
@@ -110,13 +146,23 @@ function main() {
       `TTSNATIVE_TEST_HOOKS=1 would build the test hooks into release version ${version}; unset it.`,
     );
   }
+  if (testHooks && store) {
+    throw new BootstrapError(
+      'A Microsoft Store package never has the test hooks; unset TTSNATIVE_TEST_HOOKS.',
+    );
+  }
   const env = { TTSNATIVE_BUILD_VERSION: version };
-  step(
-    `Building TTSNative ${version} for Windows${testHooks ? ' (test build, with test hooks)' : ''}…`,
-  );
+  let kind = '';
+  if (store) kind = ' (Microsoft Store package)';
+  else if (testHooks) kind = ' (test build, with test hooks)';
+  step(`Building TTSNative ${version} for Windows${kind}…`);
   node([npmCli, 'run', 'build', '--workspace', '@ltts/web'], { env });
   node([path.join(repoRoot, 'scripts', 'desktop', 'build-runtime.mjs')], { env });
   node([path.join(repoRoot, 'scripts', 'desktop', 'notices.mjs'), version], { env });
+  if (store) {
+    storeBuild(version, env);
+    return;
+  }
   tauriBuild(version, env);
   const built = readdirSync(nsisDir).find((name) => name.endsWith('-setup.exe'));
   if (!built) throw new BootstrapError(`No installer was produced in ${nsisDir}.`);

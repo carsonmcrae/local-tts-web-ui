@@ -72,6 +72,21 @@ candidate's Desktop workflow artifact, in this order:
 
 ## Latest results
 
+**2026-10-22, clean Windows 11 Home VM (VirtualBox; no developer tools; a standard user), installer
+`2.1.0-dev.345` from the Desktop run on `e71d192`.**
+
+- **Found and fixed:** the default voice didn't load (`ImportError: DLL load failed while importing
+onnxruntime_pybind11_state`). ONNX Runtime and espeak-ng need `msvcp140.dll` and `msvcp140_1.dll`
+  from the Visual C++ runtime, which a clean PC lacks and the runtime didn't ship; GitHub's runners have
+  it installed, so every automated check had passed. With the two DLLs added by hand the same build
+  read aloud, and the runtime build now ships the C++ runtime and fails if any DLL it loads is missing.
+- **Passed:** install without an administrator prompt; Start menu and desktop shortcuts; no console
+  window; PDF and EPUB import; MP3 export; closing leaves no process; reopening keeps the documents,
+  reading position and playback speed; uninstall keeps the data unless the delete box is ticked and the
+  second question confirmed; reinstall finds the library again; with too little free space the installer
+  shows the space required and available and disables Next.
+- **Not yet done:** the same pass on a build with the fix, and SmartScreen on a real download.
+
 **2026-10-21, clean `windows-2025` runner, commit `4bac5e1` (with pull request #39 merged in):** every
 automated check above passed in one run: the shell checks, the installer build, all smoke-test checks,
 the close-and-crash persistence test (the window reached through the app's `--remote-debugging-port`

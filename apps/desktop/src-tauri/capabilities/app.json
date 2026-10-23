@@ -1,12 +1,13 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "app",
-  "description": "The TTSNative web UI served by the bundled server on this computer's loopback address: version information, updates and opening its own folders. Nothing else on the system is reachable from the page.",
+  "description": "The TTSNative web UI served by the bundled server on this computer's loopback address: version information, updates, opening its own folders and deleting its own data when the user asks. Nothing else on the system is reachable from the page.",
   "windows": ["main"],
   "remote": {
     "urls": ["http://127.0.0.1:*", "http://127.0.0.1:*/*"]
   },
   "permissions": [
+    "allow-delete-user-data",
     "allow-desktop-info",
     "allow-open-folder",
     "allow-update-check",

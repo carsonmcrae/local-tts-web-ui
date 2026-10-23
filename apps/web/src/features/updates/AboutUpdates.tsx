@@ -3,9 +3,10 @@
 /**
  * Purpose: Settings → About: this version, updates and the release history.
  * Scope: Whether this is a stable release or a development build; in the desktop app the update
- *   status, Check for updates, turning automatic checks on or off, and opening the data and log
- *   folders; elsewhere, how updates arrive when running from the source code. What's new and Release
- *   history work offline from the notes built into the app.
+ *   status, Check for updates, turning automatic checks on or off (a Microsoft Store copy says the
+ *   Store updates it instead), opening the data and log folders and deleting the user's data;
+ *   elsewhere, how updates arrive when running from the source code. What's new and Release history
+ *   work offline from the notes built into the app.
  * Does NOT belong: The rest of About (SystemSections) or update state (UpdatesProvider).
  */
 import { FolderOpen, History, RefreshCw, ScrollText, Sparkles } from 'lucide-react';
@@ -22,13 +23,20 @@ import {
   parseReleaseMarkdown,
   releaseHistory,
 } from '@/lib/releaseHistory';
+import { DeleteMyData } from './DeleteMyData';
 import { ReleaseHistoryDialog } from './ReleaseHistoryDialog';
 import { UpdateDialog } from './UpdateDialog';
 import type { Updates } from './UpdatesProvider';
 import { useUpdates } from './UpdatesProvider';
 
+/** A Microsoft Store copy: the Store updates it, so it never checks GitHub. */
+function fromStore({ info, result }: Updates): boolean {
+  return info?.updates === 'store' || result?.status === 'store';
+}
+
 function status(updates: Updates): string {
   const { result, checking, info } = updates;
+  if (fromStore(updates)) return 'The Microsoft Store keeps TTSNative up to date.';
   if (checking) return 'Checking for updates…';
   if (result?.status === 'failed') return result.message;
   // GitHub answered without an update to offer: none published yet, or its servers had a problem.
@@ -45,17 +53,20 @@ function status(updates: Updates): string {
 function DesktopControls() {
   const updates = useUpdates();
   const [open, setOpen] = useState(false);
+  const store = fromStore(updates);
   return (
     <div className="flex flex-col gap-3">
       <StatusRegion className="text-sm">{status(updates)}</StatusRegion>
       <div className="flex flex-wrap gap-2">
-        <Button
-          icon={<RefreshCw size={15} />}
-          loading={updates.checking}
-          onClick={() => void updates.checkNow()}
-        >
-          Check for updates
-        </Button>
+        {store ? null : (
+          <Button
+            icon={<RefreshCw size={15} />}
+            loading={updates.checking}
+            onClick={() => void updates.checkNow()}
+          >
+            Check for updates
+          </Button>
+        )}
         {updates.available ? (
           <Button variant="primary" onClick={() => setOpen(true)}>
             Update to {updates.available.version}
@@ -82,16 +93,19 @@ function DesktopControls() {
         >
           Third-party notices
         </Button>
+        <DeleteMyData store={store} />
       </div>
-      <label className="flex items-center gap-2 text-sm">
-        <input
-          type="checkbox"
-          className="size-4 accent-[var(--color-accent)]"
-          checked={updates.info?.autoCheck ?? true}
-          onChange={(event) => void updates.setAutoCheck(event.target.checked)}
-        />
-        <span>Check for updates automatically (asks GitHub at most twice a day)</span>
-      </label>
+      {store ? null : (
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            className="size-4 accent-[var(--color-accent)]"
+            checked={updates.info?.autoCheck ?? true}
+            onChange={(event) => void updates.setAutoCheck(event.target.checked)}
+          />
+          <span>Check for updates automatically (asks GitHub at most twice a day)</span>
+        </label>
+      )}
       {updates.available ? (
         <UpdateDialog update={updates.available} open={open} onOpenChange={setOpen} />
       ) : null}

@@ -22,6 +22,9 @@ publish = false
 # TTSNATIVE_TEST_HOOKS=1): it lets `--remote-debugging-port=N` open WebView2's debugging port on
 # 127.0.0.1. A release build never has it; build.mjs and the release workflow check the binary.
 test-hooks = []
+# The Microsoft Store package (scripts/desktop/build.mjs --store): no updater plugin, and the web UI is
+# told the Store delivers updates (ADR-26).
+store = []
 
 [build-dependencies]
 tauri-build = { version = "=2.7.1", features = [] }

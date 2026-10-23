@@ -5,7 +5,8 @@
 //!   later (3 days, for that version only), turn automatic checks on or off, and install. Tauri's
 //!   updater only accepts a stable release newer than this build, and only after its minisign
 //!   signature matches the public key built into the app; the server is stopped before the signed
-//!   installer replaces the program files, and restarted if the installer can't be launched.
+//!   installer replaces the program files, and restarted if the installer can't be launched. A
+//!   Microsoft Store build (the `store` feature) never checks or installs: the Store updates it.
 //! Does NOT belong: The update endpoint and public key (tauri.conf.json) or how updates are shown
 //!   (apps/web/src/features/updates).
 
@@ -35,6 +36,8 @@ pub enum CheckResult {
     NoRelease,
     Disabled,
     NotDue,
+    /// This copy came from the Microsoft Store, which delivers its updates.
+    Store,
     Failed {
         message: String,
     },
@@ -57,6 +60,9 @@ pub enum InstallEvent {
 
 #[tauri::command]
 pub async fn update_check(app: AppHandle, manual: bool) -> CheckResult {
+    if cfg!(feature = "store") {
+        return CheckResult::Store;
+    }
     let state = app.state::<AppState>();
     let saved = state.prefs.get();
     let now = prefs::now();
@@ -110,6 +116,9 @@ pub fn update_set_auto(app: AppHandle, enabled: bool) {
 
 #[tauri::command]
 pub async fn update_install(app: AppHandle, on_event: Channel<InstallEvent>) -> Result<(), String> {
+    if cfg!(feature = "store") {
+        return Err(FROM_STORE.to_string());
+    }
     let updater = app.updater().map_err(|error| error.to_string())?;
     let update = updater
         .check()
@@ -181,6 +190,7 @@ fn is_newer(candidate: &str, current: &semver::Version) -> bool {
     semver::Version::parse(candidate).is_ok_and(|version| version > *current)
 }
 
+const FROM_STORE: &str = "This copy of TTSNative is updated by the Microsoft Store.";
 const NOT_VERIFIED: &str = "The update couldn't be downloaded and verified, so nothing was changed.";
 const NOT_STARTED: &str = "The update couldn't be started, so TTSNative kept the current version.";
 const UNREACHABLE: &str = "TTSNative couldn't check for updates. Check your internet connection, or download the \

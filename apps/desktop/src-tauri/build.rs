@@ -11,6 +11,7 @@ fn main() {
             "app_quit",
             "backend_retry",
             "backend_status",
+            "delete_user_data",
             "desktop_info",
             "open_folder",
             "update_check",

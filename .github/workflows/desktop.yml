@@ -71,14 +71,16 @@ jobs:
           echo "975a22143262fd27476d19ee00c7af67978426e40e1dee94eed6bbade1cf87dc  $RUNNER_TEMP/cargo-deny.tgz" | sha256sum --check
           (cd "$RUNNER_TEMP" && tar -xzf cargo-deny.tgz)
           "$RUNNER_TEMP/cargo-deny-0.20.2-x86_64-pc-windows-msvc/cargo-deny.exe" --locked check
-      - name: Lints and unit tests (with and without the test hooks)
+      - name: Lints and unit tests (direct download, test hooks, Microsoft Store)
         working-directory: apps/desktop/src-tauri
         run: |
           locked=$([ -f Cargo.lock ] && echo --locked || true)
           cargo clippy $locked --all-targets -- -D warnings
           cargo clippy $locked --all-targets --features test-hooks -- -D warnings
+          cargo clippy $locked --all-targets --features store -- -D warnings
           cargo test $locked
           cargo test $locked --features test-hooks
+          cargo test $locked --features store
       - name: A release build has no test hooks
         working-directory: apps/desktop/src-tauri
         env:

@@ -1,0 +1,128 @@
+<!doctype html>
+<!--
+  Purpose: TTSNative's code signing policy: what is signed, by whom, who may approve a signature, and
+    what the app sends over the network. SignPath Foundation requires this page, linked as "Code
+    signing policy" from the home and download pages.
+  Scope: The Windows direct download (signed through SignPath Foundation once the project is accepted),
+    the Microsoft Store package (signed by Microsoft), the separate update signature, the team's roles
+    and how to check a signature.
+  Does NOT belong: How releases are made (docs/guides/release-process.md) or the decision behind the
+    two channels (ADR-26 in docs/architecture/decisions.md).
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Code signing policy · TTSNative</title>
+    <meta
+      name="description"
+      content="How TTSNative's Windows releases are signed, who approves each signature, and what the app sends over the network."
+    />
+    <link rel="canonical" href="%BASE_URL%/code-signing/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="TTSNative" />
+    <meta property="og:title" content="Code signing policy · TTSNative" />
+    <meta
+      property="og:description"
+      content="How TTSNative's Windows releases are signed, who approves each signature, and what the app sends over the network."
+    />
+    <meta property="og:url" content="%BASE_URL%/code-signing/" />
+    <!-- head:shared -->
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to content</a>
+    <main id="main" class="wrap releases">
+      <p class="eyebrow"><a href="%BASE_URL%/">TTSNative</a></p>
+      <h1>Code signing policy</h1>
+      <p class="lead">
+        How TTSNative's Windows releases are signed, who may approve a signature, and what the app
+        sends over the network.
+      </p>
+
+      <h2>Where things stand</h2>
+      <ul class="checks">
+        <li>
+          <strong>TTSNative 2.1.0 and earlier have no Windows code signature.</strong> Windows calls
+          their publisher "Unknown" and may ask you to confirm before it runs the installer; compare
+          the file with the published SHA-256 checksum first.
+        </li>
+        <li>
+          <strong>The direct download</strong> (the installer on this site and on GitHub) is to be
+          signed with free code signing provided by <a href="https://signpath.io">SignPath.io</a>,
+          certificate by <a href="https://signpath.org">SignPath Foundation</a>, from the first
+          release after the foundation accepts the project. Windows will then show "SignPath
+          Foundation" as the publisher.
+        </li>
+        <li>
+          <strong>The Microsoft Store version</strong>, once it is listed, is signed by Microsoft.
+        </li>
+      </ul>
+
+      <h2>What is signed</h2>
+      <p>
+        <code>TTSNative.exe</code> and the installer, <code>TTSNative-Setup-X.Y.Z.exe</code>. Both
+        are built by the project's release workflow on GitHub-hosted runners from the public
+        repository at the tagged commit, and SignPath checks that the files it signs came from that
+        build. The programs and libraries TTSNative bundles from other projects (Python and its
+        packages, uv, ONNX Runtime, espeak-ng, Microsoft's Visual C++ runtime) keep their own
+        makers' signatures, or none; TTSNative doesn't sign them.
+      </p>
+      <p>
+        Separately, every installer carries an update signature made with the project's own key. The
+        app installs an update only when that signature matches the public key built into it.
+      </p>
+
+      <h2>Who approves</h2>
+      <p>
+        Every signing request is approved by hand, after the release's tag is on
+        <code>main</code> and the release run has passed its checks.
+      </p>
+      <ul class="checks">
+        <li>
+          <strong>Committers and reviewers:</strong>
+          <a href="https://github.com/carsonmcrae">Carson McRae</a>
+        </li>
+        <li>
+          <strong>Approvers:</strong> <a href="https://github.com/carsonmcrae">Carson McRae</a>
+        </li>
+      </ul>
+      <p>
+        Everyone in these roles uses two-factor sign-in for GitHub and for SignPath. Changes from
+        anyone else are reviewed before they're merged.
+      </p>
+
+      <h2>What TTSNative sends over the network</h2>
+      <p>
+        TTSNative doesn't send anything to other computers unless you ask it to or turn it on. It
+        has no accounts, analytics or telemetry. The only network requests are:
+      </p>
+      <ul class="checks">
+        <li>
+          a check for new versions on GitHub, at most twice a day, which you can turn off under
+          <strong>Settings → About</strong> (the Microsoft Store version leaves updates to the
+          Store);
+        </li>
+        <li>downloads you start yourself, such as the optional voice-cloning engine;</li>
+        <li>web pages you choose to import;</li>
+        <li>books you send to your own Audiobookshelf server.</li>
+      </ul>
+
+      <h2>Checking a signature</h2>
+      <p>
+        In File Explorer, right-click the file, choose <strong>Properties</strong> and open
+        <strong>Digital Signatures</strong>. In PowerShell:
+        <code>Get-AuthenticodeSignature .\TTSNative-Setup-X.Y.Z.exe</code>. Every release also lists
+        SHA-256 checksums and a build attestation on its
+        <a href="https://github.com/carsonmcrae/ttsnative/releases">GitHub release page</a>.
+      </p>
+
+      <h2>Reporting a problem</h2>
+      <p>
+        If a file claiming to be TTSNative is signed by someone else, or behaves unexpectedly, don't
+        run it, and report it through the
+        <a href="https://github.com/carsonmcrae/ttsnative/security/policy">security policy</a> with
+        its SHA-256 checksum and where you got it.
+      </p>
+    </main>
+  </body>
+</html>

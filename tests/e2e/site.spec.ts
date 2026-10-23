@@ -6,8 +6,9 @@
  *   calls to action reach real sections, the base URL fills canonical and social links, the browser
  *   speech demo (a scripted SpeechSynthesis: voices on the device first, online voices warned about,
  *   speak and stop, unsupported browsers), axe finds no serious violations in light and dark, phones
- *   get no sideways scrolling on the home and release pages, and the release history has a page per
- *   version with Older and Newer links and the latest version named in the footer.
+ *   get no sideways scrolling on the home, release and code signing pages, the release history has a
+ *   page per version with Older and Newer links and the latest version named in the footer, and the
+ *   code signing policy is linked from the footer and listed in the sitemap.
  * Does NOT belong: The app (the other specs) or the page's wording.
  */
 import type { Page } from '@playwright/test';
@@ -292,6 +293,19 @@ test.describe('website @site @cross-browser', () => {
     expect(await seriousViolations(page)).toEqual([]);
   });
 
+  test('the code signing policy is linked from the home page and names its approvers', async ({
+    page,
+  }) => {
+    await page.goto(`${BASE}/`);
+    await page.getByRole('contentinfo').getByRole('link', { name: 'Code signing policy' }).click();
+    await expect(page).toHaveURL(`${BASE}/code-signing/`);
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Code signing policy');
+    await expect(page.getByText('Approvers:')).toBeVisible();
+    expect(await seriousViolations(page)).toEqual([]);
+    const sitemap = await page.request.get(`${BASE}/sitemap.xml`);
+    expect(await sitemap.text()).toContain(`<loc>${BASE}/code-signing/</loc>`);
+  });
+
   test('the 404 page links home', async ({ page }) => {
     await page.goto(`${BASE}/404.html`);
     await expect(page.getByRole('link', { name: 'Go to the TTSNative home page' })).toHaveAttribute(
@@ -304,7 +318,7 @@ test.describe('website @site @cross-browser', () => {
 test.describe('website on phones @mobile', () => {
   // The home page (its install commands scroll sideways, so keyboards must be able to reach them),
   // the release history and one version's own page.
-  for (const path of ['/', '/releases.html', `/releases/${OLDEST.version}/`]) {
+  for (const path of ['/', '/releases.html', `/releases/${OLDEST.version}/`, '/code-signing/']) {
     test(`${path} fits the screen and passes axe`, async ({ page }) => {
       await page.goto(`${BASE}${path}`);
       const overflow = await page.evaluate(

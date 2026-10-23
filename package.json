@@ -60,6 +60,7 @@
     "sonar:coverage": "npm run test:coverage --workspace @ltts/web && node scripts/uv-run.mjs --cwd apps/server run --frozen pytest --cov --cov-report=term --cov-report=xml:coverage.xml",
     "sonar": "npx --yes @sonar/scan@5.0.1",
     "sonar:evidence": "node scripts/release/sonar-evidence.mjs",
+    "sonar:gate": "node scripts/release/sonar-gate.mjs",
     "media:demo": "npm run build && node scripts/media/record-demo.mjs",
     "media:promo": "node scripts/media/render-promo.mjs",
     "media:screenshots": "npm run build && node scripts/capture-screenshots.mjs",

@@ -2,9 +2,11 @@
 # Scope: Refuses a tag that isn't on main, doesn't match the version files, has unconsumed change files,
 #   lacks finished user-facing notes (docs/releases/X.Y.Z.md) or a dated CHANGELOG entry, was already
 #   published, or whose commit fails the readiness gate (scripts/release/gate.mjs: CI, Desktop, CodeQL
-#   and the browser journeys passed on it, SonarQube's gate recorded for it, every manual check done
-#   and no blocker open); runs the full check suite; builds the Windows installer signed for updates (and with
-#   Authenticode when its secrets exist), proves the update signature matches the app's public key and
+#   and the browser journeys passed on it, SonarQube's result recorded for it at the project's policy,
+#   the previous release published from its release commit and checked after publishing, every check
+#   before release done, none after publishing marked early, no blocker open); runs the full check
+#   suite; builds the Windows installer signed for updates (and with Authenticode when its secrets
+#   exist), proves the update signature matches the app's public key and
 #   smoke-tests the installer on a clean runner; packages the source, the prebuilt web UI, the
 #   corresponding source of the installer's GPL/LGPL parts, SBOMs and
 #   SHA256SUMS.txt with signed build provenance; creates the release as a draft, uploads everything,

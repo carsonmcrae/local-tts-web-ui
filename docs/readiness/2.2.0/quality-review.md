@@ -1,28 +1,45 @@
 # Code-quality review: 2.2.0
 
-SonarQube analysed `66d626e` on 2026-10-22 (local server, project `local-tts-web-ui`); the result the
+SonarQube analysed `cca275b` on 2026-10-22 (local server, project `local-tts-web-ui`), judged by the
+"TTSNative" gate described under Policy; the result the
 release gate reads is in [quality.json](quality.json). This page says what that analysis covered, what
 it didn't, and why each remaining finding was accepted rather than changed.
 
 ## Result
 
-| Measure                                | Value                                           |
-| -------------------------------------- | ----------------------------------------------- |
-| Quality gate                           | Passed                                          |
-| Line coverage                          | 100 % (18,651 lines)                            |
-| Branch coverage                        | 100 % (6,589 conditions)                        |
-| Duplicated lines and blocks            | 0 % and 0                                       |
-| Bugs, vulnerabilities, code smells     | 0, 0, 0                                         |
-| Security hotspots                      | 26 found, 26 reviewed (all safe, reasons below) |
-| Accepted issues                        | 6, plus 6 marked false positive (reasons below) |
-| Reliability, security, maintainability | A, A, A                                         |
-| Lines of code analysed                 | 51,679 in 454 files                             |
+| Measure                                  | Value                                           |
+| ---------------------------------------- | ----------------------------------------------- |
+| Quality gate ("TTSNative", 8 conditions) | Passed                                          |
+| Line coverage                            | 100 % (18,651 lines)                            |
+| Branch coverage                          | 100 % (6,589 conditions)                        |
+| Duplicated lines and blocks              | 0 % and 0                                       |
+| Bugs, vulnerabilities, code smells       | 0, 0, 0                                         |
+| Security hotspots                        | 27 found, 27 reviewed (all safe, reasons below) |
+| Accepted issues                          | 6, plus 6 marked false positive (reasons below) |
+| Reliability, security, maintainability   | A, A, A                                         |
+| Lines of code analysed                   | 51,991 in 456 files                             |
 
 The first analysis of the integrated branch (`c086acf`) failed the gate with 173 open issues (11 bugs,
 2 vulnerabilities, 160 code smells) and 26 unreviewed hotspots. 161 were fixed in the code, with no
 suppression comments, excluded files or lowered thresholds; two of them were real defects (the blend
 dialog keyed its rows by position, and the update test used a fixed password for its throwaway keys).
 The other 12 are the reviewed exceptions below.
+
+## Policy
+
+For the measured code (the web app and the server, below), the project requires 100 % line and branch
+coverage, no duplicated lines or blocks, no bug, vulnerability or code smell, and every security hotspot
+reviewed. Two things enforce it:
+
+- **The SonarQube server** judges the project by a quality gate named "TTSNative" with those thresholds
+  on new code and on the whole project. `npm run sonar:gate` creates or restores it. Until 2026-10-22 the
+  server used SonarQube's default gate (80 % coverage and up to 3 % duplication on new code), which the
+  analyses passed with room to spare but which allowed far less than the policy.
+- **The release gate** checks the measures recorded in [quality.json](quality.json) against the same
+  policy, so a server reset to a looser gate can't let a release through.
+
+The test suites enforce coverage first: Vitest and pytest fail below 100 % line and branch coverage, and
+jscpd fails on any duplicated block, in every CI run.
 
 ## What the analysis covers
 
@@ -63,7 +80,7 @@ Desktop workflow checks it with rustfmt, `cargo clippy -D warnings` (with and wi
 `synthesis/render.py`: SonarQube resolves typeshed's `_DataclassT` to its bound instead of the argument's
 type. `mypy --strict` infers the exact dataclass, and the server passes it.
 
-## Security hotspots (26, all reviewed safe)
+## Security hotspots (27, all reviewed safe)
 
 - **Regular expressions that could backtrack (14):** two see user input and are bounded first (an
   imported HTML file's first 4 KB; a text selection, refused over 1,000 characters before any pattern
@@ -71,7 +88,7 @@ type. `mypy --strict` infers the exact dataclass, and the server passes it.
 - **`http` addresses (6):** a language model on this computer (loopback only, enforced), the LAN address
   (R-6), and four XML namespace names that are never fetched.
 - **Pseudorandom generators (2):** seeded shuffles that hide which voice is which in blind listening tests.
-- **`PATH` lookups (2):** release tooling calling `gh` and `tar` on the maintainer's computer or a
+- **`PATH` lookups (3):** release tooling calling `gh` (twice) and `tar` on the maintainer's computer or a
   GitHub-hosted runner.
 
 Each verdict is recorded in SonarQube with its reasoning.

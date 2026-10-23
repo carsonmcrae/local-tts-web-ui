@@ -6,10 +6,9 @@
  *   users install no developer tools.
  * Scope: Into apps/desktop/runtime/: Python (the exact version in apps/desktop/runtime.json, installed
  *   by the checksum-pinned uv, which verifies it) with the server's locked, hash-checked packages and
- *   the `ltts` package, byte-compiled so nothing is written into the install folder at run time; the
- *   built web UI; the optional voice-cloning worker's project (installed later, on request, into the
- *   user's folder); the pinned uv; and the default Kokoro model, downloaded and SHA-256 verified by
- *   the server's own model store (cached in .tools/desktop-cache between builds).
+ *   the `ltts` package, byte-compiled; the Visual C++ runtime, checked against every DLL the runtime
+ *   loads (cpp-runtime.mjs); the web UI; the voice-cloning worker's project (installed on request);
+ *   the pinned uv; and the Kokoro model, SHA-256 verified (cached in .tools/desktop-cache).
  *   Usage: `node scripts/desktop/build-runtime.mjs` after `npm run build` (Windows only).
  * Does NOT belong: Building the installer (build.mjs) or the desktop shell (apps/desktop/src-tauri).
  */
@@ -30,6 +29,7 @@ import path from 'node:path';
 import { BootstrapError, formatBytes, ok, printFailure, step } from '../lib/log.mjs';
 import { readToolchain, repoRoot, serverDir, toolsDir, webDir } from '../lib/paths.mjs';
 import { resolveUv } from '../lib/uv.mjs';
+import { bundleCppRuntime, checkRuntimeDlls } from './cpp-runtime.mjs';
 
 const desktopDir = path.join(repoRoot, 'apps', 'desktop');
 const out = path.join(desktopDir, 'runtime');
@@ -187,8 +187,11 @@ async function main() {
   const uv = await pinnedUv();
   const python = installPython(uv);
   installServer(uv, python);
+  const cppRuntime = bundleCppRuntime(path.dirname(python));
   installModels(python);
   copyApps(uv);
+  step('Every DLL the runtime loads ships with it or with Windows…');
+  checkRuntimeDlls(out);
   writeFileSync(
     path.join(out, 'README.txt'),
     [
@@ -199,7 +202,7 @@ async function main() {
   );
   writeFileSync(
     path.join(out, 'runtime-manifest.json'),
-    `${JSON.stringify(provenance(uv), null, 2)}\n`,
+    `${JSON.stringify(provenance(uv, cppRuntime), null, 2)}\n`,
   );
   ok(`Desktop runtime ready in apps/desktop/runtime (${formatBytes(folderBytes(out))})`);
 }
@@ -207,8 +210,9 @@ async function main() {
 /**
  * What went into the runtime, for the release's records (the packages themselves are in the server SBOM).
  * @param {string} uv
+ * @param {ReturnType<typeof bundleCppRuntime>} cppRuntime
  */
-function provenance(uv) {
+function provenance(uv, cppRuntime) {
   const sha256 = (/** @type {string} */ file) =>
     createHash('sha256').update(readFileSync(file)).digest('hex');
   const models = JSON.parse(
@@ -220,6 +224,7 @@ function provenance(uv) {
       source: 'python-build-standalone, installed and verified by uv',
     },
     uv: { version: readToolchain().uv.version, sha256: sha256(uv) },
+    cppRuntime,
     serverLockSha256: sha256(path.join(serverDir, 'uv.lock')),
     workerLockSha256: sha256(path.join(repoRoot, 'apps', 'chatterbox-worker', 'uv.lock')),
     models: manifest.bundledModels.map((id) => ({ id, files: models[id].files })),

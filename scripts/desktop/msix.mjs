@@ -169,9 +169,11 @@ function makeappx() {
 function run(command, args) {
   const result = spawnSync(command, args, { encoding: 'utf8', windowsHide: true });
   if (result.status !== 0) {
-    // makeappx lists every file it packs; its errors are what matter.
-    const lines = `${result.stdout}${result.stderr}`.split(/\r?\n/).filter(Boolean);
-    const errors = lines.filter((line) => /error|0x8[0-9a-f]{7}/i.test(line));
+    // makeappx lists every file it packs ("Processing …"); its own messages are what matter.
+    const lines = `${result.stdout}${result.stderr}`
+      .split(/\r?\n/)
+      .filter((line) => line.trim() && !line.startsWith('Processing '));
+    const errors = lines.filter((line) => /^MakeAppx\s*:\s*error/i.test(line.trim()));
     throw new BootstrapError(
       `${path.basename(command)} failed.`,
       (errors.length ? errors : lines.slice(-8)).slice(0, 12).map((line) => line.slice(0, 400)),

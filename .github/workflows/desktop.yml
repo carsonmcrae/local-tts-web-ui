@@ -161,6 +161,8 @@ jobs:
     name: Microsoft Store package (MSIX)
     runs-on: windows-2025
     timeout-minutes: 45 # catches a hung job; a run takes about as long as one update build
+    env:
+      TTSNATIVE_TEST_HOOKS: '' # the workflow's test builds need hooks; a Store package refuses them
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:

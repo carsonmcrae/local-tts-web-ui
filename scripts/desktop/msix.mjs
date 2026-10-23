@@ -167,7 +167,16 @@ function makeappx() {
  * @param {string[]} args
  */
 function run(command, args) {
-  const result = spawnSync(command, args, { encoding: 'utf8', windowsHide: true });
+  // makeappx prints a line for each of several thousand files: more than spawnSync's 1 MB default,
+  // which would stop it part-way.
+  const result = spawnSync(command, args, {
+    encoding: 'utf8',
+    windowsHide: true,
+    maxBuffer: 256 * 1024 * 1024,
+  });
+  if (result.error) {
+    throw new BootstrapError(`${path.basename(command)} couldn't run: ${result.error.message}`);
+  }
   if (result.status !== 0) {
     // makeappx lists every file it packs ("Processing …"); its own messages are what matter.
     const lines = `${result.stdout}${result.stderr}`

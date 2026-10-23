@@ -113,10 +113,15 @@ variable `TTSNATIVE_REQUIRE_SIGNING=true` turns that into a failure once signing
 ## Status
 
 - [x] Decision recorded (ADR-26).
-- [ ] Store account and reserved name (owner).
-- [ ] `store` channel build (no updater) and the in-app data deletion.
-- [ ] MSIX packaging script, manifest, logos; checked on the clean VM.
-- [ ] Code signing policy page, then the SignPath application (owner).
+- [x] Store account and reserved name (owner): `CarsonMcRae.TTSNative`, Store ID 9PP3BKBDJP9R,
+      recorded in `apps/desktop/store/identity.json`.
+- [x] `store` channel build (no updater) and the in-app data deletion (`npm run desktop:store`,
+      Settings → About → Delete my data…). Compiled and tested only in CI (no MSVC tools locally).
+- [x] MSIX packaging script, manifest and logos (`scripts/desktop/msix.mjs`, unit-tested).
+- [x] CI builds the package: the Desktop workflow's "Microsoft Store package (MSIX)" job.
+- [ ] The package installed on the clean VM.
+- [x] Code signing policy page (live 2026-10-23) and the SignPath application (owner, submitted
+      2026-10-23; awaiting their reply).
 - [ ] Release workflow: SignPath signing, MSIX artifact.
 - [ ] Website: Store badge (gated), direct-download steps.
 - [ ] First Store submission (owner) and first signed direct release.

@@ -32,6 +32,7 @@ const UPDATE = { version: '2.1.0', date: '2026-11-02', notes: NOTES };
 const INFO = {
   version: '2.0.0',
   channel: 'stable',
+  updates: 'app',
   dataDir: 'C:/data',
   logDir: 'C:/logs',
   autoCheck: true,

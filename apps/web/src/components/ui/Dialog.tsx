@@ -98,6 +98,8 @@ interface ConfirmDialogProps {
   onConfirm: () => void;
   busy?: boolean;
   destructive?: boolean;
+  /** Keeps the confirm button off until the dialog's own condition is met (e.g. a tick box). */
+  confirmDisabled?: boolean;
 }
 
 export function ConfirmDialog({
@@ -110,6 +112,7 @@ export function ConfirmDialog({
   onConfirm,
   busy = false,
   destructive = true,
+  confirmDisabled = false,
 }: Readonly<ConfirmDialogProps>) {
   return (
     <Dialog
@@ -122,7 +125,12 @@ export function ConfirmDialog({
           <Button onClick={() => onOpenChange(false)} disabled={busy}>
             {cancelLabel}
           </Button>
-          <Button variant={destructive ? 'danger' : 'primary'} onClick={onConfirm} loading={busy}>
+          <Button
+            variant={destructive ? 'danger' : 'primary'}
+            onClick={onConfirm}
+            loading={busy}
+            disabled={confirmDisabled}
+          >
             {confirmLabel}
           </Button>
         </>

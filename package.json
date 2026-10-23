@@ -34,6 +34,7 @@
     "release:gate": "node scripts/release/gate.mjs",
     "desktop:build": "node scripts/desktop/build.mjs",
     "desktop:runtime": "node scripts/desktop/build-runtime.mjs",
+    "desktop:store": "node scripts/desktop/build.mjs --store",
     "desktop:smoke-test": "node scripts/desktop/smoke-test.mjs",
     "desktop:update-test": "node scripts/desktop/update-test.mjs",
     "desktop:persistence-test": "node scripts/desktop/persistence-test.mjs",

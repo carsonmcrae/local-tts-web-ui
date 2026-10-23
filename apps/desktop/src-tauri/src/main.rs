@@ -5,12 +5,15 @@
 //! Scope: Single instance (a second launch focuses the open window), the window (its size and position
 //!   remembered, the start-up screen while the server starts), navigation rules (only the start-up
 //!   screen and the local server load inside the window; other links open in the default browser),
-//!   the commands the web UI may call, and a clean server shutdown on exit.
-//! Does NOT belong: Running the server (backend.rs), updates (updates.rs) or file locations (paths.rs).
+//!   the commands the web UI may call, and a clean server shutdown on exit. A Microsoft Store build (the
+//!   `store` feature) leaves out the updater plugin and tells the web UI that the Store updates it.
+//! Does NOT belong: Running the server (backend.rs), updates (updates.rs), file locations (paths.rs) or
+//!   deleting the user's data (erase.rs).
 
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod backend;
+mod erase;
 mod paths;
 mod prefs;
 mod updates;
@@ -34,6 +37,8 @@ pub struct AppState {
 struct DesktopInfo {
     version: String,
     channel: &'static str,
+    /// Who updates this copy: `app` (its own updater, from GitHub Releases) or `store` (the Microsoft Store).
+    updates: &'static str,
     data_dir: String,
     log_dir: String,
     auto_check: bool,
@@ -52,6 +57,7 @@ fn desktop_info(app: AppHandle) -> DesktopInfo {
         } else {
             "development"
         },
+        updates: if cfg!(feature = "store") { "store" } else { "app" },
         data_dir: state.paths.data().display().to_string(),
         log_dir: state.paths.logs().display().to_string(),
         auto_check: saved.auto_check,
@@ -195,12 +201,15 @@ fn main() {
     // never wants that route (a test build takes the switch on its command line instead), so it is
     // dropped before any window exists. The matching registry policy stays an administrator's decision.
     std::env::remove_var("WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS");
-    let app = tauri::Builder::default()
+    let builder = tauri::Builder::default()
         // Registered first, so a second launch only focuses the running window.
         .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| focus_main(app)))
         .plugin(tauri_plugin_window_state::Builder::default().build())
-        .plugin(tauri_plugin_opener::init())
-        .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(tauri_plugin_opener::init());
+    // The Store build has no updater at all: the Store replaces the package.
+    #[cfg(not(feature = "store"))]
+    let builder = builder.plugin(tauri_plugin_updater::Builder::new().build());
+    let app = builder
         .setup(|app| {
             let paths = Paths::resolve(app.handle())?;
             paths.ensure()?;
@@ -220,6 +229,7 @@ fn main() {
             backend_retry,
             backend_status,
             desktop_info,
+            erase::delete_user_data,
             open_folder,
             updates::update_check,
             updates::update_install,

@@ -137,6 +137,12 @@ asks once more, naming everything it would delete for your Windows account:
 
 Choose **No** to uninstall the app and keep all of it for a later reinstall. Updates never delete data.
 
+You can also delete your data from inside the app: **Settings → About → Delete my data…** names the
+same two folders' contents, needs a tick before its button works, then closes TTSNative and deletes
+them. Files you saved elsewhere, such as downloaded MP3s, stay where they are. A copy from the
+Microsoft Store, once it's listed there, keeps your data when Windows uninstalls it, so this is the way
+to remove it.
+
 ## Troubleshooting
 
 - **"TTSNative couldn't start"**: choose **Try again**. If it keeps happening, **Open log folder** and

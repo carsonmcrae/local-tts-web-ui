@@ -1,0 +1,7 @@
+{
+  "//": "Purpose: The Microsoft Store package's identity, from Partner Center (Product management → Product identity). Scope: Package/Identity/Name, Package/Identity/Publisher (CN=…), Package/Properties/PublisherDisplayName and the 12-character Store ID; public identifiers, not secrets. While name and publisher are empty, scripts/desktop/msix.mjs builds a test package that can be sideloaded for checks but never uploaded. Does NOT belong: Signing (the Store signs the package) or the listing text (Partner Center).",
+  "name": "CarsonMcRae.TTSNative",
+  "publisher": "CN=C4520066-EE1C-4415-98F3-3A007C6FA29A",
+  "publisherDisplayName": "Carson McRae",
+  "storeId": "9PP3BKBDJP9R"
+}

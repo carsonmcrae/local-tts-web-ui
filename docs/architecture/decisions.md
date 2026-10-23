@@ -579,3 +579,48 @@ when a choice changes the stack, a trust boundary, data storage or the setup exp
   Anchors are only valid for the edition they were made against: the catalog's `text_version` is
   part of the preset, and a changed text flags unresolved anchors instead of guessing. Character
   names in presets must match what the dialogue analysis finds or be applied through annotations.
+
+## ADR-26: Windows ships through the Microsoft Store, with a SignPath-signed direct download beside it
+
+- **Context:** 2.1.0's installer has no Authenticode signature, so Windows warns about it: Edge says
+  the file "isn't commonly downloaded" and offers "Delete" first; run from elsewhere, SmartScreen says
+  "Windows protected your PC" and "Publisher: Unknown". Where Smart App Control is on, an unsigned app
+  can't run at all. Microsoft's guidance (2026) is that every certificate, EV included since 2024, still
+  warns until downloads build reputation, that there is no way to ask for a review for ordinary users,
+  and that only Store-distributed apps never see SmartScreen warnings. The project is free and wants no
+  recurring cost.
+- **Decision:**
+  - **The Microsoft Store is the main way to get TTSNative on Windows.** It is free for an individual
+    developer, Microsoft re-signs the package (every file in it, including the bundled Python and
+    libraries we cannot sign), and Store installs never meet SmartScreen. The Store build is an MSIX
+    package of the same program and runtime, built by the release workflow
+    (`scripts/desktop/msix.mjs`), a full-trust desktop app for Windows 11. It has no built-in updater:
+    the Store delivers its updates. Its user folder is the same `%LOCALAPPDATA%\com.ttsnative.desktop`
+    as the direct install, declared outside MSIX's file-system virtualisation (Windows 11's excluded
+    directories, restricted capability `unvirtualizedResources`), so documents and voices survive an
+    uninstall and are shared if someone switches between the two installs. Because a Store uninstall
+    can't ask, deleting personal data is an explicit action inside the app.
+  - **The direct download stays, signed for free by SignPath Foundation.** It serves people who already
+    run 2.1.0 (their in-app updater fetches from GitHub Releases), PCs without the Store, and anyone who
+    prefers a plain installer. The release workflow sends the app and then the installer to SignPath
+    from GitHub-hosted runners; each signing request is approved by the owner, and the updater's
+    minisign signature is made over the signed installer. The certificate names "SignPath Foundation"
+    as publisher, and ttsnative.com publishes the code signing policy SignPath requires.
+  - **ttsnative.com sends people to the Store first** ("Get it from Microsoft"), with the direct
+    installer, its checksum and its signing details as the alternative.
+- **Alternatives:**
+  - **Azure Artifact Signing** (about $9.99 a month) or **an OV certificate** ($150–300 a year on a
+    hardware key). Rejected: recurring cost, and both still warn until reputation builds.
+  - **An EV certificate.** Rejected: no longer skips the warning (2024) and costs more.
+  - **The Store's EXE/MSI route.** Rejected: every PE file inside must carry a Trusted Root
+    signature, and the bundled upstream binaries (Python, NumPy, ONNX Runtime's helpers) don't.
+  - **SignPath only.** Rejected as the main route: the publisher shown is "SignPath Foundation", the
+    first downloads of each new file can still warn, and acceptance is at the foundation's discretion.
+  - **Store only.** Rejected: 2.1.0's updater must keep a signed path forward, and some PCs have no
+    Store.
+- **Consequences:** Two packages per release from the same build. Store releases pass certification
+  (days, not minutes), so an urgent fix reaches direct-download users first. Neither the Store nor
+  SignPath guarantees acceptance; if SignPath declines, the direct download stays unsigned and the
+  website steers everyone to the Store. The owner holds both accounts and approves every signing
+  request; the workflow never sees anything but SignPath's API token, stored as an environment
+  secret. Details and status: [windows-distribution.md](../guides/windows-distribution.md).

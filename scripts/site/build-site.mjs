@@ -112,6 +112,7 @@ function sitemapUrls(releases, installer) {
     '/',
     '/releases.html',
     ...(installer ? ['/download/'] : []),
+    '/code-signing/',
     ...releases.map((release) => `/${releasePath(release.version)}`),
   ];
 }
@@ -186,10 +187,12 @@ async function main() {
       ),
       latest,
     ).replaceAll('%BASE_URL%', () => base);
-  const pages = ['index.html', 'download/index.html', '404.html'].map((page) => ({
-    page,
-    html: fill(readFileSync(path.join(out, page), 'utf8'), page),
-  }));
+  const pages = ['index.html', 'download/index.html', 'code-signing/index.html', '404.html'].map(
+    (page) => ({
+      page,
+      html: fill(readFileSync(path.join(out, page), 'utf8'), page),
+    }),
+  );
   const template = readFileSync(path.join(out, 'releases.html'), 'utf8');
   for (const page of releasePages(releases)) {
     pages.push({

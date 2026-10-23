@@ -10,6 +10,7 @@
  *   virtualisation, so documents and voices are the same as the direct install's and outlive an
  *   uninstall. The identity comes from apps/desktop/store/identity.json; while it is empty the result is
  *   a test package, named so, that can be sideloaded but not uploaded. The Store signs the package.
+ *   Upstream files the app never reads and MSIX can't hold are left out; any other is refused.
  * Does NOT belong: Building the program and runtime (build.mjs) or submitting to Partner Center.
  */
 import { spawnSync } from 'node:child_process';
@@ -33,6 +34,21 @@ const MIN_WINDOWS = '10.0.22000.0';
 const TESTED_WINDOWS = '10.0.26100.0';
 const LOGOS = ['Square44x44Logo.png', 'Square150x150Logo.png', 'StoreLogo.png'];
 const TEST_IDENTITY = { name: 'TTSNative.Test', publisher: 'CN=TTSNative Test' };
+/**
+ * Left out of the package: python-docx ships the unpacked source of its default.docx (it only ever
+ * opens default.docx and the loose default-*.xml files), whose [Content_Types].xml is a name MSIX keeps
+ * for itself.
+ */
+const LEFT_OUT = ['python/Lib/site-packages/docx/templates/default-docx-template'];
+
+/**
+ * Runtime files the package format can't hold: MSIX writes [Content_Types].xml itself.
+ * @param {string[]} files paths relative to the runtime, with "/"
+ * @returns {string[]}
+ */
+export function unpackable(files) {
+  return files.filter((file) => file.split('/').pop()?.toLowerCase() === '[content_types].xml');
+}
 
 /**
  * The four-part version MSIX needs; the Store wants the fourth part to be 0, so a development build
@@ -153,9 +169,13 @@ function makeappx() {
 function run(command, args) {
   const result = spawnSync(command, args, { encoding: 'utf8', windowsHide: true });
   if (result.status !== 0) {
-    throw new BootstrapError(`${path.basename(command)} failed.`, [
-      (result.stdout + result.stderr).trim().split('\n').slice(-12).join('\n'),
-    ]);
+    // makeappx lists every file it packs; its errors are what matter.
+    const lines = `${result.stdout}${result.stderr}`.split(/\r?\n/).filter(Boolean);
+    const errors = lines.filter((line) => /error|0x8[0-9a-f]{7}/i.test(line));
+    throw new BootstrapError(
+      `${path.basename(command)} failed.`,
+      (errors.length ? errors : lines.slice(-8)).slice(0, 12).map((line) => line.slice(0, 400)),
+    );
   }
 }
 
@@ -180,7 +200,20 @@ export function packMsix({ exe, runtime, version, out }) {
   mkdirSync(path.join(layout, 'Assets'), { recursive: true });
   const executable = `${conf.mainBinaryName}.exe`;
   copyFileSync(exe, path.join(layout, executable));
-  cpSync(runtime, path.join(layout, 'runtime'), { recursive: true });
+  const skipped = LEFT_OUT.map((part) => path.join(runtime, ...part.split('/')));
+  cpSync(runtime, path.join(layout, 'runtime'), {
+    recursive: true,
+    filter: (source) =>
+      !skipped.some((part) => source === part || source.startsWith(part + path.sep)),
+  });
+  const files = readdirSync(path.join(layout, 'runtime'), { recursive: true, encoding: 'utf8' });
+  const refused = unpackable(files.map((file) => file.split(path.sep).join('/')));
+  if (refused.length) {
+    throw new BootstrapError(
+      'The runtime holds files an MSIX package cannot.',
+      refused.slice(0, 10),
+    );
+  }
 
   const icons = path.join(out, 'msix-icons');
   rmSync(icons, { recursive: true, force: true });

@@ -5,12 +5,13 @@
  * Purpose: Tests for the Microsoft Store package's version, identity and manifest.
  * Scope: The four-part version from release and development versions, the test identity while
  *   Partner Center's is missing and refusals of a half-filled or malformed one, and the manifest: full
- *   trust on Windows 11, the user folder outside file-system virtualisation, the logos, and escaping.
+ *   trust on Windows 11, the user folder outside file-system virtualisation, the logos, and escaping;
+ *   runtime files the package can't hold.
  * Does NOT belong: Packing with makeappx (needs the Windows SDK; the release workflow does it).
  */
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { manifest, packageIdentity, storeVersion } from './msix.mjs';
+import { manifest, packageIdentity, storeVersion, unpackable } from './msix.mjs';
 
 test('MSIX versions have four numbers and end in 0', () => {
   assert.equal(storeVersion('2.2.0'), '2.2.0.0');
@@ -75,4 +76,19 @@ test('the manifest is a full-trust Windows 11 app that keeps its user folder out
   for (const logo of ['StoreLogo', 'Square150x150Logo', 'Square44x44Logo']) {
     assert.match(xml, new RegExp(`Assets\\\\${logo}\\.png`));
   }
+});
+
+test('a [Content_Types].xml anywhere in the runtime is refused, whatever its case', () => {
+  assert.deepEqual(
+    unpackable([
+      'python/Lib/os.py',
+      'python/Lib/site-packages/docx/templates/default-docx-template/[Content_Types].xml',
+      'python/Lib/site-packages/other/[CONTENT_TYPES].XML',
+      'python/Lib/site-packages/other/Content_Types.xml',
+    ]),
+    [
+      'python/Lib/site-packages/docx/templates/default-docx-template/[Content_Types].xml',
+      'python/Lib/site-packages/other/[CONTENT_TYPES].XML',
+    ],
+  );
 });
